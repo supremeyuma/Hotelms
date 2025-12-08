@@ -2,47 +2,79 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, SoftDeletes;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
+        'uuid',
+        'role_id',
         'name',
         'email',
         'password',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+    ];
+
+    /* ---------------- Relationships ---------------- */
+
+    // A user belongs to a role
+    public function role()
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        return $this->belongsTo(Role::class);
+    }
+
+    // A user may have a staff profile
+    public function staffProfile()
+    {
+        return $this->hasOne(StaffProfile::class);
+    }
+
+    // A user may have many bookings
+    public function bookings()
+    {
+        return $this->hasMany(Booking::class);
+    }
+
+    // Orders made by user (guest or staff)
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    // Staff audit logs
+    public function audits()
+    {
+        return $this->hasMany(AuditLog::class);
+    }
+
+    /* ---------------- Mutators ---------------- */
+
+    // Automatically hash passwords
+    public function setPasswordAttribute($value)
+    {
+        if ($value) {
+            $this->attributes['password'] = bcrypt($value);
+        }
+    }
+
+    /* ---------------- Scopes ---------------- */
+
+    // Filter staff
+    public function scopeStaff($query)
+    {
+        return $query->whereHas('staffProfile');
     }
 }
