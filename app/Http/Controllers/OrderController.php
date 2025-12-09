@@ -2,43 +2,231 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Controller;
+use App\Http\Requests\OrderRequest;
+use App\Http\Requests\OrderStatusRequest;
 use App\Models\Order;
-use App\Http\Requests\Order\StoreOrderRequest;
-use App\Http\Requests\Order\UpdateOrderRequest;
+use App\Models\OrderItem;
+use App\Models\Room;
+use App\Enums\OrderStatus;
 use App\Services\OrderService;
+use App\Services\StaffActionService;
 use App\Services\AuditLogger;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class OrderController extends Controller
 {
-    public function __construct()
+    /**
+     * Store a new room-service order.
+     */
+    public function store(OrderRequest $request)
     {
-        $this->authorizeResource(Order::class, 'order');
+        $validated = $request->validated();
+
+        return DB::transaction(function () use ($validated, $request) {
+
+            // Determine department based on order category
+            $department = strtolower($validated['category']); // kitchen/laundry/housekeeping/maintenance
+
+            // Generate order tracking code
+            $trackingCode = strtoupper('ORD-' . uniqid() . '-' . rand(1000, 9999));
+
+            $order = Order::create([
+                'room_id'       => $validated['room_id'],
+                'user_id'       => Auth::check() ? Auth::id() : null,
+                'department'    => $department,
+                'status'        => OrderStatus::PENDING,
+                'notes'         => $validated['notes'] ?? null,
+                'tracking_code' => $trackingCode,
+                'total_amount'  => 0,
+            ]);
+
+            $total = 0;
+
+            foreach ($validated['items'] as $item) {
+                $line = OrderItem::create([
+                    'order_id'   => $order->id,
+                    'name'       => $item['name'],
+                    'price'      => $item['price'],
+                    'quantity'   => $item['quantity'],
+                    'subtotal'   => $item['price'] * $item['quantity'],
+                ]);
+                $total += $line->subtotal;
+            }
+
+            $order->update(['total_amount' => $total]);
+
+            // Staff action code (optional)
+            if ($request->filled('action_code') && Auth::check()) {
+                StaffActionService::validateAndRecord(
+                    Auth::id(),
+                    $request->input('action_code'),
+                    'order_create',
+                    $order
+                );
+            }
+
+            // Audit log
+            AuditLogger::log('order_created', $order);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Order placed successfully.',
+                'order' => $order->load('items', 'room'),
+            ]);
+        });
     }
 
-    public function store(StoreOrderRequest $request, OrderService $service)
+
+    /**
+     * Update Order Status (PATCH)
+     */
+    public function updateStatus(OrderStatusRequest $request, Order $order)
     {
-        $order = $service->createOrder($request->validated());
+        $validated = $request->validated();
+        $newStatus = $validated['status'];
 
-        AuditLogger::log('order_created', 'Order', $order->id);
+        // Authorization based on department
+        $this->authorize('updateStatus', $order);
 
-        return back()->with('success', 'Order created');
+        return DB::transaction(function () use ($order, $newStatus, $request) {
+
+            $previousStatus = $order->status;
+
+            $order->update([
+                'status' => $newStatus,
+            ]);
+
+            // Set timestamps for workflow
+            if ($newStatus === OrderStatus::PROCESSING) {
+                $order->processing_at = now();
+            }
+            if ($newStatus === OrderStatus::READY) {
+                $order->ready_at = now();
+            }
+            if ($newStatus === OrderStatus::DELIVERED) {
+                $order->delivered_at = now();
+            }
+
+            $order->save();
+
+            // Staff action code (optional)
+            if ($request->filled('action_code') && Auth::check()) {
+                StaffActionService::validateAndRecord(
+                    Auth::id(),
+                    $request->input('action_code'),
+                    'order_status_update',
+                    $order
+                );
+            }
+
+            // Audit log
+            AuditLogger::log('order_status_changed', [
+                'order_id' => $order->id,
+                'from' => $previousStatus,
+                'to' => $newStatus,
+            ]);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Order status updated.',
+                'order' => $order->refresh()->load('items', 'room'),
+            ]);
+        });
     }
 
-    public function update(UpdateOrderRequest $request, Order $order, OrderService $service)
+
+    /**
+     * Kitchen queue
+     */
+    public function kitchenQueue()
     {
-        $service->updateOrder($order, $request->validated());
+        $this->authorize('viewKitchenQueue', Order::class);
 
-        AuditLogger::log('order_updated', 'Order', $order->id);
+        $orders = Order::with(['items', 'room'])
+            ->where('department', 'kitchen')
+            ->whereIn('status', [
+                OrderStatus::PENDING,
+                OrderStatus::PROCESSING,
+                OrderStatus::READY
+            ])
+            ->latest()
+            ->paginate(20);
 
-        return back()->with('success', 'Order updated');
+        return Inertia::render('Orders/KitchenQueue', [
+            'orders' => $orders,
+        ]);
     }
 
-    public function destroy(Order $order, OrderService $service)
+
+    /**
+     * Laundry queue
+     */
+    public function laundryQueue()
     {
-        $service->cancelOrder($order);
+        $this->authorize('viewLaundryQueue', Order::class);
 
-        AuditLogger::log('order_cancelled', 'Order', $order->id);
+        $orders = Order::with(['items', 'room'])
+            ->where('department', 'laundry')
+            ->whereIn('status', [
+                OrderStatus::PENDING,
+                OrderStatus::PROCESSING,
+                OrderStatus::READY
+            ])
+            ->latest()
+            ->paginate(20);
 
-        return back()->with('success', 'Order cancelled');
+        return Inertia::render('Orders/LaundryQueue', [
+            'orders' => $orders,
+        ]);
+    }
+
+
+    /**
+     * Housekeeping queue
+     */
+    public function housekeepingQueue()
+    {
+        $this->authorize('viewHousekeepingQueue', Order::class);
+
+        $orders = Order::with(['items', 'room'])
+            ->where('department', 'housekeeping')
+            ->whereIn('status', [
+                OrderStatus::PENDING,
+                OrderStatus::PROCESSING,
+                OrderStatus::READY
+            ])
+            ->latest()
+            ->paginate(20);
+
+        return Inertia::render('Orders/HousekeepingQueue', [
+            'orders' => $orders,
+        ]);
+    }
+
+
+    /**
+     * Maintenance queue
+     */
+    public function maintenanceQueue()
+    {
+        $this->authorize('viewMaintenanceQueue', Order::class);
+
+        $orders = Order::with(['items', 'room'])
+            ->where('department', 'maintenance')
+            ->whereIn('status', [
+                OrderStatus::PENDING,
+                OrderStatus::PROCESSING,
+                OrderStatus::READY
+            ])
+            ->latest()
+            ->paginate(20);
+
+        return Inertia::render('Orders/MaintenanceQueue', [
+            'orders' => $orders,
+        ]);
     }
 }

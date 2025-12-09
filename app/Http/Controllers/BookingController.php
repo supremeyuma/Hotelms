@@ -1,41 +1,98 @@
 <?php
-
+// ========================================================
+// BookingController.php
+// Namespace: App\Http\Controllers
+// ========================================================
 namespace App\Http\Controllers;
 
-use App\Http\Requests\Booking\StoreBookingRequest;
-use App\Http\Requests\Booking\UpdateBookingRequest;
+use App\Http\Requests\BookingRequest;
 use App\Models\Booking;
+use App\Models\Room;
 use App\Services\BookingService;
 use App\Services\AuditLogger;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class BookingController extends Controller
 {
-    public function __construct()
+    protected BookingService $service;
+
+    public function __construct(BookingService $service)
     {
-        $this->authorizeResource(Booking::class, 'booking');
+        $this->service = $service;
+        $this->middleware('auth')->only(['createBooking','confirmBooking','viewBooking','cancelBooking']);
     }
 
-    public function store(StoreBookingRequest $request, BookingService $service)
+    /**
+     * Check availability for room(s) between dates.
+     */
+    public function checkAvailability(Request $request)
     {
-        $booking = $service->createBooking($request->validated());
+        $data = $request->validate([
+            'room_id' => 'required|exists:rooms,id',
+            'check_in' => 'required|date',
+            'check_out' => 'required|date|after:check_in',
+        ]);
 
-        AuditLogger::log('booking_created', 'Booking', $booking->id);
+        $room = Room::findOrFail($data['room_id']);
 
-        return redirect()->back()->with('success', 'Booking created successfully.');
+        // naive availability check: bookings overlapping
+        $overlap = Booking::where('room_id', $room->id)
+            ->whereNull('deleted_at')
+            ->where(fn($q) => $q->whereBetween('check_in', [$data['check_in'],$data['check_out']])
+                                ->orWhereBetween('check_out', [$data['check_in'],$data['check_out']])
+                                ->orWhere(fn($q2) => $q2->where('check_in', '<=', $data['check_in'])
+                                                         ->where('check_out', '>=', $data['check_out'])))
+            ->exists();
+
+        return response()->json(['available' => !$overlap]);
     }
 
-    public function update(UpdateBookingRequest $request, Booking $booking, BookingService $service)
+    /**
+     * Create booking (store)
+     */
+    public function createBooking(BookingRequest $request)
     {
-        $service->updateBooking($booking, $request->validated());
+        $payload = $request->validated();
 
-        AuditLogger::log('booking_updated', 'Booking', $booking->id);
+        $booking = $this->service->createBooking($payload);
 
-        return back()->with('success', 'Booking updated.');
+        AuditLogger::log('booking_created', 'Booking', $booking->id, [
+            'payload' => $payload
+        ]);
+
+        return redirect()->route('booking.confirm', ['booking' => $booking->id]);
     }
 
-    public function destroy(Booking $booking, BookingService $service)
+    /**
+     * Confirm booking (view confirmation)
+     */
+    public function confirmBooking(Booking $booking)
     {
-        $service->cancelBooking($booking);
+        $booking->load(['room.roomType','user']);
+        return Inertia::render('Public/BookingConfirmation', [
+            'booking' => $booking
+        ]);
+    }
+
+    /**
+     * View booking (for guest or staff)
+     */
+    public function viewBooking(Booking $booking)
+    {
+        $this->authorize('view', $booking);
+        $booking->load(['room','payments','orders','user']);
+        return Inertia::render('Bookings/View', compact('booking'));
+    }
+
+    /**
+     * Cancel booking (soft delete or status)
+     */
+    public function cancelBooking(Booking $booking)
+    {
+        $this->authorize('delete', $booking);
+
+        $this->service->cancelBooking($booking);
 
         AuditLogger::log('booking_cancelled', 'Booking', $booking->id);
 
