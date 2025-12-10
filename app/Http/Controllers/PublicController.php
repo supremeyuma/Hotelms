@@ -23,12 +23,12 @@ class PublicController extends Controller
     {
         $properties = Property::with(['rooms.roomType', 'rooms.images'])->take(6)->get();
         $featuredRooms = Room::with('roomType','images')->where('status','available')->take(6)->get();
-        //$settings = Setting::all()->pluck('value','key')->toArray();
+        $settings = Setting::all()->pluck('value','key')->toArray();
 
         return Inertia::render('Public/Home', [
             'properties' => $properties,
             'featuredRooms' => $featuredRooms,
-            //'settings' => $settings,
+            'settings' => $settings,
         ]);
     }
 
