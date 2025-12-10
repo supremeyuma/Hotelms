@@ -23,6 +23,7 @@ Route::get('/rooms', [PublicController::class, 'showRoomTypes'])->name('rooms.in
 Route::get('/rooms/{room}', [PublicController::class, 'showRoom'])->name('rooms.show');
 Route::get('/contact', [PublicController::class, 'staticPage'])->defaults('pageKey', 'contact')->name('contact');
 Route::post('/contact', [PublicController::class, 'submitContactForm'])->name('contact.submit');
+Route::get('/gallery', [PublicController::class, 'staticPage'])->defaults('pageKey','gallery')->name('public.gallery');
 
 // Booking public flows
 Route::get('/booking/{room?}', [PublicController::class, 'showRoom'])->name('booking.form'); // optional room prefill
@@ -52,3 +53,11 @@ Route::patch('/order/{order}/status', [OrderController::class, 'updateStatus'])-
 
 // Fallback static pages (terms, privacy)
 Route::get('/pages/{pageKey}', [PublicController::class, 'staticPage'])->name('pages.static');
+
+require __DIR__ . '/admin.php';
+require __DIR__ . '/auth.php';
+require __DIR__ . '/console.php';
+require __DIR__ . '/images.php';
+require __DIR__ . '/public.php';
+require __DIR__ . '/roomservice.php';
+require __DIR__ . '/staff.php';

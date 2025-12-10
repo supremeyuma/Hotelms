@@ -87,11 +87,11 @@ class PublicController extends Controller
     public function staticPage(string $pageKey)
     {
         // Example mapping - prefer Vue pages if exist
-        $allowed = ['terms','privacy','about'];
+        $allowed = ['terms','privacy','about', 'gallery','contact'];
         if (! in_array($pageKey, $allowed)) {
             abort(404);
         }
 
-        return Inertia::render("Public/Pages/".ucfirst($pageKey));
+        return Inertia::render("Public/".ucfirst($pageKey));
     }
 }
