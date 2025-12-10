@@ -19,7 +19,7 @@ class PublicController extends Controller
     /**
      * Homepage with featured properties, rooms and settings.
      */
-    public function home()
+    public function homepage()
     {
         $properties = Property::with(['rooms.roomType', 'rooms.images'])->take(6)->get();
         $featuredRooms = Room::with('roomType','images')->where('status','available')->take(6)->get();
