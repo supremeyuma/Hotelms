@@ -8,7 +8,7 @@
           <p class="text-sm">{{ room.meta?.description }}</p>
           <div class="mt-4 flex justify-between items-center">
             <div class="text-lg font-bold">₦{{ room.room_type.base_price }}</div>
-            <inertia-link :href="`/rooms/${room.id}`" class="text-indigo-600">View</inertia-link>
+            <Link :href="`/rooms/${room.id}`" class="text-indigo-600">View</Link>
           </div>
         </div>
       </div>
@@ -19,6 +19,7 @@
 <script setup>
 import GuestLayout from '@/Layouts/GuestLayout.vue';
 import { ref } from 'vue';
+import { usePage } from '@inertiajs/vue3';
 
 // rooms would be passed from the controller as page props (Inertia)
 const props = usePage().props;

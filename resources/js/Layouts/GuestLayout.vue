@@ -1,6 +1,7 @@
 <script setup>
-//import ApplicationLogo from '@/Components/ApplicationLogo.vue';
-//import { Link } from '@inertiajs/vue3';
+import ApplicationLogo from '@/Components/ApplicationLogo.vue';
+import { Link } from '@inertiajs/vue3';
+import { usePage } from '@inertiajs/vue3';
 </script>
 
 <template>
@@ -9,9 +10,9 @@
       <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
         <h1 class="text-xl font-semibold">HotelMS</h1>
         <nav>
-          <inertia-link href="/" class="px-3">Home</inertia-link>
-          <inertia-link href="/rooms" class="px-3">Rooms</inertia-link>
-          <inertia-link href="/contact" class="px-3">Contact</inertia-link>
+          <Link href="/" class="px-3">Home</Link>
+          <Link href="/rooms" class="px-3">Rooms</Link>
+          <Link href="/contact" class="px-3">Contact</Link>
         </nav>
       </div>
     </header>

@@ -3,10 +3,10 @@
     <aside class="w-64 fixed inset-y-0 left-0 bg-white border-r p-4">
       <h2 class="font-bold mb-6">Staff Portal</h2>
       <nav class="space-y-2">
-        <inertia-link href="/staff/dashboard" class="block">Dashboard</inertia-link>
-        <inertia-link href="/staff/orders" class="block">Orders Queue</inertia-link>
-        <inertia-link href="/staff/quick-action" class="block">Quick Action</inertia-link>
-        <inertia-link href="/staff/profile" class="block">My Profile</inertia-link>
+        <Link href="/staff/dashboard" class="block">Dashboard</Link>
+        <Link href="/staff/orders" class="block">Orders Queue</Link>
+        <Link href="/staff/quick-action" class="block">Quick Action</Link>
+        <Link href="/staff/profile" class="block">My Profile</Link>
       </nav>
     </aside>
 
@@ -14,7 +14,7 @@
       <header class="bg-white border-b p-4 flex justify-between">
         <div>{{ page.props.auth.user.name ?? 'Guest' }}</div>
         <div>
-          <inertia-link href="/logout">Logout</inertia-link>
+          <Link href="/logout">Logout</Link>
         </div>
       </header>
 
@@ -27,5 +27,6 @@
 
 <script setup>
 import { usePage } from '@inertiajs/inertia-vue3';
+import { Link } from '@inertiajs/vue3'; // <--- ADD THIS LINE
 const page = usePage();
 </script>

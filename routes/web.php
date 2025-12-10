@@ -29,7 +29,7 @@ use App\Http\Controllers\RoomServiceController;
 Route::get('/', [PublicController::class, 'home'])->name('home');
 
 // Rooms listing
-Route::get('/rooms', [PublicController::class, 'rooms'])->name('rooms.index');
+Route::get('/rooms', [PublicController::class, 'showRoomTypes'])->name('rooms.index');
 
 // Single room detail
 Route::get('/rooms/{room}', [PublicController::class, 'roomDetail'])
