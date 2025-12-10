@@ -20,6 +20,7 @@
 import GuestLayout from '@/Layouts/GuestLayout.vue';
 import { ref } from 'vue';
 import { usePage } from '@inertiajs/vue3';
+import { Link } from '@inertiajs/vue3';
 
 // rooms would be passed from the controller as page props (Inertia)
 const props = usePage().props;

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+
 class Room extends Model
 {
     use HasFactory, SoftDeletes;
@@ -38,6 +39,36 @@ class Room extends Model
     {
         return $this->hasMany(Booking::class);
     }
+
+     /**
+     * Polymorphic images relation
+     */
+    public function images()
+    {
+        return $this->morphMany(Image::class, 'imageable')->orderByDesc('is_primary')->orderBy('created_at');
+    }
+
+    /**
+     * Primary image accessor (returns Image or null)
+     */
+    public function primaryImage()
+    {
+        return $this->morphOne(Image::class, 'imageable')->where('is_primary', true);
+    }
+
+    /**
+     * Helper to get primary image URL or fallback
+     */
+    public function getPrimaryImageUrlAttribute(): ?string
+    {
+        $img = $this->images()->where('is_primary', true)->first();
+        if ($img) return $img->url;
+        // fallback: first image
+        $first = $this->images()->first();
+        return $first?->url;
+    }
+
+    
 
     /* ---------------- Scopes ---------------- */
 
