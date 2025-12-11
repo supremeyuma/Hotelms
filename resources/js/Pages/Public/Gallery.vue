@@ -16,6 +16,7 @@
         :initial-index="selectedIndex"
         @close="closeModal"
       />
+
     </section>
   </GuestLayout>
 </template>

@@ -4,88 +4,52 @@ namespace App\Console;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
-
-// Queue Jobs
-use App\Jobs\ProcessOrdersJob;
-use App\Jobs\SendNotificationJob;
-use App\Jobs\UpdateInventoryJob;
-use App\Jobs\CompleteTaskJob;
+use App\Jobs\UpdateOrderQueueJob;
+use App\Jobs\AutoCloseCompletedOrdersJob;
+use App\Jobs\DispatchHousekeepingRemindersJob;
+use App\Jobs\ScheduleMaintenanceRoutineJob;
+use App\Jobs\DailyHotelMetricsJob;
+use App\Jobs\CleanupOldImagesJob;
+use App\Jobs\CleanupAuditLogsJob;
+use App\Jobs\PurgeOldNotificationsJob;
+use App\Jobs\GenerateRevenueReportJob;
+use App\Jobs\GenerateOccupancyReportJob;
 
 class Kernel extends ConsoleKernel
 {
-    /**
-     * Define the application's schedule.
-     */
     protected function schedule(Schedule $schedule): void
     {
-        /**
-         * ---------------------------------------------------------
-         * QUEUE PROCESSING (Hostinger Cron Compatible)
-         * ---------------------------------------------------------
-         * Use --once because Hostinger cron cannot run daemons.
-         * Cron will trigger queue:work once every minute.
-         */
-        $schedule->command('queue:work --once')->everyMinute();
+        // Run schedule every minute to process queue:work --once (Hostinger compatible)
+        $schedule->command('queue:work --once')->everyMinute()->withoutOverlapping();
 
+        // Update order queue frequently
+        $schedule->job(new UpdateOrderQueueJob())->everyFiveMinutes();
 
-        /**
-         * ---------------------------------------------------------
-         * ORDER PROCESSING JOB
-         * ---------------------------------------------------------
-         * Run every 5 minutes:
-         *   - Picks unprocessed orders
-         *   - Charges payments (if applicable)
-         *   - Updates order status
-         */
-        $schedule->job(new ProcessOrdersJob)->everyFiveMinutes();
+        // Auto close delivered orders daily midnight
+        $schedule->job(new AutoCloseCompletedOrdersJob())->dailyAt('00:30');
 
+        // Housekeeping reminders once every morning at 07:00
+        $schedule->job(new DispatchHousekeepingRemindersJob())->dailyAt('07:00');
 
-        /**
-         * ---------------------------------------------------------
-         * SEND NOTIFICATIONS (Email/SMS)
-         * ---------------------------------------------------------
-         * Runs every minute to keep notifications responsive.
-         */
-        $schedule->job(new SendNotificationJob)->everyMinute();
+        // Routine maintenance scheduling once daily
+        $schedule->job(new ScheduleMaintenanceRoutineJob())->dailyAt('02:00');
 
+        // Generate daily metrics early morning
+        $schedule->job(new DailyHotelMetricsJob())->dailyAt('03:00');
 
-        /**
-         * ---------------------------------------------------------
-         * INVENTORY UPDATE JOB
-         * ---------------------------------------------------------
-         * Runs every 10 minutes to:
-         *   - Sync stock levels
-         *   - Update low-stock alerts
-         */
-        $schedule->job(new UpdateInventoryJob)->everyTenMinutes();
+        // Reports (example: weekly and daily)
+        $schedule->job(new GenerateRevenueReportJob(now()->subDays(1)->toDateString(), now()->toDateString()))->dailyAt('04:00');
+        $schedule->job(new GenerateOccupancyReportJob(now()->subDays(7)->toDateString(), now()->toDateString()))->weekly();
 
-
-        /**
-         * ---------------------------------------------------------
-         * AUTO-COMPLETE TASKS
-         * ---------------------------------------------------------
-         * Example: auto-complete trainer sessions,
-         * maintenance tasks, subscriptions, etc.
-         */
-        $schedule->job(new CompleteTaskJob)->everyThirtyMinutes();
-
-
-        /**
-         * ---------------------------------------------------------
-         * CUSTOM COMMANDS
-         * ---------------------------------------------------------
-         * Example: order synchronization command
-         */
-        $schedule->command('orders:sync')->everyFiveMinutes();
+        // Cleanup tasks
+        $schedule->job(new CleanupOldImagesJob())->dailyAt('04:30');
+        $schedule->job(new CleanupAuditLogsJob())->weekly()->sundays()->at('05:00');
+        $schedule->job(new PurgeOldNotificationsJob())->dailyAt('05:30');
     }
 
-    /**
-     * Register the commands for the application.
-     */
     protected function commands(): void
     {
         $this->load(__DIR__.'/Commands');
-
         require base_path('routes/console.php');
     }
 }

@@ -1,0 +1,287 @@
+Perfect! Here’s a **ready-to-use, fully formatted prompt sequence** you can feed into GPT step by step. Each step is labeled, with instructions and context, so you can generate the HMS module by module without overwhelming the AI or losing continuity.
+
+---
+
+# **GPT Prompt Sequence for Holistic Hotel Management System (HMS)**
+
+---
+
+## **Step 0: Initial Project Setup**
+
+**Prompt:**
+
+```
+[Step 0: Initial Project Setup]
+
+You are an expert full-stack Laravel + Inertia + Vue 3 + Tailwind CSS developer. 
+
+Task:
+- Generate the initial Laravel 10 project scaffold
+- Include Inertia.js + Vue 3 + Tailwind CSS
+- Install Laravel Breeze Inertia auth scaffold
+- Recommend folder structure for Pages and Components
+- Include npm scripts for building assets
+- Add comments for Hostinger shared hosting deployment
+- Explain how to run the dev server and build assets
+```
+
+---
+
+## **Step 1: Database Migrations**
+
+**Prompt:**
+
+```
+[Step 1: Database Migrations]
+
+Generate Laravel migrations for the following tables with relationships, indexes, timestamps, soft deletes, and hashed staff action codes:
+
+- roles & permissions
+- users + staff_profiles
+- properties + room_types + rooms
+- bookings + payments
+- orders + order_items + order_events
+- inventory_items + inventory_logs
+- maintenance_tickets
+- audit_logs
+- settings + images
+
+Include:
+- JSON columns where appropriate
+- Comments explaining each column
+- Indexes on frequently queried fields
+```
+
+---
+
+## **Step 2: Eloquent Models & Relationships**
+
+**Prompt:**
+
+```
+[Step 2: Eloquent Models & Relationships]
+
+Generate Laravel Eloquent models for all tables:
+- User, StaffProfile, Role, Permission
+- Property, RoomType, Room
+- Booking, Payment
+- Order, OrderItem, OrderEvent
+- InventoryItem, InventoryLog
+- MaintenanceTicket
+- AuditLog
+
+Include:
+- relationships (hasMany, belongsTo, belongsToMany)
+- scopes for common queries
+- accessors/mutators where needed
+- inline comments explaining relationships
+```
+
+---
+
+## **Step 3: Controllers & Services**
+
+**Prompt:**
+
+```
+[Step 3: Controllers & Services]
+
+Generate Laravel controllers and service classes for:
+
+- BookingController + BookingService
+- PaymentController
+- OrderController + OrderService
+- StaffActionController + StaffActionService
+- InventoryController + InventoryService
+- MaintenanceController
+- AuditLogController
+
+Include:
+- validation using Form Requests
+- policies and permission checks
+- audit logging hooks for all key actions
+- inline comments explaining logic
+```
+
+---
+
+## **Step 4: Staff Action Code Service**
+
+**Prompt:**
+
+```
+[Step 4: Staff Action Code Service]
+
+Create a Laravel service class called StaffActionService that:
+
+- Accepts staff_id and action_code
+- Validates the action code (hashed)
+- Records the action in AuditLog with timestamp, user/staff id, IP, and action type
+- Returns success/failure
+- Include example usage in a controller
+- Include inline comments explaining logic
+```
+
+---
+
+## **Step 5: Inertia + Vue Pages**
+
+**Prompt:**
+
+```
+[Step 5: Inertia + Vue Pages]
+
+Generate Inertia + Vue 3 pages with Tailwind CSS for:
+
+1. Public site:
+   - Home
+   - Rooms Listing
+   - Room Detail
+   - Booking
+   - Booking Confirmation
+   - Contact
+   - Gallery
+
+2. Room Service page:
+   - Room-specific via room ID / QR code
+   - Tabs: Kitchen, Laundry, Housekeeping, Maintenance
+   - Allow adding order items, placing orders
+
+3. Staff Portal:
+   - Dashboard
+   - Quick Action page with action code input
+   - Orders queue
+   - My Profile
+
+4. Admin Dashboard:
+   - Rooms CRUD
+   - Bookings list
+   - Orders queue
+   - Staff management
+   - Inventory management
+   - Maintenance tickets
+   - Reports
+   - Audit Logs
+   - Settings
+
+Include:
+- Vue 3 Composition API
+- Tailwind UI components (tables, modals, tabs, toast notifications)
+- Pre-fill staff id if logged in or allow action code input
+- Inline comments
+```
+
+---
+
+## **Step 6: Vue Components**
+
+**Prompt:**
+
+```
+[Step 6: Vue Components]
+
+Generate reusable Vue 3 single-file components (SFCs) with Tailwind CSS:
+
+- Modal
+- Table with sorting and filtering
+- Tabs
+- Toast notifications
+- QR code viewer (for room QR codes)
+- Order item list (add/remove/quantity)
+- Staff quick-action form
+
+Include:
+- props definition
+- emits events
+- example usage
+- inline comments
+```
+
+---
+
+## **Step 7: Queue Jobs & Cron Integration**
+
+**Prompt:**
+
+```
+[Step 7: Queue Jobs & Cron Integration]
+
+Generate Laravel queue jobs for:
+
+- Processing orders
+- Sending notifications (email/SMS)
+- Inventory updates
+- Marking tasks completed
+
+Use:
+- Database queue driver
+- Cron commands for Hostinger shared hosting:
+   - php artisan schedule:run
+   - php artisan queue:work --once
+
+Explain:
+- how frequently each job should run
+- example cron entries for Hostinger
+```
+
+---
+
+## **Step 8: Seeders & Demo Data**
+
+**Prompt:**
+
+```
+[Step 8: Seeders & Demo Data]
+
+Generate Laravel seeders for:
+
+- Roles & Permissions
+- Staff users (all roles) with hashed action codes
+- Properties, Room Types, Rooms
+- Bookings (past and future)
+- Orders and OrderItems
+- Inventory items
+- Maintenance tickets
+
+Include realistic demo data suitable for testing workflows
+```
+
+---
+
+## **Step 9: Deployment Instructions**
+
+**Prompt:**
+
+```
+[Step 9: Deployment Instructions]
+
+Write step-by-step instructions to deploy the Laravel + Inertia + Vue + Tailwind HMS on Hostinger shared hosting:
+
+- Upload via Git or FTP
+- Run composer install
+- Set .env variables
+- Run migrations and seeders
+- Create storage link
+- Configure cron jobs for schedule and queue
+- Build frontend assets (npm run build)
+- Configure file permissions
+- Enable SSL
+- Hostinger-specific tips and common pitfalls
+
+Include explanations for each step
+```
+
+---
+
+✅ **How to Use This Workflow**
+
+1. Feed GPT **Step 0** first, get project scaffold.
+2. Feed **Step 1** next, wait for migrations.
+3. Continue **step by step** to avoid overwhelming the AI.
+4. After Step 9, your system should be fully functional and Hostinger-ready.
+
+---
+
+If you want, I can also **create a “combined master prompt”** that includes **all 9 steps in a single multi-step instruction** so you can paste it once and GPT will automatically work through each step sequentially.
+
+Do you want me to do that?

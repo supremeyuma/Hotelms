@@ -1,0 +1,359 @@
+Here is a **clean, precise, highly-technical project description** you can give to any advanced AI coding assistant. It is written in a way that sets strong architecture constraints, defines requirements clearly, and ensures the assistant generates code that fits your stack, hosting limitations, and feature set.
+
+You can paste this directly into any coding assistant as the “project specification.”
+
+---
+
+# ✅ **Technical Project Description for AI Coding Assistant**
+
+## **Project Name:** Holistic Hotel Management System (HMS)
+
+## **Overview**
+
+Build a full-stack hotel management system using **Laravel + Inertia.js + Vue 3 + Tailwind CSS**, fully compatible with **shared hosting on Hostinger**. The system should include a public booking website, an internal staff dashboard, per-room service ordering (via QR code links), role-based permissions, staff action-signoff using unique action codes, plus full operational modules (kitchen, laundry, housekeeping, maintenance, bookings, inventory, finance, reporting, and audit trails).
+
+The system must run **without long-running processes or self-hosted websocket servers**, using only technologies compatible with shared hosting.
+
+---
+
+# 🏛 **Architecture Requirements**
+
+### **Backend**
+
+* **Laravel 10+**, PHP 8.1+ (Hostinger limit)
+* MySQL / MariaDB
+* Inertia server-side routing
+* No separate API layer; use Inertia to pass props to Vue pages
+
+### **Frontend**
+
+* **Vue 3** (Composition API)
+* **Inertia.js** (single-page navigation)
+* **Tailwind CSS** for UI
+* Optional small Alpine.js usage allowed but not required
+
+### **Realtime Events**
+
+* Use **Pusher** or **Ably** (hosted service)
+* Do *not* use Laravel WebSockets or any solution requiring persistent processes
+
+### **Queues & Jobs**
+
+* Must use **database queue driver**
+* No Horizon or long-running workers
+* Use Hostinger cron job:
+
+  * `php artisan schedule:run` every minute
+  * `php artisan queue:work --once` every minute
+
+### **File Storage**
+
+* Default: local public disk
+* Optional S3/DigitalOcean Spaces config allowed
+
+### **Deployment Constraints**
+
+* Must deploy fully on **Hostinger shared hosting**
+* No Docker on production
+* No Redis
+* No broadcasting drivers needing sockets
+
+---
+
+# 🔐 **Authentication & Permissions**
+
+### **User Account Types**
+
+* Managing Director
+* Manager
+* Receptionist
+* Kitchen Staff
+* Laundry Staff
+* Housekeeping Staff
+* Maintenance Staff
+* Other staff roles (permission-based)
+
+### **Permissions System**
+
+* Use **Spatie Laravel Permission**
+* Roles control UI access, API access, and system operations
+
+### **Staff Action Codes**
+
+Each staff member has:
+
+* A full **login account**
+* AND a separate **action code** (4–8 characters)
+* Stored hashed in DB (bcrypt/argon2)
+* Used to “sign off” actions such as:
+
+  * completing room cleaning
+  * completing laundry
+  * delivering room service
+  * updating order status
+  * closing maintenance ticket
+
+The action-code authentication is different from login:
+
+* It does **not** log the user in
+* It only validates an action signature for audit purposes
+
+---
+
+# 🛏 **Modules Required**
+
+## 1. **Public Website**
+
+* Homepage
+* Room listings
+* Room detail pages
+* Booking search (dates, guests, room type)
+* Booking checkout + payment integration (Flutterwave/Paystack)
+* Booking confirmation page
+* Contact page
+* Gallery page
+
+## 2. **Booking Engine**
+
+* Room availability checker
+* Booking reservation with locking (transaction-safe)
+* Payment redirection
+* Webhook handler (booking status update)
+* Email/SMS notifications
+* Booking modification/cancellation
+
+## 3. **Room-Specific Service Ordering**
+
+Every room has:
+
+* A unique URL
+* A unique QR code pointing to that URL
+
+Guest can order:
+
+* Kitchen items (food)
+* Laundry service
+* Housekeeping requests
+* Maintenance issues
+
+Order lifecycle:
+`Pending → Accepted → In Progress → Completed → Delivered`
+
+Orders may be placed by:
+
+* A guest on a device
+* A receptionist on behalf of a guest
+* Staff (internal)
+
+## 4. **Staff Portal**
+
+Staff can:
+
+* Log in normally
+* Access only the module(s) permitted by their role
+* Perform departmental tasks
+* Use quick-action mode:
+
+  * select room/order
+  * choose action (e.g., “Mark Cleaned”)
+  * input **action code**
+  * action is recorded in audit log
+
+## 5. **Admin / Manager Dashboard**
+
+Managers can:
+
+* Manage bookings
+* Manage rooms & room types
+* Manage pricing
+* Manage staff accounts and action codes
+* Track active orders (kitchen, laundry, housekeeping, maintenance)
+* Track inventory
+* View audit logs
+* View financial reports
+* Manage site content (gallery, home page banners)
+
+## 6. **Inventory Module**
+
+* Track consumables (soap, towels, food stock, etc.)
+* Alert for low quantities
+* Staff consumption logs
+* Room service consumption logs
+
+## 7. **Laundry Module**
+
+* Assign laundry orders
+* Track statuses
+* Mark items washed/delivered using action codes
+
+## 8. **Kitchen Module**
+
+* Menu items
+* Kitchen orders queue
+* Marking items prepared/delivered using action codes
+
+## 9. **Housekeeping Module**
+
+* Room cleaning queue
+* Mark room as cleaned using action code
+
+## 10. **Maintenance Module**
+
+* Create maintenance tickets
+* Assign staff
+* Track ticket lifecycle
+* Action code signoff on completion
+
+## 11. **Finance Module**
+
+* Payment logs
+* Daily revenue
+* Outstanding balances
+* Booking receipts
+* Export CSV/PDF
+
+## 12. **Audit Trail System**
+
+For each action:
+
+* record actor (user_id or staff_id)
+* record if action code was used
+* record IP/device
+* record timestamp
+* record action type
+* record before/after changes
+
+Audit log must be immutable.
+
+---
+
+# 🗄 **Database Requirements (ERD Summary)**
+
+### Key tables:
+
+* `users`
+* `staff_profiles`
+* `roles` & `permissions` (Spatie)
+* `rooms`
+* `room_types`
+* `bookings`
+* `payments`
+* `orders`
+* `order_items`
+* `order_events`
+* `maintenance_tickets`
+* `inventory_items`
+* `inventory_logs`
+* `audit_logs`
+* `settings` (site-wide)
+* `images` (gallery)
+
+Use MySQL JSON type where applicable.
+
+All timestamps must be recorded using hotel property timezone.
+
+---
+
+# 🧩 **Non-functional Requirements**
+
+* Must support concurrent booking without double-booking
+* Must run fully on shared hosting
+* Must be optimized for mobile (room service via phone)
+* Must use Tailwind UI components for consistency
+* Vue 3 Composition API for all components
+* Use Pusher for realtime updates
+* Use Laravel policies for role-based operations
+* Provide seeders for:
+
+  * demo rooms
+  * demo bookings
+  * demo staff
+  * demo kitchen/laundry menus
+
+---
+
+# 🛠 **Development Standards**
+
+### Backend
+
+* PSR-12 coding standard
+* Separate service classes (BookingService, OrderService, StaffActionService)
+* Form Requests for validation
+* Use Laravel Resources to send data to Vue
+
+### Frontend
+
+* Vue SFCs in `resources/js/Pages` and `resources/js/Components`
+* Use reusable UI components:
+
+  * Modals
+  * Tables
+  * Tabs
+  * Toasts
+  * QR viewer component
+
+### Testing
+
+* Use Pest or PHPUnit
+* Test booking logic
+* Test action-code authentication
+* Test order workflows
+
+---
+
+# 🚀 **Deployment Rules**
+
+* Build assets locally using `npm run build`
+* Upload via Git or FTP
+* Run migrations on Hostinger
+* Set correct public path (Hostinger may place app under /public_html)
+* Run:
+
+  * `php artisan storage:link`
+  * Setup cron for schedule + queue:work --once
+* Disable debug mode and optimize:
+
+  * `php artisan config:cache`
+  * `php artisan route:cache`
+  * `php artisan view:cache`
+
+---
+
+# 📑 **What the AI Should Generate**
+
+* Laravel migrations
+* Eloquent models with relationships
+* Controllers + Actions
+* Inertia/Vue pages
+* Vue components for UI
+* Booking logic
+* Order lifecycle logic
+* Staff action code middleware/service
+* Audit logging system
+* Inventory logic
+* Maintenance system
+* Room service QR link generation
+* Hostinger-ready deployment instructions
+* Seeders for all modules
+
+---
+
+# 📌 **Conclusion**
+
+This is a **complete, extensible hotel management system** that must:
+
+* run on Hostinger shared hosting
+* use Laravel + Inertia + Vue + Tailwind
+* support staff action codes and audit trail
+* support full operational workflows
+* provide a seamless guest experience
+* provide a structured internal management interface
+
+All generated code must strictly follow these architectural and operational constraints.
+
+---
+
+If you want, I can also generate:
+✅ The exact prompt to feed into GPT-based coding models
+✅ A version tailored for Claude, Cursor, or GitHub Copilot
+Just tell me which one.
