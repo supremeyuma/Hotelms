@@ -2,24 +2,51 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
+/**
+ * Master DatabaseSeeder that runs all sub-seeders in proper order
+ */
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // Core foundational data
+        $this->call([
+            RolesSeeder::class,
+            PropertiesSeeder::class,
+            RoomTypesSeeder::class,
+            RoomsSeeder::class,
+            SettingsSeeder::class,
+        ]);
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        // Users & staff
+        $this->call([
+            UsersSeeder::class,
+            StaffProfilesSeeder::class,
+        ]);
+
+        // Media and inventory
+        $this->call([
+            ImagesSeeder::class,
+            InventoryItemsSeeder::class,
+            InventoryLogsSeeder::class,
+        ]);
+
+        // Content pages
+        $this->call([
+            PagesSeeder::class,
+        ]);
+
+        // Operational data
+        $this->call([
+            BookingsSeeder::class,
+            PaymentsSeeder::class,
+            OrdersSeeder::class,
+            OrderEventsSeeder::class,
+            //OrderItemsSeeder::class ?? OrderItemsSeeder::class, // fallback: orders already populated
+            MaintenanceTicketsSeeder::class,
+            AuditLogsSeeder::class,
         ]);
     }
 }
