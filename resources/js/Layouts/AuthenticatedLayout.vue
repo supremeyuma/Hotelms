@@ -33,7 +33,6 @@ const page = usePage();
 // Determine role
 const userRole = page.props.auth.user.roles?.[0]?.name || 'Guest';
 
-console.log('Inertia Props:', page.props);
 // Sidebar configuration for each role
 const sidebars = {
   Staff: [

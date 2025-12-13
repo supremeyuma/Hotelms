@@ -6,22 +6,25 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\BookingRequest;
 use App\Models\Room;
+use App\Models\Property;
 use App\Models\RoomType;
-use App\Services\AuditLogger;
+use App\Services\AuditLoggerService as AuditLogger;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class RoomController extends Controller
 {
-    public function __construct()
+    protected AuditLogger $auditLogger;
+
+    public function __construct(AuditLogger $auditLogger)
     {
         $this->middleware(['auth','role:Manager|MD']);
+        $this->auditLogger = $auditLogger;
     }
 
     /**
-     * index - list rooms
+     * Display a listing of rooms
      */
     public function index(Request $request)
     {
@@ -30,16 +33,17 @@ class RoomController extends Controller
     }
 
     /**
-     * create - show form (Inertia)
+     * Show the form for creating a new room
      */
     public function create()
     {
         $types = RoomType::all();
-        return Inertia::render('Admin/Rooms/Create', ['types' => $types]);
+        $properties = Property::all();
+        return Inertia::render('Admin/Rooms/Create', compact('types', 'properties'));
     }
 
     /**
-     * store - validate and persist room
+     * Store a newly created room
      */
     public function store(Request $request)
     {
@@ -53,62 +57,64 @@ class RoomController extends Controller
 
         $room = Room::create($data);
 
-        AuditLogger::log('room_created', 'Room', $room->id, ['data' => $data]);
+        $this->auditLogger->log('room_created', 'Room', $room->id, ['data' => $data]);
 
-        return redirect()->route('rooms.index')->with('success','Room created.');
+        return redirect()->route('admin.rooms.index')->with('success', 'Room created successfully.');
     }
 
     /**
-     * edit - show edit form
+     * Show the form for editing the specified room
      */
     public function edit(Room $room)
     {
         $room->load('roomType','property');
         $types = RoomType::all();
-        return Inertia::render('Admin/Rooms/Edit', ['room'=>$room,'types'=>$types]);
+        $properties = Property::all();
+
+        return Inertia::render('Admin/Rooms/Edit', compact('room', 'types', 'properties'));
     }
 
     /**
-     * update
+     * Update the specified room
      */
     public function update(Request $request, Room $room)
     {
         $data = $request->validate([
             'room_type_id' => 'required|exists:room_types,id',
-            'room_number' => 'required|string|max:50|unique:rooms,room_number,'.$room->id,
+            'room_number' => 'required|string|max:50|unique:rooms,room_number,' . $room->id,
             'status' => 'nullable|string|in:available,occupied,maintenance',
             'meta' => 'nullable|array',
         ]);
 
         $room->update($data);
 
-        AuditLogger::log('room_updated', 'Room', $room->id, ['data' => $data]);
+        $this->auditLogger->log('room_updated', 'Room', $room->id, ['data' => $data]);
 
-        return redirect()->route('rooms.index')->with('success','Room updated.');
+        return redirect()->route('admin.rooms.index')->with('success', 'Room updated successfully.');
     }
 
     /**
-     * destroy
+     * Remove the specified room
      */
     public function destroy(Room $room)
     {
         $room->delete();
 
-        AuditLogger::log('room_deleted', 'Room', $room->id);
+        $this->auditLogger->log('room_deleted', 'Room', $room->id);
 
-        return back()->with('success','Room deleted.');
+        return redirect()->route('admin.rooms.index')->with('success', 'Room deleted successfully.');
     }
 
     /**
-     * toggle availability
+     * Toggle room availability
      */
     public function toggleAvailability(Room $room)
     {
         $room->status = $room->status === 'available' ? 'maintenance' : 'available';
         $room->save();
 
-        AuditLogger::log('room_toggled', 'Room', $room->id, ['status' => $room->status]);
+        $this->auditLogger->log('room_toggled', 'Room', $room->id, ['status' => $room->status]);
 
-        return back()->with('success','Room availability toggled.');
+        return redirect()->route('admin.rooms.index')->with('success', 'Room availability toggled.');
     }
 }
