@@ -3,7 +3,7 @@
     <div>
       <div class="flex justify-between items-center mb-4">
         <h2 class="text-2xl">Rooms</h2>
-        <inertia-link href="/admin/rooms/create" class="bg-indigo-600 text-white px-3 py-2 rounded">New Room</inertia-link>
+        <Link href="/admin/rooms/create" class="bg-indigo-600 text-white px-3 py-2 rounded">New Room</Link>
       </div>
 
       <Table :headers="['Room #', 'Type', 'Status', 'Actions']">
@@ -12,7 +12,7 @@
           <td class="px-4 py-2">{{ r.room_type.title }}</td>
           <td class="px-4 py-2">{{ r.status }}</td>
           <td class="px-4 py-2">
-            <inertia-link :href="`/admin/rooms/${r.id}/edit`" class="text-indigo-600 mr-2">Edit</inertia-link>
+            <Link :href="`/admin/rooms/${r.id}/edit`" class="text-indigo-600 mr-2">Edit</Link>
             <button @click="deleteRoom(r.id)" class="text-red-600">Delete</button>
           </td>
         </tr>
@@ -29,7 +29,8 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import Table from '@/Components/Ui/Table.vue';
-import { Inertia } from '@inertiajs/inertia';
+import { usePage,router, Link } from '@inertiajs/vue3';
+//import { Inertia } from '@inertiajs/inertia';
 const props = usePage().props;
 const rooms = props.rooms;
 

@@ -1,67 +1,51 @@
+
+
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Admin\RoomController;
-use App\Http\Controllers\Admin\RoomTypeController;
-use App\Http\Controllers\Admin\BookingAdminController;
-use App\Http\Controllers\Admin\StaffController;
-use App\Http\Controllers\Admin\InventoryController;
-use App\Http\Controllers\Admin\MaintenanceAdminController;
-use App\Http\Controllers\Admin\ReportController;
-use App\Http\Controllers\Admin\AuditLogController;
-use App\Http\Controllers\Admin\SettingController;
-use App\Http\Controllers\OrderController;
+use App\Http\Controllers\Admin\{
+    DashboardController,
+    RoomController,
+    RoomTypeController,
+    BookingAdminController,
+    OrderAdminController,
+    StaffController,
+    InventoryController,
+    MaintenanceAdminController,
+    ReportController,
+    AuditLogController,
+    SettingController
+};
 
-/*
-|--------------------------------------------------------------------------
-| Admin Routes
-|--------------------------------------------------------------------------
-|
-| Admin and manager routes. Protected by auth and role:manager|md middleware.
-|
-*/
+Route::middleware(['auth', 'role:Manager|MD'])
+    ->prefix('admin')
+    ->as('admin.')
+    ->group(function () {
 
-Route::middleware(['auth', 'role:Manager|MD'])->prefix('admin')->name('admin.')->group(function () {
+        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // Admin dashboard route (can map to reports/index or a dedicated controller)
-    Route::get('/', [ReportController::class, 'index'])->name('dashboard');
+        Route::resource('rooms', RoomController::class);
+        Route::resource('room-types', RoomTypeController::class);
 
-    // Rooms & Room Types
-    Route::resource('rooms', RoomController::class);
-    Route::post('rooms/{room}/toggle-availability', [RoomController::class, 'toggleAvailability'])->name('rooms.toggle');
+        Route::get('bookings', [BookingAdminController::class, 'index'])->name('bookings.index');
+        Route::get('bookings/{booking}/edit', [BookingAdminController::class, 'edit'])->name('bookings.edit');
+        Route::put('bookings/{booking}', [BookingAdminController::class, 'update'])->name('bookings.update');
 
-    Route::resource('room-types', RoomTypeController::class, ['as' => 'roomtypes']);
+        Route::get('orders', [OrderAdminController::class, 'index'])->name('orders.index');
+        Route::put('orders/{order}/status', [OrderAdminController::class, 'updateStatus'])->name('orders.updateStatus');
 
-    // Bookings - list, edit, reassign, delete
-    Route::get('bookings', [BookingAdminController::class, 'index'])->name('bookings.index');
-    Route::get('bookings/{booking}/edit', [BookingAdminController::class, 'edit'])->name('bookings.edit');
-    Route::patch('bookings/{booking}', [BookingAdminController::class, 'update'])->name('bookings.update');
-    Route::delete('bookings/{booking}', [BookingAdminController::class, 'destroy'])->name('bookings.destroy');
-    Route::post('bookings/{booking}/reassign', [BookingAdminController::class, 'reassignRoom'])->name('bookings.reassign');
+        Route::resource('staff', StaffController::class);
+        Route::resource('inventory', InventoryController::class);
 
-    // Orders management
-    Route::get('orders', [OrderController::class, 'kitchenQueue'])->name('orders.index'); // general view, controllers will handle specifics
+        Route::get('maintenance', [MaintenanceAdminController::class, 'index'])->name('maintenance.index');
+        Route::get('maintenance/{ticket}', [MaintenanceAdminController::class, 'show'])->name('maintenance.show');
+        Route::put('maintenance/{ticket}', [MaintenanceAdminController::class, 'update'])->name('maintenance.update');
 
-    // Staff management
-    Route::resource('staff', StaffController::class);
+        Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+        Route::get('reports/occupancy', [ReportController::class, 'occupancy'])->name('reports.occupancy');
 
-    // Inventory
-    Route::resource('inventory', InventoryController::class);
-    Route::post('inventory/{inventory}/use', [InventoryController::class, 'useItem'])->name('inventory.use');
+        Route::get('audit-logs', [AuditLogController::class, 'index'])->name('audit.index');
 
-    // Maintenance admin
-    Route::resource('maintenance', MaintenanceAdminController::class);
-    Route::post('maintenance/{maintenance}/assign', [MaintenanceAdminController::class, 'assign'])->name('maintenance.assign');
-    Route::post('maintenance/{maintenance}/status', [MaintenanceAdminController::class, 'updateStatus'])->name('maintenance.status');
-    Route::post('maintenance/{maintenance}/close', [MaintenanceAdminController::class, 'close'])->name('maintenance.close');
-
-    // Reports & audit logs
-    Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
-    Route::get('reports/occupancy', [ReportController::class, 'occupancyDetail'])->name('reports.occupancy');
-
-    Route::get('audit-logs', [AuditLogController::class, 'index'])->name('audit-logs.index');
-
-    // Settings
-    Route::get('settings', [SettingController::class, 'index'])->name('settings.index');
-    Route::patch('settings', [SettingController::class, 'update'])->name('settings.update');
-});
+        Route::get('settings', [SettingController::class, 'index'])->name('settings.index');
+        Route::put('settings', [SettingController::class, 'update'])->name('settings.update');
+    });

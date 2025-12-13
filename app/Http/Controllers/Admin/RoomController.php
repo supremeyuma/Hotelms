@@ -17,7 +17,7 @@ class RoomController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth','role:manager|md']);
+        $this->middleware(['auth','role:Manager|MD']);
     }
 
     /**
