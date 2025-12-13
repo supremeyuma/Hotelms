@@ -21,7 +21,7 @@ use App\Http\Controllers\OrderController;
 |
 */
 
-Route::middleware(['auth', 'role:manager|md'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'role:Manager|MD'])->prefix('admin')->name('admin.')->group(function () {
 
     // Admin dashboard route (can map to reports/index or a dedicated controller)
     Route::get('/', [ReportController::class, 'index'])->name('dashboard');

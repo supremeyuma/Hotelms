@@ -16,6 +16,11 @@ use App\Http\Controllers\RoomServiceController;
 |
 */
 
+Route::get('/role-test', function () {
+    return 'OK';
+})->middleware('role:admin');
+
+
 Route::get('/', [PublicController::class, 'homepage'])->name('home');
 
 // Public pages
