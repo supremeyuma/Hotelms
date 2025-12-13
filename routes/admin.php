@@ -11,9 +11,6 @@ use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\OrderController;
-use Spatie\Permission\Middleware\RoleMiddleware;
-use Spatie\Permission\Middleware\PermissionMiddleware;
-use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
 
 /*
 |--------------------------------------------------------------------------
@@ -24,7 +21,7 @@ use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
 |
 */
 
-Route::prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'role:manager|md'])->prefix('admin')->name('admin.')->group(function () {
 
     // Admin dashboard route (can map to reports/index or a dedicated controller)
     Route::get('/', [ReportController::class, 'index'])->name('dashboard');

@@ -6,11 +6,10 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, SoftDeletes, HasRoles;
+    use HasFactory, Notifiable, SoftDeletes;
 
     protected $fillable = [
         'uuid',
@@ -32,7 +31,7 @@ class User extends Authenticatable
     /* ---------------- Relationships ---------------- */
 
     // A user belongs to a role
-    public function roleType()
+    public function role()
     {
         return $this->belongsTo(Role::class);
     }
@@ -78,11 +77,4 @@ class User extends Authenticatable
     {
         return $query->whereHas('staffProfile');
     }
-
-    // In App\Models\User.php
-    public function isSuperAdmin(): bool
-    {
-        return $this->hasRole('MD'); // MD is highest role
-    }
-
 }

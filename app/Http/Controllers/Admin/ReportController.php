@@ -19,13 +19,7 @@ class ReportController extends Controller
 {
     public function __construct()
     {
-        // middleware() is not available on this Controller base in this codebase.
-        // Apply 'auth' and role middleware in your route definitions (routes/admin.php)
-        // Example:
-        // Route::middleware(['auth','role:manager|md'])
-        //      ->prefix('admin')
-        //      ->name('admin.')
-        //      ->group(fn() => require base_path('routes/admin.php'));
+        $this->middleware(['auth','role:manager|md']);
     }
 
     /**
@@ -50,7 +44,7 @@ class ReportController extends Controller
         }])->get(['id','name']);
 
         // Inventory usage
-        $inventoryUsage = InventoryLog::select(DB::raw('inventory_item_id, SUM(ABS(`change`)) as used'))
+        $inventoryUsage = InventoryLog::select(DB::raw('inventory_item_id, SUM(ABS(change)) as used'))
             ->whereBetween('created_at', [$from, $to])
             ->groupBy('inventory_item_id')->get();
 
