@@ -21,9 +21,13 @@
           <SelectInput v-model="form.status" :options="statusOptions" id="status" />
           <InputError :message="form.errors.status" />
 
-          <FormLabel for="meta">Meta</FormLabel>
-          <Textarea v-model="form.meta" id="meta" placeholder="JSON attributes..." />
+          <FormLabel>Meta</FormLabel>
+          <Textarea v-model="form.meta" placeholder="JSON attributes..." />
           <InputError :message="form.errors.meta" />
+
+          <FormLabel>Room Images</FormLabel>
+          <input type="file" multiple accept="image/*" @change="handleFiles" />
+          <p class="text-xs text-gray-500">You can upload multiple images.</p>
 
           <PrimaryButton :disabled="form.processing">Create Room</PrimaryButton>
         </FormSection>
@@ -35,7 +39,6 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
 import { FormSection, FormLabel, TextInput, Textarea, SelectInput, InputError, PrimaryButton } from '@/Components/';
 
 const props = defineProps({
@@ -48,7 +51,8 @@ const form = useForm({
   room_type_id: '',
   room_number: '',
   status: 'available',
-  meta: ''
+  meta: '',
+  images: []
 });
 
 const typeOptions = props.types.map(t => ({ label: t.title, value: t.id }));
@@ -59,9 +63,11 @@ const statusOptions = [
   { label: 'Maintenance', value: 'maintenance' }
 ];
 
+function handleFiles(event) {
+  form.images = Array.from(event.target.files);
+}
+
 function submit() {
-  form.post('/admin/rooms', {
-    onSuccess: () => form.reset()
-  });
+  form.post('/admin/rooms', { forceFormData: true });
 }
 </script>

@@ -17,9 +17,41 @@
           <SelectInput v-model="form.status" :options="statusOptions" id="status" />
           <InputError :message="form.errors.status" />
 
-          <FormLabel for="meta">Meta</FormLabel>
-          <Textarea v-model="metaString" id="meta" placeholder="JSON attributes..." />
+          <FormLabel>Meta</FormLabel>
+          <Textarea v-model="metaString" placeholder="JSON attributes..." />
           <InputError :message="form.errors.meta" />
+
+          <FormLabel>Room Images</FormLabel>
+          <input type="file" multiple accept="image/*" @change="handleFiles" />
+          <p class="text-xs text-gray-500">Upload new images if needed.</p>
+
+          <div class="mt-4 grid grid-cols-4 gap-2">
+            <div v-for="img in room.images" :key="img.id" class="relative group border p-1 rounded">
+              <img :src="`/storage/${img.path}`" class="w-full h-24 object-cover rounded" />
+
+              <!-- Remove button -->
+              <button 
+                type="button" 
+                @click="removeExistingImage(img.id)" 
+                class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition"
+              >
+                &times;
+              </button>
+
+              <!-- Primary selector -->
+              <div class="mt-1 flex items-center">
+                <input
+                  type="radio"
+                  :value="img.id"
+                  v-model="form.primary_image_id"
+                  :id="`primary-${img.id}`"
+                  class="mr-1"
+                />
+                <label :for="`primary-${img.id}`" class="text-sm">Primary</label>
+              </div>
+            </div>
+          </div>
+
 
           <PrimaryButton :disabled="form.processing">Update Room</PrimaryButton>
         </FormSection>
@@ -39,26 +71,25 @@ const props = defineProps({
   types: Array
 });
 
+
+
 const form = useForm({
   room_type_id: props.room.room_type_id,
   room_number: props.room.room_number,
   status: props.room.status,
-  meta: props.room.meta || {} // <-- important: load existing meta
+  meta: props.room.meta || {},
+  images: [],         // New images to upload
+  remove_images: [],   // IDs of existing images to remove
+  primary_image_id: props.room.images.find(i => i.is_primary)?.id || null, // preselect current primary
 });
 
-// Convert object to string for Textarea
+//console.log(props.room);
+
+// Convert meta to JSON string for textarea
 const metaString = ref(JSON.stringify(form.meta, null, 2));
-
-// Watch changes in textarea and update form.meta
-watch(metaString, (val) => {
-  try {
-    form.meta = JSON.parse(val);
-  } catch (e) {
-    console.log("invalid JSON, maybe keep form.meta unchanged");
-  }
+watch(metaString, val => {
+  try { form.meta = JSON.parse(val); } catch(e) {}
 });
-
-
 
 const typeOptions = props.types.map(t => ({ label: t.title, value: t.id }));
 const statusOptions = [
@@ -67,7 +98,16 @@ const statusOptions = [
   { label: 'Maintenance', value: 'maintenance' }
 ];
 
+function handleFiles(event) {
+  form.images = Array.from(event.target.files);
+}
+
+function removeExistingImage(id) {
+  form.remove_images.push(id);
+  props.room.images = props.room.images.filter(i => i.id !== id);
+}
+
 function submit() {
-  form.put(`/admin/rooms/${props.room.id}`);
+  form.put(`/admin/rooms/${props.room.id}`, { forceFormData: true });
 }
 </script>

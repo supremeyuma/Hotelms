@@ -52,11 +52,10 @@ class Image extends Model
      */
     public function getUrlAttribute(): ?string
     {
-        if (! $this->path) {
-            return null;
-        }
+        if (! $this->path) return null;
         return Storage::disk('public')->url($this->path);
     }
+
 
     /**
      * Helper for thumbnail URL — looks for a thumb variant or falls back to original.
