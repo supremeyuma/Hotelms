@@ -19,7 +19,7 @@ class BookingAdminController extends Controller
 
     public function __construct(BookingService $service)
     {
-        $this->middleware(['auth','role:manager|md']);
+        $this->middleware(['auth','role:Manager|MD']);
         $this->service = $service;
     }
 
