@@ -31,10 +31,29 @@ class AuthenticatedSessionController extends Controller
     {
         $request->authenticate();
 
+        $user = Auth::user();
+
+        // Safety check (should never be null, but keeps analyzers happy)
+        if (!$user) {
+            return back()->withErrors([
+                'email' => 'Authentication failed. Please try again.',
+            ]);
+        }
+
+        // ⛔ Block suspended users
+        if ($user->is_suspended) {
+            Auth::logout();
+
+            return back()->withErrors([
+                'email' => 'Your account has been suspended. Please contact management.',
+            ]);
+        }
+
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        return redirect()->intended(route('staff.dashboard', absolute: false));
     }
+
 
     /**
      * Destroy an authenticated session.

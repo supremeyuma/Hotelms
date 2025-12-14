@@ -14,7 +14,9 @@ use App\Http\Controllers\Admin\{
     MaintenanceAdminController,
     ReportController,
     AuditLogController,
-    SettingController
+    SettingController,
+    StaffThreadController,
+    StaffThreadMessagesController,
 };
 
 Route::middleware(['auth', 'role:Manager|MD'])
@@ -34,7 +36,21 @@ Route::middleware(['auth', 'role:Manager|MD'])
         Route::get('orders', [OrderAdminController::class, 'index'])->name('orders.index');
         Route::put('orders/{order}/status', [OrderAdminController::class, 'updateStatus'])->name('orders.updateStatus');
 
-        Route::resource('staff', StaffController::class);
+        Route::prefix('staff')->name('staff.')->middleware(['auth','role:Manager|MD'])->group(function(){
+            Route::resource('', StaffController::class)->parameters([
+                '' => 'staff'
+            ]);
+            Route::get('{staff}/threads', [StaffThreadController::class,'index'])->name('threads.index');
+            Route::get('{staff}/threads/create', [StaffThreadController::class,'create'])->name('threads.create');
+            Route::get('threads/{thread}', [StaffThreadController::class,'show'])->name('threads.show');
+            Route::post('threads/{thread}/messages', [StaffThreadController::class,'storeMessage'])->name('threads.messages.store');
+            Route::post('{staff}/threads', [StaffThreadController::class,'createThread'])->name('threads.store');
+            Route::post('{staff}/suspend', [StaffController::class, 'suspend'])->name('staff.suspend');
+            Route::post('{staff}/reinstate', [StaffController::class, 'reinstate'])->name('staff.reinstate');
+            Route::post('{staff}/notes', [StaffController::class, 'addNote']);
+
+        });
+
         Route::resource('inventory', InventoryController::class);
 
         Route::get('maintenance', [MaintenanceAdminController::class, 'index'])->name('maintenance.index');

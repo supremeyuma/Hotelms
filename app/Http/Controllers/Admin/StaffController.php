@@ -9,21 +9,24 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\StaffProfile;
 use Spatie\Permission\Models\Role;
-use App\Services\AuditLogger;
+use App\Services\AuditLoggerService as AuditLogger;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Hash;
 
 class StaffController extends Controller
 {
-    public function __construct()
+    protected AuditLogger $auditLogger;
+
+    public function __construct(AuditLogger $auditLogger)
     {
-        $this->middleware(['auth','role:manager|md']);
+        $this->middleware(['auth','role:Manager|MD']);
+        $this->auditLogger = $auditLogger;
     }
 
     public function index()
     {
-        $staff = User::with('roles','staffProfile')->paginate(20);
+        $staff = User::with('roles','staffProfile', 'threads')->paginate(20);
         return Inertia::render('Admin/Staff/Index', compact('staff'));
     }
 
@@ -51,24 +54,29 @@ class StaffController extends Controller
         ]);
 
         // assign role via spatie
-        $user->assignRole($data['role']);
+        if (!empty($data['role'])) {
+            $user->assignRole($data['role']);
+        }
 
-        // staff profile
         $profile = StaffProfile::create([
             'user_id' => $user->id,
             'phone' => $data['phone'] ?? null,
             'action_code_hash' => isset($data['action_code']) ? bcrypt($data['action_code']) : null,
         ]);
 
-        AuditLogger::log('staff_created', 'User', $user->id, ['role'=>$data['role']]);
+        $this->auditLogger->log('staff_created', 'User', $user->id, ['role' => $data['role'] ?? null]);
 
-        return redirect()->route('staff.index')->with('success','Staff created');
+        return redirect()->route('admin.staff.index')->with('success','Staff created');
     }
 
     public function edit(User $staff)
     {
         $roles = Role::all();
-        $staff->load('staffProfile','roles');
+        $staff->load(['staffProfile','roles',
+            'notes' => function ($query) { $query->latest()->limit(1); },
+            'notes.admin']);
+
+
         return Inertia::render('Admin/Staff/Edit', compact('staff','roles'));
     }
 
@@ -89,7 +97,12 @@ class StaffController extends Controller
             unset($data['password']);
         }
 
-        $staff->update($data);
+        // Only update fillable user fields
+        $staff->update([
+            'name' => $data['name'],
+            'email' => $data['email'],
+            // password included only if set above
+        ] + (isset($data['password']) ? ['password' => $data['password']] : []));
 
         if (!empty($data['role'])) {
             $staff->syncRoles([$data['role']]);
@@ -108,17 +121,61 @@ class StaffController extends Controller
             ]);
         }
 
-        AuditLogger::log('staff_updated', 'User', $staff->id, ['data'=>$data]);
+        $this->auditLogger->log('staff_updated', 'User', $staff->id, ['data' => $data]);
 
-        return redirect()->route('staff.index')->with('success','Staff updated');
+        return redirect()->route('admin.staff.index')->with('success','Staff updated');
     }
+
+    public function addNote(Request $request, User $staff)
+    {
+        $data = $request->validate([
+            'type' => 'required|in:query,commendation',
+            'message' => 'required|string|max:1000',
+        ]);
+
+        $note = $staff->notes()->create([
+            'admin_id' => auth()->id(),
+            'type' => $data['type'],
+            'message' => $data['message'],
+        ]);
+
+        $this->auditLogger->log(
+            'staff_note_added',
+            'StaffNote',
+            $note->id,
+            ['staff_id' => $staff->id]
+        );
+
+        return back()->with('success', 'Note added.');
+    }
+
+
+    public function suspend(User $staff)
+    {
+        $staff->suspend();
+
+         $this->auditLogger->log('staff_suspended', 'User', $staff->id);
+
+        return back()->with('success', 'Staff suspended.');
+    }
+
+    public function reinstate(User $staff)
+    {
+        $staff->reinstate();
+
+         $this->auditLogger->log('staff_reinstated', 'User', $staff->id);
+
+        return back()->with('success', 'Staff reinstated.');
+    }
+
 
     public function destroy(User $staff)
     {
+        $this->auditLogger->log('staff_deleted', 'User', $staff->id);
+
+        // remove user record (soft delete if model uses SoftDeletes)
         $staff->delete();
 
-        AuditLogger::log('staff_deleted', 'User', $staff->id);
-
-        return back()->with('success','Staff removed.');
+        return redirect()->route('admin.staff.index')->with('success','Staff removed.');
     }
 }

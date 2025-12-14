@@ -78,4 +78,38 @@ class User extends Authenticatable
     {
         return $query->whereHas('staffProfile');
     }
+
+    public function notes()
+    {
+        return $this->hasMany(StaffNote::class,'staff_id');
+    }
+
+     // Threads where this user is the staff
+    public function threads()
+    {
+        return $this->hasMany(StaffThread::class, 'staff_id');
+    }
+
+    // Threads where this user is the admin who created them (optional)
+    public function adminThreads()
+    {
+        return $this->hasMany(StaffThread::class, 'admin_id');
+    }
+
+    public function suspend()
+    {
+        $this->update(['suspended_at' => now()]);
+    }
+
+    public function reinstate()
+    {
+        $this->update(['suspended_at' => null]);
+    }
+
+    public function getIsSuspendedAttribute(): bool
+    {
+        return !is_null($this->suspended_at);
+    }
+
+
 }
