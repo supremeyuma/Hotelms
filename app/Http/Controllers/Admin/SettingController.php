@@ -7,16 +7,19 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
-use App\Services\AuditLogger;
+use App\Services\AuditLoggerService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Storage;
 
 class SettingController extends Controller
 {
-    public function __construct()
+    protected AuditLoggerService $auditLogger;
+
+    public function __construct(AuditLoggerService $auditLogger)
     {
-        $this->middleware(['auth','role:manager|md']);
+        $this->middleware(['auth','role:Manager|MD']);
+        $this->auditLogger = $auditLogger;
     }
 
     public function index()
@@ -58,7 +61,7 @@ class SettingController extends Controller
             Setting::updateOrCreate(['key'=>'room_service_menu'], ['value'=>json_encode($data['room_service_menu'])]);
         }
 
-        AuditLogger::log('settings_updated', 'Setting', 0, ['data' => $data]);
+        $this->auditLogger->log('settings_updated', 'Setting', 0, ['data' => $data]);
 
         return back()->with('success','Settings updated.');
     }
