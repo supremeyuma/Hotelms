@@ -35,4 +35,10 @@ class InventoryItem extends Model
     {
         return $query->where('quantity', '<=', $threshold);
     }
+
+    public function isLowStock(): bool
+    {
+        return $this->quantity <= $this->low_stock_threshold;
+    }
+
 }

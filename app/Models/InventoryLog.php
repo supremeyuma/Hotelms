@@ -14,7 +14,7 @@ class InventoryLog extends Model
         'staff_id',
         'change',
         'type',
-        'meta',
+        'meta'  => 'array',
     ];
 
     protected $casts = [
@@ -31,5 +31,10 @@ class InventoryLog extends Model
     public function staff()
     {
         return $this->belongsTo(User::class, 'staff_id');
+    }
+    public function inventoryItem()
+    {
+        return $this->belongsTo(InventoryItem::class);
+        // Laravel will automatically use inventory_item_id ✅
     }
 }

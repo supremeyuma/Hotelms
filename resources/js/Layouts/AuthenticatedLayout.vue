@@ -46,8 +46,10 @@ const sidebars = {
     { name: 'Bookings', href: '/admin/bookings' },
     { name: 'Rooms', href: '/admin/rooms' },
     { name: 'Staff Management', href: '/admin/staff' },
+    { name: 'Inventory', href: '/admin/inventory' },
     { name: 'Reports', href: '/admin/reports' },
     { name: 'My Profile', href: '/admin/profile' },
+    { name: 'Settings', href: '/admin/settings' },
   ],
   MD: [
     { name: 'Dashboard', href: '/admin/dashboard' },

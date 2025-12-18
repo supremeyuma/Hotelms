@@ -52,6 +52,14 @@ Route::middleware(['auth', 'role:Manager|MD'])
         });
 
         Route::resource('inventory', InventoryController::class);
+        Route::post('inventory/{inventory}/use', [InventoryController::class,'useItem'])->name('inventory.useItem');
+        Route::get('inventory/{inventory}', [InventoryController::class, 'show'])->name('inventory.show');
+        Route::post('inventory/{inventory}/use',[InventoryController::class, 'useItem'])->name('inventory.useItem');
+        Route::post('inventory/logs/{log}/undo', [InventoryController::class, 'undoLog'])->name('inventory.logs.undo');
+
+
+
+
 
         Route::get('maintenance', [MaintenanceAdminController::class, 'index'])->name('maintenance.index');
         Route::get('maintenance/{ticket}', [MaintenanceAdminController::class, 'show'])->name('maintenance.show');
