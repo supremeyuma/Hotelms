@@ -1,4 +1,5 @@
 <?php
+// app/Http/Controllers/Admin/Reports/StaffReportController.php
 
 namespace App\Http\Controllers\Admin\Reports;
 
@@ -13,17 +14,18 @@ class StaffReportController extends Controller
 {
     public function index(Request $request, StaffReportService $service)
     {
+        $query = $service->query($request->all());
+        $rows = $query->paginate(25)->withQueryString();
+
         return Inertia::render('Admin/Reports/Staff', [
-            'rows' => $service->query($request->all())->paginate(25)->withQueryString(),
-            'filters' => $request->all()
+            'rows' => $rows,
+            'filters' => $request->all(),
         ]);
     }
 
     public function export(string $format, Request $request, StaffReportService $service)
     {
-        return Excel::download(
-            new GenericExport($service->query($request->all())->get()),
-            "staff.$format"
-        );
+        $data = $service->query($request->all())->get();
+        return Excel::download(new GenericExport($data), "staff.$format");
     }
 }

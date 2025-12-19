@@ -24,6 +24,7 @@ use App\Http\Controllers\Admin\Reports\RevenueReportController;
 use App\Http\Controllers\Admin\Reports\MaintenanceReportController;
 use App\Http\Controllers\Admin\Reports\InventoryReportController;
 use App\Http\Controllers\Admin\Reports\OccupancyReportController;
+use App\Http\Controllers\Admin\Reports\ChartController;
 
 Route::middleware(['auth', 'role:Manager|MD'])
     ->prefix('admin')
@@ -77,16 +78,21 @@ Route::middleware(['auth', 'role:Manager|MD'])
             Route::get('/staff', [StaffReportController::class, 'index'])->name('staff');
             Route::get('/staff/export/{format}', [StaffReportController::class, 'export'])->name('staff.export');
 
-            Route::middleware('role:MD')->group(function () {
-                Route::get('/revenue', [RevenueReportController::class, 'index'])->name('revenue');
-                Route::get('/revenue/export/{format}', [RevenueReportController::class, 'export'])->name('revenue.export');
-            });
+            Route::get('/revenue', [RevenueReportController::class, 'index'])->name('revenue');
+            Route::get('/revenue/export/{format}', [RevenueReportController::class, 'export'])->name('revenue.export');
 
             Route::get('/occupancy', [OccupancyReportController::class, 'index'])->name('occupancy');
             Route::get('/occupancy/export/{format}', [OccupancyReportController::class, 'export'])->name('occupancy.export');
 
             Route::get('/inventory', [InventoryReportController::class, 'index'])->name('inventory');
             Route::get('/inventory/export/{format}', [InventoryReportController::class, 'export'])->name('inventory.export');
+
+
+                Route::prefix('charts')->group(function () {
+                    Route::get('/revenue', [ChartController::class, 'revenue']);
+                    Route::get('/occupancy', [ChartController::class, 'occupancy']);
+                    Route::get('/inventory', [ChartController::class, 'inventory']);
+                });
 
             Route::get('/maintenance', [MaintenanceReportController::class, 'index'])->name('maintenance');
             Route::get('/maintenance/export/{format}', [MaintenanceReportController::class, 'export'])->name('maintenance.export');

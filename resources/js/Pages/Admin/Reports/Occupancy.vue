@@ -1,75 +1,48 @@
-<!--<template>
-  <AuthenticatedLayout>
-    <div class="space-y-6">
-      <h1 class="text-2xl font-semibold">Occupancy Details</h1>
-
-      <form @submit.prevent="load" class="flex gap-4 items-end">
-        <div>
-          <label class="text-sm">From</label>
-          <input type="date" v-model="range.from" class="input" />
-        </div>
-        <div>
-          <label class="text-sm">To</label>
-          <input type="date" v-model="range.to" class="input" />
-        </div>
-        <PrimaryButton>Load</PrimaryButton>
-      </form>
-
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Bookings</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="row in rows" :key="row.date">
-            <td>{{ row.date }}</td>
-            <td>{{ row.bookings }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </AuthenticatedLayout>
-</template>-->
-
-<!-- File: resources/js/Pages/Admin/Reports/Occupancy.vue -->
+<!-- resources/js/Pages/Admin/Reports/Occupancy.vue -->
 <script setup>
-defineProps({ rows:Array, summary:Number })
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
+import TrendChart from '@/Components/TrendChart.vue'
+
+defineProps({
+  rows: Array,
+  summary: Object,
+})
 </script>
 
 <template>
-  <h2 class="text-xl font-bold">Occupancy {{ summary }}%</h2>
-  <ul>
-    <li v-for="r in rows" :key="r.date">{{ r.date }} — {{ r.bookings }}</li>
-  </ul>
+  <AuthenticatedLayout>
+    <div class="space-y-6">
+      <h1 class="text-2xl font-semibold text-gray-800 dark:text-gray-100">
+        Occupancy Report
+      </h1>
+
+      <div class="bg-white dark:bg-gray-900 p-4 rounded-2xl shadow-sm">
+        <h2 class="text-xl font-bold mb-2">
+          Occupancy Today: {{ summary.occupancy }}%
+        </h2>
+        <TrendChart title="Occupancy Trend" endpoint="/admin/reports/charts/occupancy" />
+      </div>
+
+      <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-lg shadow-sm">
+        <table class="w-full table-auto">
+          <thead class="bg-gray-100 dark:bg-gray-800 text-left">
+            <tr>
+              <th class="px-4 py-2 text-gray-700 dark:text-gray-200">Date</th>
+              <th class="px-4 py-2 text-gray-700 dark:text-gray-200">Bookings</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="r in rows"
+              :key="r.date"
+              class="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
+            >
+              <td class="px-4 py-2">{{ r.date }}</td>
+              <td class="px-4 py-2">{{ r.bookings }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </AuthenticatedLayout>
 </template>
-
-<!-- File: resources/js/Pages/Admin/Reports/Occupancy.vue -->
-<script setup>
-defineProps({ rows:Array, summary:Number })
-</script>
-
-
-<!--<script setup>
-import { ref } from 'vue'
-import axios from 'axios'
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
-import PrimaryButton from '@/Components/PrimaryButton.vue'
-
-const props = defineProps({
-  range: Object,
-})
-
-const range = ref({ ...props.range })
-const rows = ref([])
-
-async function load() {
-  const res = await axios.get(route('reports.occupancy'), {
-    params: range.value,
-  })
-  rows.value = res.data
-}
-
-load()
-</script>-->

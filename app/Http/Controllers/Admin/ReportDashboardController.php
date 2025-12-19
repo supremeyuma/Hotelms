@@ -1,28 +1,30 @@
 <?php
+// app/Http/Controllers/Admin/ReportDashboardController.php
 
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Services\Reports\{
-    RevenueReportService,
-    OccupancyReportService,
-    StaffReportService,
-    InventoryReportService
-};
+use App\Services\Reports\RevenueReportService;
+use App\Services\Reports\OccupancyReportService;
+use App\Services\Reports\StaffReportService;
+use App\Services\Reports\InventoryReportService;
 use Inertia\Inertia;
-use Illuminate\Http\Request;
 
 class ReportDashboardController extends Controller
 {
-    public function index(Request $request)
-    {
+    public function index(
+        RevenueReportService $revenue,
+        OccupancyReportService $occupancy,
+        StaffReportService $staff,
+        InventoryReportService $inventory
+    ) {
         return Inertia::render('Admin/Reports/Dashboard', [
             'kpis' => [
-                'revenue' => app(RevenueReportService::class)->summary(),
-                'occupancy' => app(OccupancyReportService::class)->summary(),
-                'staff' => app(StaffReportService::class)->summary(),
-                'inventory' => app(InventoryReportService::class)->summary(),
-            ]
+                'revenue'   => $revenue->summary(),
+                'occupancy' => $occupancy->summary(),
+                'staff'     => $staff->summary(),
+                'inventory' => $inventory->summary(),
+            ],
         ]);
     }
 }

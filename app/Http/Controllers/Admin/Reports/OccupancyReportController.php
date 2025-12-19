@@ -1,5 +1,5 @@
 <?php
-
+// app/Http/Controllers/Admin/Reports/OccupancyReportController.php
 namespace App\Http\Controllers\Admin\Reports;
 
 use App\Http\Controllers\Controller;
@@ -13,17 +13,18 @@ class OccupancyReportController extends Controller
 {
     public function index(Request $request, OccupancyReportService $service)
     {
+        $rows = $service->query($request->all());
+        $summary = $service->summary();
+
         return Inertia::render('Admin/Reports/Occupancy', [
-            'rows' => $service->query($request->all()),
-            'summary' => $service->summary()
+            'rows' => $rows,
+            'summary' => $summary,
         ]);
     }
 
     public function export(string $format, Request $request, OccupancyReportService $service)
     {
-        return Excel::download(
-            new GenericExport($service->query($request->all())),
-            "occupancy.$format"
-        );
+        $data = $service->query($request->all());
+        return Excel::download(new GenericExport($data), "occupancy.$format");
     }
 }

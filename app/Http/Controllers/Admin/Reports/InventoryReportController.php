@@ -1,4 +1,5 @@
 <?php
+// app/Http/Controllers/Admin/Reports/InventoryReportController.php
 
 namespace App\Http\Controllers\Admin\Reports;
 
@@ -13,17 +14,26 @@ class InventoryReportController extends Controller
 {
     public function index(Request $request, InventoryReportService $service)
     {
+        // Ensure chart() is called with integer days, not full request array
+        $chartData = $service->chart((int) $request->input('days', 30));
+
+        $rows = $service->query($request->all())
+            ->with(['inventoryItem', 'staff'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(25)
+            ->withQueryString();
+
         return Inertia::render('Admin/Reports/Inventory', [
-            'rows' => $service->query($request->all())->paginate(25)->withQueryString(),
-            'filters' => $request->all()
+            'rows' => $rows,
+            'chart' => $chartData,
+            'filters' => $request->all(),
         ]);
     }
 
     public function export(string $format, Request $request, InventoryReportService $service)
     {
-        return Excel::download(
-            new GenericExport($service->query($request->all())->get()),
-            "inventory.$format"
-        );
+        $data = $service->query($request->all())->with(['inventoryItem', 'staff'])->get();
+
+        return Excel::download(new GenericExport($data), "inventory.$format");
     }
 }

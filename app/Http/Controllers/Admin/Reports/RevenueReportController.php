@@ -1,4 +1,5 @@
 <?php
+// app/Http/Controllers/Admin/Reports/RevenueReportController.php
 
 namespace App\Http\Controllers\Admin\Reports;
 
@@ -14,13 +15,14 @@ class RevenueReportController extends Controller
 {
     public function index(Request $request, RevenueReportService $service, AuditLoggerService $auditLogger)
     {
-        $data = $service->query($request->all())->paginate(25)->withQueryString();
+        $query = $service->query($request->all());
+        $rows = $query->orderBy('created_at', 'desc')->paginate(25)->withQueryString();
 
         $auditLogger->log('report_viewed', 'Revenue', 0, $request->all());
 
         return Inertia::render('Admin/Reports/Revenue', [
-            'rows' => $data,
-            'filters' => $request->all()
+            'rows' => $rows,
+            'filters' => $request->all(),
         ]);
     }
 
