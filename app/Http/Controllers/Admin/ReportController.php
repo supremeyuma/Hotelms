@@ -1,80 +1,115 @@
 <?php
-// ========================================================
-// Admin\ReportController.php
-// Namespace: App\Http\Controllers\Admin
-// ========================================================
+
 namespace App\Http\Controllers\Admin;
 
+
 use App\Http\Controllers\Controller;
-use App\Models\Booking;
-use App\Models\Order;
-use App\Models\InventoryLog;
-use App\Models\User;
-use Illuminate\Http\Request;
-use Inertia\Inertia;
+use App\Models\{Booking,InventoryLog,User,Room};
 use Carbon\Carbon;
+use Cache;
 use DB;
+use Inertia\Inertia;
+use Illuminate\Http\Request;
+
 
 class ReportController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware(['auth','role:manager|md']);
-    }
+public function index(Request $request)
+{
+[$from,$to] = $this->range($request);
 
-    /**
-     * Dashboard summary and report endpoints
-     */
-    public function index(Request $request)
-    {
-        $from = $request->input('from', Carbon::now()->subMonth()->toDateString());
-        $to = $request->input('to', Carbon::now()->toDateString());
 
-        // Occupancy: percent of occupied rooms vs total in range
-        $totalRooms = DB::table('rooms')->count();
-        $occupiedDays = Booking::whereBetween('check_in', [$from, $to])->count();
-        $occupancy = $totalRooms ? round(($occupiedDays / $totalRooms) * 100, 2) : 0;
+return Inertia::render('Admin/Reports/Index', [
+'summary' => Cache::remember("report:summary:$from:$to", 3600, fn() => [
+'occupancy' => $this->occupancyRate($from,$to),
+'revenue' => Booking::whereBetween('created_at', [$from,$to])->sum('total_amount'),
+'adr' => Booking::whereBetween('check_in', [$from,$to])->avg('nightly_rate'),
+'revpar' => $this->revpar($from,$to),
+'orders' => DB::table('orders')->whereBetween('created_at',[$from,$to])->count()
+]),
+'range' => compact('from','to')
+]);
+}
 
-        // Revenue: sum of bookings total_amount
-        $revenue = Booking::whereBetween('created_at', [$from, $to])->sum('total_amount');
 
-        // Staff performance: orders completed per staff
-        $staffPerformance = User::role('staff')->withCount(['orders as completed_orders_count' => function($q){
-            $q->where('status','completed');
-        }])->get(['id','name']);
+public function occupancy(Request $request)
+{
+[$from,$to] = $this->range($request);
 
-        // Inventory usage
-        $inventoryUsage = InventoryLog::select(DB::raw('inventory_item_id, SUM(ABS(change)) as used'))
-            ->whereBetween('created_at', [$from, $to])
-            ->groupBy('inventory_item_id')->get();
 
-        // Orders counts
-        $ordersCount = Order::whereBetween('created_at', [$from,$to])->count();
+$data = Booking::selectRaw('DATE(check_in) as date, COUNT(*) as bookings')
+->whereBetween('check_in',[$from,$to])
+->groupBy('date')->orderBy('date')->get();
 
-        return Inertia::render('Admin/Reports/Index', [
-            'occupancy' => $occupancy,
-            'revenue' => $revenue,
-            'staffPerformance' => $staffPerformance,
-            'inventoryUsage' => $inventoryUsage,
-            'ordersCount' => $ordersCount,
-            'range' => ['from'=>$from,'to'=>$to],
-        ]);
-    }
 
-    /**
-     * Occupancy detail per day (example)
-     */
-    public function occupancyDetail(Request $request)
-    {
-        $from = $request->input('from', Carbon::now()->subWeek()->toDateString());
-        $to = $request->input('to', Carbon::now()->toDateString());
+return response()->json($data);
+}
 
-        $rows = Booking::selectRaw('DATE(check_in) as date, COUNT(*) as bookings')
-            ->whereBetween('check_in', [$from, $to])
-            ->groupBy('date')
-            ->orderBy('date','asc')
-            ->get();
 
-        return response()->json($rows);
-    }
+public function revenue(Request $request)
+{
+[$from,$to] = $this->range($request);
+
+
+return Booking::selectRaw('DATE(created_at) as date, SUM(total_amount) as total')
+->whereBetween('created_at',[$from,$to])
+->groupBy('date')->orderBy('date')->get();
+}
+
+
+public function staff(Request $request)
+{
+return User::query()->role('staff')->withCount([
+'orders as completed_orders' => fn($q)=>$q->where('status','completed')
+])->get();
+}
+
+
+public function inventory(Request $request)
+{
+[$from,$to] = $this->range($request);
+
+
+return InventoryLog::selectRaw('inventory_item_id, SUM(ABS(change)) as used')
+->whereBetween('created_at',[$from,$to])
+->groupBy('inventory_item_id')->get();
+}
+
+
+/* ---------- Helpers ---------- */
+
+
+protected function range(Request $request)
+{
+return [
+$request->input('from', now()->subMonth()->toDateString()),
+$request->input('to', now()->toDateString())
+];
+}
+
+
+protected function occupancyRate($from,$to)
+{
+$rooms = Room::count();
+$days = Carbon::parse($from)->diffInDays($to);
+if (!$rooms || !$days) return 0;
+
+
+$occupied = Booking::where(function($q) use ($from,$to){
+$q->whereBetween('check_in',[$from,$to])
+->orWhereBetween('check_out',[$from,$to]);
+})->selectRaw('SUM(DATEDIFF(LEAST(check_out, ?), GREATEST(check_in, ?))) as nights',[$to,$from])->value('nights');
+
+
+return round(($occupied / ($rooms * $days)) * 100,2);
+}
+
+
+protected function revpar($from,$to)
+{
+$revenue = Booking::whereBetween('created_at',[$from,$to])->sum('total_amount');
+$rooms = Room::count();
+$days = Carbon::parse($from)->diffInDays($to);
+return $rooms && $days ? round($revenue / ($rooms * $days),2) : 0;
+}
 }

@@ -111,5 +111,14 @@ class User extends Authenticatable
         return !is_null($this->suspended_at);
     }
 
+    public function maintenanceTasks()
+    {
+        // Assuming your maintenance table has a 'user_id' or 'assigned_to' column
+        // If your foreign key is named differently, e.g., 'staff_id', 
+        // use: return $this->hasMany(MaintenanceTask::class, 'staff_id');
+        
+        return $this->hasMany(MaintenanceTicket::class, 'staff_id'); 
+    }
+
 
 }

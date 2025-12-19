@@ -18,6 +18,12 @@ use App\Http\Controllers\Admin\{
     StaffThreadController,
     StaffThreadMessagesController,
 };
+use App\Http\Controllers\Admin\ReportDashboardController;
+use App\Http\Controllers\Admin\Reports\StaffReportController;
+use App\Http\Controllers\Admin\Reports\RevenueReportController;
+use App\Http\Controllers\Admin\Reports\MaintenanceReportController;
+use App\Http\Controllers\Admin\Reports\InventoryReportController;
+use App\Http\Controllers\Admin\Reports\OccupancyReportController;
 
 Route::middleware(['auth', 'role:Manager|MD'])
     ->prefix('admin')
@@ -65,8 +71,26 @@ Route::middleware(['auth', 'role:Manager|MD'])
         Route::get('maintenance/{ticket}', [MaintenanceAdminController::class, 'show'])->name('maintenance.show');
         Route::put('maintenance/{ticket}', [MaintenanceAdminController::class, 'update'])->name('maintenance.update');
 
-        Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
-        Route::get('reports/occupancy', [ReportController::class, 'occupancy'])->name('reports.occupancy');
+        Route::prefix('reports')->name('reports.')->group(function () {
+            Route::get('/', [ReportDashboardController::class, 'index'])->name('dashboard');
+
+            Route::get('/staff', [StaffReportController::class, 'index'])->name('staff');
+            Route::get('/staff/export/{format}', [StaffReportController::class, 'export'])->name('staff.export');
+
+            Route::middleware('role:MD')->group(function () {
+                Route::get('/revenue', [RevenueReportController::class, 'index'])->name('revenue');
+                Route::get('/revenue/export/{format}', [RevenueReportController::class, 'export'])->name('revenue.export');
+            });
+
+            Route::get('/occupancy', [OccupancyReportController::class, 'index'])->name('occupancy');
+            Route::get('/occupancy/export/{format}', [OccupancyReportController::class, 'export'])->name('occupancy.export');
+
+            Route::get('/inventory', [InventoryReportController::class, 'index'])->name('inventory');
+            Route::get('/inventory/export/{format}', [InventoryReportController::class, 'export'])->name('inventory.export');
+
+            Route::get('/maintenance', [MaintenanceReportController::class, 'index'])->name('maintenance');
+            Route::get('/maintenance/export/{format}', [MaintenanceReportController::class, 'export'])->name('maintenance.export');
+        });
 
         Route::get('audit-logs', [AuditLogController::class, 'index'])->name('audit.index');
 
