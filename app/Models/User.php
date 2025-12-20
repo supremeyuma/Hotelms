@@ -7,6 +7,7 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Permission\Traits\HasRoles;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class User extends Authenticatable
 {
@@ -119,6 +120,10 @@ class User extends Authenticatable
         
         return $this->hasMany(MaintenanceTicket::class, 'staff_id'); 
     }
-
+    
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class);
+    }
 
 }

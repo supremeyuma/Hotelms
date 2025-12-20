@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Staff;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use Illuminate\Support\Facades\Auth;
 use App\Models\MaintenanceTicket;
 use App\Models\Booking;
 use Inertia\Inertia;
@@ -16,7 +17,7 @@ class StaffDashboardController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth','role:staff|manager|md']);
+        $this->middleware(['auth','role:Staff|manager|md']);
     }
 
     /**
@@ -34,6 +35,7 @@ class StaffDashboardController extends Controller
             'pendingOrders' => $pendingOrders,
             'myMaintenance' => $myMaintenance,
             'pendingBookingsCount' => $pendingBookings,
+            'department' => $user->department?->name,
             'user' => $user,
         ]);
     }

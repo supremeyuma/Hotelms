@@ -15,7 +15,7 @@ use App\Http\Controllers\Staff\StaffProfileController;
 |
 */
 
-Route::middleware(['auth', 'role:staff|manager|md'])->prefix('staff')->name('staff.')->group(function () {
+Route::middleware(['auth', 'role:Staff|manager|md'])->prefix('staff')->name('staff.')->group(function () {
 
     // Dashboard
     Route::get('/dashboard', [StaffDashboardController::class, 'index'])->name('dashboard');
