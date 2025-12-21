@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Booking;
+use App\Observers\BookingObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -36,6 +38,8 @@ class AppServiceProvider extends ServiceProvider
                 ];
             },
         ]);
+
+        Booking::observe(BookingObserver::class);
         
     }
 }

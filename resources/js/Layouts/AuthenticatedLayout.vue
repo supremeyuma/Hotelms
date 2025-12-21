@@ -15,7 +15,7 @@
       <header class="bg-white border-b p-4 flex justify-between">
         <div>{{ page.props.auth.user.name  }}</div>
         <div>
-          <Link href="/logout">Logout</Link>
+          <Link href="/logout" method="post" as="button" type="button">Logout</Link>
         </div>
       </header>
 

@@ -6,6 +6,7 @@ use App\Http\Controllers\Staff\StaffActionController;
 use App\Http\Controllers\Staff\StaffOrderController;
 use App\Http\Controllers\Staff\StaffProfileController;
 
+
 /*
 |--------------------------------------------------------------------------
 | Staff Routes
@@ -37,4 +38,11 @@ Route::middleware(['auth', 'role:Staff|manager|md'])->prefix('staff')->name('sta
     Route::get('/profile', [StaffProfileController::class, 'showProfile'])->name('profile.show');
     Route::patch('/profile', [StaffProfileController::class, 'updateProfile'])->name('profile.update');
     Route::post('/profile/action-code', [StaffProfileController::class, 'updateActionCode'])->name('profile.action_code');
+
+    Route::patch('/staff/frontdesk/checkout/{booking}', [FrontDeskController::class, 'checkout'])->name('staff.frontdesk.checkout');
+
 });
+
+
+
+

@@ -76,4 +76,16 @@ class Room extends Model
     {
         return $query->where('status', 'available');
     }
+
+    // app/Models/Room.php
+    public function cleanings()
+    {
+        return $this->hasMany(RoomCleaning::class);
+    }
+
+    public function latestCleaning()
+    {
+        return $this->hasOne(RoomCleaning::class)->latestOfMany();
+    }
+
 }

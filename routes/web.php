@@ -66,3 +66,4 @@ require __DIR__ . '/images.php';
 require __DIR__ . '/public.php';
 require __DIR__ . '/roomservice.php';
 require __DIR__ . '/staff.php';
+require __DIR__ . '/cleaning.php';
