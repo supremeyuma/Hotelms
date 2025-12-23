@@ -31,9 +31,9 @@ Route::post('/contact', [PublicController::class, 'submitContactForm'])->name('c
 Route::get('/gallery', [PublicController::class, 'staticPage'])->defaults('pageKey','gallery')->name('public.gallery');
 
 // Booking public flows
-Route::get('/booking/{room?}', [PublicController::class, 'showRoom'])->name('booking.form'); // optional room prefill
-Route::post('/bookings', [BookingController::class, 'createBooking'])->name('booking.create');
-Route::get('/booking/{booking}/confirm', [BookingController::class, 'confirmBooking'])->name('booking.confirm');
+//Route::get('/booking', [PublicController::class, 'showRoom'])->name('booking.form'); // optional room prefill
+//Route::post('/bookings', [BookingController::class, 'createBooking'])->name('booking.create');
+//Route::get('/booking/{booking}/confirm', [BookingController::class, 'confirmBooking'])->name('booking.confirm');
 
 // Order placement (public or authenticated)
 Route::post('/order', [OrderController::class, 'store'])->name('order.store');

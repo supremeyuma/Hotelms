@@ -13,6 +13,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Exception;
+use Log;
 
 /**
  * BookingService
@@ -53,31 +54,78 @@ class BookingService
     public function createBooking(array $data): Booking
     {
         return DB::transaction(function () use ($data) {
-            // Validate room availability before creating
-            if (isset($data['room_id'])) {
-                $available = $this->isAvailable($data['room_id'], $data['check_in'], $data['check_out']);
-                if (! $available) {
-                    throw new Exception('Room is not available for the selected dates.');
-                }
+
+            // 1. Fetch and lock available rooms
+            $rooms = $this->availability->getAvailableRoomsForType(
+                $data['room_type_id'],
+                $data['check_in'],
+                $data['check_out'],
+                $data['quantity']
+            );
+
+            if ($rooms->count() < $data['quantity']) {
+                throw new Exception('Not enough rooms available for the selected dates.');
             }
 
+            // 2. Create booking
             $booking = Booking::create([
-                'property_id' => $data['property_id'] ?? null,
-                'room_id' => $data['room_id'] ?? null,
+                'property_id' => $data['property_id'] ?? 1,
                 'user_id' => $data['user_id'] ?? null,
                 'booking_code' => $data['booking_code'] ?? strtoupper('BKG-'.uniqid()),
                 'check_in' => $data['check_in'],
                 'check_out' => $data['check_out'],
-                'guests' => $data['guests'] ?? 1,
-                'total_amount' => $data['total_amount'] ?? 0,
-                'status' => $data['status'] ?? 'pending',
+                'adults' => $data['adults'],
+                'children' => $data['children'],
+                'total_amount' => $data['total_amount'],
+                'status' => $data['status'] ?? 'pending_payment',
                 'details' => $data['details'] ?? null,
+                'guest_email' => $data['guest_email'],
+                'guest_phone' => $data['guest_phone'],
+                'special_requests' => $data['special_requests'] ?? null,
+                'expires_at' => Carbon::now()->addMinutes(45),
+                'guest_name' => $data['guest_name'],
+                'room_type_id' => $data['room_type_id'],
+                'quantity' => $data['quantity'],
+                'nightly_rate' => $data['nightly_rate'],
             ]);
 
-            $this->audit->log('booking_created', $booking, $booking->id, ['payload' => $data]);
+            // 3. Attach rooms (THIS assigns room numbers)
+            $booking->rooms()->attach($rooms->pluck('id'));
+
+            // 4. Audit
+            $this->audit->log(
+                'booking_created',
+                $booking,
+                $booking->id,
+                ['rooms' => $rooms->pluck('room_number')->toArray()]
+            );
 
             return $booking;
         });
+    }
+
+
+    public function confirmBooking(Booking $booking)
+    {
+        $booking->update([
+            'status' => 'confirmed',
+            'expires_at' => null
+        ]);
+
+        // Trigger email/SMS hook here
+        //\Mail::to($booking->guest_email)->send(new \App\Mail\BookingConfirmed($booking));
+
+        // SMS (example using a service like Twilio)
+        // Twilio::message($booking->guest_phone, "Your booking #{$booking->id} is confirmed.");
+
+        return $booking;
+    }
+
+    public function cancelExpiredBookings()
+    {
+        Booking::where('status', 'pending_payment')
+            ->where('expires_at', '<', Carbon::now())
+            ->update(['status' => 'cancelled']);
     }
 
     /**

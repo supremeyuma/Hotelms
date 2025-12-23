@@ -126,16 +126,6 @@ class User extends Authenticatable
         return $this->belongsTo(Department::class);
     }
 
-    // app/Models/Room.php
-    public function cleanings()
-    {
-        return $this->hasMany(RoomCleaning::class);
-    }
-
-    public function latestCleaning()
-    {
-        return $this->hasOne(RoomCleaning::class)->latestOfMany();
-    }
-
+    
 
 }

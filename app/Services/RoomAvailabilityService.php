@@ -7,6 +7,7 @@ use App\Models\Room;
 use App\Models\Booking;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use App\Models\RoomType;
 
 /**
  * RoomAvailabilityService
@@ -23,22 +24,27 @@ class RoomAvailabilityService
      * @param string|\DateTime $to
      * @return bool
      */
-    public function isRoomAvailable(int $roomId, $from, $to): bool
+    public function checkAvailability(int $roomTypeId, string $checkIn, string $checkOut, int $requestedQuantity): bool
     {
-        $from = Carbon::parse($from)->startOfDay();
-        $to = Carbon::parse($to)->endOfDay();
+        $totalRooms = Room::where('room_type_id', $roomTypeId)->count();
 
-        $conflict = Booking::where('room_id', $roomId)
-            ->whereNull('deleted_at')
-            ->where(function ($q) use ($from, $to) {
-                $q->whereBetween('check_in', [$from, $to])
-                  ->orWhereBetween('check_out', [$from, $to])
-                  ->orWhere(function ($q2) use ($from, $to) {
-                      $q2->where('check_in', '<=', $from)->where('check_out', '>=', $to);
-                  });
-            })->exists();
+        $bookedRooms = Booking::whereHas('room', function ($query) use ($roomTypeId) {
+                $query->where('room_type_id', $roomTypeId);
+            })
+            ->whereIn('status', ['confirmed', 'pending_payment'])
+            ->where(function ($query) {
+                $query->whereNull('expires_at')
+                      ->orWhere('expires_at', '>', Carbon::now());
+            })
+            ->where(function ($query) use ($checkIn, $checkOut) {
+                $query->where('check_in', '<', $checkOut)
+                      ->where('check_out', '>', $checkIn);
+            })
+            ->count();
 
-        return ! $conflict;
+            //dd($totalRooms);
+
+        return ($totalRooms - $bookedRooms) >= $requestedQuantity;
     }
 
     /**
@@ -49,19 +55,48 @@ class RoomAvailabilityService
      * @param array $criteria ['room_type_id' => int, 'property_id' => int]
      * @return Collection
      */
-    public function suggestRooms($from, $to, array $criteria = []): Collection
+    public function availableRooms(int $roomTypeId, string $checkIn, string $checkOut): int
     {
-        $q = Room::with('roomType')->where('status', 'available');
+        $totalRooms = Room::where('room_type_id', $roomTypeId)->count();
+        
+        $bookedRooms = Booking::whereHas('room', function ($query) use ($roomTypeId) {
+                $query->where('room_type_id', $roomTypeId);
+            })
+            ->whereIn('status', ['confirmed', 'pending_payment'])
+            ->where(function ($query) {
+                $query->whereNull('expires_at')
+                      ->orWhere('expires_at', '>', Carbon::now());
+            })
+            ->where(function ($query) use ($checkIn, $checkOut) {
+                $query->where('check_in', '<', $checkOut)
+                      ->where('check_out', '>', $checkIn);
+            })
+            ->count();
 
-        if (!empty($criteria['room_type_id'])) $q->where('room_type_id', $criteria['room_type_id']);
-        if (!empty($criteria['property_id'])) $q->where('property_id', $criteria['property_id']);
+            //dd($totalRooms);
 
-        $rooms = $q->get()->filter(function (Room $room) use ($from, $to) {
-            return $this->isRoomAvailable($room->id, $from, $to);
-        });
-
-        return $rooms;
+        return max($totalRooms - $bookedRooms, 0);
     }
+
+    public function getAvailableRoomsForType(
+        int $roomTypeId,
+        $checkIn,
+        $checkOut,
+        int $limit
+    ): Collection {
+        return Room::where('room_type_id', $roomTypeId)
+            ->whereDoesntHave('bookings', function ($q) use ($checkIn, $checkOut) {
+                $q->whereIn('status', ['confirmed', 'pending_payment'])
+                ->where(function ($q) use ($checkIn, $checkOut) {
+                    $q->where('check_in', '<', $checkOut)
+                        ->where('check_out', '>', $checkIn);
+                });
+            })
+            ->lockForUpdate()
+            ->limit($limit)
+            ->get();
+    }
+
 
     /**
      * Bulk availability for date range

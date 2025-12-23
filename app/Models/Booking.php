@@ -21,6 +21,15 @@ class Booking extends Model
         'total_amount',
         'status',
         'details',
+        'room_type_id',
+        'adults',
+        'children',
+        'special_requests',
+        'guest_email',
+        'guest_phone',
+        'expires_at',
+        'guest_name',
+        'quantity',
     ];
 
     protected $casts = [
@@ -68,4 +77,15 @@ class Booking extends Model
     {
         return $query->where('check_in', '>', now());
     }
+
+    public function rooms()
+    {
+        return $this->belongsToMany(Room::class, 'booking_rooms');
+    }
+    public function roomType()
+{
+    return $this->belongsTo(RoomType::class);
+}
+
+
 }
