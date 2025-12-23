@@ -21,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
         'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
         'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
         'cleaning.staff' => \App\Http\Middleware\CleaningStaffOnly::class,
+        'validate.room.token' => \App\Http\Middleware\ValidateRoomToken::class,
          ]);
 
 

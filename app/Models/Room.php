@@ -94,4 +94,11 @@ class Room extends Model
         return $this->hasOne(RoomCleaning::class)->latestOfMany();
     }
 
+    public function roomAccessToken()
+    {
+        return $this->hasOne(RoomAccessToken::class, 'room_id', 'id')
+                    ->where('booking_id', request()->booking->id);
+    }
+
+
 }

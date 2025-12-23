@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Carbon\Carbon;
+use App\Models\RoomAccessToken;
 
 class Booking extends Model
 {
@@ -80,12 +82,57 @@ class Booking extends Model
 
     public function rooms()
     {
-        return $this->belongsToMany(Room::class, 'booking_rooms');
+        return $this->belongsToMany(Room::class, 'booking_rooms', 'booking_id', 'room_id');
     }
     public function roomType()
-{
-    return $this->belongsTo(RoomType::class);
-}
+    {
+        return $this->belongsTo(RoomType::class);
+    }
+
+    public function roomAccessToken()
+    {
+        return $this->hasOne(RoomAccessToken::class);
+    }
+
+      public function generateRoomAccessTokens(): void
+    {
+        // Remove any previous tokens for this booking
+        RoomAccessToken::where('booking_id', $this->id)->delete();
+
+        $expiresAt = Carbon::parse($this->check_out)->addHours(1); // 1-hour grace
+
+        // Make sure rooms are loaded
+        $this->load('rooms');
+
+        foreach ($this->rooms as $room) {
+
+            if (!$room->id) {
+                throw new \Exception("Room ID is null for booking {$this->id}");
+            }
+            RoomAccessToken::create([
+                'booking_id' => $this->id,
+                'room_id' => $room->id,
+                'token' => hash('sha256', \Illuminate\Support\Str::random(64)),
+                'expires_at' => $expiresAt,
+            ]);
+        }
+    }
+
+    // Optional helper to get all access tokens
+    public function accessTokens()
+    {
+        return $this->hasMany(RoomAccessToken::class);
+    }
+
+     public function getAccessTokenAttribute(): ?string
+    {
+        return $this->roomAccessToken?->token;
+    }
+
+    public function charges()
+    {
+        return $this->hasMany(Charge::class);
+    }
 
 
 }

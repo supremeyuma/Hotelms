@@ -15,4 +15,12 @@ class BookingObserver
             'status' => 'dirty'
         ]);
     }
+
+    public function updated(Booking $booking)
+    {
+        if ($booking->isDirty('status') && $booking->status === 'active') {
+            $booking->generateRoomAccessToken();
+        }
+    }
+
 }

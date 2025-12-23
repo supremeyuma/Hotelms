@@ -83,4 +83,12 @@ class Kernel extends HttpKernel
         'owns.booking' => \App\Http\Middleware\EnsureBookingOwnership::class,
         'owns.order' => \App\Http\Middleware\EnsureOrderOwnership::class,
     ];
+
+    // app/Http/Kernel.php
+
+    protected $routeMiddleware = [
+        // ...
+        'validate.room.token' => \App\Http\Middleware\ValidateRoomToken::class,
+    ];
+
 }

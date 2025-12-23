@@ -20,7 +20,7 @@
           <tr v-for="booking in bookings.data" :key="booking.id" class="border-b">
             <td class="px-4 py-2">{{ booking.id }}</td>
             <td class="px-4 py-2">{{ booking.booking_code }}</td>
-            <td class="px-4 py-2">{{ booking.room.room_type.title }} #{{ booking.room.room_number }}</td>
+            <td class="px-4 py-2">{{ booking.room_type_id }} #{{ booking.room_type }}</td>
             <td class="px-4 py-2">{{ new Date(booking.check_in).toLocaleDateString() }}</td>
             <td class="px-4 py-2">{{ new Date(booking.check_out).toLocaleDateString() }}</td>
             <td class="px-4 py-2">{{ booking.guests }}</td>
@@ -45,7 +45,7 @@ import Pagination from '@/Components/Pagination.vue';
 
 const props = usePage().props;
 const bookings = props.bookings;
-//console.log(bookings);
+console.log(bookings);
 
 function deleteBooking(id) {
   if (!confirm('Are you sure you want to delete this booking?')) return;
