@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Booking;
 use App\Models\Charge;
 use App\Models\Payment;
+use Illuminate\Support\Facades\DB;
 
 class BillingService
 {
@@ -38,5 +39,49 @@ class BillingService
     public function canCheckout(Booking $booking): bool
     {
         return $this->calculateOutstanding($booking) <= 0;
+    }
+
+    public function addPayment(Booking $booking, float $amount, string $method, string $notes = null): Payment
+    {
+        if ($amount <= 0) {
+            throw new \InvalidArgumentException('Payment must be greater than zero.');
+        }
+
+        if ($amount > $this->getOutstandingAmount($booking)) {
+            throw new \InvalidArgumentException('Payment exceeds outstanding amount.');
+        }
+
+        return DB::transaction(function () use ($booking, $amount, $method, $notes) {
+            $payment = Payment::create([
+                'booking_id' => $booking->id,
+                'amount' => $amount,
+                'method' => $method,
+                'notes' => $notes,
+            ]);
+
+            // Optional: trigger event for updated outstanding
+            event(new \App\Events\BillingUpdated($booking));
+
+            return $payment;
+        });
+    }
+
+    public function settleFullAmount(Booking $booking, string $method): Payment
+    {
+        $outstanding = $this->calculateOutstanding($booking);
+        if ($outstanding <= 0) {
+            throw new \Exception('No outstanding balance to settle.');
+        }
+
+        return $this->addPayment($booking, $outstanding, $method, 'Full settlement');
+    }
+
+    public function getBillingHistory(Booking $booking)
+    {
+        return [
+            'charges' => $booking->charges()->orderBy('created_at', 'desc')->get(),
+            'payments' => $booking->payments()->orderBy('created_at', 'desc')->get(),
+            'outstanding' => $this->calculateOutstanding($booking),
+        ];
     }
 }

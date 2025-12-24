@@ -1,21 +1,23 @@
 <?php
 
-// app/Events/ServiceRequested.php
 namespace App\Events;
-use App\Models\ServiceRequest;
-use Illuminate\Foundation\Events\Dispatchable;
-use Illuminate\Queue\SerializesModels;
+
+use App\Models\GuestRequest;
 use Illuminate\Broadcasting\Channel;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Broadcasting\InteractsWithSockets;
+use Illuminate\Foundation\Events\Dispatchable;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 
-class ServiceRequested
+class GuestRequestCreated implements ShouldBroadcast
 {
-    use Dispatchable, SerializesModels;
+    use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public ServiceRequest $serviceRequest;
+    public GuestRequest $request;
 
-    public function __construct(ServiceRequest $serviceRequest)
+    public function __construct(GuestRequest $request)
     {
-        $this->serviceRequest = $serviceRequest;
+        $this->request = $request->load('booking', 'room');
     }
 
     public function broadcastOn()
@@ -35,4 +37,3 @@ class ServiceRequested
         ];
     }
 }
-

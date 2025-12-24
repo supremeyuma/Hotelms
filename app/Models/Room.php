@@ -100,5 +100,15 @@ class Room extends Model
                     ->where('booking_id', request()->booking->id);
     }
 
+    public function charges()
+    {
+        return $this->hasMany(Charge::class);
+    }
+
+    public function payments()
+    {
+        return $this->hasMany(RoomPayment::class);
+    }
+
 
 }

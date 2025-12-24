@@ -5,6 +5,11 @@ use App\Http\Controllers\Staff\StaffDashboardController;
 use App\Http\Controllers\Staff\StaffActionController;
 use App\Http\Controllers\Staff\StaffOrderController;
 use App\Http\Controllers\Staff\StaffProfileController;
+use App\Http\Controllers\FrontDesk\DashboardController;
+use App\Http\Controllers\FrontDesk\BookingController;
+use App\Http\Controllers\FrontDesk\RoomController;
+use App\Http\Controllers\FrontDesk\BillingController;
+use App\Http\Controllers\FrontDesk\RoomBillingController;
 
 
 /*
@@ -41,6 +46,32 @@ Route::middleware(['auth', 'role:Staff|manager|md'])->prefix('staff')->name('sta
 
     Route::patch('/staff/frontdesk/checkout/{booking}', [FrontDeskController::class, 'checkout'])->name('staff.frontdesk.checkout');
 
+});
+
+
+Route::prefix('frontdesk')->middleware(['auth', 'role:frontdesk'])->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('frontdesk.dashboard');
+
+    Route::get('/rooms/{room}/billing', [RoomBillingController::class, 'show']);
+    Route::post('/rooms/{room}/billing/pay', [RoomBillingController::class, 'pay']);
+
+    Route::resource('bookings', BookingController::class);
+    Route::post('bookings/{booking}/checkin', [BookingController::class, 'checkIn']);
+    Route::post('bookings/{booking}/checkout', [BookingController::class, 'checkOut']);
+    Route::post('bookings/{booking}/extend', [BookingController::class, 'extendStay']);
+
+    Route::resource('rooms', RoomController::class)->only(['index', 'show', 'updateStatus']);
+
+    Route::get('guest-requests', [GuestRequestController::class, 'index']);
+    Route::post('guest-requests/{request}/acknowledge', [GuestRequestController::class, 'acknowledge']);
+    Route::post('guest-requests/{request}/complete', [GuestRequestController::class, 'complete']);
+
+    Route::get('billing/{booking}', [BillingController::class, 'viewBill']);
+    Route::post('billing/{booking}/pay', [BillingController::class, 'acceptPayment']);
+
+    Route::get('reports/occupancy', [ReportController::class, 'occupancyReport']);
+    Route::get('reports/revenue', [ReportController::class, 'revenueReport']);
+    Route::get('reports/bookings', [ReportController::class, 'bookingHistoryReport']);
 });
 
 
