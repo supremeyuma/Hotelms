@@ -2,35 +2,30 @@
 
 namespace App\Events;
 
+use App\Models\Room;
 use Illuminate\Broadcasting\Channel;
-use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
-use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
-use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Foundation\Events\Dispatchable;
 
-class RoomBillingUpdated
+class RoomBillingUpdated implements ShouldBroadcast
 {
-    use Dispatchable, InteractsWithSockets, SerializesModels;
+    use Dispatchable, SerializesModels;
 
-    /**
-     * Create a new event instance.
-     */
-    public function __construct()
+    public Room $room;
+
+    public function __construct(Room $room)
     {
-        //
+        $this->room = $room;
     }
 
-    /**
-     * Get the channels the event should broadcast on.
-     *
-     * @return array<int, \Illuminate\Broadcasting\Channel>
-     */
-    public function broadcastOn(): array
+    public function broadcastOn()
     {
-        return [
-            new PrivateChannel('channel-name'),
-        ];
+        return new Channel("room.{$this->room->id}.billing");
+    }
+
+    public function broadcastAs()
+    {
+        return 'billing.updated';
     }
 }

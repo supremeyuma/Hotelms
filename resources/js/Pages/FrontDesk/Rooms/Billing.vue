@@ -145,7 +145,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 
 const props = defineProps({
@@ -159,6 +159,13 @@ const form = ref({
   method: 'Cash',
   notes: ''
 });
+
+onMounted(() => {
+  Echo.channel(`room.${props.room.id}.billing`)
+    .listen('.billing.updated', () => {
+      router.reload({ preserveScroll: true })
+    })
+})
 
 function submitPayment() {
   router.post(

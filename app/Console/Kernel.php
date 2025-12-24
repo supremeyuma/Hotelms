@@ -45,6 +45,8 @@ class Kernel extends ConsoleKernel
         $schedule->job(new CleanupOldImagesJob())->dailyAt('04:30');
         $schedule->job(new CleanupAuditLogsJob())->weekly()->sundays()->at('05:00');
         $schedule->job(new PurgeOldNotificationsJob())->dailyAt('05:30');
+
+        $schedule->command('billing:charge-rooms')->dailyAt('14:00');
     }
 
     protected function commands(): void

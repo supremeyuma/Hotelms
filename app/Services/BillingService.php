@@ -6,17 +6,24 @@ use App\Models\Booking;
 use App\Models\Charge;
 use App\Models\Payment;
 use Illuminate\Support\Facades\DB;
+use App\Events\RoomBillingUpdated;
 
 class BillingService
 {
     public function addCharge(Booking $booking, string $description, float $amount): Charge
     {
-        return Charge::create([
+        $charge = Charge::create([
             'booking_id' => $booking->id,
             'room_id' => $booking->room_id,
             'description' => $description,
             'amount' => $amount,
         ]);
+
+        // dispatch event with the related room if available, otherwise pass the booking
+        $subject = $booking->room ?? $booking;
+        event(new RoomBillingUpdated($subject));
+
+        return $charge;
     }
 
     public function payBill(Booking $booking, float $amount): Payment
@@ -43,13 +50,13 @@ class BillingService
 
     public function addPayment(Booking $booking, float $amount, string $method, string $notes = null): Payment
     {
-        if ($amount <= 0) {
-            throw new \InvalidArgumentException('Payment must be greater than zero.');
-        }
-
-        if ($amount > $this->getOutstandingAmount($booking)) {
+        if ($amount > $this->calculateOutstanding($booking)) {
             throw new \InvalidArgumentException('Payment exceeds outstanding amount.');
         }
+
+        /*if ($amount > $this->calculateOutstanding($booking)) {
+            throw new \InvalidArgumentException('Payment exceeds outstanding amount.');
+        }*/
 
         return DB::transaction(function () use ($booking, $amount, $method, $notes) {
             $payment = Payment::create([
