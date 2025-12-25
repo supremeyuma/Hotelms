@@ -26,10 +26,10 @@
 
 <script setup>
 import { ref } from 'vue';
-import { Inertia } from '@inertiajs/inertia';
+import { router } from '@inertiajs/vue3';
 import BookingTable from '@/Components/FrontDesk/BookingTable.vue';
 import FilterSearch from '@/Components/FrontDesk/FilterSearch.vue';
-import Pagination from '@/Components/UI/Pagination.vue';
+import Pagination from '@/Components/Pagination.vue';
 
 const props = defineProps({
   bookings: Object,
@@ -42,22 +42,22 @@ const filter = ref(props.filter || '');
 const filters = ['all', 'active', 'confirmed', 'past'];
 
 function fetchBookings(page = 1) {
-  Inertia.get('/frontdesk/bookings', { search: search.value, filter: filter.value, page }, { preserveState: true, replace: true });
+  router.get('/frontdesk/bookings', { search: search.value, filter: filter.value, page }, { preserveState: true, replace: true });
 }
 
 function checkIn(bookingId) {
-  Inertia.post(`/frontdesk/bookings/${bookingId}/checkin`);
+  router.post(`/frontdesk/bookings/${bookingId}/checkin`);
 }
 
 function checkOut(bookingId) {
-  Inertia.post(`/frontdesk/bookings/${bookingId}/checkout`);
+  router.post(`/frontdesk/bookings/${bookingId}/checkout`);
 }
 
 function extendStay(bookingId, newDate) {
-  Inertia.post(`/frontdesk/bookings/${bookingId}/extend`, { new_checkout: newDate });
+  router.post(`/frontdesk/bookings/${bookingId}/extend`, { new_checkout: newDate });
 }
 
 function editBooking(bookingId) {
-  Inertia.get(`/frontdesk/bookings/${bookingId}/edit`);
+  router.get(`/frontdesk/bookings/${bookingId}/edit`);
 }
 </script>

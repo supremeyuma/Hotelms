@@ -14,20 +14,27 @@ class DashboardController extends Controller
 {
     public function index(Request $request)
     {
+        $today = Carbon::today();
+
         // Rooms KPIs
         $roomsOccupied = Room::where('status', 'occupied')->count();
         $roomsAvailable = Room::where('status', 'available')->count();
-
-        // Today's arrivals and departures
-        $today = Carbon::today();
-        $guestsArriving = Booking::where('check_in', $today)->where('status', 'confirmed')->count();
-        $guestsDeparting = Booking::where('check_out', $today)->where('status', 'active')->count();
-
-        // Outstanding balances
-        $outstandingBookings = Booking::with('charges', 'payments')
-            ->get()
-            ->filter(fn($b) => ($b->charges->sum('amount') - $b->payments->sum('amount')) > 0)
+        
+        // Guests arriving / departing today
+        $guestsArriving = Booking::where('check_in', $today)
+            ->where('status', 'confirmed')
             ->count();
+        $guestsDeparting = Booking::where('check_out', $today)
+            ->where('status', 'active')
+            ->count();
+
+        // Outstanding bookings
+        $allBookings = Booking::with('charges', 'payments')->get();
+        $outstandingBookingList = $allBookings->filter(fn($b) => 
+            ($b->charges->sum('amount') - $b->payments->sum('amount')) > 0
+        )->values();
+
+        $outstandingBookings = $outstandingBookingList->count();
 
         // Recent guest requests
         $recentRequests = GuestRequest::where('status', 'pending')
@@ -42,7 +49,9 @@ class DashboardController extends Controller
             'guestsArriving' => $guestsArriving,
             'guestsDeparting' => $guestsDeparting,
             'outstandingBookings' => $outstandingBookings,
+            'outstandingBookingList' => $outstandingBookingList,
             'recentRequests' => $recentRequests,
         ]);
     }
+
 }

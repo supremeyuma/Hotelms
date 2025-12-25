@@ -6,10 +6,12 @@ use App\Http\Controllers\Staff\StaffActionController;
 use App\Http\Controllers\Staff\StaffOrderController;
 use App\Http\Controllers\Staff\StaffProfileController;
 use App\Http\Controllers\FrontDesk\DashboardController;
-use App\Http\Controllers\FrontDesk\BookingController;
+use App\Http\Controllers\FrontDesk\BookingsController;
 use App\Http\Controllers\FrontDesk\RoomController;
 use App\Http\Controllers\FrontDesk\BillingController;
 use App\Http\Controllers\FrontDesk\RoomBillingController;
+use App\Http\Controllers\FrontDesk\GuestRequestController;
+use App\Http\Controllers\FrontDesk\ReportController;
 
 
 /*
@@ -49,16 +51,16 @@ Route::middleware(['auth', 'role:Staff|manager|md'])->prefix('staff')->name('sta
 });
 
 
-Route::prefix('frontdesk')->middleware(['auth', 'role:frontdesk'])->group(function () {
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('frontdesk.dashboard');
+Route::prefix('frontdesk')->middleware(['auth', 'role:frontdesk'])->name('frontdesk.')->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('/rooms/{room}/billing', [RoomBillingController::class, 'show']);
     Route::post('/rooms/{room}/billing/pay', [RoomBillingController::class, 'pay']);
 
-    Route::resource('bookings', BookingController::class);
-    Route::post('bookings/{booking}/checkin', [BookingController::class, 'checkIn']);
-    Route::post('bookings/{booking}/checkout', [BookingController::class, 'checkOut']);
-    Route::post('bookings/{booking}/extend', [BookingController::class, 'extendStay']);
+    Route::resource('bookings', BookingsController::class);
+    Route::post('bookings/{booking}/checkin', [BookingsController::class, 'checkIn']);
+    Route::post('bookings/{booking}/checkout', [BookingsController::class, 'checkOut']);
+    Route::post('bookings/{booking}/extend', [BookingsController::class, 'extendStay']);
 
     Route::resource('rooms', RoomController::class)->only(['index', 'show', 'updateStatus']);
 
