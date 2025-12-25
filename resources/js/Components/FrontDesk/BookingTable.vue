@@ -36,9 +36,9 @@
             class="btn-checkout"
           >Check-out</button>
 
-          <button @click="$emit('extend', booking.id, prompt('New Checkout Date (YYYY-MM-DD)'))"
-            class="btn-extend"
-          >Extend</button>
+          <button @click="handleExtend(booking.id)" class="btn-extend">
+            Extend
+          </button>
 
           <button @click="$emit('edit', booking.id)" class="btn-edit">Edit</button>
         </td>
@@ -48,9 +48,21 @@
 </template>
 
 <script setup>
+// Inside <script setup>
+// 1. Define the actions this component can trigger
+const emit = defineEmits(['checkin', 'checkout', 'extend', 'edit']);
+
 const props = defineProps({
   bookings: Array
 });
+
+// 2. Wrap the window prompt in a proper function
+function handleExtend(bookingId) {
+  const newDate = window.prompt('New Checkout Date (YYYY-MM-DD)');
+  if (newDate) {
+    emit('extend', bookingId, newDate);
+  }
+}
 
 function statusClass(status) {
   switch (status) {

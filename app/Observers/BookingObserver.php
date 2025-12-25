@@ -5,6 +5,7 @@ namespace App\Observers;
 
 use App\Models\Booking;
 use App\Models\RoomCleaning;
+use Illuminate\Support\Facades\Log;
 
 class BookingObserver
 {
@@ -19,7 +20,7 @@ class BookingObserver
     public function updated(Booking $booking)
     {
         if ($booking->isDirty('status') && $booking->status === 'active') {
-            $booking->generateRoomAccessToken();
+            $booking->generateRoomAccessTokens();
         }
     }
 

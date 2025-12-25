@@ -82,9 +82,10 @@ class Booking extends Model
 
     public function rooms()
     {
-        return $this->belongsToMany(Room::class, 'booking_rooms', 'booking_id', 'room_id')
-         ->withPivot(['check_in', 'check_out', 'rate_override'])
-            ->withTimestamps();;
+        return $this->belongsToMany(Room::class, 'booking_rooms')
+        ->using(BookingRoom::class)
+        ->withPivot('checked_in_at', 'checked_out_at', 'rate_override')
+        ->withTimestamps();
     }
     public function roomType()
     {

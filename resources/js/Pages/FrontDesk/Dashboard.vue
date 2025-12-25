@@ -63,7 +63,7 @@
 <script setup>
 import KPIWidget from '@/Components/FrontDesk/KPIWidget.vue';
 import GuestRequestItem from '@/Components/FrontDesk/GuestRequestItem.vue';
-//import BookingItem from '@/Components/FrontDesk/BookingItem.vue';
+import BookingItem from '@/Components/FrontDesk/BookingItem.vue';
 
 const props = defineProps({
   roomsOccupied: Number,

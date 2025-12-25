@@ -115,4 +115,23 @@ class RoomAvailabilityService
         }
         return $res;
     }
+
+     public function isRoomAvailable(int $roomId, string $checkIn, string $checkOut): bool
+    {
+        $conflictingBookings = Booking::whereHas('rooms', function ($query) use ($roomId) {
+                $query->where('rooms.id', $roomId);
+            })
+            ->where('status', 'active')
+            ->where(function ($q) use ($checkIn, $checkOut) {
+                $q->whereBetween('check_in', [$checkIn, $checkOut])
+                  ->orWhereBetween('check_out', [$checkIn, $checkOut])
+                  ->orWhere(function ($q2) use ($checkIn, $checkOut) {
+                      $q2->where('check_in', '<', $checkIn)
+                         ->where('check_out', '>', $checkOut);
+                  });
+            })
+            ->exists();
+
+        return ! $conflictingBookings;
+    }
 }

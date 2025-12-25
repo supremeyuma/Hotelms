@@ -4,11 +4,12 @@
 
     <!-- Search & Filter -->
     <FilterSearch
-      v-model:search="search"
-      :filters="filters"
-      v-model:filter="filter"
-      @search="fetchBookings"
+        :routeName="'frontdesk.bookings.index'"
+        :search="search"
+        v-model:search="search"
+        :filters="filters"
     />
+
 
     <!-- Booking Table -->
     <BookingTable

@@ -47,6 +47,11 @@ class BookingsController extends Controller
             }
         }
 
+        if ($request->filled('date')) {
+            $query->whereDate('check_in', $request->date);
+        }
+
+
         $bookings = $query->with('room')->paginate(20);
 
         return Inertia::render('FrontDesk/Bookings/Index', [
@@ -96,9 +101,10 @@ class BookingsController extends Controller
             'guest_email' => 'nullable|email|max:255',
             'guest_phone' => 'nullable|string|max:20',
             'room_id' => 'nullable|exists:rooms,id',
-            'check_in' => 'required|date|after_or_equal:today',
+            'check_in' => 'required|date',
             'check_out' => 'required|date|after:check_in',
             'notes' => 'nullable|string|max:1000',
+            'status' => 'required|in:pending_payment,confirmed,active,checked_out,cancelled',
         ]);
 
         $this->bookingService->updateBooking($booking, $data);

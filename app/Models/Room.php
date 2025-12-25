@@ -42,7 +42,9 @@ class Room extends Model
     
     public function bookings()
     {
-        return $this->belongsToMany(Booking::class, 'booking_rooms');
+        return $this->belongsToMany(Booking::class, 'booking_rooms')
+            ->withPivot('checked_in_at', 'checked_out_at', 'rate_override')
+            ->withTimestamps();;
     }
 
 

@@ -243,4 +243,50 @@ class BookingService
 
         return $q->paginate($perPage);
     }
+
+    /**
+     * Extend an existing booking's check-out date
+     *
+     * @param \App\Models\Booking $booking
+     * @param string $newCheckOut
+     * @param \App\Models\User|null $by
+     * @return \App\Models\Booking
+     * @throws \Exception
+     */
+    public function extendStay(Booking $booking, string $newCheckOut, ?User $by = null): Booking
+    {
+        // Validate new check-out is after current check-out
+        if (strtotime($newCheckOut) <= strtotime($booking->check_out)) {
+            throw new \Exception('New check-out must be after current check-out.');
+        }
+
+        // Check availability for each room in the booking
+        foreach ($booking->rooms as $room) {
+            $available = $this->availability->isRoomAvailable(
+                $room->id,
+                $booking->check_out,
+                $newCheckOut
+            );
+
+            if (!$available) {
+                throw new \Exception("Room {$room->room_number} is not available for the extended dates.");
+            }
+        }
+
+        // Update booking check-out
+        $old = $booking->check_out;
+        $booking->update(['check_out' => $newCheckOut]);
+
+        // Audit log
+        $this->audit->log('booking_extended', $booking, $booking->id, [
+            'old_check_out' => $old,
+            'new_check_out' => $newCheckOut,
+            'by' => $by?->id ?? null
+        ]);
+
+        return $booking;
+    }
+
+    
+
 }

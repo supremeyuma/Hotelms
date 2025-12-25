@@ -16,6 +16,7 @@
       class="border rounded px-3 py-2"
     >
       <option value="">All Statuses</option>
+      <option value="active">Active</option>
       <option value="confirmed">Confirmed</option>
       <option value="checked_in">Checked In</option>
       <option value="checked_out">Checked Out</option>
@@ -41,7 +42,7 @@
 </template>
 
 <script setup>
-import { reactive } from 'vue';
+import { reactive, watch } from 'vue';
 import { router } from '@inertiajs/vue3';
 
 const props = defineProps({
@@ -49,22 +50,48 @@ const props = defineProps({
     type: String,
     required: true,
   },
+  modelValue: {
+    type: String,
+    default: '',
+  },
 });
 
+const emit = defineEmits(['update:modelValue']);
+
+// Reactive filters
 const filters = reactive({
-  search: '',
+  search: props.modelValue,
   status: '',
   date: '',
 });
 
+// Sync v-model search with parent
+watch(
+  () => props.modelValue,
+  val => {
+    filters.search = val;
+  }
+);
+
+watch(
+  () => filters.search,
+  val => emit('update:modelValue', val)
+);
+
+// Apply filter by sending request to backend
 function apply() {
   router.get(
     route(props.routeName),
-    { ...filters },
+    {
+      search: filters.search || undefined,
+      status: filters.status || undefined,
+      date: filters.date || undefined,
+    },
     { preserveState: true, replace: true }
   );
 }
 
+// Reset all filters
 function reset() {
   filters.search = '';
   filters.status = '';
