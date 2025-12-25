@@ -200,8 +200,27 @@ class BookingService
      */
     public function checkOut(Booking $booking, ?User $by = null): Booking
     {
-        $booking->update(['status' => 'checked_out', 'checked_out_at' => Carbon::now()]);
-        $this->audit->log('booking_checked_out', $booking, $booking->id, ['by' => $by?->id ?? null]);
+        DB::transaction(function () use ($booking, $by) {
+
+            foreach ($booking->rooms as $room) {
+                if ($room->pivot->status === 'active') {
+                    app(RoomCheckoutService::class)
+                        ->checkoutRoom($booking, $room, $by);
+                }
+            }
+
+            $booking->update([
+                'status' => 'checked_out',
+                'checked_out_at' => now()
+            ]);
+
+            $this->audit->log(
+                'booking_checked_out',
+                $booking,
+                $booking->id,
+                ['by' => $by?->id]
+            );
+        });
 
         return $booking;
     }

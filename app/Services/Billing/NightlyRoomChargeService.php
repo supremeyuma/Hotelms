@@ -6,10 +6,11 @@ use App\Models\Room;
 use App\Models\Charge;
 use Carbon\Carbon;
 use App\Events\RoomBillingUpdated;
+use App\Models\Booking;
 
 class NightlyRoomChargeService
 {
-    public function charge(Room $room, int $bookingId, Carbon $date): void
+    public function charge(Room $room, Booking $booking, Carbon $date): void
     {
         $exists = Charge::where('room_id', $room->id)
             ->where('type', 'nightly')
@@ -20,10 +21,11 @@ class NightlyRoomChargeService
             return;
         }
 
-        $amount = $room->roomType->base_price;
+        $amount = app(RoomRateResolver::class)
+        ->nightly($room, $booking);
 
         Charge::create([
-            'booking_id' => $bookingId,
+            'booking_id' => $booking->id,
             'room_id' => $room->id,
             'type' => 'nightly',
             'description' => 'Nightly room charge',
