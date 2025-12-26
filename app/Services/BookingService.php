@@ -1,43 +1,41 @@
 <?php
-// app/Services/BookingService.php
 
 namespace App\Services;
 
 use App\Models\Booking;
-use App\Models\Room;
 use App\Models\User;
 use App\Services\RoomAvailabilityService;
 use App\Services\AuditLoggerService;
+use App\Services\RoomCheckoutService;
+use Carbon\Carbon;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Carbon;
-use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Str;
+use Illuminate\Support\Collection;
 use Exception;
-use Log;
+use App\Models\Room;
 
 /**
  * BookingService
  *
- * Encapsulates booking lifecycle: checks, create, modify, cancel, check-in/out.
+ * Encapsulates booking lifecycle: availability checks,
+ * creation, modification, cancellation, check-in/out.
  */
 class BookingService
 {
     protected RoomAvailabilityService $availability;
     protected AuditLoggerService $audit;
 
-    public function __construct(RoomAvailabilityService $availability, AuditLoggerService $audit)
-    {
+    public function __construct(
+        RoomAvailabilityService $availability,
+        AuditLoggerService $audit
+    ) {
         $this->availability = $availability;
         $this->audit = $audit;
     }
 
     /**
-     * Check if room is available for date range.
-     *
-     * @param int $roomId
-     * @param string|\DateTime $from
-     * @param string|\DateTime $to
-     * @return bool
+     * Check if a room is available for a date range.
      */
     public function isAvailable(int $roomId, $from, $to): bool
     {
@@ -45,59 +43,50 @@ class BookingService
     }
 
     /**
-     * Create a booking and optionally assign room(s).
+     * Create a booking and assign rooms immediately.
      *
-     * @param array $data
-     * @return Booking
-     * @throws Exception
+     * @throws \Exception
      */
     public function createBooking(array $data): Booking
     {
         return DB::transaction(function () use ($data) {
 
-            // 1. Fetch and lock available rooms
-            $rooms = $this->availability->getAvailableRoomsForType(
+            // Inventory-level availability check (NO rooms yet)
+            $available = $this->availability->checkAvailability(
                 $data['room_type_id'],
                 $data['check_in'],
                 $data['check_out'],
                 $data['quantity']
             );
 
-            if ($rooms->count() < $data['quantity']) {
-                throw new Exception('Not enough rooms available for the selected dates.');
+            if (! $available) {
+                throw new \Exception('Not enough rooms available for the selected dates.');
             }
 
-            // 2. Create booking
             $booking = Booking::create([
-                'property_id' => $data['property_id'] ?? 1,
-                'user_id' => $data['user_id'] ?? null,
-                'booking_code' => $data['booking_code'] ?? strtoupper('BKG-'.uniqid()),
-                'check_in' => $data['check_in'],
-                'check_out' => $data['check_out'],
-                'adults' => $data['adults'],
-                'children' => $data['children'],
-                'total_amount' => $data['total_amount'],
-                'status' => $data['status'] ?? 'pending_payment',
-                'details' => $data['details'] ?? null,
-                'guest_email' => $data['guest_email'],
-                'guest_phone' => $data['guest_phone'],
-                'special_requests' => $data['special_requests'] ?? null,
-                'expires_at' => Carbon::now()->addMinutes(45),
-                'guest_name' => $data['guest_name'],
+                'property_id'  => $data['property_id'] ?? 1,
+                'user_id'      => $data['user_id'] ?? null,
+                'booking_code' => strtoupper('BKG-' . uniqid()),
+                'check_in'     => $data['check_in'],
+                'check_out'    => $data['check_out'],
                 'room_type_id' => $data['room_type_id'],
-                'quantity' => $data['quantity'],
+                'quantity'     => $data['quantity'],
+                'adults'       => $data['adults'],
+                'children'     => $data['children'],
                 'nightly_rate' => $data['nightly_rate'],
+                'total_amount' => $data['total_amount'],
+                'status'       => 'pending_payment',
+                'expires_at'   => now()->addMinutes(45),
+                'guest_name'   => $data['guest_name'],
+                'guest_email'  => $data['guest_email'],
+                'guest_phone'  => $data['guest_phone'],
             ]);
 
-            // 3. Attach rooms (THIS assigns room numbers)
-            $booking->rooms()->attach($rooms->pluck('id'));
-
-            // 4. Audit
             $this->audit->log(
                 'booking_created',
                 $booking,
                 $booking->id,
-                ['rooms' => $rooms->pluck('room_number')->toArray()]
+                ['quantity' => $booking->quantity]
             );
 
             return $booking;
@@ -105,188 +94,335 @@ class BookingService
     }
 
 
-    public function confirmBooking(Booking $booking)
+    /**
+     * Confirm a booking.
+     */
+    public function confirmBooking(Booking $booking): Booking
     {
         $booking->update([
-            'status' => 'confirmed',
-            'expires_at' => null
+            'status'     => 'confirmed',
+            'expires_at' => null,
         ]);
 
-        // Trigger email/SMS hook here
-        //\Mail::to($booking->guest_email)->send(new \App\Mail\BookingConfirmed($booking));
-
-        // SMS (example using a service like Twilio)
-        // Twilio::message($booking->guest_phone, "Your booking #{$booking->id} is confirmed.");
+        $this->audit->log('booking_confirmed', $booking, $booking->id);
 
         return $booking;
     }
 
-    public function cancelExpiredBookings()
+
+    /**
+     * Cancel expired pending bookings.
+     */
+    public function cancelExpiredBookings(): void
     {
         Booking::where('status', 'pending_payment')
-            ->where('expires_at', '<', Carbon::now())
+            ->where('expires_at', '<', now())
             ->update(['status' => 'cancelled']);
     }
 
     /**
-     * Update existing booking.
+     * Update an existing booking.
      *
-     * @param Booking $booking
-     * @param array $data
-     * @return Booking
-     * @throws Exception
+     * Handles:
+     * - Date changes
+     * - Quantity changes
+     * - Room type changes
+     *
+     * @throws \Exception
      */
     public function updateBooking(Booking $booking, array $data): Booking
     {
-        return DB::transaction(function () use ($booking, $data) {
-            $before = $booking->toArray();
+        /*if (! $booking->isEditable()) {
+            throw new \Exception('Cannot modify a booking after check-in.');
+        }*/
 
-            if (isset($data['room_id'])) {
-                $available = $this->isAvailable($data['room_id'], $data['check_in'] ?? $booking->check_in, $data['check_out'] ?? $booking->check_out);
-                if (! $available) {
-                    throw new Exception('Requested room is not available for the new dates.');
+        return DB::transaction(function () use ($booking, $data) {
+
+            $before = $booking->load('rooms')->toArray();
+
+            $checkIn  = $data['check_in']  ?? $booking->check_in;
+            $checkOut = $data['check_out'] ?? $booking->check_out;
+
+            // If dates change → verify current rooms
+            if (isset($data['check_in']) || isset($data['check_out'])) {
+                foreach ($booking->rooms as $room) {
+                    if (! $this->availability->isRoomAvailable(
+                        $room->id,
+                        $checkIn,
+                        $checkOut
+                    )) {
+                        throw new \Exception(
+                            "Room {$room->room_number} is not available for the new dates."
+                        );
+                    }
                 }
+            }
+
+            // If quantity or room type changes → reallocate rooms
+            if (
+                isset($data['quantity']) ||
+                isset($data['room_type_id'])
+            ) {
+                $quantity   = $data['quantity'] ?? $booking->quantity;
+                $roomTypeId = $data['room_type_id'] ?? $booking->room_type_id;
+
+                $booking->rooms()->detach();
+
+                $rooms = $this->availability->getAvailableRoomsForType(
+                    $roomTypeId,
+                    $checkIn,
+                    $checkOut,
+                    $quantity
+                );
+
+                if ($rooms->count() < $quantity) {
+                    throw new \Exception('Not enough rooms available for this update.');
+                }
+
+                $booking->rooms()->attach($rooms->pluck('id'));
             }
 
             $booking->update($data);
 
-            $this->audit->logChange('booking_updated', $booking, $before, $booking->toArray());
+            $this->audit->logChange(
+                'booking_updated',
+                $booking,
+                $before,
+                $booking->load('rooms')->toArray()
+            );
 
             return $booking;
         });
     }
 
     /**
-     * Cancel a booking (soft-delete or status change).
-     *
-     * @param Booking $booking
-     * @param string $reason
-     * @return Booking
+     * Cancel a booking.
      */
     public function cancelBooking(Booking $booking, string $reason = ''): Booking
     {
         return DB::transaction(function () use ($booking, $reason) {
+
             $before = $booking->toArray();
+
             $booking->update(['status' => 'cancelled']);
             $booking->delete();
 
-            $this->audit->log('booking_cancelled', $booking, $booking->id, ['reason' => $reason, 'before' => $before]);
+            $this->audit->log(
+                'booking_cancelled',
+                $booking,
+                $booking->id,
+                ['reason' => $reason, 'before' => $before]
+            );
 
             return $booking;
         });
     }
 
     /**
-     * Check-in workflow
-     *
-     * @param Booking $booking
-     * @param User|null $by
-     * @return Booking
+     * Check-in workflow.
      */
-    public function checkIn(Booking $booking, ?User $by = null): Booking
+     /* ---------------------------------------------------------
+     | CHECK-IN (ROOM ASSIGNMENT + TOKENS)
+     * ---------------------------------------------------------*/
+    public function checkIn(Booking $booking, int $roomsToCheckIn = null, ?User $by = null): Booking 
     {
-        $booking->update(['status' => 'checked_in', 'checked_in_at' => Carbon::now()]);
-        $this->audit->log('booking_checked_in', $booking, $booking->id, ['by' => $by?->id ?? null]);
+        return DB::transaction(function () use ($booking, $roomsToCheckIn, $by) {
 
-        return $booking;
+            if ($booking->status !== 'confirmed') {
+                throw new \Exception('Booking not eligible for check-in.');
+            }
+
+            $alreadyCheckedIn = $booking->rooms()->count();
+            $remaining = $booking->quantity - $alreadyCheckedIn;
+
+            $roomsToCheckIn ??= $remaining;
+
+            //dd($roomsToCheckIn, $booking->quantity, $alreadyCheckedIn, $remaining);
+
+            if ($roomsToCheckIn > $remaining) {
+                throw new \Exception('Exceeds remaining rooms.');
+            }
+
+            $rooms = $this->availability->lockRoomsForCheckIn(
+                $booking->room_type_id,
+                $booking->check_in,
+                $booking->check_out,
+                $roomsToCheckIn
+            );
+
+            foreach ($rooms as $room) {
+                $booking->rooms()->attach($room->id, [
+                    'status'        => 'active',
+                    'checked_in_at' => now(),
+                    //'access_token' => Str::uuid(),
+                ]);
+                $booking->generateRoomAccessTokens(); // 🔑 token generated HERE
+            }
+
+            if ($booking->rooms()->count() === $booking->quantity) {
+                $booking->update([
+                    'status'        => 'checked_in',
+                    'checked_in_at' => now(),
+                ]);
+            }
+
+            $this->audit->log('booking_checked_in', $booking, $booking->id, [
+                'rooms' => $rooms->pluck('room_number'),
+                'by'    => $by?->id,
+            ]);
+
+            return $booking;
+            });
+    }
+
+
+
+    /**
+     * Check-out workflow.
+     */
+    public function checkOut(Booking $booking, ?Room $room = null): Booking
+    {
+        return DB::transaction(function () use ($booking, $room) {
+
+            if ($room) {
+                $booking->rooms()->updateExistingPivot($room->id, [
+                    'status'         => 'checked_out',
+                    'checked_out_at' => now(),
+                ]);
+            } else {
+                foreach ($booking->rooms as $r) {
+                    $booking->rooms()->updateExistingPivot($r->id, [
+                        'status'         => 'checked_out',
+                        'checked_out_at' => now(),
+                    ]);
+                }
+
+                $booking->update([
+                    'status'         => 'checked_out',
+                    'checked_out_at' => now(),
+                ]);
+            }
+
+            return $booking;
+        });
     }
 
     /**
-     * Check-out workflow
+     * Extend an existing booking's stay.
      *
-     * @param Booking $booking
-     * @param User|null $by
-     * @return Booking
+     * @throws \Exception
      */
-    public function checkOut(Booking $booking, ?User $by = null): Booking
+    public function extendStay(Booking $booking, string $newCheckOut, ?User $by = null): Booking
     {
-        DB::transaction(function () use ($booking, $by) {
+        if (! $booking->isEditable()) {
+            throw new \Exception('Cannot extend a checked-in or completed booking.');
+        }
 
-            foreach ($booking->rooms as $room) {
-                if ($room->pivot->status === 'active') {
-                    app(RoomCheckoutService::class)
-                        ->checkoutRoom($booking, $room, $by);
-                }
+        if (strtotime($newCheckOut) <= strtotime($booking->check_out)) {
+            throw new \Exception('New check-out must be after current check-out.');
+        }
+
+        foreach ($booking->rooms as $room) {
+            if (! $this->availability->isRoomAvailable(
+                $room->id,
+                $booking->check_out,
+                $newCheckOut
+            )) {
+                throw new \Exception(
+                    "Room {$room->room_number} is not available for the extended dates."
+                );
             }
+        }
 
-            $booking->update([
-                'status' => 'checked_out',
-                'checked_out_at' => now()
-            ]);
+        $old = $booking->check_out;
 
-            $this->audit->log(
-                'booking_checked_out',
-                $booking,
-                $booking->id,
-                ['by' => $by?->id]
-            );
-        });
+        $booking->update(['check_out' => $newCheckOut]);
+
+        $this->audit->log(
+            'booking_extended',
+            $booking,
+            $booking->id,
+            [
+                'old_check_out' => $old,
+                'new_check_out' => $newCheckOut,
+                'by'            => $by?->id,
+            ]
+        );
 
         return $booking;
     }
 
     /**
      * List bookings with filters & pagination.
-     *
-     * @param array $filters
-     * @param int $perPage
-     * @return LengthAwarePaginator
      */
     public function list(array $filters = [], int $perPage = 25): LengthAwarePaginator
     {
-        $q = Booking::with(['room.roomType','user'])->latest();
+        $q = Booking::with(['rooms.roomType', 'user'])->latest();
 
-        if (!empty($filters['status'])) $q->where('status', $filters['status']);
-        if (!empty($filters['from'])) $q->whereDate('check_in', '>=', $filters['from']);
-        if (!empty($filters['to'])) $q->whereDate('check_out', '<=', $filters['to']);
-        if (!empty($filters['room_id'])) $q->where('room_id', $filters['room_id']);
+        if (! empty($filters['status'])) {
+            $q->where('status', $filters['status']);
+        }
+
+        if (! empty($filters['from'])) {
+            $q->whereDate('check_in', '>=', $filters['from']);
+        }
+
+        if (! empty($filters['to'])) {
+            $q->whereDate('check_out', '<=', $filters['to']);
+        }
+
+        if (! empty($filters['room_id'])) {
+            $q->whereHas('rooms', fn ($qr) =>
+                $qr->where('rooms.id', $filters['room_id'])
+            );
+        }
 
         return $q->paginate($perPage);
     }
 
-    /**
-     * Extend an existing booking's check-out date
-     *
-     * @param \App\Models\Booking $booking
-     * @param string $newCheckOut
-     * @param \App\Models\User|null $by
-     * @return \App\Models\Booking
-     * @throws \Exception
-     */
-    public function extendStay(Booking $booking, string $newCheckOut, ?User $by = null): Booking
-    {
-        // Validate new check-out is after current check-out
-        if (strtotime($newCheckOut) <= strtotime($booking->check_out)) {
-            throw new \Exception('New check-out must be after current check-out.');
-        }
 
-        // Check availability for each room in the booking
-        foreach ($booking->rooms as $room) {
-            $available = $this->availability->isRoomAvailable(
-                $room->id,
-                $booking->check_out,
-                $newCheckOut
-            );
+     /* ---------------------------------------------------------
+     | ROOM SWAP (MID-STAY)
+     * ---------------------------------------------------------*/
+    public function swapRoom(
+        Booking $booking,
+        Room $oldRoom,
+        Room $newRoom,
+        ?User $by = null
+    ): void {
+        DB::transaction(function () use ($booking, $oldRoom, $newRoom, $by) {
 
-            if (!$available) {
-                throw new \Exception("Room {$room->room_number} is not available for the extended dates.");
+            $pivot = $booking->rooms()->where('room_id', $oldRoom->id)->first()?->pivot;
+            if (! $pivot || $pivot->status !== 'active') {
+                throw new \Exception('Old room not active.');
             }
-        }
 
-        // Update booking check-out
-        $old = $booking->check_out;
-        $booking->update(['check_out' => $newCheckOut]);
+            if (! $this->availability->isRoomAvailable(
+                $newRoom->id,
+                now(),
+                $booking->check_out
+            )) {
+                throw new \Exception('New room unavailable.');
+            }
 
-        // Audit log
-        $this->audit->log('booking_extended', $booking, $booking->id, [
-            'old_check_out' => $old,
-            'new_check_out' => $newCheckOut,
-            'by' => $by?->id ?? null
-        ]);
+            $booking->rooms()->updateExistingPivot($oldRoom->id, [
+                'status'         => 'swapped_out',
+                'checked_out_at' => now(),
+            ]);
 
-        return $booking;
+            $booking->rooms()->attach($newRoom->id, [
+                'status'        => 'active',
+                'checked_in_at' => now(),
+                //'access_token' => Str::uuid(),
+            ]);
+
+            $booking->generateRoomAccessTokens(); // 🔑 token generated HERE
+
+            $this->audit->log('room_swapped', $booking, $booking->id, [
+                'from' => $oldRoom->room_number,
+                'to'   => $newRoom->room_number,
+                'by'   => $by?->id,
+            ]);
+        });
     }
-
-    
-
 }

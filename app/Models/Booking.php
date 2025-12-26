@@ -41,6 +41,8 @@ class Booking extends Model
         'total_amount' => 'decimal:2',
     ];
 
+    protected $appends = ['checked_in_rooms_count'];
+
     /* ---------------- Relationships ---------------- */
 
     public function room()
@@ -84,7 +86,7 @@ class Booking extends Model
     {
         return $this->belongsToMany(Room::class, 'booking_rooms')
         ->using(BookingRoom::class)
-        ->withPivot('checked_in_at', 'checked_out_at', 'rate_override')
+        ->withPivot('checked_in_at', 'checked_out_at', 'rate_override', 'booking_rooms.status')
         ->withTimestamps();
     }
     public function roomType()
@@ -135,6 +137,11 @@ class Booking extends Model
     public function charges()
     {
         return $this->hasMany(Charge::class);
+    }
+
+    public function getCheckedInRoomsCountAttribute(): int
+    {
+        return $this->rooms()->wherePivotNotNull('checked_in_at')->count();
     }
 
 

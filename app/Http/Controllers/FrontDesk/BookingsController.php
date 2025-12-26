@@ -52,7 +52,9 @@ class BookingsController extends Controller
         }
 
 
-        $bookings = $query->with('room')->paginate(20);
+        $bookings = $query->with('rooms')->paginate(25);
+
+        //dd($bookings);
 
         return Inertia::render('FrontDesk/Bookings/Index', [
             'bookings' => $bookings,
@@ -113,11 +115,19 @@ class BookingsController extends Controller
             ->with('success', "Booking {$booking->booking_code} updated successfully.");
     }
 
-    public function checkIn(Booking $booking)
+    public function checkIn(Request $request, Booking $booking)
     {
-        $this->bookingService->checkIn($booking);
+        $request->validate([
+            'rooms' => 'nullable|integer|min:1',
+        ]);
 
-        return back()->with('success', "Guest {$booking->guest_name} checked in successfully.");
+        $this->bookingService->checkIn(
+            $booking,
+            $request->rooms,
+            auth()->user()
+        );
+
+        return back()->with('success', 'Guest checked in successfully.');
     }
 
     public function checkOut(Booking $booking)
