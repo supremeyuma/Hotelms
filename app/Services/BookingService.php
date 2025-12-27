@@ -237,8 +237,6 @@ class BookingService
 
             $roomsToCheckIn ??= $remaining;
 
-            //dd($roomsToCheckIn, $booking->quantity, $alreadyCheckedIn, $remaining);
-
             if ($roomsToCheckIn > $remaining) {
                 throw new \Exception('Exceeds remaining rooms.');
             }
@@ -251,13 +249,18 @@ class BookingService
             );
 
             foreach ($rooms as $room) {
+                // Attach room to booking
                 $booking->rooms()->attach($room->id, [
                     'status'        => 'active',
                     'checked_in_at' => now(),
-                    //'access_token' => Str::uuid(),
                 ]);
-                $booking->generateRoomAccessTokens(); // 🔑 token generated HERE
+
+                // 🔒 Mark room as occupied
+                $room->update(['status' => 'occupied']);
             }
+
+            // Generate access tokens AFTER rooms exist
+            $booking->generateRoomAccessTokens();
 
             if ($booking->rooms()->count() === $booking->quantity) {
                 $booking->update([
@@ -272,8 +275,9 @@ class BookingService
             ]);
 
             return $booking;
-            });
+        });
     }
+
 
 
 
@@ -285,16 +289,25 @@ class BookingService
         return DB::transaction(function () use ($booking, $room) {
 
             if ($room) {
+                // ROOM-LEVEL CHECKOUT
                 $booking->rooms()->updateExistingPivot($room->id, [
                     'status'         => 'checked_out',
                     'checked_out_at' => now(),
                 ]);
+
+                // 🧹 Mark room dirty
+                $room->update(['status' => 'dirty']);
+
             } else {
+                // BOOKING-LEVEL CHECKOUT
                 foreach ($booking->rooms as $r) {
                     $booking->rooms()->updateExistingPivot($r->id, [
                         'status'         => 'checked_out',
                         'checked_out_at' => now(),
                     ]);
+
+                    // 🧹 Mark all rooms dirty
+                    $r->update(['status' => 'dirty']);
                 }
 
                 $booking->update([
@@ -303,9 +316,14 @@ class BookingService
                 ]);
             }
 
+            $this->audit->log('booking_checked_out', $booking, $booking->id, [
+                'room' => $room?->room_number,
+            ]);
+
             return $booking;
         });
     }
+
 
     /**
      * Extend an existing booking's stay.
@@ -384,15 +402,14 @@ class BookingService
      /* ---------------------------------------------------------
      | ROOM SWAP (MID-STAY)
      * ---------------------------------------------------------*/
-    public function swapRoom(
-        Booking $booking,
-        Room $oldRoom,
-        Room $newRoom,
-        ?User $by = null
-    ): void {
+    public function swapRoom(Booking $booking, Room $oldRoom, Room $newRoom, ?User $by = null): void 
+    {
         DB::transaction(function () use ($booking, $oldRoom, $newRoom, $by) {
 
-            $pivot = $booking->rooms()->where('room_id', $oldRoom->id)->first()?->pivot;
+            $pivot = $booking->rooms()
+                ->where('room_id', $oldRoom->id)
+                ->first()?->pivot;
+
             if (! $pivot || $pivot->status !== 'active') {
                 throw new \Exception('Old room not active.');
             }
@@ -405,18 +422,23 @@ class BookingService
                 throw new \Exception('New room unavailable.');
             }
 
+            // Checkout old room
             $booking->rooms()->updateExistingPivot($oldRoom->id, [
                 'status'         => 'swapped_out',
                 'checked_out_at' => now(),
             ]);
 
+            $oldRoom->update(['status' => 'dirty']);
+
+            // Check-in new room
             $booking->rooms()->attach($newRoom->id, [
                 'status'        => 'active',
                 'checked_in_at' => now(),
-                //'access_token' => Str::uuid(),
             ]);
 
-            $booking->generateRoomAccessTokens(); // 🔑 token generated HERE
+            $newRoom->update(['status' => 'occupied']);
+
+            $booking->generateRoomAccessTokens();
 
             $this->audit->log('room_swapped', $booking, $booking->id, [
                 'from' => $oldRoom->room_number,
@@ -425,4 +447,5 @@ class BookingService
             ]);
         });
     }
+
 }

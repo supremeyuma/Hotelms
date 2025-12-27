@@ -10,11 +10,13 @@ const props = defineProps({
   bookings: Object,
   search: String,
   filter: String,
+  date: String,
 });
 
 const search = ref(props.search || '');
-const filter = ref(props.filter || '');
-const filters = ['all', 'active', 'confirmed', 'past'];
+const filter = ref(props.filter || 'all');
+//const filters = ['all', 'active', 'confirmed', 'past'];
+const date   = ref(props.date || '');
 
 const showCheckIn = ref(false);
 const selectedBooking = ref(null);
@@ -49,7 +51,9 @@ function fetchBookings(page = 1) {
     <FilterSearch
       :routeName="'frontdesk.bookings.index'"
       v-model:search="search"
-      :filters="filters"
+      v-model:filter="filter"
+      v-model:date="date"
+      :filters="['active', 'confirmed', 'past']"
     />
 
     <BookingTable

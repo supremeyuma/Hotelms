@@ -1,101 +1,101 @@
 <template>
-  <div class="flex flex-wrap gap-3 items-center bg-white p-4 rounded shadow">
+  <div class="flex flex-wrap gap-3 items-center">
     <!-- Search -->
     <input
-      v-model="filters.search"
-      @keyup.enter="apply"
+      v-model="localSearch"
+      @input="apply"
       type="text"
-      placeholder="Search booking code or guest name..."
+      placeholder="Search bookings..."
       class="border rounded px-3 py-2 w-64"
     />
 
-    <!-- Status Filter -->
+    <!-- Status -->
     <select
-      v-model="filters.status"
+      v-model="localFilter"
       @change="apply"
       class="border rounded px-3 py-2"
     >
-      <option value="">All Statuses</option>
-      <option value="active">Active</option>
-      <option value="confirmed">Confirmed</option>
-      <option value="checked_in">Checked In</option>
-      <option value="checked_out">Checked Out</option>
-      <option value="cancelled">Cancelled</option>
+      <option value="all">All</option>
+      <option
+        v-for="f in filters"
+        :key="f"
+        :value="f"
+      >
+        {{ capitalize(f) }}
+      </option>
     </select>
 
-    <!-- Date Filter -->
+    <!-- Check-in Date -->
     <input
-      v-model="filters.date"
+      v-model="localDate"
       @change="apply"
       type="date"
       class="border rounded px-3 py-2"
     />
 
-    <!-- Reset -->
+    <!-- Clear -->
     <button
-      @click="reset"
-      class="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300"
+      v-if="localSearch || localFilter !== 'all' || localDate"
+      @click="clear"
+      type="button"
+      class="text-sm text-gray-600 hover:underline"
     >
-      Reset
+      Clear
     </button>
   </div>
 </template>
 
 <script setup>
-import { reactive, watch } from 'vue';
+import { ref, watch } from 'vue';
 import { router } from '@inertiajs/vue3';
 
 const props = defineProps({
-  routeName: {
-    type: String,
-    required: true,
-  },
-  modelValue: {
-    type: String,
-    default: '',
-  },
+  search: String,
+  filter: String,
+  date: String,
+  filters: Array,
+  routeName: String,
 });
 
-const emit = defineEmits(['update:modelValue']);
+const emit = defineEmits([
+  'update:search',
+  'update:filter',
+  'update:date',
+]);
 
-// Reactive filters
-const filters = reactive({
-  search: props.modelValue,
-  status: '',
-  date: '',
-});
+const localSearch = ref(props.search || '');
+const localFilter = ref(props.filter || 'all');
+const localDate   = ref(props.date || '');
 
-// Sync v-model search with parent
-watch(
-  () => props.modelValue,
-  val => {
-    filters.search = val;
-  }
-);
+watch(() => props.search, v => localSearch.value = v);
+watch(() => props.filter, v => localFilter.value = v);
+watch(() => props.date,   v => localDate.value = v);
 
-watch(
-  () => filters.search,
-  val => emit('update:modelValue', val)
-);
-
-// Apply filter by sending request to backend
 function apply() {
+  emit('update:search', localSearch.value);
+  emit('update:filter', localFilter.value);
+  emit('update:date',   localDate.value);
+
   router.get(
     route(props.routeName),
     {
-      search: filters.search || undefined,
-      status: filters.status || undefined,
-      date: filters.date || undefined,
+      search: localSearch.value || undefined,
+      filter: localFilter.value !== 'all' ? localFilter.value : undefined,
+      date:   localDate.value || undefined,
     },
     { preserveState: true, replace: true }
   );
 }
 
-// Reset all filters
-function reset() {
-  filters.search = '';
-  filters.status = '';
-  filters.date = '';
+function clear() {
+  localSearch.value = '';
+  localFilter.value = 'all';
+  localDate.value   = '';
+
   apply();
+}
+
+function capitalize(v) {
+  return v.charAt(0).toUpperCase() + v.slice(1);
 }
 </script>

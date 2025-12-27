@@ -22,46 +22,46 @@ class BookingsController extends Controller
     }
 
     public function index(Request $request)
-    {
-        $search = $request->input('search');
-        $filter = $request->input('filter', 'all');
+{
+    $search = $request->string('search')->toString();
+    $filter = $request->string('filter')->toString();
 
-        $query = Booking::query();
+    $query = Booking::query()->with('rooms');
 
-        if ($search) {
-            $query->where('booking_code', 'like', "%$search%")
-                  ->orWhere('guest_name', 'like', "%$search%");
-        }
-
-        if (in_array($filter, ['active', 'confirmed', 'past'])) {
-            switch ($filter) {
-                case 'active':
-                    $query->where('status', 'active');
-                    break;
-                case 'confirmed':
-                    $query->where('status', 'confirmed');
-                    break;
-                case 'past':
-                    $query->whereIn('status', ['checked_out', 'cancelled']);
-                    break;
-            }
-        }
-
-        if ($request->filled('date')) {
-            $query->whereDate('check_in', $request->date);
-        }
-
-
-        $bookings = $query->with('rooms')->paginate(25);
-
-        //dd($bookings);
-
-        return Inertia::render('FrontDesk/Bookings/Index', [
-            'bookings' => $bookings,
-            'search' => $search,
-            'filter' => $filter,
-        ]);
+    // SEARCH
+    if ($search !== '') {
+        $query->where(function ($q) use ($search) {
+            $q->where('booking_code', 'like', "%{$search}%")
+              ->orWhere('guest_name', 'like', "%{$search}%");
+        });
     }
+
+    // STATUS FILTER
+    if ($filter === 'confirmed') {
+        $query->where('status', 'confirmed');
+    }
+
+    if ($filter === 'active') {
+        $query->where('status', 'checked_in');
+    }
+
+    if ($filter === 'past') {
+        $query->whereIn('status', ['checked_out', 'cancelled']);
+    }
+
+    // DATE FILTER
+    if ($request->filled('date')) {
+        $query->whereDate('check_in', $request->date);
+    }
+
+    return Inertia::render('FrontDesk/Bookings/Index', [
+        'bookings' => $query->latest()->paginate(25)->withQueryString(),
+        'search'   => $search,
+        'filter'   => $filter,
+    ]);
+}
+
+
 
     public function create()
     {
