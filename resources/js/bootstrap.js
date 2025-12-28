@@ -15,3 +15,10 @@ window.Echo = new Echo({
     cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER,
     forceTLS: true,
 });
+
+// Listen in Vue component (Staff/FrontDesk)
+window.Echo.channel('laundry-orders')
+    .listen('LaundryOrderUpdated', (e) => {
+        console.log('Laundry order updated', e.order);
+        // Update local reactive array of orders
+    });

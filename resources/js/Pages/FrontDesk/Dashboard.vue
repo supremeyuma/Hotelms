@@ -61,6 +61,8 @@
 </template>
 
 <script setup>
+import { ref, watch } from 'vue';
+import { router } from '@inertiajs/vue3';
 import KPIWidget from '@/Components/FrontDesk/KPIWidget.vue';
 import GuestRequestItem from '@/Components/FrontDesk/GuestRequestItem.vue';
 import BookingItem from '@/Components/FrontDesk/BookingItem.vue';
@@ -74,4 +76,29 @@ const props = defineProps({
   recentRequests: Array,
   outstandingBookingList: Array,
 });
+
+// Make recentRequests reactive
+const recentRequests = ref([...props.recentRequests]);
+
+// Laravel Echo real-time listener
+if (window.Echo) {
+  window.Echo.channel('laundry-orders')
+    .listen('LaundryOrderUpdated', (e) => {
+      const order = e.order;
+
+      // Convert laundry order to GuestRequest format
+      const guestRequest = {
+        id: order.guest_request?.id || `laundry-${order.id}`,
+        type: 'laundry',
+        status: order.status.value,
+        requestable: order,
+      };
+
+      // Remove old request if exists
+      recentRequests.value = recentRequests.value.filter(r => r.id !== guestRequest.id);
+
+      // Prepend newest at top
+      recentRequests.value.unshift(guestRequest);
+    });
+}
 </script>

@@ -12,6 +12,9 @@ use App\Http\Controllers\FrontDesk\BillingController;
 use App\Http\Controllers\FrontDesk\RoomBillingController;
 use App\Http\Controllers\FrontDesk\GuestRequestController;
 use App\Http\Controllers\FrontDesk\ReportController;
+use App\Http\Controllers\Staff\LaundryStaffController;
+use App\Http\Controllers\FrontDesk\FrontDeskLaundryController;
+use App\Http\Controllers\Staff\LaundryItemController;
 
 
 /*
@@ -74,8 +77,22 @@ Route::prefix('frontdesk')->middleware(['auth', 'role:frontdesk'])->name('frontd
     Route::get('reports/occupancy', [ReportController::class, 'occupancyReport']);
     Route::get('reports/revenue', [ReportController::class, 'revenueReport']);
     Route::get('reports/bookings', [ReportController::class, 'bookingHistoryReport']);
+
+    Route::get('/laundry-requests', [FrontDeskLaundryController::class, 'index'])->name('frontdesk.laundry.index');
+    Route::get('/laundry-requests/{guestRequest}', [FrontDeskLaundryController::class, 'show'])->name('frontdesk.laundry.show');
 });
 
+
+// Laundry Staff
+Route::middleware(['auth', 'role:laundry'])->prefix('staff')->name('staff.')->group(function () {
+    Route::get('/laundry', [LaundryStaffController::class, 'index'])->name('laundry.index');
+    Route::post('/laundry/{order}/status', [LaundryStaffController::class, 'updateStatus'])->name('laundry.updateStatus');
+
+    Route::get('/laundry-items', [LaundryItemController::class, 'index'])->name('laundry-items.index');
+    Route::post('/laundry-items', [LaundryItemController::class, 'store'])->name('laundry-items.store');
+    Route::put('/laundry-items/{laundryItem}', [LaundryItemController::class, 'update'])->name('laundry-items.update');
+    Route::delete('/laundry-items/{laundryItem}', [LaundryItemController::class, 'destroy'])->name('laundry-items.destroy');
+});
 
 
 

@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PublicController;
 use App\Http\Controllers\RoomServiceController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\GuestLaundryController;
 
 /*
 |--------------------------------------------------------------------------
@@ -44,4 +45,9 @@ Route::prefix('booking')->name('booking.')->group(function () {
     Route::get('/payment/{booking}', [BookingController::class, 'payment'])->name('payment');
     Route::post('/payment/{booking}/confirm', [BookingController::class, 'confirmPayment'])->name('payment.confirm');
     Route::get('/confirmation/{booking}', [BookingController::class, 'confirmation'])->name('confirmation');
+});
+
+Route::middleware(['auth', 'resolve.guest.room'])->group(function () {
+    Route::get('/guest/room/{token}/laundry', [GuestLaundryController::class, 'show'])->name('guest.laundry.show');
+    Route::post('/guest/room/{token}/laundry', [GuestLaundryController::class, 'store'])->name('guest.laundry.store');
 });

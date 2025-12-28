@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Services\ActionCodeService;
 
 class StaffProfile extends Model
 {
@@ -15,12 +16,31 @@ class StaffProfile extends Model
         'position',
         'phone',
         'meta',
-        'action_code_hash',
+        'action_code',
     ];
 
     protected $casts = [
         'meta' => 'array',
     ];
+
+    protected $hidden = ['action_code'];
+
+    protected $appends = ['action_code_plain'];
+
+    public function getActionCodePlainAttribute(): string
+    {
+        // 1. Check if the value is null or empty first
+        if (!$this->action_code) {
+            return '123ABC';
+        }
+
+        // 2. Wrap in a try-catch to handle old invalid encryption payloads
+        try {
+            return ActionCodeService::decrypt($this->action_code);
+        } catch (\Exception $e) {
+            return 'Invalid Code';
+        }
+    }
 
     /* ---------------- Relationships ---------------- */
 
@@ -33,12 +53,6 @@ class StaffProfile extends Model
     /* ---------------- Mutators ---------------- */
 
     // Hash staff action codes
-    public function setActionCodeHashAttribute($value)
-    {
-        if ($value) {
-            $this->attributes['action_code_hash'] = bcrypt($value);
-        }
-    }
 
     /* ---------------- Scopes ---------------- */
 

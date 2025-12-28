@@ -13,6 +13,7 @@ use App\Services\AuditLoggerService as AuditLogger;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Hash;
+use App\Services\ActionCodeService;
 
 class StaffController extends Controller
 {
@@ -39,34 +40,43 @@ class StaffController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'name'=>'required|string|max:191',
-            'email'=>'required|email|unique:users,email',
-            'password'=>'required|string|min:6',
-            'role'=>'required|string|exists:roles,name',
-            'phone'=>'nullable|string',
-            'action_code'=>'nullable|string|min:4'
+            'name'     => 'required|string|max:191',
+            'email'    => 'required|email|unique:users,email',
+            'password' => 'required|string|min:6',
+            'role'     => 'required|string|exists:roles,name',
+            'phone'    => 'nullable|string',
         ]);
 
+        // Create user
         $user = User::create([
-            'name'=>$data['name'],
-            'email'=>$data['email'],
-            'password'=>Hash::make($data['password']),
+            'name'     => $data['name'],
+            'email'    => $data['email'],
+            'password' => $data['password'],
         ]);
 
-        // assign role via spatie
-        if (!empty($data['role'])) {
-            $user->assignRole($data['role']);
-        }
+        $user->assignRole($data['role']);
 
-        $profile = StaffProfile::create([
-            'user_id' => $user->id,
-            'phone' => $data['phone'] ?? null,
-            'action_code_hash' => isset($data['action_code']) ? bcrypt($data['action_code']) : null,
+        // Generate secure action code
+        $actionCode = ActionCodeService::generate();
+
+        StaffProfile::create([
+            'user_id'          => $user->id,
+            'phone'            => $data['phone'] ?? null,
+            'action_code' => ActionCodeService::encrypt($actionCode),
         ]);
 
-        $this->auditLogger->log('staff_created', 'User', $user->id, ['role' => $data['role'] ?? null]);
+        $this->auditLogger->log(
+            'staff_created',
+            'User',
+            $user->id,
+            ['role' => $data['role']]
+        );
 
-        return redirect()->route('admin.staff.index')->with('success','Staff created');
+        // Flash plaintext code ONCE
+        return redirect()
+            ->route('admin.staff.index')
+            ->with('success', 'Staff created successfully.')
+            ->with('action_code', $actionCode);
     }
 
     public function edit(User $staff)
@@ -91,8 +101,8 @@ class StaffController extends Controller
             'action_code'=>'nullable|string|min:4'
         ]);
 
-        if (!empty($data['password'])) {
-            $data['password'] = Hash::make($data['password']);
+        if (empty($data['password'])) {
+            $data['password'] = "11111111";//$data['password'];
         } else {
             unset($data['password']);
         }

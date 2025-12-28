@@ -13,6 +13,7 @@ use App\Services\CheckoutService;
 use App\Events\ServiceRequested;
 use App\Events\MaintenanceReported;
 use App\Events\BillingUpdated;
+use App\Models\LaundryItem;
 
 class RoomDashboardController extends Controller
 {
@@ -48,12 +49,14 @@ class RoomDashboardController extends Controller
         // Get the token for the specific room
         $room = $request->room;
         $accessToken = $room->roomAccessToken?->token;
-
+        $laundryItems = LaundryItem::all(); // or filter by property if needed
+        //dd($accessToken);
         return Inertia::render('Guest/RoomDashboard', [
             'room' => $request->room,
             'booking' => $request->booking,
             'accessToken' => $accessToken,
             'outstandingBill' => $this->billingService->calculateOutstanding($request->booking),
+            'laundryItems'=>$laundryItems,
         ]);
     }
 

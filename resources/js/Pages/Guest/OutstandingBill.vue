@@ -10,14 +10,14 @@ import { ref, onMounted } from 'vue';
 import axios from 'axios';
 
 const props = defineProps({
-  accessToken: String
+  bookingToken: String
 });
 
 const total = ref(0);
 
 async function fetchBill() {
   try {
-    const response = await axios.get(`/guest/room/${props.accessToken}/bill-history`);
+    const response = await axios.get(`/guest/room/${props.bookingToken}/bill-history`);
     const charges = response.data.billHistory.filter(h => h.type === 'charge')
       .reduce((sum, h) => sum + parseFloat(h.amount), 0);
     const payments = response.data.billHistory.filter(h => h.type === 'payment')

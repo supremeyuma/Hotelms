@@ -295,21 +295,6 @@ class BookingController extends Controller
         return response()->json(['available' => !$overlap]);
     }
 
-    /**
-     * Create booking (store)
-     */
-    /*public function createBooking(BookingRequest $request)
-    {
-        $payload = $request->validated();
-
-        $booking = $this->service->createBooking($payload);
-
-        AuditLogger::log('booking_created', 'Booking', $booking->id, [
-            'payload' => $payload
-        ]);
-
-        return redirect()->route('booking.confirm', ['booking' => $booking->id]);
-    }*/
 
     /**
      * Confirm booking (view confirmation)

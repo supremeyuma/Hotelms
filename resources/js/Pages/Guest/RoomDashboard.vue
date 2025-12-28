@@ -19,8 +19,9 @@
         <button @click="requestService('cleaning')" class="service-btn bg-green-500 hover:bg-green-600">Cleaning</button>
         <button @click="requestService('kitchen')" class="service-btn bg-yellow-500 hover:bg-yellow-600">Kitchen</button>
         <button @click="requestService('bar')" class="service-btn bg-blue-500 hover:bg-blue-600">Bar</button>
-        <button @click="requestService('laundry')" class="service-btn bg-purple-500 hover:bg-purple-600">Laundry</button>
-      </div>
+        <button @click="openLaundryModal" class="service-btn bg-purple-500 hover:bg-purple-600 text-center">Laundry</button>
+
+        </div>
 
       <!-- Action Buttons -->
       <div class="flex flex-wrap gap-4 mt-4">
@@ -90,23 +91,48 @@
           </form>
         </template>
       </Modal>
+
+      <LaundryModal
+        v-if="showLaundryModal"
+        :room="room"
+        :booking="booking"
+        :items="laundryItems"
+        :accessToken="accessToken"
+        :show="showLaundryModal"
+        @close="showLaundryModal = false"
+      />
+
     </div>
   </GuestLayout>
 </template>
 
 <script setup>
 import { ref, reactive } from 'vue'
-import { router } from '@inertiajs/vue3'
+import { router, Link } from '@inertiajs/vue3'
 import GuestLayout from '@/Layouts/GuestLayout.vue'
 import Modal from '@/Components/Modal.vue'
 import OutstandingBill from '@/Pages/Guest/OutstandingBill.vue'
+
+//Laundry Modal
+import LaundryModal from '@/Pages/Guest/LaundryModal.vue'
+
+
+const showLaundryModal = ref(false)
+const laundryItems = ref([]) // This will hold the items fetched from the backend
+
+//End Laundry Modal
+
+
 
 const props = defineProps({
   room: Object,
   booking: Object,
   outstandingBill: Number,
   accessToken: String,
+  laundryItems: Array,
 })
+
+console.log(props.accessToken)
 
 /* ---------------- UI STATE ---------------- */
 const showBillHistory = ref(false)
@@ -140,8 +166,15 @@ function submitMaintenance() {
   router.post(`/guest/room/${props.accessToken}/maintenance`, formData, { onSuccess: closeMaintenanceModal })
 }
 
+//LAUNDRY
+function openLaundryModal() {
+  // Use the items passed from the backend
+  laundryItems.value = props.laundryItems || []
+  showLaundryModal.value = true
+}
+
 /* ---------------- ACTIONS ---------------- */
-function requestService(type) { router.post(`/guest/room/${props.accessToken}/service-request`, { type }) }
+//function requestService(type) { router.post(`/guest/room/${props.accessToken}/service-request`, { type }) }
 function checkout() { router.post(`/guest/room/${props.accessToken}/checkout`) }
 function payBill() { router.post(`/guest/room/${props.accessToken}/payment`) }
 
