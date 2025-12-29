@@ -7,6 +7,7 @@ use App\Models\LaundryOrder;
 use App\Enums\LaundryStatus;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use App\Services\LaundryOrderService;
 
 class LaundryStaffController extends Controller
 {
@@ -49,48 +50,46 @@ class LaundryStaffController extends Controller
         ]);
     }
 
-    public function updateStatus(Request $request, LaundryOrder $order)
-    {
-        $request->validate([
-            'status' => 'required|string',
-        ]);
+    public function updateStatus(
+    Request $request,
+    LaundryOrder $order,
+    LaundryOrderService $service
+) {
+    $request->validate([
+        'status' => ['required', 'string'],
+    ]);
 
-        $newStatus = LaundryStatus::from($request->status);
-        $currentStatus = $order->status;
+    $newStatus = LaundryStatus::from($request->status);
 
-        if (! in_array($newStatus, LaundryStatus::allowedTransitions($currentStatus), true)) {
-            abort(403, 'Invalid status transition');
-        }
+    // Delegate ALL logic to service
+    $service->updateStatus(
+        $order,
+        $newStatus,
+        auth()->id()
+    );
 
-        $order->update(['status' => $newStatus]);
+    return back();
+}
 
-        $order->statusHistories()->create([
-            'from_status' => $currentStatus->value,
-            'to_status' => $newStatus->value,
-            'changed_by' => auth()->id(),
-        ]);
-
-        event(new \App\Events\LaundryOrderUpdated($order->fresh()));
-
-        return back();
-    }
-
-    public function cancel(LaundryOrder $order)
-    {
+    public function cancel(
+        LaundryOrder $order,
+        LaundryOrderService $service
+    ) {
         abort_unless(
-            in_array(LaundryStatus::CANCELLED, LaundryStatus::allowedTransitions($order->status), true),
-            403
+            in_array(
+                LaundryStatus::CANCELLED,
+                LaundryStatus::allowedTransitions($order->status),
+                true
+            ),
+            403,
+            'Invalid cancellation'
         );
 
-        $order->update(['status' => LaundryStatus::CANCELLED]);
-
-        $order->statusHistories()->create([
-            'from_status' => $order->status->value,
-            'to_status' => LaundryStatus::CANCELLED->value,
-            'changed_by' => auth()->id(),
-        ]);
-
-        event(new \App\Events\LaundryOrderUpdated($order->fresh()));
+        $service->updateStatus(
+            $order,
+            LaundryStatus::CANCELLED,
+            auth()->id()
+        );
 
         return back();
     }

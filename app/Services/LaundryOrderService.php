@@ -92,7 +92,6 @@ class LaundryOrderService
                 'requestable_type' => LaundryOrder::class,
                 'requestable_id' => $order->id,
                 'room_id' => $roomId,
-                'guest_id' => $guestId,
                 'type' => 'laundry',
                 'status' => LaundryStatus::REQUESTED->value,
                 'booking_id' => $bookingId,
@@ -132,9 +131,11 @@ class LaundryOrderService
 
             // 3. Sync Guest Request status
             if ($order->guestRequest) {
-                $order->guestRequest->status = $newStatus->value;
-                $order->guestRequest->save();
+                $order->guestRequest->update([
+                    'status' => $newStatus->value,
+                ]);
             }
+
 
             event(new LaundryOrderUpdated($order));
 

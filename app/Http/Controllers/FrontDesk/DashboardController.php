@@ -37,11 +37,12 @@ class DashboardController extends Controller
         $outstandingBookings = $outstandingBookingList->count();
 
         // Recent guest requests
-        $recentRequests = GuestRequest::where('status', 'pending')
+        $recentRequests = GuestRequest::latest()
             ->with('booking', 'room')
-            ->latest()
-            ->limit(10)
-            ->get();
+            ->take(20)
+            ->get()
+            ->filter(fn ($r) => $r->isFrontDeskVisible())
+            ->values();
 
         return Inertia::render('FrontDesk/Dashboard', [
             'roomsOccupied' => $roomsOccupied,

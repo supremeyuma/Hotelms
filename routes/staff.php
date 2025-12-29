@@ -85,7 +85,7 @@ Route::prefix('frontdesk')->middleware(['auth', 'role:frontdesk'])->name('frontd
 
 
 // Laundry Staff
-Route::middleware(['auth', 'role:laundry'])->prefix('staff')->name('staff.')->group(function () {
+Route::middleware(['auth', 'role:laundry|frontdesk'])->prefix('staff')->name('staff.')->group(function () {
     Route::get('/laundry', [LaundryStaffController::class, 'index'])->name('laundry.index');
     Route::post('/laundry/{order}/status', [LaundryStaffController::class, 'updateStatus'])->name('laundry.updateStatus');
     Route::get('/laundry/{order}', [LaundryStaffController::class, 'show'])->name('laundry.show');

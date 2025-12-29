@@ -1,22 +1,35 @@
+<script setup>
+import { computed } from 'vue'
+import { Link } from '@inertiajs/vue3'
+import Icon from '@/Components/Icon.vue'
+
+const props = defineProps({
+  title: { type: String, required: true },
+  value: { type: [Number, String], required: true },
+  href: { type: String, default: null },
+  icon: { type: String, default: null },
+})
+
+const Wrapper = computed(() => (props.href ? Link : 'div'))
+</script>
+
 <template>
-  <Link :href="href" class="block p-4 rounded-lg shadow hover:shadow-lg transition bg-white">
+  <component
+    :is="Wrapper"
+    :href="href"
+    class="block p-4 rounded-lg shadow hover:shadow-lg transition bg-white"
+  >
     <div class="flex items-center justify-between">
       <div>
-        <h3 class="text-sm font-medium text-gray-500">{{ title }}</h3>
+        <p class="text-sm text-gray-500">{{ title }}</p>
         <p class="text-2xl font-bold">{{ value }}</p>
       </div>
-      <Icon :name="icon" class="w-8 h-8 text-gray-400"/>
-    </div>
-</Link>
-</template>
 
-<script setup>
-import Icon from '@/Components/Icon.vue';
-import { Link } from '@inertiajs/vue3';
-const props = defineProps({
-  title: String,
-  value: [String, Number],
-  href: String,
-  icon: String,
-});
-</script>
+      <Icon
+        v-if="icon"
+        :name="icon"
+        class="w-8 h-8 text-gray-400"
+      />
+    </div>
+  </component>
+</template>

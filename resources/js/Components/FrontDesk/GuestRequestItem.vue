@@ -1,42 +1,42 @@
-<template>
-  <div class="p-4 border rounded flex justify-between items-center hover:bg-gray-50">
-    <div>
-      <p class="font-semibold">{{ request.type | capitalize }}</p>
-      <p class="text-sm text-gray-600">Room: {{ request.room.number ?? '-' }}</p>
-      <p class="text-sm text-gray-600">Guest: {{ request.booking.guest_name }}</p>
-      <p class="text-sm text-gray-500">Created: {{ formatDate(request.created_at) }}</p>
-    </div>
-    <div class="space-x-2">
-      <button 
-        v-if="request.status === 'pending'" 
-        @click="$emit('acknowledge', request.id)"
-        class="btn-acknowledge"
-      >Acknowledge</button>
-
-      <button 
-        v-if="request.status !== 'completed'" 
-        @click="$emit('complete', request.id)"
-        class="btn-complete"
-      >Complete</button>
-
-      <span v-if="request.status === 'completed'" class="text-green-600 font-semibold">Completed</span>
-    </div>
-  </div>
-</template>
-
 <script setup>
-import { format } from 'date-fns';
+import { computed } from 'vue'
+import { Link } from '@inertiajs/vue3'
 
 const props = defineProps({
-  request: Object
-});
+  request: { type: Object, required: true },
+  href: { type: String, required: true },
+})
+console.log(props.request.room_id);
 
-function formatDate(date) {
-  return format(new Date(date), 'yyyy-MM-dd HH:mm');
-}
+const label = computed(() =>
+  props.request.type
+    ? props.request.type.replace('_', ' ').toUpperCase()
+    : 'REQUEST'
+)
+
+const roomNumber = computed(() =>
+  props.request.room?.room_number ?? '—'
+)
 </script>
 
-<style scoped>
-.btn-acknowledge { @apply bg-blue-500 text-white px-2 py-1 rounded; }
-.btn-complete { @apply bg-green-500 text-white px-2 py-1 rounded; }
-</style>
+<template>
+  <Link
+    :href="href"
+    class="block p-3 rounded border hover:bg-gray-50"
+  >
+    <div class="flex justify-between items-center">
+      <div>
+        <p class="font-semibold">
+          {{ label }} — Room {{ roomNumber }}
+        </p>
+        <p class="text-sm text-gray-500">
+          Status: {{ request.status }}
+        </p>
+      </div>
+
+      <span class="text-xs text-gray-400">
+        {{ new Date(request.created_at).toLocaleTimeString() }}
+      </span>
+    </div>
+  </Link>
+</template>
