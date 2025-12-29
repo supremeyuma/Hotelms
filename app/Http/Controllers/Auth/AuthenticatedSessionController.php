@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Inertia\Response;
+use App\Services\RoleRedirectService;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -27,35 +28,14 @@ class AuthenticatedSessionController extends Controller
     /**
      * Handle an incoming authentication request.
      */
-    public function store(LoginRequest $request): RedirectResponse
+    public function store(LoginRequest $request, RoleRedirectService $redirectService)
     {
         $request->authenticate();
-
-        $user = Auth::user();
-
-        // Safety check (should never be null, but keeps analyzers happy)
-        if (!$user) {
-            return back()->withErrors([
-                'email' => 'Authentication failed. Please try again.',
-            ]);
-        }
-
-        // ⛔ Block suspended users
-        if ($user->is_suspended) {
-            Auth::logout();
-
-            return back()->withErrors([
-                'email' => 'Your account has been suspended. Please contact management.',
-            ]);
-        }
-
         $request->session()->regenerate();
 
-        if ($user?->hasRole('staff')) {
-            return redirect()->intended(route('staff.dashboard', absolute: false));
-        }
-
-        return redirect()->route('admin.dashboard');
+        return redirect()->intended(
+            $redirectService->redirectPath(auth()->user())
+        );
     }
 
 

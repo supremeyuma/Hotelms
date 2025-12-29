@@ -27,7 +27,9 @@ use App\Http\Controllers\Staff\FrontDeskController;
 |
 */
 
-Route::middleware(['auth', 'role:Staff|manager|md'])->prefix('staff')->name('staff.')->group(function () {
+
+
+Route::middleware(['auth', 'role:staff|manager|md|laundry|frontdesk'])->prefix('staff')->name('staff.')->group(function () {
 
     // Dashboard
     Route::get('/dashboard', [StaffDashboardController::class, 'index'])->name('dashboard');

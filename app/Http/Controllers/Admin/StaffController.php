@@ -21,7 +21,7 @@ class StaffController extends Controller
 
     public function __construct(AuditLogger $auditLogger)
     {
-        $this->middleware(['auth','role:Manager|MD']);
+        $this->middleware(['auth','role:manager|md']);
         $this->auditLogger = $auditLogger;
     }
 

@@ -17,7 +17,7 @@ class StaffDashboardController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth','role:Staff|manager|md']);
+        $this->middleware(['auth','role:staff|manager|md']);
     }
 
     /**
@@ -28,7 +28,7 @@ class StaffDashboardController extends Controller
         $user = $request->user();
 
         $pendingOrders = Order::where('status','pending')->with('booking','items')->paginate(10);
-        $myMaintenance = MaintenanceTicket::where('staff_id', $user->id)->whereIn('status', ['open','in_progress'])->get();
+        $myMaintenance = MaintenanceTicket::whereIn('status', ['open','in_progress'])->get();
         $pendingBookings = Booking::where('status','pending')->count();
 
         return Inertia::render('Staff/Dashboard', [

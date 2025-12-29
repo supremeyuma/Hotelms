@@ -18,7 +18,7 @@ class SettingController extends Controller
 
     public function __construct(AuditLoggerService $auditLogger)
     {
-        $this->middleware(['auth','role:Manager|MD']);
+        $this->middleware(['auth','role:manager|md']);
         $this->auditLogger = $auditLogger;
     }
 

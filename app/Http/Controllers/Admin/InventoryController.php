@@ -21,7 +21,7 @@ class InventoryController extends Controller
 
     public function __construct(InventoryService $service, AuditLoggerService $auditLogger)
     {
-        $this->middleware(['auth','role:Manager|MD']);
+        $this->middleware(['auth','role:manager|md']);
         $this->service = $service;
         $this->auditLogger = $auditLogger;
     }

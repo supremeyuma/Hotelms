@@ -19,7 +19,7 @@ class StaffProfileController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth','role:Staff|manager|md']);
+        $this->middleware(['auth','role:staff|manager|md']);
     }
 
     /**

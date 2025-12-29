@@ -26,7 +26,7 @@ use App\Http\Controllers\Admin\Reports\InventoryReportController;
 use App\Http\Controllers\Admin\Reports\OccupancyReportController;
 use App\Http\Controllers\Admin\Reports\ChartController;
 
-Route::middleware(['auth', 'role:Manager|MD'])
+Route::middleware(['auth', 'role:manager|md'])
     ->prefix('admin')
     ->as('admin.')
     ->group(function () {
