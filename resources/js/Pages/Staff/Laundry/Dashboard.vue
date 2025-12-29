@@ -15,13 +15,20 @@
     <div v-if="orders.length === 0" class="text-gray-500 text-center py-12">
         No laundry orders yet.
     </div>
-    <div v-for="order in orders" :key="order.id" class="p-4 border rounded shadow-sm">
+    <div
+        v-for="order in orders"
+        :key="order.id"
+        class="p-4 border rounded shadow-sm cursor-pointer hover:bg-gray-50"
+        @click="router.visit(route('staff.laundry.show', order.id))"
+    >
       <div class="flex justify-between">
         <div>
           <p class="font-semibold">Order {{ order.order_code }} — Room {{ order.room.room_number }}</p>
-          <p>Status: <span class="font-bold">{{ order.status.value }}</span></p>
+            <p class="text-sm text-gray-500">Requested: {{ formatDateTime(order.created_at) }}</p>
+            <p>Status:<span class="font-bold">{{ order.status }}</span></p>
+
         </div>
-        <form @submit.prevent="updateStatus(order)" class="flex space-x-2">
+        <form @click.stop @submit.prevent="updateStatus(order)" class="flex space-x-2">
           <select v-model="order.newStatus" class="border rounded px-2 py-1">
             <option v-for="s in statuses" :key="s.value" :value="s.value">{{ s.value }}</option>
           </select>
@@ -41,14 +48,14 @@
         </li>
       </ul>
 
-      <div class="mt-2 text-sm text-gray-500">
+      <!--<div class="mt-2 text-sm text-gray-500">
         Status History:
         <ul class="list-disc pl-6">
           <li v-for="h in order.statusHistories" :key="h.id">
             {{ h.from_status || 'N/A' }} → {{ h.to_status }} by {{ h.changer?.name || 'Guest' }} at {{ h.created_at }}
           </li>
         </ul>
-      </div>
+      </div>-->
     </div>
   </div>
 </template>
@@ -60,6 +67,7 @@ import { router } from '@inertiajs/vue3';
 const props = defineProps({
   orders: Array
 });
+//console.log(props.orders);
 
 // Make orders reactive
 const orders = ref([...props.orders]);
@@ -96,4 +104,9 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.Echo?.leave('laundry-orders');
 });
+
+function formatDateTime(date) {
+  return new Date(date).toLocaleString();
+}
+
 </script>

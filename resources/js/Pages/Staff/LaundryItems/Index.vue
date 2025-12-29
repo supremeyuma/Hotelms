@@ -1,83 +1,53 @@
-<template>
-  <div class="p-6 space-y-6">
-    <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-bold">Laundry Items</h1>
-
-        <a
-            :href="route('staff.laundry.index')"
-            class="btn-secondary"
-        >
-            Return to Laundry Dashboard
-        </a>
-    </div>
-
-    <!-- Create -->
-    <form @submit.prevent="createItem" class="flex gap-2">
-      <input v-model="form.name" placeholder="Item name" class="border rounded px-2 py-1" />
-      <input v-model.number="form.price" type="number" placeholder="Price" class="border rounded px-2 py-1 w-28" />
-      <input v-model="form.description" placeholder="Description" class="border rounded px-2 py-1 flex-1" />
-      <button class="btn-primary">Add</button>
-    </form>
-
-    <!-- List -->
-    <div class="space-y-2">
-      <div
-        v-for="item in items"
-        :key="item.id"
-        class="flex items-center gap-2 border p-3 rounded"
-      >
-        <input v-model="item.name" class="border rounded px-2 py-1 w-40" />
-        <input v-model.number="item.price" type="number" class="border rounded px-2 py-1 w-24" />
-        <input v-model="item.description" class="border rounded px-2 py-1 flex-1" />
-
-        <button class="btn-secondary" @click="updateItem(item)">Save</button>
-        <button class="btn-danger" @click="deleteItem(item)">Delete</button>
-      </div>
-    </div>
-
-    <p v-if="items.length === 0" class="text-gray-500">
-      No laundry items yet.
-    </p>
-  </div>
-</template>
-
 <script setup>
-import { reactive } from 'vue'
-import { router } from '@inertiajs/vue3'
+import { router } from '@inertiajs/vue3';
 
 const props = defineProps({
-  items: Array,
-})
+  orders: Array,
+  statuses: Array,
+  activeStatus: String,
+});
 
-const items = reactive(props.items)
-
-const form = reactive({
-  name: '',
-  price: '',
-  description: '',
-})
-
-function createItem() {
-  router.post(route('staff.laundry-items.store'), form, {
-    onSuccess: () => {
-      form.name = ''
-      form.price = ''
-      form.description = ''
-    },
-  })
+function filter(status) {
+  router.get(route('staff.laundry.index'), { status }, { preserveState: true });
 }
 
-function updateItem(item) {
-  router.put(route('staff.laundry-items.update', item.id), {
-    name: item.name,
-    price: item.price,
-    description: item.description,
-  })
-}
-
-function deleteItem(item) {
-  if (!confirm('Delete this laundry item?')) return
-
-  router.delete(route('staff.laundry-items.destroy', item.id))
+function format(date) {
+  return new Date(date).toLocaleString();
 }
 </script>
+
+<template>
+  <div class="p-6 space-y-6">
+    <div class="flex justify-between">
+      <h1 class="text-2xl font-bold">Laundry Dashboard</h1>
+
+      <select
+        class="border rounded px-3 py-1"
+        @change="filter($event.target.value)"
+      >
+        <option value="">All</option>
+        <option
+          v-for="s in statuses"
+          :key="s.value"
+          :value="s.value"
+          :selected="s.value === activeStatus"
+        >
+          {{ s.value }}
+        </option>
+      </select>
+    </div>
+
+    <div v-for="order in orders" :key="order.id"
+      class="border p-4 rounded hover:bg-gray-50 cursor-pointer"
+      @click="router.visit(route('staff.laundry.show', order.id))"
+    >
+      <p class="font-semibold">
+        {{ order.order_code }} — Room {{ order.room.room_number }}
+      </p>
+      <p class="text-sm text-gray-500">
+        Requested: {{ format(order.created_at) }}
+      </p>
+      <p>Status: <strong>{{ order.status.value }}</strong></p>
+    </div>
+  </div>
+</template>

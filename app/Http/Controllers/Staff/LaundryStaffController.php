@@ -1,50 +1,123 @@
 <?php
 
-// app/Http/Controllers/LaundryStaffController.php
-
 namespace App\Http\Controllers\Staff;
 
 use App\Http\Controllers\Controller;
-use App\Enums\LaundryStatus;
 use App\Models\LaundryOrder;
-use App\Services\LaundryOrderService;
+use App\Enums\LaundryStatus;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class LaundryStaffController extends Controller
 {
-    protected LaundryOrderService $service;
-
-    public function __construct(LaundryOrderService $service)
+    public function index(Request $request)
     {
-        $this->service = $service;
+        $status = $request->query('status');
+
+        $orders = LaundryOrder::with([
+            'room',
+            'items.item',
+            'images',
+            'statusHistories.changer',
+        ])
+        ->when($status, fn ($q) => $q->where('status', $status))
+        ->latest()
+        ->get();
+
+        return Inertia::render('Staff/Laundry/Dashboard', [
+            'orders' => $orders,
+            'statuses' => LaundryStatus::cases(),
+            'activeStatus' => $status,
+        ]);
     }
 
-    /**
-     * Laundry dashboard (newest → oldest)
-     */
-    public function index()
+    public function show(LaundryOrder $order)
     {
-        $orders = LaundryOrder::with(['room', 'items.item', 'images', 'statusHistories'])
-            ->orderByDesc('created_at')
-            ->get();
+        $order->load([
+            'room',
+            'items.item',
+            'images',
+            'statusHistories.changer',
+        ]);
+        //dd(LaundryStatus::cases());
 
-        return Inertia::render('Staff/LaundryDashboard', compact('orders'));
+        return Inertia::render('Staff/Laundry/Show', [
+            'order' => $order,
+            'statuses' => collect(LaundryStatus::cases())
+                ->map(fn ($s) => $s->value)
+                ->values(),
+        ]);
     }
 
-    /**
-     * Update order status
-     */
     public function updateStatus(Request $request, LaundryOrder $order)
     {
-        $this->authorize('updateStatus', $order);
-
-        $data = $request->validate([
-            'status' => 'required|in:' . implode(',', array_column(LaundryStatus::cases(), 'value')),
+        $request->validate([
+            'status' => 'required|string',
         ]);
 
-        $updated = $this->service->updateStatus($order, LaundryStatus::from($data['status']), $request->user()->id);
+        $newStatus = LaundryStatus::from($request->status);
+        $currentStatus = $order->status;
 
-        return redirect()->back()->with('success', "Laundry order {$updated->order_code} status updated.");
+        if (! in_array($newStatus, LaundryStatus::allowedTransitions($currentStatus), true)) {
+            abort(403, 'Invalid status transition');
+        }
+
+        $order->update(['status' => $newStatus]);
+
+        $order->statusHistories()->create([
+            'from_status' => $currentStatus->value,
+            'to_status' => $newStatus->value,
+            'changed_by' => auth()->id(),
+        ]);
+
+        event(new \App\Events\LaundryOrderUpdated($order->fresh()));
+
+        return back();
+    }
+
+    public function cancel(LaundryOrder $order)
+    {
+        abort_unless(
+            in_array(LaundryStatus::CANCELLED, LaundryStatus::allowedTransitions($order->status), true),
+            403
+        );
+
+        $order->update(['status' => LaundryStatus::CANCELLED]);
+
+        $order->statusHistories()->create([
+            'from_status' => $order->status->value,
+            'to_status' => LaundryStatus::CANCELLED->value,
+            'changed_by' => auth()->id(),
+        ]);
+
+        event(new \App\Events\LaundryOrderUpdated($order->fresh()));
+
+        return back();
+    }
+
+    public function addImages(Request $request, LaundryOrder $order)
+    {
+        $request->validate([
+            'images.*' => 'required|image|max:2048',
+        ]);
+
+        foreach ($request->file('images') as $file) {
+            $order->images()->create([
+                'path' => $file->store('laundry', 'public'),
+            ]);
+        }
+
+        event(new \App\Events\LaundryOrderUpdated($order->fresh()));
+
+        return back();
+    }
+
+    public function print(LaundryOrder $order)
+    {
+        $order->load(['room', 'items.item']);
+
+        return Inertia::render('Staff/Laundry/Print', [
+            'order' => $order,
+        ]);
     }
 }
