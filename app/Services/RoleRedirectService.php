@@ -21,7 +21,7 @@ class RoleRedirectService
         }
 
         if ($user->hasRole('laundry')) {
-            return route('laundry.dashboard');
+            return route('staff.laundry.dashboard');
         }
 
         if ($user->hasRole('cleaner')) {
