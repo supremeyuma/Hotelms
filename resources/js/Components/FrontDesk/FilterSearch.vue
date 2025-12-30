@@ -3,7 +3,7 @@
     <!-- Search -->
     <input
       v-model="localSearch"
-      @input="apply"
+      @input="emitChange"
       type="text"
       placeholder="Search bookings..."
       class="border rounded px-3 py-2 w-64"
@@ -12,23 +12,19 @@
     <!-- Status -->
     <select
       v-model="localFilter"
-      @change="apply"
+      @change="emitChange"
       class="border rounded px-3 py-2"
     >
       <option value="all">All</option>
-      <option
-        v-for="f in filters"
-        :key="f"
-        :value="f"
-      >
+      <option v-for="f in filters" :key="f" :value="f">
         {{ capitalize(f) }}
       </option>
     </select>
 
-    <!-- Check-in Date -->
+    <!-- Date -->
     <input
       v-model="localDate"
-      @change="apply"
+      @change="emitChange"
       type="date"
       class="border rounded px-3 py-2"
     />
@@ -47,21 +43,15 @@
 
 <script setup>
 import { ref, watch } from 'vue';
-import { router } from '@inertiajs/vue3';
 
 const props = defineProps({
   search: String,
   filter: String,
   date: String,
   filters: Array,
-  routeName: String,
 });
 
-const emit = defineEmits([
-  'update:search',
-  'update:filter',
-  'update:date',
-]);
+const emit = defineEmits(['change']);
 
 const localSearch = ref(props.search || '');
 const localFilter = ref(props.filter || 'all');
@@ -71,28 +61,19 @@ watch(() => props.search, v => localSearch.value = v);
 watch(() => props.filter, v => localFilter.value = v);
 watch(() => props.date,   v => localDate.value = v);
 
-function apply() {
-  emit('update:search', localSearch.value);
-  emit('update:filter', localFilter.value);
-  emit('update:date',   localDate.value);
-
-  router.get(
-    route(props.routeName),
-    {
-      search: localSearch.value || undefined,
-      filter: localFilter.value !== 'all' ? localFilter.value : undefined,
-      date:   localDate.value || undefined,
-    },
-    { preserveState: true, replace: true }
-  );
+function emitChange() {
+  emit('change', {
+    search: localSearch.value,
+    filter: localFilter.value,
+    date: localDate.value,
+  });
 }
 
 function clear() {
   localSearch.value = '';
   localFilter.value = 'all';
   localDate.value   = '';
-
-  apply();
+  emitChange();
 }
 
 function capitalize(v) {

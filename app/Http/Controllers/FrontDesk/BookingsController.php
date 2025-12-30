@@ -22,48 +22,50 @@ class BookingsController extends Controller
     }
 
     public function index(Request $request)
-{
-    $search = $request->string('search')->toString();
-    $filter = $request->string('filter')->toString();
+    {
+        $search = $request->string('search')->toString();
+        $filter = $request->string('filter')->toString();
 
-    $query = Booking::query()->with('rooms');
+        $query = Booking::query()->with('rooms');
 
-    // SEARCH
-    if ($search !== '') {
-        $query->where(function ($q) use ($search) {
-            $q->where('booking_code', 'like', "%{$search}%")
-              ->orWhere('guest_name', 'like', "%{$search}%");
-        });
+        // SEARCH
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('booking_code', 'like', "%{$search}%")
+                ->orWhere('guest_name', 'like', "%{$search}%");
+            });
+        }
+
+        // STATUS FILTER
+        if ($filter === 'confirmed') {
+            $query->where('status', 'confirmed');
+        }
+
+        if ($filter === 'active') {
+            $query->where('status', 'checked_in');
+        }
+
+        if ($filter === 'past') {
+            $query->whereIn('status', ['checked_out', 'cancelled']);
+        }
+
+        // DATE FILTERS
+        if ($request->filled('check_in_date')) {
+            $query->whereDate('check_in', $request->check_in_date);
+        }
+
+        if ($request->filled('check_out_date')) {
+            $query->whereDate('check_out', $request->check_out_date);
+        }
+
+        return Inertia::render('FrontDesk/Bookings/Index', [
+            'bookings' => $query->latest()->paginate(25)->withQueryString(),
+            'search'   => $search,
+            'filter'   => $filter,
+            'date'     => $request->check_in_date ?? $request->check_out_date,
+            'dateType' => $request->filled('check_out_date') ? 'check_out' : 'check_in',
+        ]);
     }
-
-    // STATUS FILTER
-    if ($filter === 'confirmed') {
-        $query->where('status', 'confirmed');
-    }
-
-    if ($filter === 'active') {
-        $query->where('status', 'checked_in');
-    }
-
-    if ($filter === 'past') {
-        $query->whereIn('status', ['checked_out', 'cancelled']);
-    }
-
-    // DATE FILTERS
-    if ($request->filled('check_in_date')) {
-        $query->whereDate('check_in', $request->check_in_date);
-    }
-
-    if ($request->filled('check_out_date')) {
-        $query->whereDate('check_out', $request->check_out_date);
-    }
-
-    return Inertia::render('FrontDesk/Bookings/Index', [
-        'bookings' => $query->latest()->paginate(25)->withQueryString(),
-        'search'   => $search,
-        'filter'   => $filter,
-    ]);
-}
 
 
 
