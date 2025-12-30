@@ -115,6 +115,18 @@ class BookingsController extends Controller
             ->with('success', "Booking {$booking->booking_code} updated successfully.");
     }
 
+    public function show(Booking $booking)
+    {
+        return Inertia::render('FrontDesk/Bookings/Show', [
+            'booking' => $booking->load([
+                'room',
+                'rooms',
+                'billingItems',
+                'payments',
+            ]),
+        ]);
+    }
+
     public function checkIn(Request $request, Booking $booking)
     {
         $request->validate([
