@@ -7,6 +7,8 @@ const props = defineProps({
   href: { type: String, required: true },
 })
 
+console.log(props.booking)
+
 const outstandingAmount = computed(() => {
   // Convert each charge amount string to a float number
   const charges = props.booking.charges?.reduce((sum, c) => {

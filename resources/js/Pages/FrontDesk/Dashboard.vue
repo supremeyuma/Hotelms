@@ -99,15 +99,29 @@ function resolveRequestLink(request) {
       <KPIWidget
         title="Guests Arriving Today"
         :value="guestsArriving"
+        :href="route('frontdesk.bookings.index', {
+          check_in_date: new Date().toISOString().slice(0, 10)
+        })"
         icon="user-plus"
       />
 
       <KPIWidget
         title="Guests Departing Today"
         :value="guestsDeparting"
+        :href="route('frontdesk.bookings.index', {
+          check_out_date: new Date().toISOString().slice(0, 10)
+        })"
         icon="user-minus"
       />
     </div>
+
+    <KPIWidget
+      title="All Bookings"
+      :value="'View'"
+      :href="route('frontdesk.bookings.index')"
+      icon="list"
+    />
+
 
     <!-- Outstanding -->
     <div>

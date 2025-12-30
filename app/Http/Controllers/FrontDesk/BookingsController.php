@@ -49,9 +49,13 @@ class BookingsController extends Controller
         $query->whereIn('status', ['checked_out', 'cancelled']);
     }
 
-    // DATE FILTER
-    if ($request->filled('date')) {
-        $query->whereDate('check_in', $request->date);
+    // DATE FILTERS
+    if ($request->filled('check_in_date')) {
+        $query->whereDate('check_in', $request->check_in_date);
+    }
+
+    if ($request->filled('check_out_date')) {
+        $query->whereDate('check_out', $request->check_out_date);
     }
 
     return Inertia::render('FrontDesk/Bookings/Index', [

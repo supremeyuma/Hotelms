@@ -10,6 +10,7 @@ const props = defineProps({
   icon: { type: String, default: null },
 })
 
+//console.log(props)
 const Wrapper = computed(() => (props.href ? Link : 'div'))
 </script>
 

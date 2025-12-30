@@ -47,7 +47,3 @@ Route::prefix('booking')->name('booking.')->group(function () {
     Route::get('/confirmation/{booking}', [BookingController::class, 'confirmation'])->name('confirmation');
 });
 
-Route::middleware(['auth', 'resolve.guest.room'])->group(function () {
-    Route::get('/guest/room/{token}/laundry', [GuestLaundryController::class, 'show'])->name('guest.laundry.show');
-    Route::post('/guest/room/{token}/laundry', [GuestLaundryController::class, 'store'])->name('guest.laundry.store');
-});
