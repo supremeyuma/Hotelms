@@ -121,11 +121,14 @@ class BookingsController extends Controller
             'booking' => $booking->load([
                 'room',
                 'rooms',
-                'billingItems',
+                'charges',   // ✅ correct relationship
                 'payments',
+                'orders',
+                'user',
             ]),
         ]);
     }
+
 
     public function checkIn(Request $request, Booking $booking)
     {
