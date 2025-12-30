@@ -15,7 +15,7 @@
 
 <script setup>
 import { ref, reactive } from 'vue';
-import { Inertia } from '@inertiajs/inertia';
+import { Ine } from '@inertiajs/vue3';
 
 const props = defineProps({
   serviceName: String, // Kitchen or Bar
@@ -35,7 +35,7 @@ function submitOrder() {
     return;
   }
 
-  Inertia.post(`/guest/room/${props.bookingToken}/service-request`, {
+  router.post(`/guest/room/${props.bookingToken}/service-request`, {
     type: props.serviceName.toLowerCase(),
     items
   });

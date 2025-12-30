@@ -28,8 +28,8 @@
 <script setup>
 import GuestLayout from '@/Layouts/GuestLayout.vue';
 import { ref } from 'vue';
-import Tabs from '@/Components/Ui/Tabs.vue';
-import OrderForm from '@/Pages/RoomService/Components/OrderForm.vue'; // small order form component
+//import Tabs from '@/Components/Ui/Tabs.vue';
+//import OrderForm from '@/Pages/RoomService/Components/OrderForm.vue'; // small order form component
 
 const props = usePage().props;
 const room = props.room;

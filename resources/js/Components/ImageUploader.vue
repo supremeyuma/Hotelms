@@ -58,7 +58,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
 import axios from 'axios';
-import { usePage } from '@inertiajs/inertia-vue3';
+import { usePage } from '@inertiajs/vue3-vue3';
 
 const props = defineProps({
   imageable_type: { type: String, required: true }, // 'rooms', 'room-types', etc.

@@ -31,7 +31,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import Table from '@/Components/Ui/Table.vue';
 import { usePage,router, Link } from '@inertiajs/vue3';
 import Pagination from '@/Components/Pagination.vue'; // <-- add this
-//import { Inertia } from '@inertiajs/inertia';
+//import { router } from '@inertiajs/vue3';
 const props = usePage().props;
 const rooms = props.rooms;
 

@@ -38,7 +38,7 @@
 <script setup>
 import { ref } from 'vue';
 import GuestLayout from '@/Layouts/GuestLayout.vue';
-import { Inertia } from '@inertiajs/inertia';
+import {  } from '@inertiajs/vue3';
 
 const props = usePage().props;
 const rooms = props.rooms ?? [];
@@ -51,6 +51,6 @@ const form = ref({
 });
 
 function submit() {
-  Inertia.post('/bookings', form.value);
+  router.post('/bookings', form.value);
 }
 </script>

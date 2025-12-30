@@ -19,8 +19,7 @@
 </template>
 
 <script setup>
-import { useForm } from 'vue';
-import { router } from '@inertiajs/inertia';
+import { router, useForm } from '@inertiajs/vue3';
 import { defineProps } from 'vue';
 
 const props = defineProps({

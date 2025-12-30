@@ -26,7 +26,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { ref } from 'vue';
-import { Inertia } from '@inertiajs/inertia';
+import { router } from '@inertiajs/vue3';
 
 const user = usePage().props.auth.user;
 const form = ref({
@@ -36,6 +36,6 @@ const form = ref({
 
 function submit() {
   // Uses StaffActionController endpoint
-  Inertia.post('/staff/action/verify', { action_code: form.value.action_code });
+  router.post('/staff/action/verify', { action_code: form.value.action_code });
 }
 </script>
