@@ -2,11 +2,12 @@
 
 namespace App\Services;
 
-use App\Models\Booking;
 use App\Models\Room;
+use App\Models\Booking;
 use App\Models\RoomPayment;
-use App\Events\RoomBillingUpdated;
 use Illuminate\Support\Facades\DB;
+use App\Events\RoomBillingUpdated;
+use Exception;
 
 class RoomBillingService
 {
@@ -21,28 +22,57 @@ class RoomBillingService
     public function history(Room $room): array
     {
         return [
-            'charges' => $room->charges()->latest()->get(),
-            'payments' => $room->payments()->latest()->get(),
+            'charges' => $room->charges()
+                ->select('id','description','amount','created_at')
+                ->orderBy('created_at')
+                ->get(),
+
+            'payments' => $room->payments()
+                ->select('id','amount','method','created_at')
+                ->orderBy('created_at')
+                ->get(),
+
             'outstanding' => $this->outstanding($room),
+            'currency' => 'NGN',
         ];
     }
-    public function pay(Room $room, Booking $booking, float $amount, string $method, ?string $notes = null)
-    {
-        if ($amount > $this->outstanding($room)) {
-            throw new \Exception('Payment exceeds outstanding balance.');
-        }
 
-        $payment = RoomPayment::create([
-            'booking_id' => $booking->id,
-            'room_id' => $room->id,
-            'amount' => $amount,
-            'method' => $method,
-            'notes' => $notes,
-        ]);
+    public function pay(
+        Room $room,
+        Booking $booking,
+        float $amount,
+        string $method,
+        ?string $notes = null
+    ): RoomPayment {
+        return DB::transaction(function () use (
+            $room,
+            $booking,
+            $amount,
+            $method,
+            $notes
+        ) {
+            $outstanding = $this->outstanding($room);
 
-        event(new RoomBillingUpdated($room));
+            if ($amount <= 0) {
+                throw new Exception('Invalid payment amount.');
+            }
 
-        return $payment;
+            if ($amount > $outstanding) {
+                throw new Exception('Payment exceeds outstanding balance.');
+            }
+
+            $payment = RoomPayment::create([
+                'booking_id' => $booking->id,
+                'room_id'    => $room->id,
+                'amount'     => $amount,
+                'method'     => $method,
+                'notes'      => $notes,
+            ]);
+
+            event(new RoomBillingUpdated($room));
+
+            return $payment;
+        });
     }
 
     public function fullyPaid(Room $room): bool

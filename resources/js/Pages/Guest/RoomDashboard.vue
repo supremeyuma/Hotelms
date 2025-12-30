@@ -9,7 +9,7 @@
           <p class="text-sm text-gray-500">Stay: {{ formatDate(booking.check_in) }} → {{ formatDate(booking.check_out) }}</p>
         </div>
         <div class="text-right">
-          <OutstandingBill :bookingToken="accessToken" />
+          <OutstandingBill :accessToken="accessToken" />
           <button @click="showBillHistory = true" class="text-sm text-blue-600 underline">View Bill History</button>
         </div>
       </div>
@@ -132,7 +132,7 @@ const props = defineProps({
   laundryItems: Array,
 })
 
-console.log(props.accessToken)
+//console.log(props.accessToken)
 
 /* ---------------- UI STATE ---------------- */
 const showBillHistory = ref(false)

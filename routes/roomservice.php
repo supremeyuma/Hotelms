@@ -13,6 +13,7 @@ Route::prefix('guest')->group(function () {
         Route::post('/room/{token}/extend-stay', [RoomDashboardController::class, 'extendStay']);
         Route::post('/room/{token}/checkout', [RoomDashboardController::class, 'checkout']);
         Route::post('/room/{token}/payment', [RoomDashboardController::class, 'payBill']);
+        Route::get('/room/{token}/bill-history', [RoomDashboardController::class, 'billHistory'])->name('guest.room.bill-history');
     });
 });
 

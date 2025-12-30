@@ -14,6 +14,7 @@ use App\Events\ServiceRequested;
 use App\Events\MaintenanceReported;
 use App\Events\BillingUpdated;
 use App\Models\LaundryItem;
+use Illuminate\Support\Facades\DB;
 
 class RoomDashboardController extends Controller
 {
@@ -37,28 +38,115 @@ class RoomDashboardController extends Controller
         $this->checkoutService = $checkoutService;
     }
 
+    /**
+     * Guest room dashboard
+     */
     public function index(Request $request)
     {
-         $booking = $request->booking;
-
-        // Assuming the pivot table is bookings_rooms
-        $booking->load(['rooms' => function ($query) {
-            $query->with('roomAccessToken');
-        }]);
-
-        // Get the token for the specific room
         $room = $request->room;
+        $booking = $request->booking;
+
         $accessToken = $room->roomAccessToken?->token;
-        $laundryItems = LaundryItem::all(); // or filter by property if needed
-        //dd($accessToken);
+
         return Inertia::render('Guest/RoomDashboard', [
-            'room' => $request->room,
-            'booking' => $request->booking,
+            'room' => $room,
+            'booking' => $booking,
             'accessToken' => $accessToken,
-            'outstandingBill' => $this->billingService->calculateOutstanding($request->booking),
-            'laundryItems'=>$laundryItems,
+            'outstandingBill' => $this->outstandingForRoom($room),
+            'laundryItems' => LaundryItem::all(),
         ]);
     }
+
+    /**
+     * ROOM-SPECIFIC outstanding balance
+     */
+    protected function outstandingForRoom($room): float
+    {
+        $charges = $room->charges()->sum('amount');
+        $payments = $room->payments()->sum('amount');
+
+        return max($charges - $payments, 0);
+    }
+
+    /**
+     * Guest bill history (ROOM-SCOPED)
+     */
+    public function billHistory(Request $request)
+    {
+        $room = $request->room;
+
+        $charges = $room->charges()
+            ->select('id', 'description', 'amount', 'created_at')
+            ->get()
+            ->map(fn ($c) => [
+                'id' => $c->id,
+                'type' => 'charge',
+                'description' => $c->description,
+                'amount' => $c->amount,
+                'created_at' => $c->created_at,
+            ]);
+
+        $payments = $room->payments()
+            ->select('id', 'amount', 'created_at')
+            ->get()
+            ->map(fn ($p) => [
+                'id' => $p->id,
+                'type' => 'payment',
+                'description' => 'Payment',
+                'amount' => $p->amount,
+                'created_at' => $p->created_at,
+            ]);
+
+        return response()->json([
+            'history' => $charges
+                ->merge($payments)
+                ->sortBy('created_at')
+                ->values(),
+            'outstanding' => $this->outstandingForRoom($room),
+            'currency' => 'NGN',
+        ]);
+    }
+
+    /**
+     * MOCK PAYMENT (ROOM + BOOKING)
+     * Later replaced by Paystack / Flutterwave
+     */
+    public function payBill(Request $request)
+    {
+        $request->validate([
+            'amount' => 'required|numeric|min:1',
+        ]);
+
+        $room = $request->room;
+        $booking = $request->booking;
+
+        DB::transaction(function () use ($room, $booking, $request) {
+            $outstanding = $this->outstandingForRoom($room);
+
+            if ($request->amount > $outstanding) {
+                throw new \Exception('Payment exceeds outstanding balance.');
+            }
+
+            // payments table: id, booking_id, room_id, amount
+            $room->payments()->create([
+                'booking_id' => $booking->id,
+                'amount' => $request->amount,
+                'method' => 'guest-portal',
+                'notes' => 'Payment via guest portal',
+            ]);
+        });
+
+        event(new BillingUpdated($booking));
+
+        return response()->json([
+            'success' => true,
+            'outstanding' => $this->outstandingForRoom($room),
+        ]);
+    }
+
+    /* ======================
+       EXISTING METHODS BELOW
+       ====================== */
 
     public function serviceRequest(Request $request)
     {
@@ -104,7 +192,7 @@ class RoomDashboardController extends Controller
             'new_checkout' => 'required|date|after:' . $request->booking->check_out,
         ]);
 
-        $booking = $this->extensionService->extendStay(
+        $this->extensionService->extendStay(
             $request->booking,
             $request->new_checkout
         );
@@ -115,48 +203,13 @@ class RoomDashboardController extends Controller
     public function checkout(Request $request)
     {
         try {
-            $booking = $this->checkoutService->checkout($request->booking);
-            return redirect()->route('guest.room.dashboard', ['token' => $request->booking->access_token])
+            $this->checkoutService->checkout($request->booking);
+
+            return redirect()
+                ->route('guest.room.dashboard', ['token' => $request->room->roomAccessToken->token])
                 ->with('success', 'Checked out successfully.');
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
         }
-    }
-
-    public function payBill(Request $request)
-    {
-        $request->validate([
-            'amount' => 'required|numeric|min:1',
-        ]);
-
-        $this->billingService->payBill($request->booking, $request->amount);
-
-        event(new BillingUpdated($request->booking));
-
-        return back()->with('success', 'Payment successful.');
-    }
-
-    public function billHistory(Request $request)
-    {
-        $charges = $request->booking->charges()->get();
-        $payments = $request->booking->payments()->get();
-
-        $history = $charges->map(fn($c) => [
-            'id' => $c->id,
-            'type' => 'charge',
-            'description' => $c->description,
-            'amount' => $c->amount,
-            'created_at' => $c->created_at,
-        ])->merge(
-            $payments->map(fn($p) => [
-                'id' => $p->id,
-                'type' => 'payment',
-                'description' => 'Payment',
-                'amount' => $p->amount,
-                'created_at' => $p->created_at,
-            ])
-        )->sortBy('created_at')->values();
-
-        return response()->json(['billHistory' => $history]);
     }
 }
