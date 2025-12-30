@@ -16,6 +16,7 @@ use App\Http\Controllers\Staff\LaundryStaffController;
 use App\Http\Controllers\FrontDesk\FrontDeskLaundryController;
 use App\Http\Controllers\Staff\LaundryItemController;
 use App\Http\Controllers\Staff\FrontDeskController;
+use App\Http\Controllers\Staff\ReceiptController;
 
 
 /*
@@ -83,6 +84,10 @@ Route::prefix('frontdesk')->middleware(['auth', 'role:frontdesk'])->name('frontd
 
     Route::get('/laundry-requests', [FrontDeskLaundryController::class, 'index'])->name('frontdesk.laundry.index');
     Route::get('/laundry-requests/{guestRequest}', [FrontDeskLaundryController::class, 'show'])->name('frontdesk.laundry.show');
+
+    Route::get('/receipts', [ReceiptController::class, 'index']);
+    Route::get('/receipts/{receipt}', [ReceiptController::class, 'show']);
+
 });
 
 

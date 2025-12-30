@@ -107,8 +107,9 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { router, Link } from '@inertiajs/vue3'
+import axios from 'axios'
 import GuestLayout from '@/Layouts/GuestLayout.vue'
 import Modal from '@/Components/Modal.vue'
 import OutstandingBill from '@/Pages/Guest/OutstandingBill.vue'
@@ -131,6 +132,9 @@ const props = defineProps({
   accessToken: String,
   laundryItems: Array,
 })
+
+
+console.log(props.booking)
 
 //console.log(props.accessToken)
 
@@ -172,6 +176,26 @@ function openLaundryModal() {
   laundryItems.value = props.laundryItems || []
   showLaundryModal.value = true
 }
+
+//BILL HISTORY
+// 1. Define the reactive variable that was missing
+const billHistory = ref([]) 
+
+// 2. Fetch the data from your new controller method
+async function fetchBillHistory() {
+  try {
+    const response = await axios.get(`/guest/room/${props.accessToken}/bill-history`)
+    // Your controller returns { history: [...] }, so we access .history
+    billHistory.value = response.data.history
+  } catch (error) {
+    console.error("Failed to load bill history:", error)
+  }
+}
+
+// 3. Trigger the fetch when the page loads
+onMounted(() => {
+  fetchBillHistory()
+})
 
 /* ---------------- ACTIONS ---------------- */
 //function requestService(type) { router.post(`/guest/room/${props.accessToken}/service-request`, { type }) }

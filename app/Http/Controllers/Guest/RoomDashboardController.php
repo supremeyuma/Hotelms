@@ -15,6 +15,7 @@ use App\Events\MaintenanceReported;
 use App\Events\BillingUpdated;
 use App\Models\LaundryItem;
 use Illuminate\Support\Facades\DB;
+use App\Models\Receipt;
 
 class RoomDashboardController extends Controller
 {
@@ -115,24 +116,34 @@ class RoomDashboardController extends Controller
     {
         $request->validate([
             'amount' => 'required|numeric|min:1',
+            'reference' => 'nullable|string|max:100',
         ]);
 
         $room = $request->room;
         $booking = $request->booking;
 
-        DB::transaction(function () use ($room, $booking, $request) {
+        $reference = $request->reference ?? 'MOCK-' . strtoupper(uniqid());
+
+        // ✅ IDEMPOTENCY CHECK
+        if (\DB::table('payments')->where('reference', $reference)->exists()) {
+            return response()->json([
+                'success' => true,
+                'outstanding' => $this->outstandingForRoom($room),
+                'message' => 'Payment already processed.',
+            ]);
+        }
+
+        \DB::transaction(function () use ($room, $booking, $request, $reference) {
             $outstanding = $this->outstandingForRoom($room);
 
             if ($request->amount > $outstanding) {
                 throw new \Exception('Payment exceeds outstanding balance.');
             }
 
-            // payments table: id, booking_id, room_id, amount
             $room->payments()->create([
                 'booking_id' => $booking->id,
                 'amount' => $request->amount,
-                'method' => 'guest-portal',
-                'notes' => 'Payment via guest portal',
+                'reference' => $reference,
             ]);
         });
 
@@ -143,6 +154,7 @@ class RoomDashboardController extends Controller
             'outstanding' => $this->outstandingForRoom($room),
         ]);
     }
+
 
     /* ======================
        EXISTING METHODS BELOW
