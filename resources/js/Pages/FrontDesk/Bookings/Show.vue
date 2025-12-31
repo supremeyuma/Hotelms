@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { router } from '@inertiajs/vue3'
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
+import FrontDeskLayout from '@/Layouts/Staff/FrontDeskLayout.vue'
 
 const props = defineProps({
   booking: Object,
@@ -45,7 +45,7 @@ function extendStay() {
 </script>
 
 <template>
-  <AuthenticatedLayout>
+  <FrontDeskLayout>
     <div class="p-6 space-y-6">
 
       <!-- Header -->
@@ -193,5 +193,5 @@ function extendStay() {
       </div>
 
     </div>
-  </AuthenticatedLayout>
+  </FrontDeskLayout>
 </template>

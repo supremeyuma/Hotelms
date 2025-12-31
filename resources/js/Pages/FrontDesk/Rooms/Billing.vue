@@ -1,4 +1,5 @@
 <template>
+  <FrontDeskLayout>
   <div class="p-6 space-y-8">
     <div class="flex justify-between items-center">
       <h1 class="text-2xl font-bold">
@@ -142,9 +143,11 @@
       </form>
     </div>
   </div>
+  </FrontDeskLayout>
 </template>
 
 <script setup>
+import FrontDeskLayout from '@/Layouts/Staff/FrontDeskLayout.vue'
 import { ref, onMounted } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 

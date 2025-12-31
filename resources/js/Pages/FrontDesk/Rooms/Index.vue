@@ -1,4 +1,5 @@
 <template>
+  <FrontDeskLayout>
   <div class="p-6 space-y-6">
     <h1 class="text-2xl font-bold capitalize">
       {{ status }} Rooms
@@ -109,9 +110,11 @@
       </tbody>
     </table>
   </div>
+  </FrontDeskLayout>
 </template>
 
 <script setup>
+import FrontDeskLayout from '@/Layouts/Staff/FrontDeskLayout.vue'
 import { Link } from '@inertiajs/vue3';
 
 const props = defineProps({

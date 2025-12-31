@@ -1,5 +1,6 @@
 <!-- resources/js/Pages/FrontDesk/LaundryRequests.vue -->
 <template>
+  <FrontDeskLayout>
   <div class="space-y-6">
     <h1 class="text-2xl font-bold">Laundry Requests</h1>
 
@@ -29,9 +30,12 @@
       </div>
     </div>
   </div>
+  </FrontDeskLayout>
 </template>
 
 <script setup>
+import FrontDeskLayout from '@/Layouts/Staff/FrontDeskLayout.vue'
+
 const props = defineProps({
   requests: Array
 })

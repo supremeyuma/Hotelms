@@ -71,7 +71,7 @@ Route::prefix('frontdesk')->middleware(['auth', 'role:frontdesk'])->name('frontd
 
     Route::resource('rooms', RoomController::class)->only(['index', 'show', 'updateStatus']);
 
-    Route::get('guest-requests', [GuestRequestController::class, 'index']);
+    Route::get('guest-requests', [GuestRequestController::class, 'index'])->name('guest-requests.index');;
     Route::post('guest-requests/{request}/acknowledge', [GuestRequestController::class, 'acknowledge']);
     Route::post('guest-requests/{request}/complete', [GuestRequestController::class, 'complete']);
 
@@ -82,7 +82,7 @@ Route::prefix('frontdesk')->middleware(['auth', 'role:frontdesk'])->name('frontd
     Route::get('reports/revenue', [ReportController::class, 'revenueReport']);
     Route::get('reports/bookings', [ReportController::class, 'bookingHistoryReport']);
 
-    Route::get('/laundry-requests', [FrontDeskLaundryController::class, 'index'])->name('frontdesk.laundry.index');
+    Route::get('/laundry-requests', [FrontDeskLaundryController::class, 'index'])->name('laundry.index');
     Route::get('/laundry-requests/{guestRequest}', [FrontDeskLaundryController::class, 'show'])->name('frontdesk.laundry.show');
 
     Route::get('/receipts', [ReceiptController::class, 'index']);

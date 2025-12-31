@@ -1,4 +1,5 @@
 <template>
+  <FrontDeskLayout>
   <div class="p-6 space-y-6">
     <h1 class="text-2xl font-bold">Guest Requests</h1>
 
@@ -14,9 +15,11 @@
 
     <Pagination :links="guestRequests.links" @page-change="fetchRequests" />
   </div>
+  </FrontDeskLayout>
 </template>
 
 <script setup>
+import FrontDeskLayout from '@/Layouts/Staff/FrontDeskLayout.vue'
 import { ref, onMounted } from 'vue';
 import { router } from '@inertiajs/vue3';
 

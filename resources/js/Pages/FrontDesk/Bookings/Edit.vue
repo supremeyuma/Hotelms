@@ -1,4 +1,5 @@
 <template>
+  <FrontDeskLayout>
   <div class="p-6 space-y-6 max-w-4xl mx-auto">
     <h1 class="text-2xl font-bold">Edit Booking</h1>
 
@@ -69,9 +70,11 @@
       </div>
     </form>
   </div>
+  </FrontDeskLayout>
 </template>
 
 <script setup>
+import FrontDeskLayout from '@/Layouts/Staff/FrontDeskLayout.vue'
 import { useForm, Link } from '@inertiajs/vue3';
 
 const props = defineProps({

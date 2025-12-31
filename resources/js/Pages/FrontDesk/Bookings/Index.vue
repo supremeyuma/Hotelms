@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue';
 import { router } from '@inertiajs/vue3';
+import FrontDeskLayout from '@/Layouts/Staff/FrontDeskLayout.vue'
 import BookingTable from '@/Components/FrontDesk/BookingTable.vue';
 import FilterSearch from '@/Components/FrontDesk/FilterSearch.vue';
 import Pagination from '@/Components/Pagination.vue';
@@ -69,6 +70,7 @@ function fetchBookings(page = 1) {
 </script>
 
 <template>
+  <FrontDeskLayout>
   <div class="p-6 space-y-6">
     <h1 class="text-2xl font-bold">Bookings</h1>
     <div class="flex items-end gap-4">
@@ -121,4 +123,5 @@ function fetchBookings(page = 1) {
       @close="showCheckIn = false"
     />
   </div>
+  </FrontDeskLayout>
 </template>

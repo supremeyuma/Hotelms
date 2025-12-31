@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
+import FrontDeskLayout from '@/Layouts/Staff/FrontDeskLayout.vue'
 import KPIWidget from '@/Components/FrontDesk/KPIWidget.vue'
 import GuestRequestItem from '@/Components/FrontDesk/GuestRequestItem.vue'
 import BookingItem from '@/Components/FrontDesk/BookingItem.vue'
@@ -78,6 +79,7 @@ function resolveRequestLink(request) {
 </script>
 
 <template>
+  <FrontDeskLayout>
   <div class="space-y-6 p-6">
     <h1 class="text-2xl font-bold">FrontDesk Dashboard</h1>
 
@@ -160,5 +162,6 @@ function resolveRequestLink(request) {
       </p>
     </div>
   </div>
+  </FrontDeskLayout>
 </template>
 
