@@ -116,7 +116,7 @@ Route::middleware(['auth', 'role:laundry|frontdesk'])->prefix('staff')->name('st
 
 
 //KITCHEN AND BAR ROUTES
-Route::middleware(['auth', 'role:staff|manager|md|frontdesk'])->prefix('staff')->name('staff.')->group(function () {
+Route::middleware(['auth', 'role:staff|manager|md|kitchen|bar'])->prefix('staff')->name('staff.')->group(function () {
 
     Route::get('/kitchen/orders', [KitchenOrderController::class, 'index'])->name('kitchen.orders.index');
     Route::patch('/kitchen/orders/{order}', [KitchenOrderController::class, 'updateStatus'])->name('kitchen.orders.updateStatus');
@@ -127,20 +127,14 @@ Route::middleware(['auth', 'role:staff|manager|md|frontdesk'])->prefix('staff')-
     /* ==============================
      | KITCHEN DASHBOARD
      |==============================*/
-    Route::get('/kitchen', [KitchenDashboardController::class, 'index'])
-        ->name('kitchen.dashboard');
+    Route::get('/kitchen', [KitchenDashboardController::class, 'index'])->name('kitchen.dashboard');
 
-    Route::get('/kitchen/orders', [KitchenOrderController::class, 'index']);
-    Route::patch('/kitchen/orders/{order}', [KitchenOrderController::class, 'updateStatus']);
 
     /* ==============================
      | BAR DASHBOARD
      |==============================*/
-    Route::get('/bar', [BarDashboardController::class, 'index'])
-        ->name('staff.bar.dashboard');
+    Route::get('/bar', [BarDashboardController::class, 'index'])->name('bar.dashboard');
 
-    Route::get('/bar/orders', [BarOrderController::class, 'index']);
-    Route::patch('/bar/orders/{order}', [BarOrderController::class, 'updateStatus']);
 
     /* ==============================
      | MENU MANAGEMENT (SHARED)

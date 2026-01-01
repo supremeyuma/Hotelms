@@ -52,7 +52,7 @@ const nav = computed(() => {
     case 'bar':
       return [
         { label: 'Bar Dashboard', route: 'staff.bar.dashboard', icon: 'home' },
-        { label: 'Orders Queue', route: 'bar.orders.index', icon: 'clipboard' },
+        { label: 'Orders Queue', route: 'staff.bar.orders.index', icon: 'clipboard' },
         {
           label: 'Menu Management',
           href: '/staff/menu?area=bar',

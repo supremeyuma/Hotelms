@@ -31,6 +31,12 @@ class RoleRedirectService
         if ($user->hasRole('staff')) {
             return route('staff.dashboard');
         }
+        if ($user->hasRole('kitchen')) {
+            return route('staff.kitchen.dashboard');
+        }
+        if ($user->hasRole('bar')) {
+            return route('staff.bar.dashboard');
+        }
 
         // Fallback (should never happen)
         return route('login');
