@@ -1,25 +1,25 @@
+<!-- resources/js/Components/Staff/StaffSidebarItem.vue -->
 <script setup>
-import { Link, usePage } from '@inertiajs/vue3'
+import { Link } from '@inertiajs/vue3'
+import Icon from '@/Components/Icon.vue'
 
 const props = defineProps({
-  item: Object,
+  item: {
+    type: Object,
+    required: true,
+  },
 })
-
-const page = usePage()
-
-const isActive = () =>
-  route().current(props.item.route)
 </script>
 
 <template>
   <Link
     :href="route(item.route)"
     class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition"
-    :class="isActive()
+    :class="route().current(item.route)
       ? 'bg-blue-600 text-white'
       : 'text-gray-700 hover:bg-gray-100'"
   >
-    <span class="w-5 h-5 text-center">{{ item.icon }}</span>
+    <Icon :name="item.icon" class="w-5 h-5" />
     <span>{{ item.label }}</span>
   </Link>
 </template>

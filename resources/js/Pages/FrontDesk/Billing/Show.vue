@@ -1,4 +1,5 @@
 <template>
+  <FrontDeskLayout>
   <div class="p-6 space-y-6">
     <h1 class="text-2xl font-bold">Billing for {{ booking.guest_name }}</h1>
 
@@ -70,9 +71,11 @@
       <button type="button" @click="settleFull" class="btn-success">Settle Full Balance</button>
     </form>
   </div>
+  </FrontDeskLayout>
 </template>
 
 <script setup>
+import FrontDeskLayout from '@/Layouts/Staff/FrontDeskLayout.vue'
 import { ref } from 'vue';
 import { router } from '@inertiajs/vue3';
 

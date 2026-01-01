@@ -1,3 +1,4 @@
+<!-- resources/js/Components/Staff/StaffSidebar.vue -->
 <script setup>
 import { computed } from 'vue'
 import { usePage, Link } from '@inertiajs/vue3'
@@ -10,10 +11,8 @@ const role = computed(() => {
   if (Array.isArray(user.roles) && user.roles.length) {
     return user.roles[0].name ?? user.roles[0]
   }
-
   return user.role ?? 'staff'
 })
-
 
 const nav = computed(() => {
   switch (role.value) {
@@ -47,18 +46,14 @@ const nav = computed(() => {
       ]
   }
 })
-
-console.log(nav.value)
 </script>
 
 <template>
   <aside class="w-64 bg-white border-r flex flex-col">
-    <!-- Brand -->
     <div class="h-16 flex items-center px-6 font-bold text-lg border-b">
       Moorelife Resort
     </div>
 
-    <!-- Nav -->
     <nav class="flex-1 p-4 space-y-2">
       <StaffSidebarItem
         v-for="item in nav"
@@ -67,7 +62,6 @@ console.log(nav.value)
       />
     </nav>
 
-    <!-- Profile (BOTTOM PINNED) -->
     <div class="border-t p-4">
       <Link
         :href="route('staff.profile.show')"

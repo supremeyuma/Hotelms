@@ -1,3 +1,4 @@
+<!-- resources/js/Components/Icon.vue -->
 <template>
   <component
     :is="iconComponent"
@@ -15,16 +16,26 @@ import {
   AlertCircle,
   ClipboardList,
   CreditCard,
-} from 'lucide-vue-next';
+
+  Home,
+  Calendar,
+  Bell,
+  Shirt,
+  Clipboard,
+  Tag,
+  BarChart,
+  Users,
+} from 'lucide-vue-next'
 
 const props = defineProps({
   name: {
     type: String,
     required: true,
   },
-});
+})
 
 const icons = {
+  // Existing / shared
   bed: BedDouble,
   'bed-outline': Bed,
   'user-plus': UserPlus,
@@ -32,7 +43,17 @@ const icons = {
   alert: AlertCircle,
   requests: ClipboardList,
   billing: CreditCard,
-};
 
-const iconComponent = icons[props.name] ?? AlertCircle;
+  // Sidebar / navigation
+  home: Home,
+  calendar: Calendar,
+  bell: Bell,
+  shirt: Shirt,
+  clipboard: Clipboard,
+  tag: Tag,
+  chart: BarChart,
+  users: Users,
+}
+
+const iconComponent = icons[props.name] ?? AlertCircle
 </script>

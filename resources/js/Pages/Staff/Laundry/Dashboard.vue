@@ -1,4 +1,5 @@
 <template>
+  <LaundryLayout>
   <div class="space-y-6 p-6">
     <div class="flex items-center justify-between">
         <h1 class="text-2xl font-bold">Laundry Dashboard</h1>
@@ -58,9 +59,11 @@
       </div>-->
     </div>
   </div>
+  </LaundryLayout>
 </template>
 
 <script setup>
+import LaundryLayout from '@/Layouts/Staff/LaundryLayout.vue'
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { router } from '@inertiajs/vue3';
 

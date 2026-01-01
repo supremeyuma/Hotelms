@@ -1,10 +1,12 @@
 <script setup>
+import LaundryLayout from '@/Layouts/Staff/LaundryLayout.vue'
 const props = defineProps({ order: Object });
 
 window.print();
 </script>
 
 <template>
+  <LaundryLayout>
   <div class="p-6 text-sm">
     <h1 class="text-xl font-bold">Laundry Order {{ order.order_code }}</h1>
     <p>Room {{ order.room.room_number }}</p>
@@ -19,4 +21,5 @@ window.print();
       Total: ₦{{ order.total_amount }}
     </p>
   </div>
+  </LaundryLayout>
 </template>

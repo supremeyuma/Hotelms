@@ -1,4 +1,5 @@
 <script setup>
+import LaundryLayout from '@/Layouts/Staff/LaundryLayout.vue'
 import { router } from '@inertiajs/vue3';
 import LaundryStatusBadge from '@/Components/Laundry/StatusBadge.vue';
 import LaundryTimeline from '@/Components/Laundry/Timeline.vue';
@@ -33,6 +34,7 @@ function uploadImages(e) {
 </script>
 
 <template>
+  <LaundryLayout>
   <div class="p-6 space-y-8 max-w-5xl mx-auto">
     <!-- HEADER -->
     <div class="flex justify-between items-start">
@@ -109,4 +111,5 @@ function uploadImages(e) {
       <LaundryTimeline :history="order.status_histories" />
     </div>
   </div>
+  </LaundryLayout>
 </template>
