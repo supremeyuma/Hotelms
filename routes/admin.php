@@ -43,7 +43,7 @@ Route::middleware(['auth', 'role:manager|md'])
         Route::get('orders', [OrderAdminController::class, 'index'])->name('orders.index');
         Route::put('orders/{order}/status', [OrderAdminController::class, 'updateStatus'])->name('orders.updateStatus');
 
-        Route::prefix('staff')->name('staff.')->middleware(['auth','role:Manager|MD'])->group(function(){
+        Route::prefix('staff')->name('staff.')->middleware(['auth','role:manager|md'])->group(function(){
             Route::resource('', StaffController::class)->parameters([
                 '' => 'staff'
             ]);

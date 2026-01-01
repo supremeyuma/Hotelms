@@ -17,6 +17,15 @@ use App\Http\Controllers\FrontDesk\FrontDeskLaundryController;
 use App\Http\Controllers\Staff\LaundryItemController;
 use App\Http\Controllers\Staff\FrontDeskController;
 use App\Http\Controllers\Staff\ReceiptController;
+use App\Http\Controllers\Staff\KitchenOrderController;
+use App\Http\Controllers\Staff\BarOrderController;
+use App\Http\Controllers\Staff\KitchenDashboardController;
+use App\Http\Controllers\Staff\BarDashboardController;
+use App\Http\Controllers\Staff\MenuCategoryController;
+use App\Http\Controllers\Staff\MenuSubcategoryController;
+use App\Http\Controllers\Staff\MenuItemController;
+
+
 
 
 /*
@@ -106,4 +115,54 @@ Route::middleware(['auth', 'role:laundry|frontdesk'])->prefix('staff')->name('st
 });
 
 
+//KITCHEN AND BAR ROUTES
+Route::middleware(['auth', 'role:staff|manager|md|frontdesk'])->prefix('staff')->name('staff.')->group(function () {
+
+    Route::get('/kitchen/orders', [KitchenOrderController::class, 'index'])->name('kitchen.orders.index');
+    Route::patch('/kitchen/orders/{order}', [KitchenOrderController::class, 'updateStatus'])->name('kitchen.orders.updateStatus');
+
+    Route::get('/bar/orders', [BarOrderController::class, 'index'])->name('bar.orders.index');
+    Route::patch('/bar/orders/{order}', [BarOrderController::class, 'updateStatus'])->name('bar.orders.updateStatus');
+
+    /* ==============================
+     | KITCHEN DASHBOARD
+     |==============================*/
+    Route::get('/kitchen', [KitchenDashboardController::class, 'index'])
+        ->name('kitchen.dashboard');
+
+    Route::get('/kitchen/orders', [KitchenOrderController::class, 'index']);
+    Route::patch('/kitchen/orders/{order}', [KitchenOrderController::class, 'updateStatus']);
+
+    /* ==============================
+     | BAR DASHBOARD
+     |==============================*/
+    Route::get('/bar', [BarDashboardController::class, 'index'])
+        ->name('staff.bar.dashboard');
+
+    Route::get('/bar/orders', [BarOrderController::class, 'index']);
+    Route::patch('/bar/orders/{order}', [BarOrderController::class, 'updateStatus']);
+
+    /* ==============================
+     | MENU MANAGEMENT (SHARED)
+     |==============================*/
+    Route::get('/menu', [MenuItemController::class, 'index'])->name('menu.index');
+
+    Route::get('/menu/manage', [MenuItemController::class, 'index'])
+        ->name('staff.menu.index');
+
+    /* Categories */
+    Route::post('/menu/categories', [MenuCategoryController::class, 'store']);
+    Route::patch('/menu/categories/{category}', [MenuCategoryController::class, 'update']);
+    Route::delete('/menu/categories/{category}', [MenuCategoryController::class, 'destroy']);
+
+    /* Subcategories */
+    Route::post('/menu/subcategories', [MenuSubcategoryController::class, 'store']);
+    Route::patch('/menu/subcategories/{subcategory}', [MenuSubcategoryController::class, 'update']);
+    Route::delete('/menu/subcategories/{subcategory}', [MenuSubcategoryController::class, 'destroy']);
+
+    /* Items */
+    Route::post('/menu/items', [MenuItemController::class, 'store']);
+    Route::patch('/menu/items/{item}', [MenuItemController::class, 'update']);
+    Route::delete('/menu/items/{item}', [MenuItemController::class, 'destroy']);
+});
 

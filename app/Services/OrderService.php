@@ -144,6 +144,12 @@ class OrderService
             // notify stakeholders
             $this->notifier->notifyStaff($staffId, "Order #{$order->order_code} changed to {$to}", ['order_id' => $order->id]);
 
+            // If this is a room-service order that was delivered, post a charge to the booking
+            if ($to === OrderStatus::DELIVERED) {
+                // OrderChargeService will create a Charge record linked to booking/room
+                app(\App\Services\OrderChargeService::class)->post($order);
+            }
+
             $this->audit->log('order_status_updated', $order, $order->id, ['from' => $from, 'to' => $to, 'by' => $staffId]);
         });
 

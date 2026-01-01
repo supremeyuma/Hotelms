@@ -1,0 +1,60 @@
+<?php
+
+namespace App\Http\Controllers\Staff;
+
+use App\Http\Controllers\Controller;
+use App\Models\MenuCategory;
+use App\Models\MenuSubcategory;
+use App\Models\MenuItem;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+
+class MenuController extends Controller
+{
+    public function index(Request $request)
+    {
+        $area = $request->get('area'); // kitchen | bar
+
+        return Inertia::render('Staff/Menu/Index', [
+            'categories' => MenuCategory::with([
+                'subcategories.items',
+                'items' => fn ($q) => $q->whereNull('menu_subcategory_id')
+            ])
+            ->where(function ($q) use ($area) {
+                $q->where('type', $area)->orWhere('type', 'both');
+            })
+            ->orderBy('sort_order')
+            ->get(),
+            'area' => $area
+        ]);
+    }
+
+    public function storeItem(Request $request)
+    {
+        $data = $request->validate([
+            'menu_category_id' => 'required|exists:menu_categories,id',
+            'menu_subcategory_id' => 'nullable|exists:menu_subcategories,id',
+            'name' => 'required|string',
+            'description' => 'nullable|string',
+            'price' => 'required|numeric|min:0',
+            'prep_time_minutes' => 'nullable|integer|min:0',
+            'service_area' => 'required|in:kitchen,bar'
+        ]);
+
+        MenuItem::create($data);
+
+        return back()->with('success', 'Menu item created');
+    }
+
+    public function updateItem(Request $request, MenuItem $item)
+    {
+        $item->update($request->all());
+        return back()->with('success', 'Menu item updated');
+    }
+
+    public function destroyItem(MenuItem $item)
+    {
+        $item->delete();
+        return back()->with('success', 'Menu item deleted');
+    }
+}

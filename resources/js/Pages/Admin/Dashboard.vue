@@ -1,5 +1,5 @@
 <template>
-  <AuthenticatedLayout>
+  <AdminLayout>
     <div class="grid grid-cols-4 gap-6">
       <div class="p-6 bg-white rounded shadow">
         <p class="text-gray-500">Rooms</p>
@@ -38,10 +38,11 @@
         </tbody>
       </table>
     </div>
-  </AuthenticatedLayout>
+  </AdminLayout>
 </template>
 
 <script setup>
+import AdminLayout from '@/Layouts/AdminLayout.vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 defineProps({ stats: Object, recentBookings: Array })
 </script>
