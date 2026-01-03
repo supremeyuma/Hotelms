@@ -11,4 +11,6 @@ class KitchenDashboardController extends Controller
     {
         return Inertia::render('Staff/Kitchen/Dashboard');
     }
+
+    
 }

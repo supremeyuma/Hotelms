@@ -24,6 +24,9 @@ use App\Http\Controllers\Staff\BarDashboardController;
 use App\Http\Controllers\Staff\MenuCategoryController;
 use App\Http\Controllers\Staff\MenuSubcategoryController;
 use App\Http\Controllers\Staff\MenuItemController;
+use App\Http\Controllers\Staff\CleaningDashboardController;
+use App\Http\Controllers\Staff\CleaningActionController;
+
 
 
 
@@ -112,6 +115,13 @@ Route::middleware(['auth', 'role:laundry|frontdesk'])->prefix('staff')->name('st
     Route::post('/laundry-items', [LaundryItemController::class, 'store'])->name('laundry-items.store');
     Route::put('/laundry-items/{laundryItem}', [LaundryItemController::class, 'update'])->name('laundry-items.update');
     Route::delete('/laundry-items/{laundryItem}', [LaundryItemController::class, 'destroy'])->name('laundry-items.destroy');
+});
+
+//Cleaning Routes
+Route::middleware(['auth', 'role:staff|clean'])->prefix('clean')->name('clean.')->group(function () {
+    Route::get('/', [CleaningDashboardController::class, 'index'])->name('dashboard');
+    //Route::patch('/cleaning/{cleaning}', [CleaningDashboardController::class, 'update'])->name('update');
+    Route::patch('/{cleaning}', [CleaningDashboardController::class, 'update'])->name('update');
 });
 
 

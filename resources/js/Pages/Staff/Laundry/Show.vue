@@ -1,27 +1,43 @@
 <script setup>
-import LaundryLayout from '@/Layouts/Staff/LaundryLayout.vue'
 import { router } from '@inertiajs/vue3';
+import LaundryLayout from '@/Layouts/Staff/LaundryLayout.vue'
 import LaundryStatusBadge from '@/Components/Laundry/StatusBadge.vue';
 import LaundryTimeline from '@/Components/Laundry/Timeline.vue';
+import { 
+  Camera, 
+  ChevronLeft, 
+  Ban, 
+  ListChecks, 
+  History, 
+  Image as ImageIcon,
+  ArrowUpCircle,
+  RefreshCw,
+  ChevronDown
+} from 'lucide-vue-next';
 
 const props = defineProps({
   order: Object,
-  statuses: Array, // ['requested', 'washing', ...]
+  statuses: Array,
 });
 
-//console.log(props.order.status_histories);
-
 function format(date) {
-  return new Date(date).toLocaleString();
+  return new Date(date).toLocaleString([], { 
+    month: 'short', 
+    day: 'numeric', 
+    hour: '2-digit', 
+    minute: '2-digit' 
+  });
 }
 
 function updateStatus(status) {
   if (!status || status === props.order.status) return;
-  router.post(route('staff.laundry.updateStatus', props.order.id), { status });
+  router.post(route('staff.laundry.updateStatus', props.order.id), { status }, {
+    preserveScroll: true
+  });
 }
 
 function cancelOrder() {
-  if (confirm('Cancel this order?')) {
+  if (confirm('Are you sure you want to cancel this order? This action cannot be undone.')) {
     router.post(route('staff.laundry.cancel', props.order.id));
   }
 }
@@ -29,87 +45,164 @@ function cancelOrder() {
 function uploadImages(e) {
   const data = new FormData();
   [...e.target.files].forEach(f => data.append('images[]', f));
-  router.post(route('staff.laundry.addImages', props.order.id), data);
+  router.post(route('staff.laundry.addImages', props.order.id), data, {
+    forceFormData: true,
+    preserveScroll: true
+  });
 }
 </script>
 
 <template>
   <LaundryLayout>
-  <div class="p-6 space-y-8 max-w-5xl mx-auto">
-    <!-- HEADER -->
-    <div class="flex justify-between items-start">
-      <div>
-        <h1 class="text-2xl font-bold">{{ order.order_code }}</h1>
-        <p class="text-gray-500">
-          Room {{ order.room.room_number }} · Requested {{ format(order.created_at) }}
-        </p>
-      </div>
-
-      <LaundryStatusBadge :status="order.status" />
-    </div>
-
-    <!-- STATUS ACTIONS (STAFF ONLY) -->
-    <div class="flex items-center gap-4">
-      <select
-        class="border rounded px-3 py-2"
-        @change="updateStatus($event.target.value)"
-      >
-        <option disabled selected>Update status</option>
-
-        <option
-          v-for="s in statuses"
-          :key="s"
-          :value="s"
-          :disabled="s === order.status"
+    <div class="max-w-4xl mx-auto px-4 py-6 md:py-10 space-y-8">
+      
+      <div class="space-y-4">
+        <button 
+          @click="router.visit(route('staff.laundry.index'))"
+          class="flex items-center gap-2 text-slate-500 font-bold text-sm hover:text-indigo-600 transition-colors group"
         >
-          {{ s.replace('_', ' ') }}
-        </option>
-      </select>
+          <ChevronLeft class="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+          Back to Dashboard
+        </button>
 
-      <button
-        class="btn-danger"
-        @click="cancelOrder"
-        :disabled="order.status === 'cancelled'"
-      >
-        Cancel Order
-      </button>
-    </div>
-
-    <!-- ITEMS -->
-    <div>
-      <h2 class="font-semibold mb-2">Items</h2>
-      <ul class="list-disc pl-6">
-        <li v-for="item in order.items" :key="item.id">
-          {{ item.quantity }} × {{ item.item.name }} — ₦{{ item.subtotal }}
-        </li>
-      </ul>
-    </div>
-
-    <!-- IMAGES -->
-    <div>
-      <h2 class="font-semibold mb-2">Uploaded Images</h2>
-      <div class="flex gap-3 flex-wrap">
-        <img
-          v-for="img in order.images"
-          :key="img.id"
-          :src="`/storage/${img.path}`"
-          class="h-28 w-28 object-cover rounded border"
-        />
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm">
+          <div class="flex items-center gap-4">
+            <div class="w-16 h-16 bg-slate-900 rounded-2xl flex flex-col items-center justify-center text-white shrink-0 shadow-lg shadow-slate-200">
+              <span class="text-[10px] font-black opacity-50 uppercase tracking-tighter">Room</span>
+              <span class="text-xl font-black leading-none">{{ order.room.room_number }}</span>
+            </div>
+            <div>
+              <h1 class="text-2xl font-black text-slate-900 tracking-tight">{{ order.order_code }}</h1>
+              <p class="text-slate-500 text-sm font-medium flex items-center gap-1.5">
+                <History class="w-3.5 h-3.5" /> Requested {{ format(order.created_at) }}
+              </p>
+            </div>
+          </div>
+          <LaundryStatusBadge :status="order.status" class="scale-110 md:self-center self-start" />
+        </div>
       </div>
 
-      <input
-        type="file"
-        multiple
-        class="mt-3"
-        @change="uploadImages"
-      />
-    </div>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <div class="lg:col-span-2 space-y-8">
+          <section class="bg-white rounded-[2rem] border border-slate-200 p-8 shadow-sm relative overflow-hidden">
+            <h2 class="flex items-center gap-2 text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-6">
+              <ArrowUpCircle class="w-4 h-4 text-indigo-500" /> Management Actions
+            </h2>
+            
+            <div class="flex flex-wrap items-center gap-4 relative z-10">
+              <div class="relative flex-1 min-w-[240px]">
+                <select
+                  class="w-full pl-5 pr-12 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-bold text-slate-700 focus:bg-white focus:border-indigo-600 focus:ring-0 transition-all appearance-none cursor-pointer"
+                  @change="updateStatus($event.target.value)"
+                >
+                  <option disabled selected>Change order status...</option>
+                  <option
+                    v-for="s in statuses"
+                    :key="s"
+                    :value="s"
+                    :disabled="s === order.status"
+                  >
+                    {{ s.replace('_', ' ').toUpperCase() }}
+                  </option>
+                </select>
+                <div class="absolute inset-y-0 right-0 pr-5 flex items-center pointer-events-none text-slate-400">
+                  <ChevronDown class="w-5 h-5" />
+                </div>
+              </div>
 
-    <!-- TIMELINE -->
-    <div>
-      <h2 class="font-semibold mb-4">Order Timeline</h2>
-      <LaundryTimeline :history="order.status_histories" />
+              <button
+                class="px-8 py-4 bg-rose-50 text-rose-600 rounded-2xl font-bold text-sm hover:bg-rose-100 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
+                @click="cancelOrder"
+                :disabled="['cancelled', 'delivered'].includes(order.status)"
+              >
+                <Ban class="w-4 h-4" />
+                Cancel Order
+              </button>
+            </div>
+          </section>
+
+          <section class="bg-white rounded-[2rem] border border-slate-200 p-8 shadow-sm">
+            <h2 class="flex items-center gap-2 text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-6">
+              <ListChecks class="w-4 h-4 text-indigo-500" /> Order Details
+            </h2>
+            
+            <div class="space-y-4">
+              <div 
+                v-for="item in order.items" 
+                :key="item.id"
+                class="flex justify-between items-center p-5 bg-slate-50/50 rounded-2xl border border-slate-100 transition-colors hover:bg-slate-50"
+              >
+                <div class="flex items-center gap-4">
+                  <span class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-sm font-black text-slate-900 shadow-sm">
+                    {{ item.quantity }}
+                  </span>
+                  <span class="font-bold text-slate-700 text-lg">{{ item.item.name }}</span>
+                </div>
+                <span class="font-black text-slate-900 text-lg">₦{{ item.subtotal }}</span>
+              </div>
+              
+              <div class="flex justify-between items-center p-8 bg-slate-900 rounded-[2rem] text-white mt-8 shadow-xl shadow-slate-200">
+                <div>
+                  <p class="text-[10px] font-black uppercase tracking-[0.2em] opacity-50 mb-1">Total Amount</p>
+                  <p class="text-3xl font-black">₦{{ order.total_amount }}</p>
+                </div>
+                <div class="p-3 bg-white/10 rounded-2xl">
+                   <ListChecks class="w-8 h-8 opacity-50" />
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div class="space-y-8">
+          <section class="bg-white rounded-[2.5rem] border border-slate-200 p-6 shadow-sm">
+            <h2 class="flex items-center gap-2 text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-6">
+              <ImageIcon class="w-4 h-4 text-indigo-500" /> Photo Evidence
+            </h2>
+            
+            <div class="grid grid-cols-2 gap-3 mb-6">
+              <div
+                v-for="img in order.images"
+                :key="img.id"
+                class="relative aspect-square rounded-2xl overflow-hidden border border-slate-100 group shadow-sm bg-slate-50"
+              >
+                <img :src="`/storage/${img.path}`" class="h-full w-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              </div>
+              
+              <label class="relative aspect-square rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center cursor-pointer hover:bg-indigo-50 hover:border-indigo-400 hover:text-indigo-600 transition-all text-slate-400 group">
+                <Camera class="w-7 h-7 mb-2 group-hover:scale-110 transition-transform" />
+                <span class="text-[10px] font-black uppercase tracking-widest">Add Photo</span>
+                <input type="file" multiple class="hidden" @change="uploadImages" />
+              </label>
+            </div>
+            <p class="text-[10px] text-slate-400 text-center font-medium italic px-4">Upload condition photos before pickup and after delivery.</p>
+          </section>
+
+          <section class="bg-white rounded-[2.5rem] border border-slate-200 p-6 shadow-sm">
+            <h2 class="flex items-center gap-2 text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-6">
+              <History class="w-4 h-4 text-indigo-500" /> Activity Log
+            </h2>
+            <div class="px-1 overflow-hidden">
+              <LaundryTimeline :history="order.status_histories" />
+            </div>
+          </section>
+        </div>
+      </div>
     </div>
-  </div>
   </LaundryLayout>
 </template>
+
+<style scoped>
+/* Scannability and mobile touch targets */
+select {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (max-width: 640px) {
+  .rounded-\[2rem\] {
+    border-radius: 1.5rem;
+  }
+}
+</style>

@@ -11,7 +11,7 @@ class LaundryItemController extends Controller
 {
     public function index()
     {
-        return Inertia::render('Staff/LaundryItems/Index', [
+        return Inertia::render('Staff/Laundry/LaundryItems', [
             'items' => LaundryItem::orderBy('name')->get(),
         ]);
     }

@@ -19,6 +19,7 @@ function logout() {
 
 const nav = computed(() => {
   switch (role.value) {
+
     /* =========================
      | FRONT DESK
      |=========================*/
@@ -32,17 +33,35 @@ const nav = computed(() => {
       ]
 
     /* =========================
+     | CLEANING STAFF
+     |=========================*/
+    case 'clean':
+      return [
+        { label: 'Dashboard', route: 'clean.dashboard', icon: 'broom' },
+      ]
+
+    /* =========================
+     | LAUNDRY STAFF
+     |=========================*/
+    case 'laundry':
+      return [
+        { label: 'Laundry Dashboard', route: 'staff.laundry.dashboard', icon: 'shirt' },
+        { label: 'Laundry Orders', route: 'staff.laundry.dashboard', icon: 'clipboard' },
+        { label: 'Laundry Items', route: 'staff.laundry-items.index', icon: 'tag' },
+      ]
+
+    /* =========================
      | KITCHEN STAFF
      |=========================*/
     case 'kitchen':
       return [
         { label: 'Kitchen Dashboard', route: 'staff.kitchen.dashboard', icon: 'home' },
         { label: 'Orders Queue', route: 'staff.kitchen.orders.index', icon: 'clipboard' },
-        { 
-          label: 'Kitchen Menu', 
-          route: 'staff.menu.index', 
-          params: { area: 'kitchen' }, 
-          icon: 'menu' 
+        {
+          label: 'Kitchen Menu',
+          route: 'staff.menu.index',
+          params: { area: 'kitchen' },
+          icon: 'menu'
         },
       ]
 
@@ -53,11 +72,11 @@ const nav = computed(() => {
       return [
         { label: 'Bar Dashboard', route: 'staff.bar.dashboard', icon: 'home' },
         { label: 'Orders Queue', route: 'staff.bar.orders.index', icon: 'clipboard' },
-        { 
-          label: 'Bar Menu', 
-          route: 'staff.menu.index', 
-          params: { area: 'bar' }, 
-          icon: 'menu' 
+        {
+          label: 'Bar Menu',
+          route: 'staff.menu.index',
+          params: { area: 'bar' },
+          icon: 'menu'
         },
       ]
 
@@ -68,27 +87,27 @@ const nav = computed(() => {
     case 'md':
       return [
         { label: 'Dashboard', route: 'staff.dashboard', icon: 'home' },
-        // Kitchen Section
+
+        // Kitchen
         { label: 'Kitchen Orders', route: 'staff.kitchen.orders.index', icon: 'clipboard' },
-        { 
-          label: 'Kitchen Menu', 
-          route: 'staff.menu.index', 
-          params: { area: 'kitchen' }, 
-          icon: 'menu' 
-        },
-        // Bar Section
+        { label: 'Kitchen Menu', route: 'staff.menu.index', params: { area: 'kitchen' }, icon: 'menu' },
+
+        // Bar
         { label: 'Bar Orders', route: 'staff.bar.orders.index', icon: 'clipboard' },
-        { 
-          label: 'Bar Menu', 
-          route: 'staff.menu.index', 
-          params: { area: 'bar' }, 
-          icon: 'menu' 
-        },
+        { label: 'Bar Menu', route: 'staff.menu.index', params: { area: 'bar' }, icon: 'menu' },
+
+        // Laundry
+        { label: 'Laundry Dashboard', route: 'staff.laundry.dashboard', icon: 'shirt' },
+        { label: 'Laundry Items', route: 'staff.laundry-items.index', icon: 'tag' },
+
         // Admin
         { label: 'Reports', route: 'frontdesk.reports.bookings', icon: 'chart' },
         { label: 'Staff Management', route: 'staff.profile.show', icon: 'users' },
       ]
 
+    /* =========================
+     | DEFAULT STAFF
+     |=========================*/
     default:
       return [
         { label: 'Dashboard', route: 'staff.dashboard', icon: 'home' },
@@ -127,7 +146,6 @@ const nav = computed(() => {
         </div>
       </Link>
 
-      <!-- SIGN OUT -->
       <button
         @click="logout"
         class="w-full text-left text-sm text-red-600 hover:text-red-800"
