@@ -19,7 +19,6 @@ function logout() {
 
 const nav = computed(() => {
   switch (role.value) {
-
     /* =========================
      | FRONT DESK
      |=========================*/
@@ -39,10 +38,11 @@ const nav = computed(() => {
       return [
         { label: 'Kitchen Dashboard', route: 'staff.kitchen.dashboard', icon: 'home' },
         { label: 'Orders Queue', route: 'staff.kitchen.orders.index', icon: 'clipboard' },
-        {
-          label: 'Menu Management',
-          href: '/staff/menu?area=kitchen',
-          icon: 'menu'
+        { 
+          label: 'Kitchen Menu', 
+          route: 'staff.menu.index', 
+          params: { area: 'kitchen' }, 
+          icon: 'menu' 
         },
       ]
 
@@ -53,10 +53,11 @@ const nav = computed(() => {
       return [
         { label: 'Bar Dashboard', route: 'staff.bar.dashboard', icon: 'home' },
         { label: 'Orders Queue', route: 'staff.bar.orders.index', icon: 'clipboard' },
-        {
-          label: 'Menu Management',
-          href: '/staff/menu?area=bar',
-          icon: 'menu'
+        { 
+          label: 'Bar Menu', 
+          route: 'staff.menu.index', 
+          params: { area: 'bar' }, 
+          icon: 'menu' 
         },
       ]
 
@@ -67,25 +68,27 @@ const nav = computed(() => {
     case 'md':
       return [
         { label: 'Dashboard', route: 'staff.dashboard', icon: 'home' },
+        // Kitchen Section
         { label: 'Kitchen Orders', route: 'staff.kitchen.orders.index', icon: 'clipboard' },
+        { 
+          label: 'Kitchen Menu', 
+          route: 'staff.menu.index', 
+          params: { area: 'kitchen' }, 
+          icon: 'menu' 
+        },
+        // Bar Section
         { label: 'Bar Orders', route: 'staff.bar.orders.index', icon: 'clipboard' },
-        {
-          label: 'Kitchen Menu',
-          href: '/staff/menu?area=kitchen',
-          icon: 'menu'
+        { 
+          label: 'Bar Menu', 
+          route: 'staff.menu.index', 
+          params: { area: 'bar' }, 
+          icon: 'menu' 
         },
-        {
-          label: 'Bar Menu',
-          href: '/staff/menu?area=bar',
-          icon: 'menu'
-        },
+        // Admin
         { label: 'Reports', route: 'frontdesk.reports.bookings', icon: 'chart' },
-        { label: 'Staff', route: 'staff.profile.show', icon: 'users' },
+        { label: 'Staff Management', route: 'staff.profile.show', icon: 'users' },
       ]
 
-    /* =========================
-     | DEFAULT STAFF
-     |=========================*/
     default:
       return [
         { label: 'Dashboard', route: 'staff.dashboard', icon: 'home' },

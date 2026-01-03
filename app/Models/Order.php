@@ -22,6 +22,8 @@ class Order extends Model
         'total' => 'decimal:2',
     ];
 
+    protected $appends = ['eta_minutes'];
+
     /* ---------------- Relationships ---------------- */
 
     public function booking()
@@ -49,5 +51,13 @@ class Order extends Model
     public function scopeCompleted($query)
     {
         return $query->where('status', 'completed');
+    }
+
+
+    public function getEtaMinutesAttribute(): int
+    {
+        return $this->items
+            ->map(fn ($item) => $item->menuItem?->effective_prep_time ?? 0)
+            ->max() ?? 0;
     }
 }

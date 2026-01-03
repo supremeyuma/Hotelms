@@ -15,7 +15,7 @@
 
 <script setup>
 import { ref, reactive } from 'vue';
-import { Ine } from '@inertiajs/vue3';
+import { router } from '@inertiajs/vue3';
 
 const props = defineProps({
   serviceName: String, // Kitchen or Bar

@@ -1,1 +1,0 @@
-import{_ as a}from"./BaseStaffLayout-caQ3QYSb.js";import{c as e,o,w as r,j as s}from"./app-CC5fGMjh.js";const m={__name:"KitchenLayout",setup(_){return(t,c)=>(o(),e(a,null,{default:r(()=>[s(t.$slots,"default")]),_:3}))}};export{m as _};

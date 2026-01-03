@@ -57,4 +57,32 @@ class MenuController extends Controller
         $item->delete();
         return back()->with('success', 'Menu item deleted');
     }
+
+    public function bulkAddTime(Request $request)
+    {
+        $data = $request->validate([
+            'minutes' => ['required','integer','min:1'],
+            'scope' => ['required','in:menu,category,subcategory'],
+            'id' => ['nullable','integer'],
+        ]);
+
+        $query = MenuItem::query();
+
+        if ($data['scope'] === 'category') {
+            $query->where('menu_category_id', $data['id']);
+        }
+
+        if ($data['scope'] === 'subcategory') {
+            $query->where('menu_subcategory_id', $data['id']);
+        }
+
+        $query->update([
+            'prep_time_minutes' => DB::raw(
+                "COALESCE(prep_time_minutes,0) + {$data['minutes']}"
+            )
+        ]);
+
+        return back();
+    }
+
 }

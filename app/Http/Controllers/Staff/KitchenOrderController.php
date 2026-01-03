@@ -13,14 +13,20 @@ class KitchenOrderController extends Controller
 {
     public function index()
     {
+        $orders = Order::with([
+            'items.menuItem.category',
+            'items.menuItem.subcategory'
+        ])
+        ->where('service_area', 'kitchen')
+        ->whereIn('status', ['pending', 'preparing'])
+        ->latest()
+        ->get();
+
         return Inertia::render('Staff/Kitchen/Orders', [
-            'orders' => Order::with('items.menuItem')
-                ->where('service_area', 'kitchen')
-                ->whereIn('status', ['pending','preparing','ready'])
-                ->latest()
-                ->get()
+            'orders' => $orders
         ]);
     }
+
 
     public function updateStatus(Request $request, Order $order)
     {

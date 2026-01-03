@@ -141,8 +141,6 @@ Route::middleware(['auth', 'role:staff|manager|md|kitchen|bar'])->prefix('staff'
      |==============================*/
     Route::get('/menu', [MenuItemController::class, 'index'])->name('menu.index');
 
-    Route::get('/menu/manage', [MenuItemController::class, 'index'])
-        ->name('staff.menu.index');
 
     /* Categories */
     Route::post('/menu/categories', [MenuCategoryController::class, 'store']);
@@ -158,5 +156,39 @@ Route::middleware(['auth', 'role:staff|manager|md|kitchen|bar'])->prefix('staff'
     Route::post('/menu/items', [MenuItemController::class, 'store']);
     Route::patch('/menu/items/{item}', [MenuItemController::class, 'update']);
     Route::delete('/menu/items/{item}', [MenuItemController::class, 'destroy']);
+    Route::delete('/menu/items/images/{image}', [MenuItemController::class, 'deleteImage']);
+
+
+
+    /* ==============================
+    | MENU VIEW / EDIT
+    |==============================*/
+
+    // View menu tree
+
+    // Edit item
+    Route::get('/menu/items/{item}/edit', [MenuItemController::class, 'edit'])
+        ->name('menu.items.edit');
+    Route::patch('/menu/items/{item}/toggle', [MenuItemController::class, 'toggle']);
+
+    // Edit category
+    Route::get('/menu/categories/{category}/edit', [MenuCategoryController::class, 'edit'])
+        ->name('menu.categories.edit');
+    Route::patch('/menu/categories/{category}/toggle', [MenuCategoryController::class, 'toggle']);
+
+    // Edit subcategory
+    Route::get('/menu/subcategories/{subcategory}/edit', [MenuSubcategoryController::class, 'edit'])
+        ->name('menu.subcategories.edit');
+    Route::patch('/menu/subcategories/{subcategory}/toggle', [MenuSubcategoryController::class, 'toggle']);
+
+    // Drag & drop ordering
+    Route::post('/menu/reorder', [MenuCategoryController::class, 'reorder']);
+    Route::post('/menu/reorder-items', [MenuItemController::class, 'reorder']);
+
+        
+
+
+
+
 });
 

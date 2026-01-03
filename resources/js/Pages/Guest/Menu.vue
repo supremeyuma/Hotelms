@@ -22,6 +22,12 @@ defineProps({ categories: Array })
         <div class="flex justify-between">
           <span>{{ item.name }}</span>
           <span>{{ item.price }}</span>
+          <img
+            v-if="item.images?.length"
+            :src="`/storage/${item.images[0].path}`"
+            class="w-20 h-20 object-cover rounded"
+            />
+
         </div>
       </div>
     </div>
