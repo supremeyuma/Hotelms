@@ -12,7 +12,7 @@ import {
   Brush
 } from 'lucide-vue-next'
 
-defineProps({ rooms: Array })
+const props = defineProps({ rooms: Array })
 
 const selectedRoom = ref(null)
 
@@ -36,6 +36,14 @@ const getStatusConfig = (status) => {
         label: 'In Progress', 
         bg: 'bg-blue-50', 
         text: 'text-blue-700', 
+        border: 'border-blue-100',
+        icon: Clock 
+      }
+    case 'cleaner_requested':
+      return { 
+        label: 'Cleaner Requested', 
+        bg: 'bg-yellow-50', 
+        text: 'text-blue-900', 
         border: 'border-blue-100',
         icon: Clock 
       }

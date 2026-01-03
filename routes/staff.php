@@ -120,7 +120,7 @@ Route::middleware(['auth', 'role:laundry|frontdesk'])->prefix('staff')->name('st
 //Cleaning Routes
 Route::middleware(['auth', 'role:staff|clean'])->prefix('clean')->name('clean.')->group(function () {
     Route::get('/', [CleaningDashboardController::class, 'index'])->name('dashboard');
-    //Route::patch('/cleaning/{cleaning}', [CleaningDashboardController::class, 'update'])->name('update');
+    //Route::patch('/clean/{cleaning}', [CleaningDashboardController::class, 'update'])->name('update');
     Route::patch('/{cleaning}', [CleaningDashboardController::class, 'update'])->name('update');
 });
 

@@ -25,7 +25,7 @@ const cleaningId = computed(() => props.room.latest_cleaning?.id)
 const submit = () => {
   error.value = null
   router.patch(
-    `/cleaning/${cleaningId.value ?? 'create'}`,
+    `/clean/${cleaningId.value ?? 'create'}`,
     {
       room_id: props.room.id,
       action: action.value,

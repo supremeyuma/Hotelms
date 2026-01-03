@@ -1,114 +1,136 @@
 <template>
-  <Modal :show="show" @close="show = false">
+  <Modal :show="show" @close="$emit('close')">
     <template #title>
-      <h2 class="text-xl font-bold">Laundry Service</h2>
+      <div class="flex items-center gap-3">
+        <div class="p-2 bg-purple-50 text-purple-600 rounded-xl">
+          <WashingMachine class="w-6 h-6" />
+        </div>
+        <div>
+          <h2 class="text-xl font-black text-slate-900 tracking-tight">Laundry Service</h2>
+          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Professional Care</p>
+        </div>
+      </div>
     </template>
 
     <template #content>
-      <form @submit.prevent="submitOrder" class="space-y-4">
-        <!-- Laundry Items -->
-        <div v-for="item in items" :key="item.id" class="flex items-center space-x-2">
-          <div class="flex-1">
-            <p class="font-semibold">{{ item.name }} — ₦{{ item.price }}</p>
-            <p class="text-sm text-gray-500" v-if="item.description">{{ item.description }}</p>
-          </div>
-          <input 
-            type="number" 
-            min="0" 
-            v-model.number="quantities[item.id]" 
-            class="w-16 border rounded px-2 py-1" 
-          />
-        </div>
+      <form @submit.prevent="submitOrder" class="space-y-8 py-2">
+        <div class="space-y-4 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar">
+          <div 
+            v-for="item in items" 
+            :key="item.id" 
+            class="group flex items-center justify-between p-4 rounded-[1.5rem] border border-slate-100 bg-slate-50/50 hover:bg-white hover:border-purple-200 hover:shadow-md transition-all duration-300"
+          >
+            <div class="flex-1">
+              <p class="font-bold text-slate-800">{{ item.name }}</p>
+              <p class="text-xs font-black text-purple-600 italic">₦{{ Number(item.price).toLocaleString() }}</p>
+            </div>
 
-        <!-- Selected Items Summary -->
-        <div v-if="selectedItems.length" class="border-t pt-2 text-sm">
-          <p class="font-semibold">Selected Items:</p>
-          <ul class="list-disc pl-5">
-            <li v-for="i in selectedItems" :key="i.id">
-              {{ i.quantity }} × {{ i.name }} — ₦{{ i.subtotal }}
-            </li>
-          </ul>
-        </div>
-
-        <!-- Image Upload -->
-        <div>
-          <label class="block font-semibold">Photos (optional)</label>
-          <input type="file" multiple @change="handleFiles" accept="image/*" class="mt-1" />
-          <div class="flex mt-2 space-x-2">
-            <div v-for="(file, idx) in filePreviews" :key="idx">
-              <img :src="file" class="h-20 w-20 object-cover rounded border" />
+            <div class="flex items-center bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
+              <button 
+                type="button"
+                @click="quantities[item.id] > 0 ? quantities[item.id]-- : null"
+                class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-purple-600 transition-colors"
+              >
+                <Minus class="w-4 h-4" />
+              </button>
+              <input 
+                type="number" 
+                v-model.number="quantities[item.id]" 
+                readonly
+                class="w-8 text-center border-none focus:ring-0 text-sm font-black text-slate-900 bg-transparent p-0" 
+              />
+              <button 
+                type="button"
+                @click="quantities[item.id]++"
+                class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-purple-600 transition-colors"
+              >
+                <Plus class="w-4 h-4" />
+              </button>
             </div>
           </div>
         </div>
 
-        <!-- Total -->
-        <div class="text-right font-bold mt-2">
-          Total: ₦{{ total }}
+        <div class="space-y-3">
+          <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Condition Photos (Optional)</label>
+          <div class="flex flex-wrap gap-3">
+            <label class="w-20 h-20 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-[1.25rem] text-slate-400 hover:border-purple-400 hover:text-purple-500 cursor-pointer transition-all bg-slate-50/50">
+              <Camera class="w-6 h-6 mb-1" />
+              <span class="text-[8px] font-black uppercase">Add</span>
+              <input type="file" multiple @change="handleFiles" accept="image/*" class="hidden" />
+            </label>
+            
+            <div v-for="(file, idx) in filePreviews" :key="idx" class="relative group">
+              <img :src="file" class="h-20 w-20 object-cover rounded-[1.25rem] border border-slate-100 shadow-sm" />
+              <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 rounded-[1.25rem] transition-opacity flex items-center justify-center">
+                 <button @click="removeFile(idx)" type="button" class="text-white"><X class="w-4 h-4" /></button>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <!-- Actions -->
-        <div class="flex justify-end space-x-2">
-          <button type="button" class="btn-secondary" @click="show = false">Cancel</button>
-          <button type="submit" class="btn-primary" :disabled="total === 0">Submit</button>
+        <div class="bg-slate-900 rounded-[2rem] p-6 text-white flex justify-between items-center shadow-xl shadow-slate-200">
+          <div>
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Estimated Total</p>
+            <p class="text-2xl font-black">₦{{ total.toLocaleString() }}</p>
+          </div>
+          <button 
+            type="submit" 
+            :disabled="total === 0"
+            class="px-8 py-3 bg-purple-600 disabled:bg-slate-700 text-white rounded-xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-purple-900/20"
+          >
+            Place Request
+          </button>
         </div>
       </form>
     </template>
-    </Modal>
+  </Modal>
 </template>
 
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { router } from '@inertiajs/vue3'
 import Modal from '@/Components/Modal.vue'
+import { WashingMachine, Plus, Minus, Camera, X } from 'lucide-vue-next'
 
 const props = defineProps({
   room: Object,
   booking: Object,
-  items: {
-    type: Array,
-    default: () => []
-  },
+  items: { type: Array, default: () => [] },
   accessToken: String,
+  show: Boolean
 })
 
-console.log(props.booking.id)
+const emit = defineEmits(['close'])
 
-const show = ref(true)
 const quantities = ref({})
 const files = ref([])
 const filePreviews = ref([])
 
-// Initialize quantities
-props.items.forEach(i => quantities.value[i.id] = 0)
+// Initialize quantities correctly
+props.items.forEach(i => {
+  quantities.value[i.id] = 0
+})
 
-// Compute total
 const total = computed(() =>
   props.items.reduce((sum, i) => sum + (quantities.value[i.id] || 0) * i.price, 0)
 )
 
-// Selected items for summary
-const selectedItems = computed(() => 
-  props.items
-    .map(i => ({ ...i, quantity: quantities.value[i.id] || 0, subtotal: (quantities.value[i.id] || 0) * i.price }))
-    .filter(i => i.quantity > 0)
-)
-
-// Watch files to generate previews
 watch(files, () => {
   filePreviews.value = files.value.map(f => URL.createObjectURL(f))
 })
 
 function handleFiles(event) {
-  files.value = Array.from(event.target.files)
+  files.value = [...files.value, ...Array.from(event.target.files)]
+}
+
+function removeFile(index) {
+  files.value.splice(index, 1)
 }
 
 function submitOrder() {
   const formData = new FormData()
-  
-  // Append booking ID
-  formData.append('booking_id', props.booking.id) // <-- must include this
+  formData.append('booking_id', props.booking.id)
 
-  // Append selected items
   for (const id in quantities.value) {
     if (quantities.value[id] > 0) {
       formData.append(`items[${id}][laundry_item_id]`, id)
@@ -116,21 +138,16 @@ function submitOrder() {
     }
   }
 
-  // Append uploaded images
   files.value.forEach(f => formData.append('images[]', f))
 
-  // Send request using the guest token in the URL
   router.post(route('guest.laundry.store', props.accessToken), formData, {
     onSuccess: () => {
-      show.value = false // close modal on success
-      quantities.value = {} // reset quantities
+      emit('close')
+      quantities.value = {}
+      props.items.forEach(i => quantities.value[i.id] = 0)
       files.value = []
       filePreviews.value = []
-    },
-    onError: (errors) => {
-      console.error('Validation errors:', errors)
     }
   })
 }
-
 </script>

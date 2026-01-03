@@ -1,94 +1,261 @@
+<script setup>
+import { ref, reactive, onMounted, computed } from 'vue'
+import { router, Head } from '@inertiajs/vue3'
+import axios from 'axios'
+import GuestLayout from '@/Layouts/GuestLayout.vue'
+import Modal from '@/Components/Modal.vue'
+import OutstandingBill from '@/Pages/Guest/OutstandingBill.vue'
+import LaundryModal from '@/Pages/Guest/LaundryModal.vue'
+import { 
+  Sparkles, 
+  Utensils, 
+  Wine, 
+  WashingMachine, 
+  Wrench, 
+  CalendarPlus, 
+  LogOut, 
+  CreditCard,
+  History,
+  ChevronRight,
+  Clock,
+  Receipt,
+} from 'lucide-vue-next'
+
+const props = defineProps({
+  room: Object,
+  booking: Object,
+  outstandingBill: Number,
+  accessToken: String,
+  laundryItems: Array,
+  cleaningStatus: String,
+})
+
+const showLaundryModal = ref(false)
+const showBillHistory = ref(false)
+const showMaintenanceModal = ref(false)
+const showExtendStayModal = ref(false)
+const extensionDate = ref('')
+const billHistory = ref([]) 
+const maintenance = reactive({ type: 'plumbing', description: '', file: null })
+const cleaningRequested = computed(() => props.cleaningStatus === 'cleaner_requested')
+
+/* ---------------- DATA FETCHING ---------------- */
+async function fetchBillHistory() {
+  try {
+    const response = await axios.get(`/guest/room/${props.accessToken}/bill-history`)
+    billHistory.value = response.data.history
+  } catch (error) {
+    console.error("Failed to load bill history:", error)
+  }
+}
+
+onMounted(() => {
+  fetchBillHistory()
+})
+
+/* ---------------- ACTIONS ---------------- */
+function requestService(type) { 
+  router.post(`/guest/room/${props.accessToken}/service-request`, { type }) 
+}
+
+function submitExtendStay() {
+  router.post(`/guest/room/${props.accessToken}/extend-stay`, 
+    { new_checkout: extensionDate.value }, 
+    { onSuccess: () => showExtendStayModal.value = false }
+  )
+}
+
+function handleFileUpload(e) { maintenance.file = e.target.files[0] }
+
+function submitMaintenance() {
+  const formData = new FormData()
+  formData.append('type', maintenance.type)
+  formData.append('description', maintenance.description)
+  if (maintenance.file) formData.append('file', maintenance.file)
+  router.post(`/guest/room/${props.accessToken}/maintenance`, formData, { 
+    onSuccess: () => showMaintenanceModal.value = false 
+  })
+}
+
+function checkout() { router.post(`/guest/room/${props.accessToken}/checkout`) }
+function payBill() { router.post(`/guest/room/${props.accessToken}/payment`) }
+
+function formatDate(date) { 
+  return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) 
+}
+</script>
+
 <template>
   <GuestLayout>
-    <div class="space-y-6 p-6">
-      <!-- Room Header -->
-      <div class="flex justify-between items-center">
-        <div>
-          <h1 class="text-2xl font-bold">Room {{ room.number }}</h1>
-          <p class="text-sm text-gray-500">Booking: {{ booking.guest_name }}</p>
-          <p class="text-sm text-gray-500">Stay: {{ formatDate(booking.check_in) }} → {{ formatDate(booking.check_out) }}</p>
+    <Head title="Your Stay" />
+    
+    <div class="max-w-xl mx-auto space-y-8 pb-20">
+      
+      <div class="bg-slate-900 text-white p-8 rounded-b-[3rem] shadow-2xl -mt-6 -mx-6">
+        <div class="flex justify-between items-start mb-6">
+          <div>
+            <p class="text-indigo-400 text-[10px] font-black uppercase tracking-[0.2em] mb-1">Current Residence</p>
+            <h1 class="text-4xl font-black tracking-tight">Room {{ room.room_number }}</h1>
+          </div>
+          <div class="bg-white/10 p-3 rounded-2xl backdrop-blur-md">
+            <Sparkles class="w-6 h-6 text-indigo-300" />
+          </div>
         </div>
-        <div class="text-right">
-          <OutstandingBill :accessToken="accessToken" />
-          <button @click="showBillHistory = true" class="text-sm text-blue-600 underline">View Bill History</button>
+
+        <div class="space-y-1 opacity-90">
+          <p class="text-lg font-bold">{{ booking.guest_name }}</p>
+          <div class="flex items-center gap-2 text-xs font-medium text-slate-400">
+            <Clock class="w-3.5 h-3.5" />
+            {{ formatDate(booking.check_in) }} — {{ formatDate(booking.check_out) }}
+          </div>
         </div>
       </div>
 
-      <!-- Service Buttons -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <button @click="requestService('cleaning')" class="service-btn bg-green-500 hover:bg-green-600">Cleaning</button>
-        <button @click="requestService('kitchen')" class="service-btn bg-yellow-500 hover:bg-yellow-600">Kitchen</button>
-        <button @click="requestService('bar')" class="service-btn bg-blue-500 hover:bg-blue-600">Bar</button>
-        <button @click="openLaundryModal" class="service-btn bg-purple-500 hover:bg-purple-600 text-center">Laundry</button>
-
+      <div class="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-100 flex items-center justify-between">
+        <div class="space-y-1">
+          <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Outstanding Bill</p>
+          <OutstandingBill :accessToken="accessToken" class="text-2xl font-black text-slate-900" />
         </div>
-
-      <!-- Action Buttons -->
-      <div class="flex flex-wrap gap-4 mt-4">
-        <button @click="showMaintenanceModal = true" class="btn-secondary">Report Maintenance Issue</button>
-        <button @click="showExtendStayModal = true" class="btn-primary">Extend Stay</button>
+        <button @click="showBillHistory = true" class="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-xl text-[10px] font-black uppercase text-slate-600 hover:bg-slate-100 transition-all">
+          <History class="w-3.5 h-3.5" /> History
+        </button>
       </div>
 
-      <!-- Checkout -->
-      <div class="mt-6 flex justify-end space-x-4">
-        <button @click="checkout" :disabled="outstandingBill > 0" class="btn-danger">Checkout</button>
-        <button @click="payBill" class="btn-secondary">Pay Bill</button>
+      <div class="grid grid-cols-2 gap-4">
+
+        <button @click="requestService('kitchen')" class="group flex flex-col items-center justify-center p-6 bg-amber-50 rounded-[2rem] border border-amber-100 transition-all active:scale-95">
+          <div class="p-3 bg-white rounded-2xl text-amber-600 shadow-sm mb-3 group-hover:scale-110 transition-transform">
+            <Utensils class="w-6 h-6" />
+          </div>
+          <span class="text-xs font-black uppercase tracking-widest text-amber-700">Kitchen</span>
+        </button>
+
+        <button @click="requestService('bar')" class="group flex flex-col items-center justify-center p-6 bg-indigo-50 rounded-[2rem] border border-indigo-100 transition-all active:scale-95">
+          <div class="p-3 bg-white rounded-2xl text-indigo-600 shadow-sm mb-3 group-hover:scale-110 transition-transform">
+            <Wine class="w-6 h-6" />
+          </div>
+          <span class="text-xs font-black uppercase tracking-widest text-indigo-700">The Bar</span>
+        </button>
+
+        <button
+          @click="requestService('cleaning')"
+          :disabled="cleaningRequested"
+          class="group flex flex-col items-center justify-center p-6 rounded-[2rem] border transition-all active:scale-95"
+          :class="cleaningRequested
+            ? 'bg-slate-100 border-slate-200 cursor-not-allowed'
+            : 'bg-emerald-50 border-emerald-100 hover:bg-emerald-100'
+          "
+        >
+          <div
+            class="p-3 bg-white rounded-2xl shadow-sm mb-3 transition-transform"
+            :class="cleaningRequested ? 'text-slate-400' : 'text-emerald-600 group-hover:scale-110'"
+          >
+            <Sparkles class="w-6 h-6" />
+          </div>
+
+          <span
+            class="text-xs font-black uppercase tracking-widest"
+            :class="cleaningRequested ? 'text-slate-500' : 'text-emerald-700'"
+          >
+            <template v-if="cleaningRequested">
+              Cleaner Requested
+            </template>
+            <template v-else>
+              Cleaning
+            </template>
+          </span>
+
+          <p v-if="cleaningRequested" class="mt-2 text-[10px] text-slate-500 font-medium text-center">
+            A cleaner will be at your room shortly
+          </p>
+        </button>
+
+
+        <button @click="showLaundryModal = true" class="group flex flex-col items-center justify-center p-6 bg-purple-50 rounded-[2rem] border border-purple-100 transition-all active:scale-95">
+          <div class="p-3 bg-white rounded-2xl text-purple-600 shadow-sm mb-3 group-hover:scale-110 transition-transform">
+            <WashingMachine class="w-6 h-6" />
+          </div>
+          <span class="text-xs font-black uppercase tracking-widest text-purple-700">Laundry</span>
+        </button>
       </div>
 
-      <!-- Modals -->
+      <div class="space-y-3">
+        <button @click="showMaintenanceModal = true" class="w-full flex items-center justify-between p-5 bg-white border border-slate-100 rounded-2xl group active:scale-[0.98] transition-all">
+          <div class="flex items-center gap-4">
+            <div class="p-2 bg-rose-50 text-rose-500 rounded-lg"><Wrench class="w-5 h-5" /></div>
+            <span class="text-sm font-bold text-slate-700">Report Maintenance Issue</span>
+          </div>
+          <ChevronRight class="w-4 h-4 text-slate-300 group-hover:text-rose-500 transition-colors" />
+        </button>
+
+        <button @click="showExtendStayModal = true" class="w-full flex items-center justify-between p-5 bg-white border border-slate-100 rounded-2xl group active:scale-[0.98] transition-all">
+          <div class="flex items-center gap-4">
+            <div class="p-2 bg-indigo-50 text-indigo-600 rounded-lg"><CalendarPlus class="w-5 h-5" /></div>
+            <span class="text-sm font-bold text-slate-700">Extend Your Stay</span>
+          </div>
+          <ChevronRight class="w-4 h-4 text-slate-300 group-hover:text-indigo-500 transition-colors" />
+        </button>
+      </div>
+
+      <div class="fixed bottom-0 left-0 right-0 p-6 bg-white/80 backdrop-blur-lg border-t border-slate-100 flex gap-4">
+        <button @click="payBill" class="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-slate-200 active:scale-95 transition-all">
+          <div class="flex items-center justify-center gap-2">
+            <CreditCard class="w-4 h-4" /> Pay Bill
+          </div>
+        </button>
+        <button @click="checkout" :disabled="outstandingBill > 0" class="flex-1 py-4 bg-rose-600 disabled:bg-slate-200 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-rose-100 active:scale-95 transition-all">
+          <div class="flex items-center justify-center gap-2">
+            <LogOut class="w-4 h-4" /> Checkout
+          </div>
+        </button>
+      </div>
+
       <Modal :show="showBillHistory" @close="showBillHistory = false">
-        <template #title>Bill History</template>
-        <template #content>
-          <ul class="space-y-2">
-            <li v-for="charge in billHistory" :key="charge.id">
-              {{ charge.description }} — ₦{{ charge.amount }} — {{ formatDateTime(charge.created_at) }}
-            </li>
-          </ul>
+        <template #title>
+          <div class="flex items-center gap-2">
+            <History class="w-5 h-5 text-indigo-600" /> 
+            <span>Statement of Account</span>
+          </div>
         </template>
-      </Modal>
 
-      <Modal :show="showMaintenanceModal" @close="closeMaintenanceModal">
-        <template #title>Report Maintenance Issue</template>
         <template #content>
-          <form @submit.prevent="submitMaintenance" class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium">Issue Type</label>
-              <select v-model="maintenance.type" class="input-field">
-                <option value="plumbing">Plumbing</option>
-                <option value="electrical">Electrical</option>
-                <option value="furniture">Furniture</option>
-                <option value="other">Other</option>
-              </select>
+          <div class="space-y-4">
+            <div v-if="billHistory && billHistory.length > 0" class="space-y-3 max-h-[50vh] overflow-y-auto pr-2">
+              <div 
+                v-for="charge in billHistory" 
+                :key="charge.id" 
+                class="flex justify-between items-center p-4 bg-slate-50 rounded-2xl border border-slate-100"
+              >
+                <div class="space-y-0.5">
+                  <p class="font-bold text-slate-800 text-sm">{{ charge.description }}</p>
+                  <div class="flex items-center gap-2 text-[10px] text-slate-400 font-bold uppercase tracking-tighter">
+                    <Clock class="w-3 h-3" />
+                    {{ new Date(charge.created_at).toLocaleDateString() }} • 
+                    {{ new Date(charge.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }}
+                  </div>
+                </div>
+                <div class="text-right">
+                  <p class="font-black text-slate-900 italic">
+                    ₦{{ Number(charge.amount).toLocaleString(undefined, { minimumFractionDigits: 2 }) }}
+                  </p>
+                </div>
+              </div>
             </div>
-            <div>
-              <label class="block text-sm font-medium">Description</label>
-              <textarea v-model="maintenance.description" class="input-field" rows="3"></textarea>
-            </div>
-            <div>
-              <label class="block text-sm font-medium">Photo (optional)</label>
-              <input type="file" @change="handleFileUpload" />
-            </div>
-            <div class="flex justify-end gap-3">
-              <button type="button" @click="closeMaintenanceModal" class="btn-secondary">Cancel</button>
-              <button type="submit" class="btn-primary">Submit Issue</button>
-            </div>
-          </form>
-        </template>
-      </Modal>
 
-      <Modal :show="showExtendStayModal" @close="closeExtendStayModal">
-        <template #title>Extend Stay</template>
-        <template #content>
-          <form @submit.prevent="submitExtendStay" class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium">New Checkout Date</label>
-              <input type="date" v-model="extensionDate" class="input-field" required />
+            <div v-else class="py-10 text-center">
+              <div class="inline-flex p-4 bg-slate-50 rounded-full text-slate-300 mb-2">
+                <History class="w-8 h-8" />
+              </div>
+              <p class="text-slate-500 font-bold italic text-sm">No transactions found yet.</p>
             </div>
-            <div class="flex justify-end gap-3">
-              <button type="button" @click="closeExtendStayModal" class="btn-secondary">Cancel</button>
-              <button type="submit" class="btn-primary">Confirm Extension</button>
+
+            <div class="mt-4 pt-4 border-t border-slate-100 flex justify-between items-center">
+              <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Running Total</span>
+              <span class="text-lg font-black text-slate-900">
+                ₦{{ billHistory.reduce((sum, item) => sum + Number(item.amount), 0).toLocaleString(undefined, { minimumFractionDigits: 2 }) }}
+              </span>
             </div>
-          </form>
+          </div>
         </template>
       </Modal>
 
@@ -101,115 +268,7 @@
         :show="showLaundryModal"
         @close="showLaundryModal = false"
       />
-
-    </div>
+      
+      </div>
   </GuestLayout>
 </template>
-
-<script setup>
-import { ref, reactive, onMounted } from 'vue'
-import { router, Link } from '@inertiajs/vue3'
-import axios from 'axios'
-import GuestLayout from '@/Layouts/GuestLayout.vue'
-import Modal from '@/Components/Modal.vue'
-import OutstandingBill from '@/Pages/Guest/OutstandingBill.vue'
-
-//Laundry Modal
-import LaundryModal from '@/Pages/Guest/LaundryModal.vue'
-
-
-const showLaundryModal = ref(false)
-const laundryItems = ref([]) // This will hold the items fetched from the backend
-
-//End Laundry Modal
-
-
-
-const props = defineProps({
-  room: Object,
-  booking: Object,
-  outstandingBill: Number,
-  accessToken: String,
-  laundryItems: Array,
-})
-
-
-console.log(props.booking)
-
-//console.log(props.accessToken)
-
-/* ---------------- UI STATE ---------------- */
-const showBillHistory = ref(false)
-const showMaintenanceModal = ref(false)
-const showExtendStayModal = ref(false)
-const extensionDate = ref('')
-
-/* ---------------- EXTEND STAY ---------------- */
-function closeExtendStayModal() {
-  showExtendStayModal.value = false
-  extensionDate.value = ''
-}
-function submitExtendStay() {
-  router.post(`/guest/room/${props.accessToken}/extend-stay`, { new_checkout: extensionDate.value }, { onSuccess: closeExtendStayModal })
-}
-
-/* ---------------- MAINTENANCE ---------------- */
-const maintenance = reactive({ type: 'plumbing', description: '', file: null })
-function handleFileUpload(e) { maintenance.file = e.target.files[0] }
-function closeMaintenanceModal() {
-  showMaintenanceModal.value = false
-  maintenance.type = 'plumbing'
-  maintenance.description = ''
-  maintenance.file = null
-}
-function submitMaintenance() {
-  const formData = new FormData()
-  formData.append('type', maintenance.type)
-  formData.append('description', maintenance.description)
-  if (maintenance.file) formData.append('file', maintenance.file)
-  router.post(`/guest/room/${props.accessToken}/maintenance`, formData, { onSuccess: closeMaintenanceModal })
-}
-
-//LAUNDRY
-function openLaundryModal() {
-  // Use the items passed from the backend
-  laundryItems.value = props.laundryItems || []
-  showLaundryModal.value = true
-}
-
-//BILL HISTORY
-// 1. Define the reactive variable that was missing
-const billHistory = ref([]) 
-
-// 2. Fetch the data from your new controller method
-async function fetchBillHistory() {
-  try {
-    const response = await axios.get(`/guest/room/${props.accessToken}/bill-history`)
-    // Your controller returns { history: [...] }, so we access .history
-    billHistory.value = response.data.history
-  } catch (error) {
-    console.error("Failed to load bill history:", error)
-  }
-}
-
-// 3. Trigger the fetch when the page loads
-onMounted(() => {
-  fetchBillHistory()
-})
-
-/* ---------------- ACTIONS ---------------- */
-//function requestService(type) { router.post(`/guest/room/${props.accessToken}/service-request`, { type }) }
-function checkout() { router.post(`/guest/room/${props.accessToken}/checkout`) }
-function payBill() { router.post(`/guest/room/${props.accessToken}/payment`) }
-
-function formatDate(date) { return new Date(date).toLocaleDateString() }
-function formatDateTime(date) { return new Date(date).toLocaleString() }
-</script>
-
-<style scoped>
-.service-btn { padding: 1rem; color: white; font-weight: bold; border-radius: 0.5rem; }
-.input-field { width: 100%; border: 1px solid #ddd; padding: 0.5rem; border-radius: 0.375rem; }
-.btn-primary { background-color: #2563eb; color: white; padding: 0.5rem 1rem; border-radius: 0.375rem; }
-.btn-secondary { background-color: #9ca3af; color: white; padding: 0.5rem 1rem; border-radius: 0.375rem; }
-.btn-danger { background-color: #dc2626; color: white; padding: 0.5rem 1rem; border-radius: 0.375rem; }
-</style>

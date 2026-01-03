@@ -16,6 +16,7 @@ use App\Events\BillingUpdated;
 use App\Models\LaundryItem;
 use Illuminate\Support\Facades\DB;
 use App\Models\Receipt;
+use App\Models\RoomCleaning;
 
 class RoomDashboardController extends Controller
 {
@@ -49,12 +50,18 @@ class RoomDashboardController extends Controller
 
         $accessToken = $room->roomAccessToken?->token;
 
+        $cleaningRequest = RoomCleaning::where('room_id', $room->id)
+            ->whereNull('cleaned_at')
+            ->latest()
+            ->first();
+
         return Inertia::render('Guest/RoomDashboard', [
             'room' => $room,
             'booking' => $booking,
             'accessToken' => $accessToken,
             'outstandingBill' => $this->outstandingForRoom($room),
             'laundryItems' => LaundryItem::all(),
+            'cleaningStatus' => $cleaningRequest?->status,
         ]);
     }
 
@@ -166,11 +173,12 @@ class RoomDashboardController extends Controller
             'type' => 'required|string|in:cleaning,kitchen,bar,laundry',
             'notes' => 'nullable|string|max:500',
         ]);
+        
 
         $serviceRequest = $this->roomService->createRequest(
             $request->booking,
             $request->type,
-            ['notes' => $request->notes]
+            ['notes' => $request->notes, 'room_id' => $request->room->id],
         );
 
         event(new ServiceRequested($serviceRequest));
