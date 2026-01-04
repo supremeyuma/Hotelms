@@ -151,6 +151,7 @@ class RoomDashboardController extends Controller
                 'booking_id' => $booking->id,
                 'amount' => $request->amount,
                 'reference' => $reference,
+                'method' => 'guest_portal',
             ]);
         });
 

@@ -7,18 +7,9 @@ import Modal from '@/Components/Modal.vue'
 import OutstandingBill from '@/Pages/Guest/OutstandingBill.vue'
 import LaundryModal from '@/Pages/Guest/LaundryModal.vue'
 import { 
-  Sparkles, 
-  Utensils, 
-  Wine, 
-  WashingMachine, 
-  Wrench, 
-  CalendarPlus, 
-  LogOut, 
-  CreditCard,
-  History,
-  ChevronRight,
-  Clock,
-  Receipt,
+  Sparkles, Utensils, Wine, WashingMachine, Wrench, 
+  CalendarPlus, LogOut, CreditCard, History, 
+  ChevronRight, Clock, Receipt, Plus, Minus, Camera, X
 } from 'lucide-vue-next'
 
 const props = defineProps({
@@ -30,12 +21,14 @@ const props = defineProps({
   cleaningStatus: String,
 })
 
+/* ---------------- UI STATE ---------------- */
 const showLaundryModal = ref(false)
 const showBillHistory = ref(false)
 const showMaintenanceModal = ref(false)
 const showExtendStayModal = ref(false)
 const extensionDate = ref('')
 const billHistory = ref([]) 
+
 const maintenance = reactive({ type: 'plumbing', description: '', file: null })
 const cleaningRequested = computed(() => props.cleaningStatus === 'cleaner_requested')
 
@@ -58,27 +51,51 @@ function requestService(type) {
   router.post(`/guest/room/${props.accessToken}/service-request`, { type }) 
 }
 
-function submitExtendStay() {
-  router.post(`/guest/room/${props.accessToken}/extend-stay`, 
-    { new_checkout: extensionDate.value }, 
-    { onSuccess: () => showExtendStayModal.value = false }
-  )
-}
-
+// Maintenance Logic
 function handleFileUpload(e) { maintenance.file = e.target.files[0] }
-
+function closeMaintenanceModal() {
+  showMaintenanceModal.value = false
+  maintenance.type = 'plumbing'
+  maintenance.description = ''
+  maintenance.file = null
+}
 function submitMaintenance() {
   const formData = new FormData()
   formData.append('type', maintenance.type)
   formData.append('description', maintenance.description)
   if (maintenance.file) formData.append('file', maintenance.file)
   router.post(`/guest/room/${props.accessToken}/maintenance`, formData, { 
-    onSuccess: () => showMaintenanceModal.value = false 
+    onSuccess: closeMaintenanceModal 
   })
 }
 
+// Extend Stay Logic
+function closeExtendStayModal() {
+  showExtendStayModal.value = false
+  extensionDate.value = ''
+}
+function submitExtendStay() {
+  router.post(`/guest/room/${props.accessToken}/extend-stay`, 
+    { new_checkout: extensionDate.value }, 
+    { onSuccess: closeExtendStayModal }
+  )
+}
+
 function checkout() { router.post(`/guest/room/${props.accessToken}/checkout`) }
-function payBill() { router.post(`/guest/room/${props.accessToken}/payment`) }
+async function payBill() {
+  try {
+    const response = await axios.post(
+      `/guest/room/${props.accessToken}/payment`,
+      { amount: props.outstandingBill }
+    )
+
+    // OPTIONAL: refresh page data
+    router.reload({ preserveScroll: true })
+  } catch (error) {
+    console.error(error.response?.data || error)
+  }
+}
+
 
 function formatDate(date) { 
   return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) 
@@ -89,13 +106,13 @@ function formatDate(date) {
   <GuestLayout>
     <Head title="Your Stay" />
     
-    <div class="max-w-xl mx-auto space-y-8 pb-20">
+    <div class="max-w-xl mx-auto space-y-8 pb-32">
       
       <div class="bg-slate-900 text-white p-8 rounded-b-[3rem] shadow-2xl -mt-6 -mx-6">
         <div class="flex justify-between items-start mb-6">
           <div>
             <p class="text-indigo-400 text-[10px] font-black uppercase tracking-[0.2em] mb-1">Current Residence</p>
-            <h1 class="text-4xl font-black tracking-tight">Room {{ room.room_number }}</h1>
+            <h1 class="text-4xl font-black tracking-tight">Room {{ room.room_number || room.number }}</h1>
           </div>
           <div class="bg-white/10 p-3 rounded-2xl backdrop-blur-md">
             <Sparkles class="w-6 h-6 text-indigo-300" />
@@ -114,7 +131,7 @@ function formatDate(date) {
       <div class="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-100 flex items-center justify-between">
         <div class="space-y-1">
           <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Outstanding Bill</p>
-          <OutstandingBill :accessToken="accessToken" class="text-2xl font-black text-slate-900" />
+          <OutstandingBill :accessToken="accessToken" />
         </div>
         <button @click="showBillHistory = true" class="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-xl text-[10px] font-black uppercase text-slate-600 hover:bg-slate-100 transition-all">
           <History class="w-3.5 h-3.5" /> History
@@ -122,7 +139,6 @@ function formatDate(date) {
       </div>
 
       <div class="grid grid-cols-2 gap-4">
-
         <button @click="requestService('kitchen')" class="group flex flex-col items-center justify-center p-6 bg-amber-50 rounded-[2rem] border border-amber-100 transition-all active:scale-95">
           <div class="p-3 bg-white rounded-2xl text-amber-600 shadow-sm mb-3 group-hover:scale-110 transition-transform">
             <Utensils class="w-6 h-6" />
@@ -141,35 +157,15 @@ function formatDate(date) {
           @click="requestService('cleaning')"
           :disabled="cleaningRequested"
           class="group flex flex-col items-center justify-center p-6 rounded-[2rem] border transition-all active:scale-95"
-          :class="cleaningRequested
-            ? 'bg-slate-100 border-slate-200 cursor-not-allowed'
-            : 'bg-emerald-50 border-emerald-100 hover:bg-emerald-100'
-          "
+          :class="cleaningRequested ? 'bg-slate-100 border-slate-200 cursor-not-allowed' : 'bg-emerald-50 border-emerald-100 hover:bg-emerald-100'"
         >
-          <div
-            class="p-3 bg-white rounded-2xl shadow-sm mb-3 transition-transform"
-            :class="cleaningRequested ? 'text-slate-400' : 'text-emerald-600 group-hover:scale-110'"
-          >
+          <div class="p-3 bg-white rounded-2xl shadow-sm mb-3 transition-transform" :class="cleaningRequested ? 'text-slate-400' : 'text-emerald-600 group-hover:scale-110'">
             <Sparkles class="w-6 h-6" />
           </div>
-
-          <span
-            class="text-xs font-black uppercase tracking-widest"
-            :class="cleaningRequested ? 'text-slate-500' : 'text-emerald-700'"
-          >
-            <template v-if="cleaningRequested">
-              Cleaner Requested
-            </template>
-            <template v-else>
-              Cleaning
-            </template>
+          <span class="text-xs font-black uppercase tracking-widest" :class="cleaningRequested ? 'text-slate-500' : 'text-emerald-700'">
+            {{ cleaningRequested ? 'Requested' : 'Cleaning' }}
           </span>
-
-          <p v-if="cleaningRequested" class="mt-2 text-[10px] text-slate-500 font-medium text-center">
-            A cleaner will be at your room shortly
-          </p>
         </button>
-
 
         <button @click="showLaundryModal = true" class="group flex flex-col items-center justify-center p-6 bg-purple-50 rounded-[2rem] border border-purple-100 transition-all active:scale-95">
           <div class="p-3 bg-white rounded-2xl text-purple-600 shadow-sm mb-3 group-hover:scale-110 transition-transform">
@@ -197,12 +193,21 @@ function formatDate(date) {
         </button>
       </div>
 
-      <div class="fixed bottom-0 left-0 right-0 p-6 bg-white/80 backdrop-blur-lg border-t border-slate-100 flex gap-4">
-        <button @click="payBill" class="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-slate-200 active:scale-95 transition-all">
+      <div class="fixed bottom-0 left-0 right-0 p-6 bg-white/80 backdrop-blur-lg border-t border-slate-100 flex gap-4 z-50">
+        <button
+          @click="payBill"
+          :disabled="outstandingBill <= 0"
+          class="flex-1 py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl transition-all
+                active:scale-95
+                disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none disabled:cursor-not-allowed
+                bg-slate-900 text-white shadow-slate-200"
+        >
           <div class="flex items-center justify-center gap-2">
-            <CreditCard class="w-4 h-4" /> Pay Bill
+            <CreditCard class="w-4 h-4" />
+            {{ outstandingBill > 0 ? 'Pay Bill' : 'Paid' }}
           </div>
         </button>
+
         <button @click="checkout" :disabled="outstandingBill > 0" class="flex-1 py-4 bg-rose-600 disabled:bg-slate-200 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-rose-100 active:scale-95 transition-all">
           <div class="flex items-center justify-center gap-2">
             <LogOut class="w-4 h-4" /> Checkout
@@ -217,45 +222,74 @@ function formatDate(date) {
             <span>Statement of Account</span>
           </div>
         </template>
-
         <template #content>
           <div class="space-y-4">
             <div v-if="billHistory && billHistory.length > 0" class="space-y-3 max-h-[50vh] overflow-y-auto pr-2">
-              <div 
-                v-for="charge in billHistory" 
-                :key="charge.id" 
-                class="flex justify-between items-center p-4 bg-slate-50 rounded-2xl border border-slate-100"
-              >
+              <div v-for="charge in billHistory" :key="charge.id" class="flex justify-between items-center p-4 bg-slate-50 rounded-2xl border border-slate-100">
                 <div class="space-y-0.5">
                   <p class="font-bold text-slate-800 text-sm">{{ charge.description }}</p>
-                  <div class="flex items-center gap-2 text-[10px] text-slate-400 font-bold uppercase tracking-tighter">
-                    <Clock class="w-3 h-3" />
-                    {{ new Date(charge.created_at).toLocaleDateString() }} • 
-                    {{ new Date(charge.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }}
-                  </div>
+                  <p class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">{{ new Date(charge.created_at).toLocaleString() }}</p>
                 </div>
-                <div class="text-right">
-                  <p class="font-black text-slate-900 italic">
-                    ₦{{ Number(charge.amount).toLocaleString(undefined, { minimumFractionDigits: 2 }) }}
-                  </p>
-                </div>
+                <p class="font-black text-slate-900">₦{{ Number(charge.amount).toLocaleString() }}</p>
               </div>
             </div>
-
-            <div v-else class="py-10 text-center">
-              <div class="inline-flex p-4 bg-slate-50 rounded-full text-slate-300 mb-2">
-                <History class="w-8 h-8" />
-              </div>
-              <p class="text-slate-500 font-bold italic text-sm">No transactions found yet.</p>
-            </div>
-
-            <div class="mt-4 pt-4 border-t border-slate-100 flex justify-between items-center">
-              <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Running Total</span>
-              <span class="text-lg font-black text-slate-900">
-                ₦{{ billHistory.reduce((sum, item) => sum + Number(item.amount), 0).toLocaleString(undefined, { minimumFractionDigits: 2 }) }}
-              </span>
-            </div>
+            <div v-else class="py-10 text-center text-slate-400 italic">No transactions found.</div>
           </div>
+        </template>
+      </Modal>
+
+      <Modal :show="showMaintenanceModal" @close="closeMaintenanceModal">
+        <template #title>
+          <div class="flex items-center gap-2">
+            <Wrench class="w-5 h-5 text-rose-500" /> 
+            <span>Maintenance Report</span>
+          </div>
+        </template>
+        <template #content>
+          <form @submit.prevent="submitMaintenance" class="space-y-5">
+            <div>
+              <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Issue Category</label>
+              <select v-model="maintenance.type" class="w-full bg-slate-50 border-slate-100 rounded-xl font-bold">
+                <option value="plumbing">Plumbing</option>
+                <option value="electrical">Electrical</option>
+                <option value="furniture">Furniture</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Description</label>
+              <textarea v-model="maintenance.description" rows="3" class="w-full bg-slate-50 border-slate-100 rounded-xl" placeholder="Describe the issue..."></textarea>
+            </div>
+            <div>
+              <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Attach Photo</label>
+              <input type="file" @change="handleFileUpload" class="text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-black file:bg-rose-50 file:text-rose-700 hover:file:bg-rose-100" />
+            </div>
+            <div class="flex gap-3">
+              <button type="button" @click="closeMaintenanceModal" class="flex-1 py-3 bg-slate-100 text-slate-500 rounded-xl font-black text-[10px] uppercase">Cancel</button>
+              <button type="submit" class="flex-1 py-3 bg-rose-600 text-white rounded-xl font-black text-[10px] uppercase">Submit Report</button>
+            </div>
+          </form>
+        </template>
+      </Modal>
+
+      <Modal :show="showExtendStayModal" @close="closeExtendStayModal">
+        <template #title>
+          <div class="flex items-center gap-2">
+            <CalendarPlus class="w-5 h-5 text-indigo-600" /> 
+            <span>Extend Your Stay</span>
+          </div>
+        </template>
+        <template #content>
+          <form @submit.prevent="submitExtendStay" class="space-y-5">
+            <div>
+              <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">New Checkout Date</label>
+              <input type="date" v-model="extensionDate" required class="w-full bg-slate-50 border-slate-100 rounded-xl font-bold" />
+            </div>
+            <div class="flex gap-3">
+              <button type="button" @click="closeExtendStayModal" class="flex-1 py-3 bg-slate-100 text-slate-500 rounded-xl font-black text-[10px] uppercase">Cancel</button>
+              <button type="submit" class="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-black text-[10px] uppercase">Confirm</button>
+            </div>
+          </form>
         </template>
       </Modal>
 
@@ -268,7 +302,7 @@ function formatDate(date) {
         :show="showLaundryModal"
         @close="showLaundryModal = false"
       />
-      
-      </div>
+
+    </div>
   </GuestLayout>
 </template>
