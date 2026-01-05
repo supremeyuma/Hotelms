@@ -15,7 +15,18 @@ class MenuController extends Controller
     {
         $area = $request->get('area'); // kitchen | bar
 
+        dd($area);
+
+        if (auth()->user()->hasRole('kitchen') && $area !== 'kitchen') {
+            abort(403);
+        }
+
+        if (auth()->user()->hasRole('bar') && $area !== 'bar') {
+            abort(403);
+        }
+
         return Inertia::render('Staff/Menu/Index', [
+            'area' => $area,
             'categories' => MenuCategory::with([
                 'subcategories.items',
                 'items' => fn ($q) => $q->whereNull('menu_subcategory_id')
@@ -25,7 +36,6 @@ class MenuController extends Controller
             })
             ->orderBy('sort_order')
             ->get(),
-            'area' => $area
         ]);
     }
 
@@ -40,6 +50,8 @@ class MenuController extends Controller
             'prep_time_minutes' => 'nullable|integer|min:0',
             'service_area' => 'required|in:kitchen,bar'
         ]);
+
+        
 
         MenuItem::create($data);
 

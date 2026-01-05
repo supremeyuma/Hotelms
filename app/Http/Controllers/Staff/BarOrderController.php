@@ -8,6 +8,7 @@ use App\Events\OrderStatusUpdated;
 use App\Services\OrderChargeService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use App\Models\Charge;
 
 class BarOrderController extends Controller
 {
@@ -28,12 +29,21 @@ class BarOrderController extends Controller
             'status' => 'required|in:preparing,ready,delivered'
         ]);
 
+        //dd($order);
+
         $order->update(['status' => $request->status]);
 
         broadcast(new OrderStatusUpdated($order))->toOthers();
 
-        if ($request->status === 'delivered') {
+        if ($request->status === 'preparing') {
             app(OrderChargeService::class)->post($order);
+            
+            /*Charge::create([
+                'booking_id' => $order->booking_id,
+                'room_id' => $order->room_id,
+                'amount' => $order->total,
+                'description' => "Bar Order: {$order->order_code}",
+            ]);*/
         }
 
         return back();

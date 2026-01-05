@@ -38,7 +38,7 @@ class KitchenOrderController extends Controller
 
         broadcast(new OrderStatusUpdated($order))->toOthers();
 
-        if ($request->status === 'delivered') {
+        if ($request->status === 'preparing') {
             app(OrderChargeService::class)->post($order);
         }
 

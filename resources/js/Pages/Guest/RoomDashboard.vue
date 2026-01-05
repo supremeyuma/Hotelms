@@ -19,6 +19,7 @@ const props = defineProps({
   accessToken: String,
   laundryItems: Array,
   cleaningStatus: String,
+  orders: Array,
 })
 
 /* ---------------- UI STATE ---------------- */
@@ -28,6 +29,11 @@ const showMaintenanceModal = ref(false)
 const showExtendStayModal = ref(false)
 const extensionDate = ref('')
 const billHistory = ref([]) 
+
+const showOrdersHistory = ref(false)
+//const orders = ref([])
+
+console.log(props.orders);
 
 const maintenance = reactive({ type: 'plumbing', description: '', file: null })
 const cleaningRequested = computed(() => props.cleaningStatus === 'cleaner_requested')
@@ -47,8 +53,8 @@ onMounted(() => {
 })
 
 /* ---------------- ACTIONS ---------------- */
-function requestService(type) { 
-  router.post(`/guest/room/${props.accessToken}/service-request`, { type }) 
+function openMenu(type) {
+  router.visit(`/guest/room/${props.accessToken}/menu/${type}`)
 }
 
 // Maintenance Logic
@@ -133,20 +139,23 @@ function formatDate(date) {
           <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Outstanding Bill</p>
           <OutstandingBill :accessToken="accessToken" />
         </div>
+        <button @click="showOrdersHistory = true" class="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-xl text-[10px] font-black uppercase text-slate-600 hover:bg-slate-100 transition-all">
+          <Receipt class="w-3.5 h-3.5" /> Orders
+        </button>
         <button @click="showBillHistory = true" class="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-xl text-[10px] font-black uppercase text-slate-600 hover:bg-slate-100 transition-all">
           <History class="w-3.5 h-3.5" /> History
         </button>
       </div>
 
       <div class="grid grid-cols-2 gap-4">
-        <button @click="requestService('kitchen')" class="group flex flex-col items-center justify-center p-6 bg-amber-50 rounded-[2rem] border border-amber-100 transition-all active:scale-95">
+        <button @click="openMenu('kitchen')" class="group flex flex-col items-center justify-center p-6 bg-amber-50 rounded-[2rem] border border-amber-100 transition-all active:scale-95">
           <div class="p-3 bg-white rounded-2xl text-amber-600 shadow-sm mb-3 group-hover:scale-110 transition-transform">
             <Utensils class="w-6 h-6" />
           </div>
           <span class="text-xs font-black uppercase tracking-widest text-amber-700">Kitchen</span>
         </button>
 
-        <button @click="requestService('bar')" class="group flex flex-col items-center justify-center p-6 bg-indigo-50 rounded-[2rem] border border-indigo-100 transition-all active:scale-95">
+        <button @click="openMenu('bar')" class="group flex flex-col items-center justify-center p-6 bg-indigo-50 rounded-[2rem] border border-indigo-100 transition-all active:scale-95">
           <div class="p-3 bg-white rounded-2xl text-indigo-600 shadow-sm mb-3 group-hover:scale-110 transition-transform">
             <Wine class="w-6 h-6" />
           </div>
@@ -234,6 +243,72 @@ function formatDate(date) {
               </div>
             </div>
             <div v-else class="py-10 text-center text-slate-400 italic">No transactions found.</div>
+          </div>
+        </template>
+      </Modal>
+
+      <Modal :show="showOrdersHistory" @close="showOrdersHistory = false">
+        <template #title>
+          <div class="flex items-center gap-2">
+            <div class="p-2 bg-indigo-50 rounded-lg">
+              <History class="w-5 h-5 text-indigo-600" />
+            </div>
+            <div>
+              <h2 class="text-xl font-black text-slate-900 tracking-tight">Order History</h2>
+              <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Kitchen & Bar</p>
+            </div>
+          </div>
+        </template>
+
+        <template #content>
+          <div class="space-y-6 py-2">
+            <div v-if="orders && orders.length > 0" class="space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+              <div 
+                v-for="order in orders" 
+                :key="order.id" 
+                class="bg-slate-50 border border-slate-100 rounded-[2rem] overflow-hidden transition-all hover:bg-white hover:shadow-md group"
+              >
+                <div class="px-5 py-4 flex justify-between items-center border-b border-white/50">
+                  <div>
+                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Code</p>
+                    <p class="font-black text-slate-900">{{ order.order_code }}</p>
+                  </div>
+                  
+                  <div :class="[
+                    'px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter',
+                    order.status === 'delivered' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                  ]">
+                    {{ order.status }}
+                  </div>
+                </div>
+
+                <div class="px-5 py-4 space-y-2">
+                  <div v-for="item in order.items" :key="item.id" class="flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                      <span class="w-5 h-5 flex items-center justify-center bg-white rounded-md text-[10px] font-black text-slate-400 border border-slate-100">
+                        {{ item.qty }}
+                      </span>
+                      <span class="text-sm font-bold text-slate-600">{{ item.item_name }}</span>
+                    </div>
+                    <span class="text-xs font-bold text-slate-400">₦{{ Number(item.price * item.qty).toLocaleString() }}</span>
+                  </div>
+                </div>
+
+                <div class="px-5 py-3 bg-slate-900/5 flex justify-between items-center">
+                  <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Amount</span>
+                  <span class="text-lg font-black text-slate-900 italic">
+                    ₦{{ Number(order.total).toLocaleString() }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div v-else class="py-12 text-center">
+              <div class="inline-flex p-5 bg-slate-50 rounded-full text-slate-200 mb-4">
+                <Utensils class="w-10 h-10" />
+              </div>
+              <p class="text-slate-500 font-bold italic">You haven't placed any orders yet.</p>
+            </div>
           </div>
         </template>
       </Modal>

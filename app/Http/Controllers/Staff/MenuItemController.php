@@ -14,23 +14,32 @@ use Illuminate\Support\Facades\Storage;
 
 class MenuItemController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, string $area)
     {
-        $area = $request->query('area', 'kitchen');
+        //$area = $request->get('area'); // kitchen | bar
+        //dd($token);
 
-        $categories = MenuCategory::with([
-            'items.images',
-            'subcategories.items.images',
-        ])
-        ->where(fn ($q) =>
-            $q->where('type', $area)->orWhere('type', 'both')
-        )
-        ->orderBy('sort_order')
-        ->get();
+        
+
+        if (auth()->user()->hasRole('kitchen') && $area !== 'kitchen') {
+            abort(403);
+        }
+
+        if (auth()->user()->hasRole('bar') && $area !== 'bar') {
+            abort(403);
+        }
 
         return Inertia::render('Staff/Menu/Index', [
-            'categories' => $categories,
             'area' => $area,
+            'categories' => MenuCategory::with([
+                'subcategories.items',
+                'items' => fn ($q) => $q->whereNull('menu_subcategory_id')
+            ])
+            ->where(function ($q) use ($area) {
+                $q->where('type', $area)->orWhere('type', 'both');
+            })
+            ->orderBy('sort_order')
+            ->get(),
         ]);
     }
 

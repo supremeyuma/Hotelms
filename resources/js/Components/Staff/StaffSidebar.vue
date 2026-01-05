@@ -59,7 +59,7 @@ const nav = computed(() => {
         { label: 'Orders Queue', route: 'staff.kitchen.orders.index', icon: 'clipboard' },
         {
           label: 'Kitchen Menu',
-          route: 'staff.menu.index',
+          route: 'staff.menu.kitchen',
           params: { area: 'kitchen' },
           icon: 'menu'
         },
@@ -74,7 +74,7 @@ const nav = computed(() => {
         { label: 'Orders Queue', route: 'staff.bar.orders.index', icon: 'clipboard' },
         {
           label: 'Bar Menu',
-          route: 'staff.menu.index',
+          route: 'staff.menu.bar',
           params: { area: 'bar' },
           icon: 'menu'
         },

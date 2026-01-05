@@ -9,18 +9,48 @@ use Inertia\Inertia;
 
 class MenuController extends Controller
 {
-    public function index(Request $request)
+   public function index(Request $request, string $token, string $type)
     {
         return Inertia::render('Guest/Menu', [
-            'categories' => MenuCategory::with([
-                'subcategories.items' => fn ($q) => $q->where('is_available', true),
-                'items' => fn ($q) => $q
-                    ->whereNull('menu_subcategory_id')
-                    ->where('is_available', true)
-            ])
-            ->where('is_active', true)
-            ->orderBy('sort_order')
-            ->get()
+            'accessToken' => $token,
+            'type' => $type,
+            'categories' => MenuCategory::query()
+                ->where('is_active', true)
+                ->where('type', $type)
+                ->where(function ($q) use ($type) {
+                    $q->whereHas('items', fn ($i) =>
+                        $i->whereNull('menu_subcategory_id')
+                        ->where('is_active', true)
+                        ->where('service_area', $type)
+                    )
+                    ->orWhereHas('subcategories.items', fn ($i) =>
+                        $i->where('is_active', true)
+                        ->where('service_area', $type)
+                    );
+                })
+                ->with([
+                    'items' => fn ($q) => $q
+                        ->whereNull('menu_subcategory_id')
+                        ->where('is_active', true)
+                        ->where('service_area', $type)
+                        ->with('images'),
+
+                    'subcategories' => fn ($q) => $q
+                        ->where('is_active', true)
+                        ->whereHas('items', fn ($i) =>
+                            $i->where('is_active', true)
+                            ->where('service_area', $type)
+                        )
+                        ->with([
+                            'items' => fn ($i) => $i
+                                ->where('is_active', true)
+                                ->where('service_area', $type)
+                                ->with('images')
+                        ]),
+                ])
+                ->orderBy('sort_order')
+                ->get(),
         ]);
     }
+
 }

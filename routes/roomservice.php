@@ -3,6 +3,9 @@
 use App\Http\Controllers\Guest\RoomDashboardController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GuestLaundryController;
+use App\Http\Controllers\Guest\MenuController;
+use App\Http\Controllers\Guest\OrderController;
+use App\Http\Controllers\Guest\OrderHistoryController;
 
 Route::prefix('guest')->group(function () {
     Route::middleware(['validate.room.token'])->group(function () {
@@ -20,4 +23,10 @@ Route::prefix('guest')->group(function () {
 Route::middleware(['auth', 'resolve.guest.room'])->group(function () {
     Route::get('/guest/room/{token}/laundry', [GuestLaundryController::class, 'show'])->name('guest.laundry.show');
     Route::post('/guest/room/{token}/laundry', [GuestLaundryController::class, 'store'])->name('guest.laundry.store');
+});
+
+Route::prefix('guest/room/{token}')->group(function () {
+    Route::get('/menu/{type}', [MenuController::class, 'index']);
+    Route::post('/orders', [OrderController::class, 'store'])->name('guest.orders.store');
+    Route::get('/orders', [OrderHistoryController::class, 'index'])->name('guest.orders.index');
 });

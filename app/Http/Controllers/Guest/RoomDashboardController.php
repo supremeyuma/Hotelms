@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Guest;
 
 use App\Http\Controllers\Controller;
+use App\Models\Order;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Services\RoomServiceService;
@@ -50,6 +51,10 @@ class RoomDashboardController extends Controller
 
         $accessToken = $room->roomAccessToken?->token;
 
+        $orders = Order::where('room_id', $room->id)
+            ->where('booking_id', $booking->id)
+            ->get();
+
         $cleaningRequest = RoomCleaning::where('room_id', $room->id)
             ->whereNull('cleaned_at')
             ->latest()
@@ -62,6 +67,7 @@ class RoomDashboardController extends Controller
             'outstandingBill' => $this->outstandingForRoom($room),
             'laundryItems' => LaundryItem::all(),
             'cleaningStatus' => $cleaningRequest?->status,
+            'orders' => $orders,
         ]);
     }
 

@@ -76,6 +76,12 @@ const getStatusClass = (status) => {
               </div>
               <div class="text-xl font-black text-slate-900">#{{ order.id }}</div>
             </div>
+            <div>
+              <div class="flex items-center gap-1 text-slate-400 font-bold text-xs uppercase tracking-widest mb-1">
+                <Hash class="w-3 h-3" /> ROOM
+              </div>
+              <div class="text-xl font-black text-slate-900">ROOM - {{ order.room_id }}</div>
+            </div>
             <span :class="getStatusClass(order.status)">
               {{ order.status }}
             </span>
@@ -90,14 +96,14 @@ const getStatusClass = (status) => {
               >
                 <div class="flex flex-col">
                   <span class="font-bold text-slate-800 text-sm md:text-base leading-tight">
-                    {{ item.menu_item.name }}
+                    {{ item.item_name }}
                   </span>
                   <span v-if="item.notes" class="text-xs text-orange-600 font-medium mt-1 flex items-center gap-1">
                     <AlertCircle class="w-3 h-3" /> {{ item.notes }}
                   </span>
                 </div>
                 <div class="bg-slate-100 text-slate-900 font-black px-2.5 py-1 rounded-lg text-sm">
-                  ×{{ item.quantity }}
+                  ×{{ item.qty }}
                 </div>
               </li>
             </ul>

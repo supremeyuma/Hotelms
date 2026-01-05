@@ -58,7 +58,7 @@ import {
         </Link>
 
         <Link 
-          href="/staff/menu" 
+          href="/staff/bar/menu" 
           class="group relative overflow-hidden bg-white p-8 rounded-3xl border border-slate-200 shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-300"
         >
           <div class="relative z-10 flex flex-col h-full">

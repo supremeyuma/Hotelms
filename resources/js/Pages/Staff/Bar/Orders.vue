@@ -15,6 +15,8 @@ import {
 const props = defineProps({ orders: Array })
 const orders = ref(props.orders)
 
+console.log(orders);
+
 onMounted(() => {
   if (window.Echo) {
     window.Echo.channel('orders.bar')
@@ -85,7 +87,7 @@ const getStatusStyles = (status) => {
                 <span :class="[getStatusStyles(order.status), 'inline-flex items-center rounded-md px-2 py-1 text-xs font-bold ring-1 ring-inset uppercase tracking-wider mb-1']">
                   {{ order.status }}
                 </span>
-                <p class="text-xs text-slate-400 font-medium">Updated just now</p>
+                <p class="text-xs text-slate-400 font-medium">Updated at {{ order.updated_at }}</p>
               </div>
             </div>
           </div>
@@ -94,10 +96,11 @@ const getStatusStyles = (status) => {
             <ul class="space-y-4">
               <li v-for="item in order.items" :key="item.id" class="flex items-center justify-between">
                 <div class="flex flex-col">
-                  <span class="text-slate-900 font-bold text-lg leading-tight">{{ item.menu_item.name }}</span>
+                  <span class="text-slate-900 font-bold text-lg leading-tight">{{ item.item_name }}</span>
+                  <span class="text-slate-900 font-bold text-lg leading-tight">ROOM {{ order.room_id }}</span>
                   <div v-if="item.notes" class="flex items-center gap-1.5 mt-1 text-blue-600 bg-blue-50 w-fit px-2 py-0.5 rounded-md">
                     <MessageSquare class="w-3 h-3" />
-                    <span class="text-xs font-bold">{{ item.notes }}</span>
+                    <span class="text-xs font-bold">{{ order.room_id }}</span>
                   </div>
                 </div>
                 <div class="flex items-center justify-center w-10 h-10 bg-white border-2 border-slate-100 rounded-xl shadow-sm text-slate-900 font-black">

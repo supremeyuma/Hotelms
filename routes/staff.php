@@ -139,7 +139,6 @@ Route::middleware(['auth', 'role:staff|manager|md|kitchen|bar'])->prefix('staff'
      |==============================*/
     Route::get('/kitchen', [KitchenDashboardController::class, 'index'])->name('kitchen.dashboard');
 
-
     /* ==============================
      | BAR DASHBOARD
      |==============================*/
@@ -149,7 +148,9 @@ Route::middleware(['auth', 'role:staff|manager|md|kitchen|bar'])->prefix('staff'
     /* ==============================
      | MENU MANAGEMENT (SHARED)
      |==============================*/
-    Route::get('/menu', [MenuItemController::class, 'index'])->name('menu.index');
+    Route::get('/kitchen/menu', [MenuItemItemController::class, 'index'])->defaults('area', 'kitchen')->name('menu.kitchen');
+
+    Route::get('/bar/menu', [MenuItemController::class, 'index'])->defaults('area', 'bar')->name('menu.bar');
 
 
     /* Categories */

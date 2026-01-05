@@ -12,10 +12,13 @@ class Order extends Model
 
     protected $fillable = [
         'booking_id',
+        'room_id',
         'user_id',
         'order_code',
         'total',
         'status',
+        'service_area',
+        'notes',
     ];
 
     protected $casts = [
@@ -59,5 +62,10 @@ class Order extends Model
         return $this->items
             ->map(fn ($item) => $item->menuItem?->effective_prep_time ?? 0)
             ->max() ?? 0;
+    }
+    
+    public function room()
+    {
+        return $this->belongsTo(Room::class);
     }
 }
