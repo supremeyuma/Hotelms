@@ -37,7 +37,7 @@ const outstandingAmount = computed(() => {
           Booking #{{ booking.booking_code }}
         </p>
         <p class="text-sm text-gray-500">
-          Room {{ booking.room?.room_number ?? 'Unassigned' }}
+          Room {{ booking.room?.name ?? 'Unassigned' }}
         </p>
       </div>
 

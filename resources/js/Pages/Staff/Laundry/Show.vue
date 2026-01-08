@@ -69,7 +69,7 @@ function uploadImages(e) {
           <div class="flex items-center gap-4">
             <div class="w-16 h-16 bg-slate-900 rounded-2xl flex flex-col items-center justify-center text-white shrink-0 shadow-lg shadow-slate-200">
               <span class="text-[10px] font-black opacity-50 uppercase tracking-tighter">Room</span>
-              <span class="text-xl font-black leading-none">{{ order.room.room_number }}</span>
+              <span class="text-xl font-black leading-none">{{ order.room.name }}</span>
             </div>
             <div>
               <h1 class="text-2xl font-black text-slate-900 tracking-tight">{{ order.order_code }}</h1>

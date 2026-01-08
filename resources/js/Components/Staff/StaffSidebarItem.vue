@@ -9,7 +9,7 @@ const props = defineProps({
   },
 })
 
-console.log(props.item)
+//console.log(props.item)
 </script>
 
 <template>

@@ -5,7 +5,7 @@
         <img :src="room.images?.[0]?.path ?? '/images/room-placeholder.jpg'" class="w-full rounded" />
       </div>
       <div>
-        <h2 class="text-2xl">{{ room.room_number }} — {{ room.room_type }}</h2>
+        <h2 class="text-2xl">{{ room.name }} — {{ room.room_type }}</h2>
         <p class="mt-2">{{ room.meta?.description }}</p>
         <div class="mt-4">
           <div class="text-xl font-bold">₦{{ room.room_type }}</div>

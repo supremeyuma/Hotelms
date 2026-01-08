@@ -152,7 +152,7 @@ function formatDate(date) {
         <div class="flex justify-between items-start mb-6">
           <div>
             <p class="text-indigo-400 text-[10px] font-black uppercase tracking-[0.2em] mb-1">Current Residence</p>
-            <h1 class="text-4xl font-black tracking-tight">Room {{ room.room_number || room.number }}</h1>
+            <h1 class="text-4xl font-black tracking-tight">Room {{ room.name || room.name }}</h1>
           </div>
           <div class="bg-white/10 p-3 rounded-2xl backdrop-blur-md">
             <Sparkles class="w-6 h-6 text-indigo-300" />

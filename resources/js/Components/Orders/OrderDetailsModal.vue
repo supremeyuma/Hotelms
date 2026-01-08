@@ -9,7 +9,7 @@ const props = defineProps({
 
 const emit = defineEmits(['close'])
 
-console.log(props.order)
+//console.log(props.order)
 </script>
 
 

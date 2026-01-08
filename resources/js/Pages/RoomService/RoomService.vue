@@ -1,7 +1,7 @@
 <template>
   <GuestLayout>
     <div class="max-w-4xl mx-auto">
-      <h2 class="text-2xl mb-4">Room Service — Room {{ room.room_number }}</h2>
+      <h2 class="text-2xl mb-4">Room Service — Room {{ room.name }}</h2>
 
       <div class="mb-4">
         <Tabs :tabs="tabs" v-model:active="activeTab" />

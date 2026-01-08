@@ -96,7 +96,7 @@ const getStatusConfig = (status) => {
           <div class="flex items-start justify-between mb-4">
             <div class="flex flex-col">
               <span class="text-xs font-bold text-slate-400 uppercase tracking-tighter">Room</span>
-              <span class="text-2xl font-black text-slate-900 leading-none">{{ room.room_number }}</span>
+              <span class="text-2xl font-black text-slate-900 leading-none">{{ room.name }}</span>
             </div>
             <div class="p-2 bg-slate-50 rounded-xl group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
               <DoorOpen class="w-5 h-5" />

@@ -24,7 +24,7 @@ const label = computed(() =>
 )
 
 const roomNumber = computed(() =>
-  props.request.room?.room_number ?? props.request.room_number ?? '—'
+  props.request.room?.name ?? props.request.name ?? '—'
 )
 
 // Dynamic styling based on status

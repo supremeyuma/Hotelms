@@ -152,7 +152,7 @@ class BookingService
                         $checkOut
                     )) {
                         throw new \Exception(
-                            "Room {$room->room_number} is not available for the new dates."
+                            "Room {$room->name} is not available for the new dates."
                         );
                     }
                 }
@@ -270,7 +270,7 @@ class BookingService
             }
 
             $this->audit->log('booking_checked_in', $booking, $booking->id, [
-                'rooms' => $rooms->pluck('room_number'),
+                'rooms' => $rooms->pluck('name'),
                 'by'    => $by?->id,
             ]);
 
@@ -317,7 +317,7 @@ class BookingService
             }
 
             $this->audit->log('booking_checked_out', $booking, $booking->id, [
-                'room' => $room?->room_number,
+                'room' => $room?->name,
             ]);
 
             return $booking;
@@ -347,7 +347,7 @@ class BookingService
                 $newCheckOut
             )) {
                 throw new \Exception(
-                    "Room {$room->room_number} is not available for the extended dates."
+                    "Room {$room->name} is not available for the extended dates."
                 );
             }
         }
@@ -441,8 +441,8 @@ class BookingService
             $booking->generateRoomAccessTokens();
 
             $this->audit->log('room_swapped', $booking, $booking->id, [
-                'from' => $oldRoom->room_number,
-                'to'   => $newRoom->room_number,
+                'from' => $oldRoom->name,
+                'to'   => $newRoom->name,
                 'by'   => $by?->id,
             ]);
         });

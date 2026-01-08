@@ -99,7 +99,7 @@ const getStatusConfig = (status) => {
                   {{ room.room_type?.title || 'Standard Unit' }}
                 </span>
                 <h2 class="text-3xl font-black text-slate-900 tracking-tight">
-                  Room {{ room.room_number }}
+                  Room {{ room.name }}
                 </h2>
               </div>
               <div :class="['px-4 py-1.5 rounded-xl border-2 font-black text-[10px] uppercase tracking-widest flex items-center gap-2', getStatusConfig(room.status).bg, getStatusConfig(room.status).text]">

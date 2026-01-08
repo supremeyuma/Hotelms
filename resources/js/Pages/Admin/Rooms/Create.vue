@@ -13,9 +13,9 @@
           <SelectInput v-model="form.room_type_id" :options="typeOptions" id="room_type_id" required />
           <InputError :message="form.errors.room_type_id" />
 
-          <FormLabel for="room_number">Room Number</FormLabel>
-          <TextInput v-model="form.room_number" id="room_number" required />
-          <InputError :message="form.errors.room_number" />
+          <FormLabel for="name">Room Name</FormLabel>
+          <TextInput v-model="form.name" id="name" required />
+          <InputError :message="form.errors.name" />
 
           <FormLabel for="status">Status</FormLabel>
           <SelectInput v-model="form.status" :options="statusOptions" id="status" />
@@ -49,7 +49,7 @@ const props = defineProps({
 const form = useForm({
   property_id: '',
   room_type_id: '',
-  room_number: '',
+  name: '',
   status: 'available',
   meta: '',
   images: []

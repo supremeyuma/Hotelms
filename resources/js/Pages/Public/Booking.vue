@@ -7,7 +7,7 @@
         <div class="mb-3">
           <label class="block text-sm">Room</label>
           <select v-model="form.room_id" class="w-full border p-2 rounded">
-            <option v-for="r in rooms" :value="r.id" :key="r.id">{{ r.room_number }} — {{ r.room_type.title }}</option>
+            <option v-for="r in rooms" :value="r.id" :key="r.id">{{ r.name }} — {{ r.room_type.title }}</option>
           </select>
         </div>
 

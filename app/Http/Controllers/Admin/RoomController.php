@@ -50,7 +50,7 @@ class RoomController extends Controller
         $data = $request->validate([
             'property_id' => 'required|exists:properties,id',
             'room_type_id' => 'required|exists:room_types,id',
-            'room_number' => 'required|string|max:50|unique:rooms,room_number',
+            'name' => 'required|string|max:50|unique:rooms,name',
             'status' => 'nullable|string|in:available,occupied,maintenance',
             'meta' => 'nullable|array',
             'images.*' => 'nullable|image|max:8192'
@@ -90,7 +90,7 @@ class RoomController extends Controller
     {
         $data = $request->validate([
             'room_type_id' => 'required|exists:room_types,id',
-            'room_number'  => 'required|string|max:50|unique:rooms,room_number,' . $room->id,
+            'name'  => 'required|string|max:50|unique:rooms,name,' . $room->id,
             'status'       => 'nullable|string|in:available,occupied,maintenance',
             'meta'         => 'nullable|array',
             'images.*'     => 'nullable|image|max:8192', // each image max 5MB
@@ -134,7 +134,7 @@ class RoomController extends Controller
         // Update room data
         $room->update([
             'room_type_id' => $data['room_type_id'],
-            'room_number'  => $data['room_number'],
+            'name'  => $data['name'],
             'status'       => $data['status'] ?? $room->status,
             'meta'         => $data['meta'] ?? $room->meta,
         ]);

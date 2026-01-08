@@ -6,9 +6,9 @@
         <Link href="/admin/rooms/create" class="bg-indigo-600 text-white px-3 py-2 rounded">New Room</Link>
       </div>
 
-      <Table :headers="['Room #', 'Type', 'Status', 'Actions']">
+      <Table :headers="['Room Name', 'Type', 'Status', 'Actions']">
         <tr v-for="r in rooms.data" :key="r.id">
-          <td class="px-4 py-2">{{ r.room_number }}</td>
+          <td class="px-4 py-2">{{ r.name }}</td>
           <td class="px-4 py-2">{{ r.room_type.title }}</td>
           <td class="px-4 py-2">{{ r.status }}</td>
           <td class="px-4 py-2">

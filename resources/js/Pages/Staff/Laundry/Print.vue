@@ -37,7 +37,7 @@ const printOrder = () => {
             <h1 class="text-2xl font-black text-slate-900 uppercase tracking-tighter">Laundry Invoice</h1>
             <div class="mt-2 flex items-center gap-4 text-slate-500 font-bold text-xs uppercase tracking-widest">
               <span class="flex items-center gap-1"><Hash class="w-3 h-3" /> {{ order.order_code }}</span>
-              <span class="flex items-center gap-1"><DoorOpen class="w-3 h-3" /> Room {{ order.room.room_number }}</span>
+              <span class="flex items-center gap-1"><DoorOpen class="w-3 h-3" /> Room {{ order.room.name }}</span>
             </div>
           </div>
           <div class="absolute -top-10 -right-10 w-32 h-32 bg-indigo-50 rounded-full opacity-50"></div>

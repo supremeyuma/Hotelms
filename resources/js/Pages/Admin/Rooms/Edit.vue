@@ -1,7 +1,7 @@
 <template>
   <AuthenticatedLayout>
     <div>
-      <h2 class="text-2xl mb-4">Edit Room {{ room.room_number }}</h2>
+      <h2 class="text-2xl mb-4">Edit Room {{ room.name }}</h2>
 
       <form @submit.prevent="submit">
         <FormSection>
@@ -9,9 +9,9 @@
           <SelectInput v-model="form.room_type_id" :options="typeOptions" id="room_type_id" required />
           <InputError :message="form.errors.room_type_id" />
 
-          <FormLabel for="room_number">Room Number</FormLabel>
-          <TextInput v-model="form.room_number" id="room_number" required />
-          <InputError :message="form.errors.room_number" />
+          <FormLabel for="name">Room Name</FormLabel>
+          <TextInput v-model="form.name" id="name" required />
+          <InputError :message="form.errors.name" />
 
           <FormLabel for="status">Status</FormLabel>
           <SelectInput v-model="form.status" :options="statusOptions" id="status" />
@@ -75,7 +75,7 @@ const props = defineProps({
 
 const form = useForm({
   room_type_id: props.room.room_type_id,
-  room_number: props.room.room_number,
+  name: props.room.name,
   status: props.room.status,
   meta: props.room.meta || {},
   images: [],         // New images to upload

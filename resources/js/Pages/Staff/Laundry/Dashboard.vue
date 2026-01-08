@@ -40,7 +40,7 @@
               <div class="flex items-start gap-4">
                 <div class="w-14 h-14 bg-slate-900 rounded-2xl flex flex-col items-center justify-center text-white shrink-0">
                   <span class="text-[10px] font-black opacity-50 uppercase tracking-tighter">Room</span>
-                  <span class="text-lg font-black leading-none">{{ order.room.room_number }}</span>
+                  <span class="text-lg font-black leading-none">{{ order.room.name }}</span>
                 </div>
                 <div>
                   <div class="flex items-center gap-2 mb-1">

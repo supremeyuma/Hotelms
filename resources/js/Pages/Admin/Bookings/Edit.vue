@@ -55,7 +55,7 @@ const form = useForm({
   guests: props.booking.guests.toString() || 1 //Convert to string for v-model binding
 });
 
-const roomOptions = props.rooms.map(r => ({ label: `${r.room_type.title} #${r.room_number}`, value: r.id }));
+const roomOptions = props.rooms.map(r => ({ label: `${r.room_type.title} #${r.name}`, value: r.id }));
 const statusOptions = [
   { label: 'Pending', value: 'pending' },
   { label: 'Confirmed', value: 'confirmed' },

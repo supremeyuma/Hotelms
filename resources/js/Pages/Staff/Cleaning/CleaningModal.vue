@@ -58,7 +58,7 @@ const submit = () => {
           </div>
           <div>
             <h2 class="text-2xl font-black text-slate-900 leading-none">
-              Room {{ room.room_number || room.number }}
+              Room {{ room.name || room.name }}
             </h2>
             <p class="text-sm text-slate-500 font-medium mt-1">Update cleaning status</p>
           </div>

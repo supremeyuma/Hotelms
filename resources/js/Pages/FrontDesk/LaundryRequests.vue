@@ -76,7 +76,7 @@ function formatDate(dateString) {
                 </div>
 
                 <h2 class="text-2xl font-black text-slate-900">
-                  Room {{ req.requestable.room.room_number }} 
+                  Room {{ req.requestable.room.name }} 
                   <span class="text-slate-400 font-medium mx-2">—</span>
                   {{ req.requestable.booking?.guest_name || 'Guest' }}
                 </h2>
