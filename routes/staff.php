@@ -92,7 +92,7 @@ Route::prefix('frontdesk')->middleware(['auth', 'role:frontdesk'])->name('frontd
 
     Route::get('reports/occupancy', [ReportController::class, 'occupancyReport']);
     Route::get('reports/revenue', [ReportController::class, 'revenueReport']);
-    Route::get('reports/bookings', [ReportController::class, 'bookingHistoryReport']);
+    Route::get('reports/bookings', [ReportController::class, 'bookingHistoryReport'])->name('reports.bookings');
 
     Route::get('/laundry-requests', [FrontDeskLaundryController::class, 'index'])->name('laundry.index');
     Route::get('/laundry-requests/{guestRequest}', [FrontDeskLaundryController::class, 'show'])->name('frontdesk.laundry.show');
@@ -130,9 +130,11 @@ Route::middleware(['auth', 'role:staff|manager|md|kitchen|bar'])->prefix('staff'
 
     Route::get('/kitchen/orders', [KitchenOrderController::class, 'index'])->name('kitchen.orders.index');
     Route::patch('/kitchen/orders/{order}', [KitchenOrderController::class, 'updateStatus'])->name('kitchen.orders.updateStatus');
+    Route::get('/kitchen/orders/history', [KitchenOrderController::class, 'history'])->name('kitchen.orders.history');
 
     Route::get('/bar/orders', [BarOrderController::class, 'index'])->name('bar.orders.index');
     Route::patch('/bar/orders/{order}', [BarOrderController::class, 'updateStatus'])->name('bar.orders.updateStatus');
+    Route::get('/bar/orders/history', [BarOrderController::class, 'history'])->name('bar.orders.history');
 
     /* ==============================
      | KITCHEN DASHBOARD
@@ -148,7 +150,7 @@ Route::middleware(['auth', 'role:staff|manager|md|kitchen|bar'])->prefix('staff'
     /* ==============================
      | MENU MANAGEMENT (SHARED)
      |==============================*/
-    Route::get('/kitchen/menu', [MenuItemItemController::class, 'index'])->defaults('area', 'kitchen')->name('menu.kitchen');
+    Route::get('/kitchen/menu', [MenuItemController::class, 'index'])->defaults('area', 'kitchen')->name('menu.kitchen');
 
     Route::get('/bar/menu', [MenuItemController::class, 'index'])->defaults('area', 'bar')->name('menu.bar');
 

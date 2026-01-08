@@ -57,6 +57,7 @@ const nav = computed(() => {
       return [
         { label: 'Kitchen Dashboard', route: 'staff.kitchen.dashboard', icon: 'home' },
         { label: 'Orders Queue', route: 'staff.kitchen.orders.index', icon: 'clipboard' },
+        { label: 'Orders History', route: 'staff.kitchen.orders.history', icon: 'clipboard' },
         {
           label: 'Kitchen Menu',
           route: 'staff.menu.kitchen',
@@ -72,6 +73,7 @@ const nav = computed(() => {
       return [
         { label: 'Bar Dashboard', route: 'staff.bar.dashboard', icon: 'home' },
         { label: 'Orders Queue', route: 'staff.bar.orders.index', icon: 'clipboard' },
+        { label: 'Orders History', route: 'staff.bar.orders.history', icon: 'clipboard' },
         {
           label: 'Bar Menu',
           route: 'staff.menu.bar',
@@ -90,11 +92,11 @@ const nav = computed(() => {
 
         // Kitchen
         { label: 'Kitchen Orders', route: 'staff.kitchen.orders.index', icon: 'clipboard' },
-        { label: 'Kitchen Menu', route: 'staff.menu.index', params: { area: 'kitchen' }, icon: 'menu' },
+        { label: 'Kitchen Menu', route: 'staff.menu.kitchen', params: { area: 'kitchen' }, icon: 'menu' },
 
         // Bar
         { label: 'Bar Orders', route: 'staff.bar.orders.index', icon: 'clipboard' },
-        { label: 'Bar Menu', route: 'staff.menu.index', params: { area: 'bar' }, icon: 'menu' },
+        { label: 'Bar Menu', route: 'staff.menu.bar', params: { area: 'bar' }, icon: 'menu' },
 
         // Laundry
         { label: 'Laundry Dashboard', route: 'staff.laundry.dashboard', icon: 'shirt' },

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class Order extends Model
 {
@@ -19,13 +20,17 @@ class Order extends Model
         'status',
         'service_area',
         'notes',
+        'cancelable_until',
+        'completed_at',
     ];
 
     protected $casts = [
         'total' => 'decimal:2',
+        'cancelable_until' => 'datetime',
+        'completed_at' => 'datetime',
     ];
 
-    protected $appends = ['eta_minutes'];
+    protected $appends = ['eta_minutes', 'can_be_cancelled'];
 
     /* ---------------- Relationships ---------------- */
 
@@ -67,5 +72,18 @@ class Order extends Model
     public function room()
     {
         return $this->belongsTo(Room::class);
+    }
+
+    public function canBeCancelled(): Attribute
+    {
+        return Attribute::get(fn () =>
+            $this->cancelable_until && now()->lt($this->cancelable_until)
+        );
+    }
+
+    public function slaMinutes(): ?int
+    {
+        if (!$this->completed_at) return null;
+        return $this->created_at->diffInMinutes($this->completed_at);
     }
 }

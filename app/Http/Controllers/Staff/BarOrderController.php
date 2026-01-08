@@ -48,4 +48,20 @@ class BarOrderController extends Controller
 
         return back();
     }
+
+    public function history()
+    {
+        $orders = Order::with([
+            'items.menuItem.category',
+            'items.menuItem.subcategory'
+        ])
+        ->where('service_area', 'bar')
+        ->whereIn('status', ['delivered', 'cancelled'])
+        ->latest()
+        ->paginate(30);
+
+        return Inertia::render('Staff/Bar/OrderHistory', [
+            'orders' => $orders
+        ]);
+    }
 }

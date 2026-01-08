@@ -1,29 +1,23 @@
 <script setup>
 import { ref } from 'vue'
 import KitchenLayout from '@/Layouts/Staff/KitchenLayout.vue'
-import OrderDetailsModal from '@/Components/Orders/OrderDetailsModal.vue'
-import { Clock, Hash } from 'lucide-vue-next'
+import { Clock, Hash, CheckCircle2, XCircle } from 'lucide-vue-next'
 
 const props = defineProps({
-  orders: Object,
+  orders: Object, // paginated
 })
 
 const orders = ref(props.orders.data)
-const selectedOrder = ref(null)
-const showModal = ref(false)
-
-function openOrder(order) {
-  selectedOrder.value = order
-  showModal.value = true
-}
 </script>
 
 <template>
   <KitchenLayout>
     <div class="max-w-6xl mx-auto px-4 py-6">
-
+      
       <div class="mb-8">
-        <h1 class="text-3xl font-black text-slate-900">Order History</h1>
+        <h1 class="text-2xl md:text-3xl font-black text-slate-900">
+          Order History
+        </h1>
         <p class="text-slate-500 text-sm mt-1">
           Completed and cancelled kitchen orders
         </p>
@@ -34,11 +28,10 @@ function openOrder(order) {
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <button
+        <div
           v-for="order in orders"
           :key="order.id"
-          @click="openOrder(order)"
-          class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden text-left hover:shadow-md transition-all"
+          class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden"
         >
           <!-- HEADER -->
           <div class="p-5 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
@@ -61,6 +54,22 @@ function openOrder(order) {
             </div>
           </div>
 
+          <!-- ITEMS -->
+          <div class="p-5 space-y-3">
+            <div
+              v-for="item in order.items"
+              :key="item.id"
+              class="flex justify-between items-center"
+            >
+              <span class="font-bold text-slate-700 text-sm">
+                {{ item.item_name }} × {{ item.qty }}
+              </span>
+              <span class="text-xs font-bold text-slate-400">
+                ₦{{ Number(item.price * item.qty).toLocaleString() }}
+              </span>
+            </div>
+          </div>
+
           <!-- FOOTER -->
           <div class="px-5 py-4 bg-slate-900/5 flex justify-between items-center">
             <div class="flex items-center gap-1 text-xs text-slate-400">
@@ -71,7 +80,7 @@ function openOrder(order) {
               ₦{{ Number(order.total).toLocaleString() }}
             </span>
           </div>
-        </button>
+        </div>
       </div>
 
       <!-- PAGINATION -->
@@ -89,13 +98,6 @@ function openOrder(order) {
           />
         </div>
       </div>
-
-      <!-- ORDER DETAILS MODAL -->
-      <OrderDetailsModal
-        :show="showModal"
-        :order="selectedOrder"
-        @close="showModal = false"
-      />
 
     </div>
   </KitchenLayout>

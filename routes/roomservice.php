@@ -29,4 +29,7 @@ Route::prefix('guest/room/{token}')->group(function () {
     Route::get('/menu/{type}', [MenuController::class, 'index']);
     Route::post('/orders', [OrderController::class, 'store'])->name('guest.orders.store');
     Route::get('/orders', [OrderHistoryController::class, 'index'])->name('guest.orders.index');
+    Route::post('/orders/{order:id}/cancel', [OrderController::class, 'cancel'])->name('guest.orders.cancel');
 });
+
+

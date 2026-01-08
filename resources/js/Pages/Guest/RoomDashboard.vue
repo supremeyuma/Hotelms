@@ -2,6 +2,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { router, Head } from '@inertiajs/vue3'
 import axios from 'axios'
+import Echo from 'laravel-echo'
 import GuestLayout from '@/Layouts/GuestLayout.vue'
 import Modal from '@/Components/Modal.vue'
 import OutstandingBill from '@/Pages/Guest/OutstandingBill.vue'
@@ -22,7 +23,11 @@ const props = defineProps({
   orders: Array,
 })
 
+
 /* ---------------- UI STATE ---------------- */
+
+const orders = ref([...props.orders])
+
 const showLaundryModal = ref(false)
 const showBillHistory = ref(false)
 const showMaintenanceModal = ref(false)
@@ -33,7 +38,7 @@ const billHistory = ref([])
 const showOrdersHistory = ref(false)
 //const orders = ref([])
 
-console.log(props.orders);
+//console.log(props.orders);
 
 const maintenance = reactive({ type: 'plumbing', description: '', file: null })
 const cleaningRequested = computed(() => props.cleaningStatus === 'cleaner_requested')
@@ -50,6 +55,14 @@ async function fetchBillHistory() {
 
 onMounted(() => {
   fetchBillHistory()
+})
+onMounted(() => {
+  window.Echo.channel('orders')
+    .listen('OrderCreated', e => orders.value.unshift(e.order))
+    .listen('OrderStatusUpdated', e => {
+      const i = orders.value.find(o => o.id === e.order.id)
+      if (i) Object.assign(i, e.order)
+    })
 })
 
 /* ---------------- ACTIONS ---------------- */
@@ -101,6 +114,27 @@ async function payBill() {
     console.error(error.response?.data || error)
   }
 }
+
+
+function cancelOrder(order) {
+  if (!order.can_be_cancelled) return
+
+  if (!confirm('Are you sure you want to cancel this order?')) return
+
+  router.post(
+    `/guest/room/${props.accessToken}/orders/${order.id}/cancel`,
+    {},
+    {
+      preserveScroll: true,
+      onSuccess: () => {
+        // Optimistic UI update
+        order.status = 'cancelled'
+        order.can_be_cancelled = false
+      },
+    }
+  )
+}
+
 
 
 function formatDate(date) { 
@@ -270,16 +304,29 @@ function formatDate(date) {
               >
                 <div class="px-5 py-4 flex justify-between items-center border-b border-white/50">
                   <div>
-                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Code</p>
+                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Code - {{order.service_area}}</p>
                     <p class="font-black text-slate-900">{{ order.order_code }}</p>
                   </div>
+                  <button
+                    v-if="order.can_be_cancelled"
+                    @click="cancelOrder(order)"
+                    class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tight
+                          bg-red-100 text-red-700 hover:bg-red-200 active:scale-95 transition"
+                  >
+                    Cancel Order
+                  </button>
                   
                   <div :class="[
-                    'px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter',
-                    order.status === 'delivered' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
-                  ]">
-                    {{ order.status }}
-                  </div>
+                  'px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter',
+                  order.status === 'delivered'
+                    ? 'bg-emerald-100 text-emerald-700'
+                    : order.status === 'cancelled'
+                    ? 'bg-rose-100 text-rose-700'
+                    : 'bg-amber-100 text-amber-700'
+                ]">
+                  {{ order.status }}
+                </div>
+
                 </div>
 
                 <div class="px-5 py-4 space-y-2">
