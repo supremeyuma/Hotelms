@@ -42,7 +42,7 @@ class BookingsController extends Controller
         }
 
         if ($filter === 'active') {
-            $query->where('status', 'checked_in');
+            $query->where('status', 'active');
         }
 
         if ($filter === 'past') {
@@ -71,7 +71,10 @@ class BookingsController extends Controller
 
     public function create()
     {
-        $rooms = Room::where('status', 'available')->get();
+        $rooms = Room::with('roomType')
+            ->where('status', 'available')
+            ->get();
+        //dd($rooms);
         return Inertia::render('FrontDesk/Bookings/Create', ['rooms' => $rooms]);
     }
 
@@ -95,8 +98,10 @@ class BookingsController extends Controller
 
     public function edit(Booking $booking)
     {
-        $rooms = Room::where('status', 'available')->orWhere('id', $booking->room_id)->get();
-        return Inertia::render('FrontDesk/Bookings/Edit', [
+        $rooms = Room::with('roomType')
+            ->where('status', 'available')
+            ->get();
+                return Inertia::render('FrontDesk/Bookings/Edit', [
             'booking' => $booking->load('room'),
             'rooms' => $rooms
         ]);
