@@ -15,11 +15,12 @@ use App\Http\Controllers\GuestLaundryController;
 |
 */
 
-Route::get('/', [PublicController::class, 'homepage'])->name('public.home');
-Route::get('/rooms', [PublicController::class, 'showRoomTypes'])->name('public.rooms.index');
-Route::get('/rooms/{room}', [PublicController::class, 'showRoom'])->name('public.rooms.show');
+Route::get('/', [PublicController::class,'home']);
+Route::get('/gallery', [PublicController::class,'gallery']);
+Route::get('/amenities', [PublicController::class,'amenities']);
+Route::get('/club-lounge', [PublicController::class,'club']);
+Route::get('/policies', [PublicController::class,'policies']);
 
-Route::get('/gallery', [PublicController::class, 'staticPage'])->defaults('pageKey','gallery')->name('public.gallery');
 Route::get('/contact', [PublicController::class, 'staticPage'])->defaults('pageKey','contact')->name('public.contact');
 Route::post('/contact', [PublicController::class, 'submitContactForm'])->name('public.contact.submit');
 

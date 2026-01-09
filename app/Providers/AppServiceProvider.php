@@ -8,6 +8,7 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Booking;
 use App\Observers\BookingObserver;
+use App\Services\ContentService;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -38,6 +39,11 @@ class AppServiceProvider extends ServiceProvider
                 ];
             },
         ]);
+
+        Inertia::share('content', function () {
+            return app(ContentService::class)->all();
+        });
+
 
         Booking::observe(BookingObserver::class);
         

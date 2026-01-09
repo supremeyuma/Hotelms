@@ -25,6 +25,9 @@ use App\Http\Controllers\Admin\Reports\MaintenanceReportController;
 use App\Http\Controllers\Admin\Reports\InventoryReportController;
 use App\Http\Controllers\Admin\Reports\OccupancyReportController;
 use App\Http\Controllers\Admin\Reports\ChartController;
+use App\Http\Controllers\Admin\ContentController;
+use App\Http\Controllers\Admin\GalleryController;
+use App\Http\Controllers\Admin\EventController;
 
 Route::middleware(['auth', 'role:manager|md'])
     ->prefix('admin')
@@ -103,3 +106,21 @@ Route::middleware(['auth', 'role:manager|md'])
         Route::get('settings', [SettingController::class, 'index'])->name('settings.index');
         Route::put('settings', [SettingController::class, 'update'])->name('settings.update');
     });
+
+
+    // TEXTS AND GALLERY LINKS
+
+Route::middleware(['auth','role:manager|md'])->prefix('admin/website')->group(function () {
+    Route::get('/content', [ContentController::class,'index'])->name('admin.website.content');
+    Route::post('/content', [ContentController::class,'store']);
+    Route::post('/content/image', [ContentController::class, 'uploadImage']);
+
+    Route::get('/gallery', [GalleryController::class,'index'])->name('admin.website.gallery');
+    Route::post('/gallery', [GalleryController::class,'store']);
+    Route::delete('/gallery/{gallery}', [GalleryController::class,'destroy']);
+});
+
+Route::middleware(['auth','role:manager|md'])->group(function () {
+    Route::get('/admin/events', [EventController::class,'index']);
+    Route::post('/admin/events', [EventController::class,'store']);
+});

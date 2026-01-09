@@ -12,7 +12,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // Core foundational data
-        $this->call([
+        /*$this->call([
             RolesSeeder::class,
             PropertiesSeeder::class,
             RoomTypesSeeder::class,
@@ -47,6 +47,11 @@ class DatabaseSeeder extends Seeder
             //OrderItemsSeeder::class ?? OrderItemsSeeder::class, // fallback: orders already populated
             MaintenanceTicketsSeeder::class,
             AuditLogsSeeder::class,
+        ]);*/
+
+        $this->call([
+            WebsiteContentSeeder::class,
+            GallerySeeder::class,
         ]);
     }
 }

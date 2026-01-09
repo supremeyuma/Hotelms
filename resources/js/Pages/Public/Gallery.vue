@@ -1,66 +1,23 @@
-<template>
-  <GuestLayout>
-    <PageHeader title="Gallery" subtitle="Explore our hotel and amenities" />
-
-    <section class="py-12 px-4 max-w-7xl mx-auto">
-      <ImageGrid
-        :images="images"
-        :loading="loading"
-        @open-modal="openModal"
-      />
-
-      <!-- Optional: Lightbox modal -->
-      <ImageLightbox
-        v-if="selectedImage"
-        :images="images"
-        :initial-index="selectedIndex"
-        @close="closeModal"
-      />
-
-    </section>
-  </GuestLayout>
-</template>
-
+<!-- resources/js/Pages/Public/Gallery.vue -->
 <script setup>
-import { ref, onMounted } from 'vue';
-import { router } from '@inertiajs/vue3';
-import GuestLayout from '@/Layouts/GuestLayout.vue';
-//import PageHeader from '@/Components/PageHeader.vue';
-//import ImageGrid from '@/Components/ImageGrid.vue';
-//import ImageLightbox from '@/Components/ImageLightbox.vue';
-import axios from 'axios';
-
-const images = ref([]);
-const loading = ref(true);
-const selectedImage = ref(null);
-const selectedIndex = ref(0);
-
-const fetchImages = async () => {
-  loading.value = true;
-  try {
-    const response = await axios.get('/api/gallery'); // assumes you have an API endpoint
-    images.value = response.data.data;
-  } catch (err) {
-    console.error(err);
-  } finally {
-    loading.value = false;
-  }
-};
-
-const openModal = (index) => {
-  selectedIndex.value = index;
-  selectedImage.value = images.value[index];
-};
-
-const closeModal = () => {
-  selectedImage.value = null;
-};
-
-onMounted(() => {
-  fetchImages();
-});
+import PublicLayout from '@/Layouts/PublicLayout.vue'
+defineProps({ items: Object })
 </script>
 
-<style scoped>
-/* Optional custom styling if needed */
-</style>
+<template>
+  <PublicLayout>
+    <div class="max-w-7xl mx-auto px-4 py-16 space-y-16">
+      <div v-for="(images, category) in items" :key="category">
+        <h2 class="text-2xl font-black mb-6 capitalize">{{ category }}</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <img
+            v-for="img in images"
+            :key="img.id"
+            :src="`/storage/${img.image_path.replace('public/','')}`"
+            class="rounded-2xl object-cover h-48 w-full"
+          />
+        </div>
+      </div>
+    </div>
+  </PublicLayout>
+</template>

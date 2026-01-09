@@ -1,13 +1,13 @@
-import '../css/app.css';
-import './bootstrap';
+import '../css/app.css'
+import './bootstrap'
 
-import { createInertiaApp, Link, usePage } from '@inertiajs/vue3';
-import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
-import { createApp, h } from 'vue';
-import { ZiggyVue } from '../../vendor/tightenco/ziggy';
-import { InertiaProgress } from '@inertiajs/progress';
+import { createInertiaApp } from '@inertiajs/vue3'
+import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers'
+import { createApp, h } from 'vue'
+import { ZiggyVue } from '../../vendor/tightenco/ziggy'
+import { InertiaProgress } from '@inertiajs/progress'
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const appName = import.meta.env.VITE_APP_NAME || 'Laravel'
 
 createInertiaApp({
     title: (title) => `${title} - ${appName}`,
@@ -17,14 +17,23 @@ createInertiaApp({
             import.meta.glob('./Pages/**/*.vue'),
         ),
     setup({ el, App, props, plugin }) {
-        return createApp({ render: () => h(App, props) })
-            .use(plugin)
-            .use(ZiggyVue)
-            .mount(el);
+        const vueApp = createApp({
+            render: () => h(App, props),
+        })
+
+        vueApp.use(plugin)
+        vueApp.use(ZiggyVue)
+
+        // ✅ GLOBAL content() HELPER
+        vueApp.config.globalProperties.content = (key, fallback = '') => {
+            return props.initialPage.props.content?.[key] ?? fallback
+        }
+
+        vueApp.mount(el)
     },
     progress: {
         color: '#4B5563',
     },
-});
+})
 
-InertiaProgress.init({ showSpinner: true });
+InertiaProgress.init({ showSpinner: true })
