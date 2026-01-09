@@ -1,0 +1,1 @@
+import{B as a}from"./BaseStaffLayout-B4Kl57lg.js";import{c as o,o as e,w as r,j as s}from"./app-DdNzErec.js";const u={__name:"FrontDeskLayout",setup(n){return(t,_)=>(e(),o(a,null,{default:r(()=>[s(t.$slots,"default")]),_:3}))}};export{u as _};
