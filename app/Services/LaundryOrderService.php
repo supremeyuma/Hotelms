@@ -1,7 +1,5 @@
 <?php
 
-// app/Services/LaundryOrderService.php
-
 namespace App\Services;
 
 use App\Enums\LaundryStatus;
@@ -17,85 +15,100 @@ class LaundryOrderService
 {
     /**
      * Create a new laundry order from guest input
-     *
-     * @param int $roomId
-     * @param int $bookingId
-     * @param array $items [
-     *   ['laundry_item_id' => int, 'quantity' => int],
-     *   ...
-     * ]
-     * @param array $images Array of uploaded file paths
-     * @param int $guestId
-     * @return LaundryOrder
      */
-    public function createOrder(int $roomId, int $bookingId, array $items, array $images = [], int $guestId): LaundryOrder
-    {
-        return DB::transaction(function () use ($roomId, $bookingId, $items, $images, $guestId) {
-            // 1. Generate unique order code
+    public function createOrder(
+        int $roomId,
+        int $bookingId,
+        array $items,
+        array $images = [],
+        ?int $guestId = null,
+        string $paymentMode = 'prepaid' // 🔑 default matches Kitchen
+    ): LaundryOrder {
+        return DB::transaction(function () use (
+            $roomId,
+            $bookingId,
+            $items,
+            $images,
+            $guestId,
+            $paymentMode
+        ) {
+            // 1️⃣ Generate unique order code
             $orderCode = 'L' . strtoupper(Str::random(8));
 
-            // 2. Calculate total
+            // 2️⃣ Calculate total
             $totalAmount = 0;
             $orderItemsData = [];
 
             foreach ($items as $itemData) {
                 $laundryItem = LaundryItem::findOrFail($itemData['laundry_item_id']);
-                $quantity = max(1, (int)$itemData['quantity']);
+                $quantity = max(1, (int) $itemData['quantity']);
                 $subtotal = $laundryItem->price * $quantity;
+
                 $totalAmount += $subtotal;
 
                 $orderItemsData[] = [
                     'laundry_item_id' => $laundryItem->id,
-                    'quantity' => $quantity,
-                    'unit_price' => $laundryItem->price,
-                    'subtotal' => $subtotal,
+                    'quantity'        => $quantity,
+                    'unit_price'      => $laundryItem->price,
+                    'subtotal'        => $subtotal,
                 ];
             }
 
-            // 3. Create Laundry Order
+            // 3️⃣ Create Laundry Order
             $order = LaundryOrder::create([
-                'order_code' => $orderCode,
-                'room_id' => $roomId,
-                'status' => LaundryStatus::REQUESTED,
-                'total_amount' => $totalAmount,
+                'order_code'    => $orderCode,
+                'room_id'       => $roomId,
+                'status'        => LaundryStatus::REQUESTED,
+                'total_amount'  => $totalAmount,
             ]);
 
-            event(new LaundryOrderUpdated($order));
-
-            // 4. Create Order Items
+            // 4️⃣ Create Order Items
             foreach ($orderItemsData as $item) {
                 $order->items()->create($item);
             }
 
-            // 5. Save images if any
+            // 5️⃣ Save images if any
             foreach ($images as $path) {
                 $order->images()->create(['path' => $path]);
             }
 
-            // 6. Create initial status history
+            // 6️⃣ Create initial status history
             $order->statusHistories()->create([
                 'from_status' => null,
-                'to_status' => LaundryStatus::REQUESTED->value,
-                'changed_by' => $guestId,
+                'to_status'   => LaundryStatus::REQUESTED->value,
+                'changed_by'  => $guestId,
             ]);
 
-            // 7. Add pending charge to booking/room
-            Charge::create([
-                'booking_id' => $bookingId,
-                'room_id' => $roomId,
-                'amount' => $totalAmount,
-                'description' => "Laundry Order: {$orderCode}",
+            /**
+             * 7️⃣ CREATE CHARGE (THIS IS THE KEY PART)
+             * ---------------------------------------
+             * - Linked directly to the laundry order
+             * - Has status + payment_mode
+             * - Enforced by staff UI + backend
+             */
+            $order->charge()->create([
+                //'order_id'     => $order->id,
+                'booking_id'   => $bookingId,
+                'room_id'      => $roomId,
+                'amount'       => $totalAmount,
+                'status'       => 'unpaid',
+                'payment_mode' => $paymentMode, // prepaid | pay_on_delivery | postpaid
+                'type'         => 'laundry',
+                'description'  => "Laundry Order ({$orderCode})",
+                'charge_date'  => now(),
             ]);
 
-            // 8. Create Guest Request for FrontDesk
+            // 8️⃣ Create Guest Request for Front Desk
             GuestRequest::create([
                 'requestable_type' => LaundryOrder::class,
-                'requestable_id' => $order->id,
-                'room_id' => $roomId,
-                'type' => 'laundry',
-                'status' => LaundryStatus::REQUESTED->value,
-                'booking_id' => $bookingId,
+                'requestable_id'   => $order->id,
+                'room_id'          => $roomId,
+                'type'             => 'laundry',
+                'status'           => LaundryStatus::REQUESTED->value,
+                'booking_id'       => $bookingId,
             ]);
+
+            event(new LaundryOrderUpdated($order));
 
             return $order;
         });
@@ -103,43 +116,52 @@ class LaundryOrderService
 
     /**
      * Change laundry order status
-     *
-     * @param LaundryOrder $order
-     * @param LaundryStatus $newStatus
-     * @param int|null $userId
-     * @return LaundryOrder
      */
-    public function updateStatus(LaundryOrder $order, LaundryStatus $newStatus, ?int $userId = null): LaundryOrder
-    {
+    public function updateStatus(
+        LaundryOrder $order,
+        LaundryStatus $newStatus,
+        ?int $userId = null
+    ): LaundryOrder {
         return DB::transaction(function () use ($order, $newStatus, $userId) {
             $oldStatus = $order->status->value;
 
             if ($oldStatus === $newStatus->value) {
-                return $order; // no change
+                return $order;
             }
 
-            // 1. Update order status
+            // 🔒 HARD PAYMENT GUARD (same as Kitchen)
+            if (
+                $order->charge &&
+                $order->charge->payment_mode === 'prepaid' &&
+                $order->charge->status === 'unpaid'
+            ) {
+                abort(
+                    403,
+                    'Laundry order cannot be processed until payment is completed.'
+                );
+            }
+
+            // 1️⃣ Update order status
             $order->status = $newStatus;
             $order->save();
 
-            // 2. Record status history
+            // 2️⃣ Record status history
             $order->statusHistories()->create([
                 'from_status' => $oldStatus,
-                'to_status' => $newStatus->value,
-                'changed_by' => $userId,
+                'to_status'   => $newStatus->value,
+                'changed_by'  => $userId,
             ]);
 
-            // 3. Sync Guest Request status
+            // 3️⃣ Sync Guest Request status
             if ($order->guestRequest) {
                 $order->guestRequest->update([
                     'status' => $newStatus->value,
                 ]);
             }
 
-
             event(new LaundryOrderUpdated($order));
 
-            return $order->fresh();
+            return $order->fresh(['charge']);
         });
     }
 }

@@ -86,4 +86,11 @@ class Order extends Model
         if (!$this->completed_at) return null;
         return $this->created_at->diffInMinutes($this->completed_at);
     }
+
+    public function charge()
+    {
+        return $this->morphOne(Charge::class, 'billable');
+    }
+
+
 }

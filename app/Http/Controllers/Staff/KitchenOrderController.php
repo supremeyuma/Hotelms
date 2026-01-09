@@ -15,10 +15,17 @@ class KitchenOrderController extends Controller
     {
         $orders = Order::with([
             'items.menuItem.category',
-            'items.menuItem.subcategory'
+            'items.menuItem.subcategory', 'charge',
         ])
         ->where('service_area', 'kitchen')
-        ->whereIn('status', ['pending', 'preparing'])
+        ->whereIn('status', ['pending', 'preparing', 'confirmed'])
+        ->where(function ($q) {
+            $q->whereDoesntHave('charge')
+            ->orWhereHas('charge', function ($c) {
+                $c->where('payment_mode', '!=', 'prepaid')
+                    ->orWhere('status', 'paid');
+            });
+        })
         ->latest()
         ->get();
 
@@ -38,6 +45,14 @@ class KitchenOrderController extends Controller
 
         broadcast(new OrderStatusUpdated($order))->toOthers();
 
+        if (
+            $order->charge &&
+            $order->charge->payment_mode === 'prepaid' &&
+            $order->charge->status === 'unpaid'
+        ) {
+            return back()->with('error', 'Order cannot be prepared until payment is completed.');
+        }
+
         if ($request->status === 'preparing') {
             app(OrderChargeService::class)->post($order);
         }
@@ -49,7 +64,7 @@ class KitchenOrderController extends Controller
     {
         $orders = Order::with([
             'items.menuItem.category',
-            'items.menuItem.subcategory'
+            'items.menuItem.subcategory', 'charge',
         ])
         ->where('service_area', 'kitchen')
         ->whereIn('status', ['delivered', 'cancelled'])

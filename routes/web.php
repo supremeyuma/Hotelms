@@ -5,6 +5,7 @@ use App\Http\Controllers\PublicController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\RoomServiceController;
+use App\Http\Controllers\PaymentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -58,6 +59,10 @@ Route::patch('/order/{order}/status', [OrderController::class, 'updateStatus'])-
 
 // Fallback static pages (terms, privacy)
 Route::get('/pages/{pageKey}', [PublicController::class, 'staticPage'])->name('pages.static');
+
+Route::post('/payments/initialize', [PaymentController::class, 'initialize']);
+Route::get('/payments/verify/{reference}', [PaymentController::class, 'verify']);
+
 
 require __DIR__ . '/admin.php';
 require __DIR__ . '/auth.php';

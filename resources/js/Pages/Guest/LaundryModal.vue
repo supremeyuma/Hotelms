@@ -13,6 +13,15 @@
     </template>
 
     <template #content>
+
+      <!-- SUCCESS CONFIRMATION -->
+      <div
+        v-if="successMessage"
+        class="bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl p-4 text-sm font-bold"
+      >
+        {{ successMessage }}
+      </div>
+
       <form @submit.prevent="submitOrder" class="space-y-8 py-2">
         <div class="space-y-4 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar">
           <div 
@@ -68,6 +77,40 @@
           </div>
         </div>
 
+        <!-- PAYMENT MODE -->
+        <div class="space-y-2">
+          <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+            Payment Option
+          </p>
+
+          <div class="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              @click="paymentMode = 'postpaid'"
+              class="p-4 rounded-xl border text-left transition-all"
+              :class="paymentMode === 'postpaid'
+                ? 'border-purple-600 bg-purple-50'
+                : 'border-slate-200 bg-white hover:border-purple-300'"
+            >
+              <p class="font-black text-sm">Pay on Delivery</p>
+              <p class="text-xs text-slate-500">Pay when laundry is returned</p>
+            </button>
+
+            <button
+              type="button"
+              @click="paymentMode = 'prepaid'"
+              class="p-4 rounded-xl border text-left transition-all"
+              :class="paymentMode === 'prepaid'
+                ? 'border-purple-600 bg-purple-50'
+                : 'border-slate-200 bg-white hover:border-purple-300'"
+            >
+              <p class="font-black text-sm">Pay Now</p>
+              <p class="text-xs text-slate-500">Complete payment online</p>
+            </button>
+          </div>
+        </div>
+
+
         <div class="bg-slate-900 rounded-[2rem] p-6 text-white flex justify-between items-center shadow-xl shadow-slate-200">
           <div>
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Estimated Total</p>
@@ -106,6 +149,11 @@ const quantities = ref({})
 const files = ref([])
 const filePreviews = ref([])
 
+const paymentMode = ref('postpaid')
+const submitting = ref(false)
+const successMessage = ref(null)
+
+
 // Initialize quantities correctly
 props.items.forEach(i => {
   quantities.value[i.id] = 0
@@ -128,8 +176,14 @@ function removeFile(index) {
 }
 
 function submitOrder() {
+  if (submitting.value) return
+
+  submitting.value = true
+  successMessage.value = null
+
   const formData = new FormData()
   formData.append('booking_id', props.booking.id)
+  formData.append('payment_mode', paymentMode.value)
 
   for (const id in quantities.value) {
     if (quantities.value[id] > 0) {
@@ -141,13 +195,29 @@ function submitOrder() {
   files.value.forEach(f => formData.append('images[]', f))
 
   router.post(route('guest.laundry.store', props.accessToken), formData, {
-    onSuccess: () => {
-      emit('close')
-      quantities.value = {}
-      props.items.forEach(i => quantities.value[i.id] = 0)
-      files.value = []
-      filePreviews.value = []
+    onSuccess: (page) => {
+      submitting.value = false
+
+      if (paymentMode.value === 'prepaid') {
+        // 🚧 Flutterwave redirect will go here
+        router.visit(`/guest/payments/laundry/${page.props.order_id}`)
+        return
+      }
+
+      successMessage.value = 'Laundry request sent successfully.'
+      resetForm()
+    },
+    onError: () => {
+      submitting.value = false
     }
   })
 }
+
+function resetForm() {
+  quantities.value = {}
+  props.items.forEach(i => quantities.value[i.id] = 0)
+  files.value = []
+  filePreviews.value = []
+}
+
 </script>

@@ -6,6 +6,8 @@ import {
   Plus,
   Minus,
   X,
+  ArrowLeft,
+  ClipboardList,
 } from 'lucide-vue-next'
 
 /* ================= PROPS ================= */
@@ -24,16 +26,18 @@ const cart = ref([])
 
 const showPreview = ref(false)
 const submitting = ref(false)
+const paymentMode = ref('prepaid') // prepaid | pay_on_delivery
 
-/* ================= FLASH / TOAST ================= */
+/* ================= UI ================= */
 const toast = ref(null)
 const toastType = ref('success')
 const showConfirm = ref(false)
 
+/* ================= FLASH ================= */
 watch(
   () => page.props.flash,
   (flash) => {
-    if (flash?.success) {
+    if (flash?.success && paymentMode.value === 'pay_on_delivery') {
       toastType.value = 'success'
       toast.value = flash.success
       showConfirm.value = true
@@ -53,7 +57,7 @@ watch(
   { deep: true, immediate: true }
 )
 
-/* ================= CART PERSISTENCE ================= */
+/* ================= CART ================= */
 onMounted(() => {
   const saved = sessionStorage.getItem('guest-cart')
   if (saved) {
@@ -67,21 +71,17 @@ onMounted(() => {
 
 watch(
   cart,
-  (val) => {
-    sessionStorage.setItem('guest-cart', JSON.stringify(val))
-  },
+  (val) => sessionStorage.setItem('guest-cart', JSON.stringify(val)),
   { deep: true }
 )
 
-/* ================= ITEMS ================= */
+/* ================= COMPUTED ================= */
 const items = computed(() => {
   if (!activeCategory.value) return []
   if (activeSubcategory.value) return activeSubcategory.value.items
 
   let all = [...activeCategory.value.items]
-  activeCategory.value.subcategories?.forEach(s =>
-    all.push(...s.items)
-  )
+  activeCategory.value.subcategories?.forEach(s => all.push(...s.items))
   return all
 })
 
@@ -92,18 +92,15 @@ const total = computed(() =>
 /* ================= CART ACTIONS ================= */
 function add(item) {
   const found = cart.value.find(i => i.id === item.id)
-  if (found) {
-    found.quantity++
-  } else {
-    cart.value.push({ ...item, quantity: 1 })
-  }
+  found ? found.quantity++ : cart.value.push({ ...item, quantity: 1 })
 }
 
 function remove(item) {
   const found = cart.value.find(i => i.id === item.id)
   if (!found) return
-  if (found.quantity > 1) found.quantity--
-  else cart.value = cart.value.filter(i => i.id !== item.id)
+  found.quantity > 1
+    ? found.quantity--
+    : (cart.value = cart.value.filter(i => i.id !== item.id))
 }
 
 /* ================= ORDER FLOW ================= */
@@ -120,6 +117,7 @@ function confirmOrder() {
     `/guest/room/${props.accessToken}/orders`,
     {
       department: props.type,
+      payment_mode: paymentMode.value,
       items: cart.value.map(i => ({
         name: i.name,
         price: i.price,
@@ -131,19 +129,29 @@ function confirmOrder() {
       onFinish: () => {
         submitting.value = false
         showPreview.value = false
-        toast.value = 'Order placed successfully.'
+        if (paymentMode.value === 'pay_on_delivery') {
+          cart.value = []
+          sessionStorage.removeItem('guest-cart')
+        }
       },
       onError: () => {
-      submitting.value = false
-      toastType.value = 'error'
-      toast.value = 'Failed to place order. Please review your items.'
-    },
+        submitting.value = false
+        toastType.value = 'error'
+        toast.value = 'Failed to place order. Please try again.'
+      },
     }
   )
 }
 
-function goToHistory() {
-  router.visit(`/guest/room/${props.accessToken}/orders`)
+function goBack() {
+  router.visit(route('guest.room.dashboard', props.accessToken))
+}
+
+function openHistory() {
+  router.visit(route('guest.room.dashboard', props.accessToken), {
+    data: { showOrders: true },
+    preserveState: false,
+  })
 }
 </script>
 
@@ -151,50 +159,75 @@ function goToHistory() {
   <GuestLayout>
     <Head :title="`${type} Menu`" />
 
+    <!-- HEADER -->
+    <div class="sticky top-0 z-30 bg-white border-b">
+      <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+        <button
+          @click="goBack"
+          class="flex items-center gap-2 text-sm font-black text-slate-600 hover:text-black"
+        >
+          <ArrowLeft class="w-4 h-4" />
+          Back
+        </button>
+
+        <h1 class="font-black capitalize">{{ type }} Menu</h1>
+
+        <button
+          @click="openHistory"
+          class="flex items-center gap-2 text-sm font-black text-slate-600 hover:text-black"
+        >
+          <ClipboardList class="w-4 h-4" />
+          Orders
+        </button>
+      </div>
+    </div>
+
     <!-- TOAST -->
     <transition name="toast">
       <div
         v-if="toast"
-        class="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-xl text-white font-bold shadow-lg"
+        class="fixed top-16 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-xl text-white font-bold shadow-lg"
         :class="toastType === 'success' ? 'bg-green-600' : 'bg-red-600'"
       >
         {{ toast }}
       </div>
     </transition>
 
-    <!-- CONFIRM SUCCESS MODAL -->
-    <div v-if="showConfirm" class="fixed inset-0 bg-black/40 z-40 flex items-center justify-center">
+    <!-- CONFIRM MODAL -->
+    <div
+      v-if="showConfirm"
+      class="fixed inset-0 bg-black/40 z-40 flex items-center justify-center"
+    >
       <div class="bg-white rounded-2xl p-6 max-w-sm w-full text-center space-y-4">
-        <h2 class="font-black text-lg">Order Confirmed 🎉</h2>
+        <h2 class="font-black text-lg">Order Sent 🎉</h2>
         <p class="text-sm text-gray-500">
           Your order has been sent to the {{ type }}.
         </p>
         <button
-          @click="goToHistory"
-          class="w-full bg-black text-white py-3 rounded-xl font-black uppercase text-xs"
+          @click="openHistory"
+          class="w-full bg-black text-white py-3 rounded-xl font-black uppercase text-xs flex items-center justify-center gap-2"
         >
-          View Order History
+          <ClipboardList class="w-4 h-4" />
+          View Orders
         </button>
         <button
-          @click="showConfirm = false"
-          class="text-xs text-gray-400 underline"
+          @click="goBack"
+          class="w-full bg-gray-100 py-3 rounded-xl font-black uppercase text-xs flex items-center justify-center gap-2"
         >
-          Close
+          <ArrowLeft class="w-4 h-4" />
+          Back to Room
         </button>
       </div>
     </div>
 
-    <!-- MENU -->
+    <!-- CATEGORIES -->
     <div class="max-w-6xl mx-auto p-4 space-y-4">
-      <h1 class="font-black text-lg capitalize">{{ type }} Menu</h1>
-
-      <!-- CATEGORIES -->
       <div class="flex gap-2 overflow-x-auto">
         <button
           v-for="c in categories"
           :key="c.id"
           @click="activeCategory = c; activeSubcategory = null"
-          class="px-4 py-2 rounded-full text-xs font-bold uppercase"
+          class="px-4 py-2 rounded-full text-xs font-bold uppercase whitespace-nowrap"
           :class="activeCategory?.id === c.id ? 'bg-black text-white' : 'bg-gray-200'"
         >
           {{ c.name }}
@@ -217,10 +250,7 @@ function goToHistory() {
           <p class="text-xs text-gray-500 mb-2">₦{{ item.price }}</p>
 
           <div class="flex items-center justify-between">
-            <button
-              @click="remove(item)"
-              class="p-1 rounded bg-gray-100"
-            >
+            <button @click="remove(item)" class="p-1 rounded bg-gray-100">
               <Minus class="w-4 h-4" />
             </button>
 
@@ -228,10 +258,7 @@ function goToHistory() {
               {{ cart.find(i => i.id === item.id)?.quantity || 0 }}
             </span>
 
-            <button
-              @click="add(item)"
-              class="p-1 rounded bg-gray-100"
-            >
+            <button @click="add(item)" class="p-1 rounded bg-gray-100">
               <Plus class="w-4 h-4" />
             </button>
           </div>
@@ -252,14 +279,14 @@ function goToHistory() {
 
         <button
           @click="openPreview"
-          class="bg-green-600 text-white px-6 py-3 rounded-xl font-black uppercase text-xs disabled:opacity-50"
+          class="bg-green-600 text-white px-6 py-3 rounded-xl font-black uppercase text-xs"
         >
           Review Order
         </button>
       </div>
     </div>
 
-    <!-- ORDER PREVIEW MODAL -->
+    <!-- PREVIEW MODAL -->
     <div
       v-if="showPreview"
       class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center"
@@ -273,11 +300,7 @@ function goToHistory() {
         </div>
 
         <div class="space-y-3 max-h-64 overflow-y-auto">
-          <div
-            v-for="item in cart"
-            :key="item.id"
-            class="flex justify-between text-sm"
-          >
+          <div v-for="item in cart" :key="item.id" class="flex justify-between text-sm">
             <div>
               <p class="font-bold">{{ item.name }}</p>
               <p class="text-xs text-gray-500">
@@ -289,15 +312,25 @@ function goToHistory() {
                 class="w-full border rounded p-1 text-xs"
               />
             </div>
-            <p class="font-black">
-              ₦{{ item.price * item.quantity }}
-            </p>
+            <p class="font-black">₦{{ item.price * item.quantity }}</p>
           </div>
         </div>
 
         <div class="border-t pt-3 flex justify-between font-black">
           <span>Total</span>
           <span>₦{{ total }}</span>
+        </div>
+
+        <div class="space-y-2">
+          <p class="font-bold text-sm">Payment Method</p>
+          <label class="flex items-center gap-2 text-sm">
+            <input type="radio" value="prepaid" v-model="paymentMode" />
+            Pay now
+          </label>
+          <label class="flex items-center gap-2 text-sm">
+            <input type="radio" value="pay_on_delivery" v-model="paymentMode" />
+            Pay on delivery
+          </label>
         </div>
 
         <div class="flex gap-3">

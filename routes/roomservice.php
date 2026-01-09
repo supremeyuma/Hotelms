@@ -20,7 +20,7 @@ Route::prefix('guest')->group(function () {
     });
 });
 
-Route::middleware(['auth', 'resolve.guest.room'])->group(function () {
+Route::middleware([ 'resolve.guest.room'])->group(function () {
     Route::get('/guest/room/{token}/laundry', [GuestLaundryController::class, 'show'])->name('guest.laundry.show');
     Route::post('/guest/room/{token}/laundry', [GuestLaundryController::class, 'store'])->name('guest.laundry.store');
 });
@@ -31,5 +31,6 @@ Route::prefix('guest/room/{token}')->group(function () {
     Route::get('/orders', [OrderHistoryController::class, 'index'])->name('guest.orders.index');
     Route::post('/orders/{order:id}/cancel', [OrderController::class, 'cancel'])->name('guest.orders.cancel');
 });
+
 
 

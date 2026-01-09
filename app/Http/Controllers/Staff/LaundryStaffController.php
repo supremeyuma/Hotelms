@@ -20,6 +20,7 @@ class LaundryStaffController extends Controller
             'items.item',
             'images',
             'statusHistories.changer',
+            'charge',
         ])
         ->when($status, fn ($q) => $q->where('status', $status))
         ->latest()
@@ -39,8 +40,8 @@ class LaundryStaffController extends Controller
             'items.item',
             'images',
             'statusHistories.changer',
+            'charge',
         ]);
-        //dd(LaundryStatus::cases());
 
         return Inertia::render('Staff/Laundry/Show', [
             'order' => $order,
@@ -51,26 +52,36 @@ class LaundryStaffController extends Controller
     }
 
     public function updateStatus(
-    Request $request,
-    LaundryOrder $order,
-    LaundryOrderService $service
-) {
-    $request->validate([
-        'status' => ['required', 'string'],
-    ]);
+        Request $request,
+        LaundryOrder $order,
+        LaundryOrderService $service
+    ) {
+        $request->validate([
+            'status' => ['required', 'string'],
+        ]);
 
-    $newStatus = LaundryStatus::from($request->status);
+        // 🔒 HARD BACKEND GUARD
+        if (
+            $order->charge &&
+            $order->charge->payment_mode === 'prepaid' &&
+            $order->charge->status === 'unpaid'
+        ) {
+            return back()->with(
+                'error',
+                'Laundry order cannot be processed until payment is completed.'
+            );
+        }
 
-    // Delegate ALL logic to service
-    $service->updateStatus(
-        $order,
-        $newStatus,
-        auth()->id()
-    );
+        $newStatus = LaundryStatus::from($request->status);
 
-    return back();
-}
+        $service->updateStatus(
+            $order,
+            $newStatus,
+            auth()->id()
+        );
 
+        return back();
+    }
     public function cancel(
         LaundryOrder $order,
         LaundryOrderService $service

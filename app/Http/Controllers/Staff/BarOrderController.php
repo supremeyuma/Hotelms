@@ -14,12 +14,24 @@ class BarOrderController extends Controller
 {
     public function index()
     {
+        $orders = Order::with([
+            'items.menuItem.category',
+            'items.menuItem.subcategory', 'charge',
+        ])
+        ->where('service_area', 'bar')
+        ->whereIn('status', ['pending', 'preparing', 'confirmed'])
+        ->where(function ($q) {
+            $q->whereDoesntHave('charge')
+            ->orWhereHas('charge', function ($c) {
+                $c->where('payment_mode', '!=', 'prepaid')
+                    ->orWhere('status', 'paid');
+            });
+        })
+        ->latest()
+        ->get();
+
         return Inertia::render('Staff/Bar/Orders', [
-            'orders' => Order::with('items.menuItem')
-                ->where('service_area', 'bar')
-                ->whereIn('status', ['pending','preparing','ready'])
-                ->latest()
-                ->get()
+            'orders' => $orders
         ]);
     }
 
@@ -34,6 +46,16 @@ class BarOrderController extends Controller
         $order->update(['status' => $request->status]);
 
         broadcast(new OrderStatusUpdated($order))->toOthers();
+
+        if (
+            $request->status === 'preparing' &&
+            $order->charge &&
+            $order->charge->payment_mode === 'prepaid' &&
+            $order->charge->status === 'unpaid'
+        ) {
+            return back()->with('error', 'Order cannot be prepared until payment is completed.');
+        }
+
 
         if ($request->status === 'preparing') {
             app(OrderChargeService::class)->post($order);

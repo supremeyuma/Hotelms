@@ -50,12 +50,16 @@ class GuestLaundryController extends Controller
         //dd($room, $booking);
         //$this->authorize('requestLaundry', $room);
 
+
+
         $data = $request->validate([
             'booking_id' => 'required|exists:bookings,id',
             'items' => 'required|array|min:1',
             'items.*.laundry_item_id' => 'required|exists:laundry_items,id',
             'items.*.quantity' => 'required|integer|min:1',
             'images.*' => 'nullable|file|image|max:2048',
+            'payment_mode' => 'required|in:prepaid,postpaid',
+
         ]);
 
         // Handle image uploads
@@ -71,7 +75,8 @@ class GuestLaundryController extends Controller
             $data['booking_id'],
             $data['items'],
             $uploadedPaths,
-            $request->user()->id
+            null,//$request->user()->id
+            $data['payment_mode'],
         );
 
         return redirect()->back()->with('success', "Laundry order {$order->order_code} submitted!");

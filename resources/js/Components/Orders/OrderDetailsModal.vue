@@ -2,6 +2,9 @@
 import Modal from '@/Components/Modal.vue'
 import { Clock, Hash } from 'lucide-vue-next'
 
+import { ref } from 'vue'
+import { router } from '@inertiajs/vue3'
+
 const props = defineProps({
   show: Boolean,
   order: Object,
@@ -9,7 +12,34 @@ const props = defineProps({
 
 const emit = defineEmits(['close'])
 
-//console.log(props.order)
+
+const selectedCharge = ref(null)
+const method = ref('cash')
+
+function openPayModal(charge) {
+  selectedCharge.value = charge
+}
+
+function markAsPaid() {
+  router.post(
+    `/staff/charges/${selectedCharge.value.id}/mark-paid`,
+    { method: method.value },
+    {
+      onSuccess: () => {
+        selectedCharge.value = null
+        emit('close')
+
+        router.reload({
+          only: ['orders'],
+          preserveScroll: true,
+        })
+      }
+
+    }
+  )
+}
+
+
 </script>
 
 
@@ -44,6 +74,29 @@ const emit = defineEmits(['close'])
           >
             {{ order.status }}
           </span>
+                      <span
+              v-if="order.charge"
+              class="px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-wide"
+              :class="
+                order.charge.status === 'paid'
+                  ? 'bg-emerald-100 text-emerald-700'
+                  : order.charge.payment_mode === 'pay_on_delivery'
+                    ? 'bg-amber-100 text-amber-700'
+                    : 'bg-rose-100 text-rose-700'
+              "
+            >
+              <template v-if="order.charge.status === 'paid'">
+                Paid
+              </template>
+
+              <template v-else-if="order.charge.payment_mode === 'pay_on_delivery'">
+                Pay on Delivery
+              </template>
+
+              <template v-else>
+                Awaiting Payment
+              </template>
+            </span>
 
           <div class="flex items-center gap-1 text-xs text-slate-400">
             <Clock class="w-4 h-4" />
@@ -88,7 +141,76 @@ const emit = defineEmits(['close'])
           </span>
         </div>
 
+
+        <button
+          v-if="
+            order?.charge &&
+            order.charge.status === 'unpaid' &&
+            order.charge.payment_mode !== 'prepaid'
+          "
+          @click="openPayModal(order.charge)"
+          class="px-3 py-1 bg-green-600 text-white text-xs font-bold rounded"
+        >
+          Mark as Paid
+        </button>
+
+
+
+
       </div>
+
     </template>
   </Modal>
+
+  <!-- MARK AS PAID MODAL -->
+<div
+  v-if="selectedCharge"
+  class="fixed inset-0 bg-black/40 z-[60] flex items-center justify-center"
+>
+  <div class="bg-white rounded-2xl p-6 w-full max-w-sm space-y-4">
+    <h2 class="font-black text-lg text-slate-900">
+      Mark Charge as Paid
+    </h2>
+
+    <p class="text-sm text-slate-500">
+      ₦{{ Number(selectedCharge.amount).toLocaleString() }}
+    </p>
+
+    <!-- PAYMENT METHOD -->
+    <div class="space-y-2">
+      <label class="flex items-center gap-2 text-sm">
+        <input type="radio" v-model="method" value="cash" />
+        Cash
+      </label>
+
+      <label class="flex items-center gap-2 text-sm">
+        <input type="radio" v-model="method" value="pos" />
+        POS
+      </label>
+
+      <label class="flex items-center gap-2 text-sm">
+        <input type="radio" v-model="method" value="transfer" />
+        Bank Transfer
+      </label>
+    </div>
+
+    <!-- ACTIONS -->
+    <div class="flex gap-3 pt-2">
+      <button
+        @click="markAsPaid"
+        class="flex-1 bg-green-600 text-white py-3 rounded-xl font-black text-xs uppercase"
+      >
+        Confirm Payment
+      </button>
+
+      <button
+        @click="selectedCharge = null"
+        class="flex-1 bg-gray-100 py-3 rounded-xl font-black text-xs uppercase"
+      >
+        Cancel
+      </button>
+    </div>
+  </div>
+</div>
+
 </template>

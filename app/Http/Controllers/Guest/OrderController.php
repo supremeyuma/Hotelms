@@ -25,35 +25,38 @@ class OrderController extends Controller
             'items.*.quantity'    => 'required|integer|min:1',
             'items.*.note'        => 'nullable|string|max:255',
             'notes'               => 'nullable|string|max:1000',
+            'payment_mode'        => 'required|in:prepaid,pay_on_delivery',
         ]);
 
         try {
-            DB::transaction(function () use ($data, $token) {
+            $order = DB::transaction(function () use ($data, $token) {
 
                 $access = RoomAccessToken::with(['room', 'booking'])
                     ->where('token', $token)
                     ->firstOrFail();
 
                 $order = Order::create([
-                    'booking_id'        => $access->booking_id,
-                    'room_id'           => $access->room_id,
-                    'service_area'      => $data['department'],
-                    'status'            => OrderStatus::PENDING,
-                    'cancelable_until'  => now()->addMinutes(5),
-                    'notes'             => $data['notes'] ?? null,
-                    'order_code'        => strtoupper('ORD-' . uniqid()),
-                    'total'             => 0,
+                    'booking_id' => $access->booking_id,
+                    'room_id'    => $access->room_id,
+                    'service_area' => $data['department'],
+                    'status' => $data['payment_mode'] === 'prepaid'
+                        ? OrderStatus::PENDING
+                        : OrderStatus::CONFIRMED,
+                    'cancelable_until' => now()->addMinutes(5),
+                    'notes' => $data['notes'] ?? null,
+                    'order_code' => strtoupper('ORD-' . uniqid()),
+                    'total' => 0,
                 ]);
 
                 $total = 0;
 
                 foreach ($data['items'] as $item) {
                     OrderItem::create([
-                        'order_id'  => $order->id,
+                        'order_id' => $order->id,
                         'item_name' => $item['name'],
-                        'price'     => $item['price'],
-                        'qty'       => $item['quantity'],
-                        'note'      => $item['note'] ?? null,
+                        'price' => $item['price'],
+                        'qty' => $item['quantity'],
+                        'note' => $item['note'] ?? null,
                     ]);
 
                     $total += $item['price'] * $item['quantity'];
@@ -61,18 +64,33 @@ class OrderController extends Controller
 
                 $order->update(['total' => $total]);
 
-                // Create charge for the room / booking
-                Charge::create([
-                    'booking_id'  => $access->booking_id,
-                    'room_id'     => $access->room_id,
-                    'amount'      => $total,
-                    'description' => ucfirst($data['department']) . " Order ({$order->order_code})",
+                $order->charge()->create([
+                    'booking_id'   => $access->booking_id,
+                    'room_id'      => $access->room_id,
+                    'amount'       => $total,
+                    'status'       => 'unpaid',
+                    'payment_mode' => $data['payment_mode'], // prepaid | pay_on_delivery
+                    'charge_date'  => now(),
+                    'type'         => $data['department'],
+                    'description'  => ucfirst($data['department']) . " Order ({$order->order_code})",
                 ]);
 
+
                 event(new OrderCreated($order));
+
+                return $order; // ✅ return data, not response
             });
 
-            return back()->with('success', 'Order placed successfully.');
+            // ✅ NOW decide response (outside transaction)
+
+            if ($data['payment_mode'] === 'prepaid') {
+                return inertia()->location(
+                    route('guest.payment.start', ['order' => $order->id])
+                );
+            }
+
+
+            return back()->with('success', 'Order confirmed. Pay on delivery.');
 
         } catch (\Throwable $e) {
             report($e);
@@ -83,6 +101,7 @@ class OrderController extends Controller
             );
         }
     }
+
 
     public function cancel(string $token, Order $order)
     {

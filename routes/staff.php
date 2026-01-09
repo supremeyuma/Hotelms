@@ -26,6 +26,7 @@ use App\Http\Controllers\Staff\MenuSubcategoryController;
 use App\Http\Controllers\Staff\MenuItemController;
 use App\Http\Controllers\Staff\CleaningDashboardController;
 use App\Http\Controllers\Staff\CleaningActionController;
+use App\Http\Controllers\Staff\StaffChargeController;
 
 
 
@@ -198,10 +199,9 @@ Route::middleware(['auth', 'role:staff|manager|md|kitchen|bar'])->prefix('staff'
     Route::post('/menu/reorder', [MenuCategoryController::class, 'reorder']);
     Route::post('/menu/reorder-items', [MenuItemController::class, 'reorder']);
 
-        
-
-
-
-
 });
 
+Route::post(
+    '/staff/charges/{charge}/mark-paid',
+    [StaffChargeController::class, 'markAsPaid']
+)->middleware(['auth', 'role:kitchen|bar|staff|manager|md|laundry'])->name('staff.charges.markPaid');

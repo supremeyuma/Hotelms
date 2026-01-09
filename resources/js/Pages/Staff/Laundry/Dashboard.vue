@@ -43,12 +43,42 @@
                   <span class="text-lg font-black leading-none">{{ order.room.name }}</span>
                 </div>
                 <div>
-                  <div class="flex items-center gap-2 mb-1">
-                    <span class="text-lg font-black text-slate-900 tracking-tight">{{ order.order_code }}</span>
-                    <span :class="[getStatusBadgeClass(order.status)]">
+                  <div class="flex items-center flex-wrap gap-2 mb-1">
+                    <span class="text-lg font-black text-slate-900 tracking-tight">
+                      {{ order.order_code }}
+                    </span>
+
+                    <!-- ORDER STATUS -->
+                    <span :class="getStatusBadgeClass(order.status)">
                       {{ order.status.replace('_', ' ') }}
                     </span>
+
+                    <!-- PAYMENT BADGE -->
+                    <span
+                      v-if="order.charge"
+                      class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border"
+                      :class="
+                        order.charge.status === 'paid'
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                          : order.charge.payment_mode === 'postpaid'
+                            ? 'bg-amber-50 text-amber-700 border-amber-100'
+                            : 'bg-rose-50 text-rose-700 border-rose-100 animate-pulse'
+                      "
+                    >
+                      <template v-if="order.charge.status === 'paid'">
+                        Paid
+                      </template>
+
+                      <template v-else-if="order.charge.payment_mode === 'postpaid'">
+                        Pay on Delivery
+                      </template>
+
+                      <template v-else>
+                        Awaiting Payment
+                      </template>
+                    </span>
                   </div>
+
                   <p class="text-sm text-slate-400 font-medium flex items-center gap-1.5">
                     <Clock class="w-4 h-4" /> {{ formatDateTime(order.created_at) }}
                   </p>
@@ -67,7 +97,13 @@
                 </select>
                 <button 
                   @click="updateStatus(order)"
-                  class="p-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 shadow-md shadow-indigo-100 transition-all active:scale-90"
+                  :disabled="!canUpdateStatus(order)"
+                  class="p-2.5 rounded-xl shadow-md transition-all active:scale-90"
+                  :class="
+                    canUpdateStatus(order)
+                      ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-100'
+                      : 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                  "
                 >
                   <RefreshCw class="w-4 h-4" />
                 </button>
@@ -131,6 +167,7 @@ const props = defineProps({
 
 const orders = ref([...props.orders]);
 
+console.log(orders)
 const statuses = [
   { value: 'requested' },
   { value: 'pickup_scheduled' },
@@ -184,6 +221,16 @@ function formatDateTime(date) {
     minute: '2-digit' 
   });
 }
+
+function canUpdateStatus(order) {
+  if (!order.charge) return true
+
+  return !(
+    order.charge.payment_mode === 'prepaid' &&
+    order.charge.status === 'unpaid'
+  )
+}
+
 </script>
 
 <style scoped>

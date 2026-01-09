@@ -39,16 +39,19 @@ class LaundryOrder extends Model
         return $this->hasMany(LaundryStatusHistory::class);
     }
 
-    /** 
-     * Required for Billing & Guest Request linking
-     */
-    public function billable()
-    {
-        return $this->morphOne(BillItem::class, 'billable');
-    }
+    
 
     public function guestRequest()
     {
         return $this->morphOne(GuestRequest::class, 'requestable');
     }
+
+    // LaundryOrder.php
+    // app/Models/Order.php
+    public function charge()
+    {
+        return $this->morphOne(Charge::class, 'billable');
+    }
+
+
 }

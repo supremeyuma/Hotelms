@@ -1,6 +1,7 @@
 <script setup>
 import { router } from '@inertiajs/vue3';
-import LaundryLayout from '@/Layouts/Staff/LaundryLayout.vue'
+import { ref } from 'vue';
+import LaundryLayout from '@/Layouts/Staff/LaundryLayout.vue';
 import LaundryStatusBadge from '@/Components/Laundry/StatusBadge.vue';
 import LaundryTimeline from '@/Components/Laundry/Timeline.vue';
 import { 
@@ -19,6 +20,9 @@ const props = defineProps({
   order: Object,
   statuses: Array,
 });
+
+const openPayModal = ref(false)
+const paymentMethod = ref('pos')
 
 function format(date) {
   return new Date(date).toLocaleString([], { 
@@ -50,6 +54,29 @@ function uploadImages(e) {
     preserveScroll: true
   });
 }
+
+function canProcessOrder() {
+  if (!props.order.charge) return true
+
+  return !(
+    props.order.charge.payment_mode === 'prepaid' &&
+    props.order.charge.status === 'unpaid'
+  )
+}
+
+function markChargePaid() {
+  router.post(
+    route('staff.charges.markPaid', props.order.charge.id),
+    { method: paymentMethod.value },
+    {
+      preserveScroll: true,
+      onSuccess: () => {
+        openPayModal.value = false
+      }
+    }
+  )
+}
+
 </script>
 
 <template>
@@ -58,7 +85,7 @@ function uploadImages(e) {
       
       <div class="space-y-4">
         <button 
-          @click="router.visit(route('staff.laundry.index'))"
+          @click="router.visit(route('staff.laundry.dashboard'))"
           class="flex items-center gap-2 text-slate-500 font-bold text-sm hover:text-indigo-600 transition-colors group"
         >
           <ChevronLeft class="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
@@ -79,6 +106,39 @@ function uploadImages(e) {
             </div>
           </div>
           <LaundryStatusBadge :status="order.status" class="scale-110 md:self-center self-start" />
+          <!-- PAYMENT STATUS -->
+          <div
+            v-if="order.charge"
+            class="flex items-center gap-2 mt-2"
+          >
+            <span
+              class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border"
+              :class="
+                order.charge.status === 'paid'
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                  : order.charge.payment_mode === 'postpaid'
+                    ? 'bg-amber-50 text-amber-700 border-amber-100'
+                    : 'bg-rose-50 text-rose-700 border-rose-100 animate-pulse'
+              "
+            >
+              <template v-if="order.charge.status === 'paid'">
+                Paid
+              </template>
+
+              <template v-else-if="order.charge.payment_mode === 'postpaid'">
+                Pay on Delivery
+              </template>
+
+              <template v-else>
+                Awaiting Payment
+              </template>
+            </span>
+
+            <span class="text-xs text-slate-400 font-bold">
+              ₦{{ order.charge.amount }}
+            </span>
+          </div>
+
         </div>
       </div>
 
@@ -106,6 +166,13 @@ function uploadImages(e) {
                     {{ s.replace('_', ' ').toUpperCase() }}
                   </option>
                 </select>
+                <p
+                  v-if="!canProcessOrder()"
+                  class="text-xs text-rose-600 font-bold mt-2"
+                >
+                  Payment required before processing
+                </p>
+
                 <div class="absolute inset-y-0 right-0 pr-5 flex items-center pointer-events-none text-slate-400">
                   <ChevronDown class="w-5 h-5" />
                 </div>
@@ -119,6 +186,59 @@ function uploadImages(e) {
                 <Ban class="w-4 h-4" />
                 Cancel Order
               </button>
+
+              <!-- CHARGE STATUS -->
+              <div
+                v-if="order.charge"
+                class="mt-6 p-6 rounded-[2rem] border flex items-center justify-between"
+                :class="
+                  order.charge.status === 'paid'
+                    ? 'bg-emerald-50 border-emerald-200'
+                    : 'bg-amber-50 border-amber-200'
+                "
+              >
+                <div>
+                  <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">
+                    Payment Status
+                  </p>
+
+                  <p
+                    class="text-lg font-black"
+                    :class="
+                      order.charge.status === 'paid'
+                        ? 'text-emerald-700'
+                        : 'text-amber-700'
+                    "
+                  >
+                    <template v-if="order.charge.status === 'paid'">
+                      Paid
+                    </template>
+
+                    <template v-else-if="order.charge.payment_mode === 'postpaid'">
+                      Pay on Delivery
+                    </template>
+
+                    <template v-else>
+                      Awaiting Payment
+                    </template>
+                  </p>
+
+                  <p class="text-xs text-slate-500 font-medium mt-1">
+                    Method: {{ order.charge.payment_mode.replace('_', ' ') }}
+                  </p>
+                </div>
+
+                <!-- ACTION -->
+                <div v-if="order.charge.status === 'unpaid'">
+                  <button
+                    @click="openPayModal = true"
+                    class="px-6 py-3 bg-emerald-600 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-emerald-700 active:scale-95 shadow-lg shadow-emerald-200"
+                  >
+                    Mark as Paid
+                  </button>
+                </div>
+              </div>
+
             </div>
           </section>
 
@@ -191,6 +311,46 @@ function uploadImages(e) {
         </div>
       </div>
     </div>
+
+    <!-- MARK AS PAID MODAL -->
+    <div
+      v-if="openPayModal"
+      class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center"
+    >
+      <div class="bg-white rounded-[2rem] p-8 w-full max-w-sm shadow-xl">
+        <h3 class="text-lg font-black mb-4">Confirm Payment</h3>
+
+        <p class="text-sm text-slate-500 mb-6">
+          Select payment method used to settle this charge.
+        </p>
+
+        <select
+          v-model="paymentMethod"
+          class="w-full mb-6 px-4 py-3 border border-slate-200 rounded-xl font-bold"
+        >
+          <option value="cash">Cash</option>
+          <option value="pos">POS</option>
+          <option value="transfer">Transfer</option>
+        </select>
+
+        <div class="flex gap-3">
+          <button
+            @click="openPayModal = false"
+            class="flex-1 py-3 rounded-xl bg-slate-100 font-black text-xs uppercase"
+          >
+            Cancel
+          </button>
+
+          <button
+            @click="markChargePaid"
+            class="flex-1 py-3 rounded-xl bg-emerald-600 text-white font-black text-xs uppercase"
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+
   </LaundryLayout>
 </template>
 

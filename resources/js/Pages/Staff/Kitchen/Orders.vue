@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { router } from '@inertiajs/vue3'
 import KitchenLayout from '@/Layouts/Staff/KitchenLayout.vue'
+import OrderDetailsModal from '@/Components/Orders/OrderDetailsModal.vue'
 import { 
   Clock, 
   CheckCircle2, 
@@ -13,6 +14,11 @@ import {
 
 const props = defineProps({ orders: Array })
 const orders = ref(props.orders)
+
+const selectedOrder = ref(null)
+const showModal = ref(false)
+
+console.log(props.orders)
 
 onMounted(() => {
   if (window.Echo) {
@@ -31,6 +37,12 @@ function setStatus(order, status) {
   })
 }
 
+function openOrder(order) {
+  selectedOrder.value = order
+  showModal.value = true
+  console.log(order)
+}
+
 const getStatusClass = (status) => {
   const base = "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider "
   switch (status) {
@@ -40,6 +52,22 @@ const getStatusClass = (status) => {
     default: return base + "bg-slate-100 text-slate-700 border border-slate-200"
   }
 }
+
+function canStartPreparing(order) {
+  // No charge → allow (safety fallback)
+  if (!order.charge) return true
+
+  // Block prepaid orders until paid
+  if (
+    order.charge.payment_mode === 'prepaid' &&
+    order.charge.status === 'unpaid'
+  ) {
+    return false
+  }
+
+  return true
+}
+
 </script>
 
 <template>
@@ -66,6 +94,7 @@ const getStatusClass = (status) => {
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div 
           v-for="order in orders" 
+          @click="openOrder(order)"
           :key="order.id" 
           class="bg-white rounded-3xl border border-slate-200 shadow-sm flex flex-col overflow-hidden transition-all hover:shadow-md"
         >
@@ -85,6 +114,31 @@ const getStatusClass = (status) => {
             <span :class="getStatusClass(order.status)">
               {{ order.status }}
             </span>
+            <!-- PAYMENT BADGE -->
+            <span
+              v-if="order.charge"
+              class="px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-wide"
+              :class="
+                order.charge.status === 'paid'
+                  ? 'bg-emerald-100 text-emerald-700'
+                  : order.charge.payment_mode === 'pay_on_delivery'
+                    ? 'bg-amber-100 text-amber-700'
+                    : 'bg-rose-100 text-rose-700'
+              "
+            >
+              <template v-if="order.charge.status === 'paid'">
+                Paid
+              </template>
+
+              <template v-else-if="order.charge.payment_mode === 'pay_on_delivery'">
+                Pay on Delivery
+              </template>
+
+              <template v-else>
+                Awaiting Payment
+              </template>
+            </span>
+
           </div>
 
           <div class="p-5 flex-1">
@@ -110,15 +164,30 @@ const getStatusClass = (status) => {
           </div>
 
           <div class="p-4 bg-slate-50/80 grid grid-cols-3 gap-2">
+            
             <button 
-              @click="setStatus(order,'preparing')"
-              :disabled="order.status === 'preparing'"
+              @click.stop="setStatus(order,'preparing')"
+              :disabled="order.status === 'preparing' || !canStartPreparing(order)"
               class="flex flex-col items-center justify-center gap-1 p-2 rounded-xl border transition-all"
-              :class="order.status === 'preparing' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-400'"
+              :class="
+                order.status === 'preparing'
+                  ? 'bg-indigo-600 text-white border-indigo-600'
+                  : !canStartPreparing(order)
+                    ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
+                    : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-400'
+              "
             >
               <Clock class="w-5 h-5" />
               <span class="text-[10px] font-bold uppercase">Prep</span>
             </button>
+            <div
+              v-if="!canStartPreparing(order)"
+              class="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition"
+            >
+              Awaiting payment
+            </div>
+          
+
 
             <button 
               @click="setStatus(order,'ready')"
@@ -142,6 +211,13 @@ const getStatusClass = (status) => {
       </div>
     </div>
   </KitchenLayout>
+
+  <!-- ORDER DETAILS MODAL -->
+      <OrderDetailsModal
+        :show="showModal"
+        :order="selectedOrder"
+        @close="showModal = false"
+      />
 </template>
 
 <style scoped>

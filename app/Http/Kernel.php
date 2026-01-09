@@ -89,6 +89,7 @@ class Kernel extends HttpKernel
     protected $routeMiddleware = [
         // ...
         'validate.room.token' => \App\Http\Middleware\ValidateRoomToken::class,
+        'resolve.guest.room' => \App\Http\Middleware\ResolveGuestRoom::class,
     ];
 
 }

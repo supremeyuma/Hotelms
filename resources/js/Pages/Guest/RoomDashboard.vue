@@ -1,5 +1,5 @@
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { router, Head } from '@inertiajs/vue3'
 import axios from 'axios'
 import Echo from 'laravel-echo'
@@ -21,6 +21,7 @@ const props = defineProps({
   laundryItems: Array,
   cleaningStatus: String,
   orders: Array,
+  showOrders: Boolean,
 })
 
 
@@ -64,6 +65,21 @@ onMounted(() => {
       if (i) Object.assign(i, e.order)
     })
 })
+
+onMounted(() => {
+  if (props.showOrders) {
+    showOrdersHistory.value = true
+  }
+})
+
+watch(
+  () => props.showOrders,
+  (val) => {
+    if (val) showOrdersHistory.value = true
+  },
+  { immediate: true }
+)
+
 
 /* ---------------- ACTIONS ---------------- */
 function openMenu(type) {

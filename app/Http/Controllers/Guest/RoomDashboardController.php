@@ -68,6 +68,7 @@ class RoomDashboardController extends Controller
             'laundryItems' => LaundryItem::all(),
             'cleaningStatus' => $cleaningRequest?->status,
             'orders' => $orders,
+            'showOrders' => request()->boolean('showOrders'),
         ]);
     }
 
