@@ -21,15 +21,29 @@ const nav = computed(() => {
   switch (role.value) {
 
     /* =========================
-     | FRONT DESK
+     | FRONT DESK (CONTROL CENTER)
      |=========================*/
     case 'frontdesk':
       return [
         { label: 'Dashboard', route: 'frontdesk.dashboard', icon: 'home' },
+
+        // Core operations
         { label: 'Bookings', route: 'frontdesk.bookings.index', icon: 'calendar' },
         { label: 'Rooms', route: 'frontdesk.rooms.index', icon: 'bed' },
         { label: 'Guest Requests', route: 'frontdesk.guest-requests.index', icon: 'bell' },
         { label: 'Laundry Requests', route: 'frontdesk.laundry.index', icon: 'shirt' },
+
+        // Orders visibility (ALL DEPARTMENTS)
+        { label: 'Kitchen Orders', route: 'staff.kitchen.orders.index', icon: 'clipboard' },
+        { label: 'Kitchen History', route: 'staff.kitchen.orders.history', icon: 'clock' },
+
+        { label: 'Bar Orders', route: 'staff.bar.orders.index', icon: 'clipboard' },
+        { label: 'Bar History', route: 'staff.bar.orders.history', icon: 'clock' },
+
+        { label: 'Laundry Dashboard', route: 'staff.laundry.dashboard', icon: 'shirt' },
+
+        // Billing & reports
+        
       ]
 
     /* =========================
@@ -45,8 +59,7 @@ const nav = computed(() => {
      |=========================*/
     case 'laundry':
       return [
-        { label: 'Laundry Dashboard', route: 'staff.laundry.dashboard', icon: 'shirt' },
-        { label: 'Laundry Orders', route: 'staff.laundry.dashboard', icon: 'clipboard' },
+        { label: 'Dashboard', route: 'staff.laundry.dashboard', icon: 'shirt' },
         { label: 'Laundry Items', route: 'staff.laundry-items.index', icon: 'tag' },
       ]
 
@@ -55,15 +68,10 @@ const nav = computed(() => {
      |=========================*/
     case 'kitchen':
       return [
-        { label: 'Kitchen Dashboard', route: 'staff.kitchen.dashboard', icon: 'home' },
+        { label: 'Dashboard', route: 'staff.kitchen.dashboard', icon: 'home' },
         { label: 'Orders Queue', route: 'staff.kitchen.orders.index', icon: 'clipboard' },
-        { label: 'Orders History', route: 'staff.kitchen.orders.history', icon: 'clipboard' },
-        {
-          label: 'Kitchen Menu',
-          route: 'staff.menu.kitchen',
-          params: { area: 'kitchen' },
-          icon: 'menu'
-        },
+        { label: 'Orders History', route: 'staff.kitchen.orders.history', icon: 'clock' },
+        { label: 'Kitchen Menu', route: 'staff.menu.kitchen', icon: 'menu' },
       ]
 
     /* =========================
@@ -71,40 +79,47 @@ const nav = computed(() => {
      |=========================*/
     case 'bar':
       return [
-        { label: 'Bar Dashboard', route: 'staff.bar.dashboard', icon: 'home' },
+        { label: 'Dashboard', route: 'staff.bar.dashboard', icon: 'home' },
         { label: 'Orders Queue', route: 'staff.bar.orders.index', icon: 'clipboard' },
-        { label: 'Orders History', route: 'staff.bar.orders.history', icon: 'clipboard' },
-        {
-          label: 'Bar Menu',
-          route: 'staff.menu.bar',
-          params: { area: 'bar' },
-          icon: 'menu'
-        },
+        { label: 'Orders History', route: 'staff.bar.orders.history', icon: 'clock' },
+        { label: 'Bar Menu', route: 'staff.menu.bar', icon: 'menu' },
       ]
 
     /* =========================
-     | MANAGER / MD
+     | MANAGER / MD (FULL VISIBILITY)
      |=========================*/
     case 'manager':
     case 'md':
       return [
-        { label: 'Dashboard', route: 'staff.dashboard', icon: 'home' },
+        { label: 'Admin Dashboard', route: 'admin.dashboard', icon: 'home' },
 
-        // Kitchen
+        // Operations
+        { label: 'Bookings', route: 'admin.bookings.index', icon: 'calendar' },
+        { label: 'Rooms', route: 'admin.rooms.index', icon: 'bed' },
+
+        // Orders (ALL)
+        { label: 'All Orders', route: 'admin.orders.index', icon: 'clipboard' },
+
+        // Departments
         { label: 'Kitchen Orders', route: 'staff.kitchen.orders.index', icon: 'clipboard' },
-        { label: 'Kitchen Menu', route: 'staff.menu.kitchen', params: { area: 'kitchen' }, icon: 'menu' },
-
-        // Bar
         { label: 'Bar Orders', route: 'staff.bar.orders.index', icon: 'clipboard' },
-        { label: 'Bar Menu', route: 'staff.menu.bar', params: { area: 'bar' }, icon: 'menu' },
+        { label: 'Laundry', route: 'staff.laundry.dashboard', icon: 'shirt' },
 
-        // Laundry
-        { label: 'Laundry Dashboard', route: 'staff.laundry.dashboard', icon: 'shirt' },
-        { label: 'Laundry Items', route: 'staff.laundry-items.index', icon: 'tag' },
+        // Staff & inventory
+        { label: 'Staff Management', route: 'admin.staff.index', icon: 'users' },
+        { label: 'Inventory', route: 'admin.inventory.index', icon: 'boxes' },
 
-        // Admin
-        { label: 'Reports', route: 'frontdesk.reports.bookings', icon: 'chart' },
-        { label: 'Staff Management', route: 'staff.profile.show', icon: 'users' },
+        // Reports & audit
+        { label: 'Reports', route: 'admin.reports.dashboard', icon: 'chart' },
+        { label: 'Audit Logs', route: 'admin.audit.index', icon: 'shield' },
+
+        // Website & events
+        { label: 'Website Content', route: 'admin.website.content', icon: 'edit' },
+        { label: 'Gallery', route: 'admin.website.gallery', icon: 'image' },
+        { label: 'Events', route: 'admin.events.index', icon: 'calendar' },
+
+        // Settings
+        { label: 'Settings', route: 'admin.settings.index', icon: 'settings' },
       ]
 
     /* =========================

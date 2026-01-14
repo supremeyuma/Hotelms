@@ -83,6 +83,7 @@ Route::prefix('frontdesk')->middleware(['auth', 'role:frontdesk'])->name('frontd
     Route::post('bookings/{booking}/extend', [BookingsController::class, 'extendStay']);
 
     Route::resource('rooms', RoomController::class)->only(['index', 'show', 'updateStatus']);
+    Route::patch('rooms/{room}/status', [RoomController::class, 'updateStatus'])->name('rooms.update-status');
 
     Route::get('guest-requests', [GuestRequestController::class, 'index'])->name('guest-requests.index');;
     Route::post('guest-requests/{request}/acknowledge', [GuestRequestController::class, 'acknowledge']);
@@ -127,7 +128,7 @@ Route::middleware(['auth', 'role:staff|clean'])->prefix('clean')->name('clean.')
 
 
 //KITCHEN AND BAR ROUTES
-Route::middleware(['auth', 'role:staff|manager|md|kitchen|bar'])->prefix('staff')->name('staff.')->group(function () {
+Route::middleware(['auth', 'role:frontdesk|manager|md|kitchen|bar'])->prefix('staff')->name('staff.')->group(function () {
 
     Route::get('/kitchen/orders', [KitchenOrderController::class, 'index'])->name('kitchen.orders.index');
     Route::patch('/kitchen/orders/{order}', [KitchenOrderController::class, 'updateStatus'])->name('kitchen.orders.updateStatus');
