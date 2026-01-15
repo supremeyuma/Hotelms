@@ -7,6 +7,7 @@ use App\Models\Content;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
+use App\Models\Gallery;
 
 class ContentController extends Controller
 {
@@ -21,6 +22,7 @@ class ContentController extends Controller
                     'updated_at' => $c->updated_at,
                 ],
             ]),
+            'gallery'  => Gallery::orderBy('order')->get(),
         ]);
 
     }

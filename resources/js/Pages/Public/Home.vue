@@ -124,31 +124,6 @@ import { ChevronDown, MapPin, Phone, Star } from 'lucide-vue-next'
       </div>
     </section>
 
-    <footer class="bg-slate-900 py-16 text-white">
-        <div class="container mx-auto px-6 grid md:grid-cols-3 gap-12 border-b border-white/10 pb-16">
-            <div class="space-y-4">
-                <h2 class="text-xl font-black uppercase tracking-tighter">{{ content('site.name') }}</h2>
-                <p class="text-slate-400 text-sm leading-relaxed">{{ content('footer.about') }}</p>
-            </div>
-            <div class="space-y-4">
-                <h4 class="text-xs font-black uppercase tracking-widest text-slate-500">Location</h4>
-                <div class="flex items-start gap-3 text-slate-300">
-                    <MapPin class="w-5 h-5 text-indigo-400 shrink-0" />
-                    <p class="text-sm">{{ content('footer.location') }}</p>
-                </div>
-            </div>
-            <div class="space-y-4">
-                <h4 class="text-xs font-black uppercase tracking-widest text-slate-500">Contact</h4>
-                <div class="flex items-start gap-3 text-slate-300">
-                    <Phone class="w-5 h-5 text-indigo-400 shrink-0" />
-                    <p class="text-sm">{{ content('footer.contact') }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="container mx-auto px-6 pt-8 text-center text-slate-500 text-xs tracking-widest uppercase">
-            &copy; 2026 {{ content('site.name') }}. All Rights Reserved.
-        </div>
-    </footer>
   </PublicLayout>
 </template>
 

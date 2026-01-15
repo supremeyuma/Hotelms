@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 use App\Models\Content;
+use App\Models\Setting;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -38,6 +39,7 @@ class HandleInertiaRequests extends Middleware
             'site_content' => function () {
                 return Content::all()->pluck('value', 'key');
             },
+            'settings' => fn () => Setting::pluck('value', 'key'),
         ];
     }
 }
