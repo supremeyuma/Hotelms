@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
 use Inertia\Middleware;
+use App\Models\Content;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -34,6 +35,9 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
+            'site_content' => function () {
+                return Content::all()->pluck('value', 'key');
+            },
         ];
     }
 }

@@ -22,7 +22,7 @@ const label = computed(() =>
     ? props.request.type.replace('_', ' ').toUpperCase()
     : 'GENERAL REQUEST'
 )
-
+console.log(props.request);
 const roomNumber = computed(() =>
   props.request.room?.name ?? props.request.name ?? '—'
 )
@@ -98,7 +98,7 @@ function formatTime(date) {
           </div>
           
           <h3 class="text-xl font-black text-slate-900 leading-tight mb-2">
-            Room {{ roomNumber }} <span class="text-slate-300 mx-1">—</span> {{ request.guest_name || 'Guest' }}
+            Room {{ request.room.name }} <span class="text-slate-300 mx-1">—</span> {{ request.guest_name || 'Guest' }}
           </h3>
 
           <div class="flex items-center gap-4 text-slate-500">

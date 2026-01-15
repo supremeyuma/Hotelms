@@ -111,14 +111,23 @@ Route::middleware(['auth', 'role:manager|md'])
     // TEXTS AND GALLERY LINKS
 
 Route::middleware(['auth','role:manager|md'])->prefix('admin/website')->group(function () {
-    Route::get('/content', [ContentController::class,'index'])->name('admin.website.content');
-    Route::post('/content', [ContentController::class,'store']);
-    Route::post('/content/image', [ContentController::class, 'uploadImage']);
 
-    Route::get('/gallery', [GalleryController::class,'index'])->name('admin.website.gallery');
-    Route::post('/gallery', [GalleryController::class,'store']);
-    Route::delete('/gallery/{gallery}', [GalleryController::class,'destroy']);
-});
+        Route::get('/content', [ContentController::class, 'index'])
+            ->name('admin.website.content');
+
+        Route::post('/content', [ContentController::class, 'store']);
+
+        Route::put('/content/{key}', [ContentController::class, 'update'])
+            ->where('key', '.*'); // 👈 VERY IMPORTANT (allows dots)
+
+        Route::post('/content/image', [ContentController::class, 'uploadImage']);
+
+        Route::get('/gallery', [GalleryController::class, 'index']);
+        Route::post('/gallery', [GalleryController::class, 'store']);
+        Route::delete('/gallery/{gallery}', [GalleryController::class, 'destroy']);
+        Route::put('/gallery/{gallery}', [GalleryController::class, 'update']);
+    });
+
 
 Route::middleware(['auth','role:manager|md'])->group(function () {
     Route::get('/admin/events', [EventController::class,'index']);

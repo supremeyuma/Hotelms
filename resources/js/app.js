@@ -1,7 +1,7 @@
 import '../css/app.css'
 import './bootstrap'
 
-import { createInertiaApp } from '@inertiajs/vue3'
+import { createInertiaApp, usePage } from '@inertiajs/vue3'
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers'
 import { createApp, h } from 'vue'
 import { ZiggyVue } from '../../vendor/tightenco/ziggy'
@@ -24,10 +24,18 @@ createInertiaApp({
         vueApp.use(plugin)
         vueApp.use(ZiggyVue)
 
-        // ✅ GLOBAL content() HELPER
+        // ✅ REACIVE GLOBAL content() HELPER
         vueApp.config.globalProperties.content = (key, fallback = '') => {
-            return props.initialPage.props.content?.[key] ?? fallback
-        }
+            // Access the site_content from the page props
+            const content = usePage().props.site_content;
+            
+            // Check if the key exists and has a value (not null/undefined)
+            if (content && content[key] !== undefined && content[key] !== null) {
+                return content[key];
+            }
+            
+            return fallback;
+        };
 
         vueApp.mount(el)
     },
