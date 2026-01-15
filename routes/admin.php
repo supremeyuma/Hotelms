@@ -126,6 +126,8 @@ Route::middleware(['auth','role:manager|md'])->prefix('admin/website')->group(fu
         Route::post('/gallery', [GalleryController::class, 'store']);
         Route::delete('/gallery/{gallery}', [GalleryController::class, 'destroy']);
         Route::put('/gallery/{gallery}', [GalleryController::class, 'update']);
+        Route::post('/gallery/reorder', [GalleryController::class, 'reorder']);
+        Route::patch('/gallery/{gallery}/toggle', [GalleryController::class, 'toggle']);
     });
 
 

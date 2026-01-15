@@ -61,4 +61,27 @@ class GalleryController extends Controller
 
         return back()->with('success', 'Gallery item deleted');
     }
+
+    public function reorder(Request $request)
+    {
+        $request->validate([
+            'order' => 'required|array',
+        ]);
+
+        foreach ($request->order as $index => $id) {
+            Gallery::where('id', $id)->update(['order' => $index]);
+        }
+
+        return back()->with('success', 'Gallery reordered');
+    }
+
+    public function toggle(Gallery $gallery)
+    {
+        $gallery->update([
+            'is_active' => ! $gallery->is_active,
+        ]);
+
+        return back();
+}
+
 }

@@ -1,7 +1,8 @@
 <!-- resources/js/Pages/Admin/WebsiteContent/Gallery.vue -->
 <script setup>
 import { ref, computed } from 'vue'
-import { useForm } from '@inertiajs/vue3'
+import { useForm, router } from '@inertiajs/vue3'
+import draggable from 'vuedraggable'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import {
   Image as ImageIcon,
@@ -9,6 +10,9 @@ import {
   Trash2,
   Search,
   Loader2,
+  GripVertical,
+  Eye,
+  EyeOff,
 } from 'lucide-vue-next'
 
 /* ================= PROPS ================= */
@@ -18,8 +22,6 @@ const props = defineProps({
     required: true,
   },
 })
-
-console.log(props.items)
 
 /* ================= STATE ================= */
 const activeId = ref(null)
@@ -94,6 +96,22 @@ const remove = (id) => {
     onSuccess: resetEditor,
   })
 }
+
+const toggleActive = (item) => {
+  router.patch(
+    `/admin/website/gallery/${item.id}/toggle`,
+    {},
+    { preserveScroll: true }
+  )
+}
+
+const saveOrder = (items) => {
+  router.post(
+    '/admin/website/gallery/reorder',
+    { order: items.map(i => i.id) },
+    { preserveScroll: true }
+  )
+}
 </script>
 
 <template>
@@ -141,20 +159,44 @@ const remove = (id) => {
               {{ section }}
             </h2>
 
-            <ul class="space-y-1">
-              <li
-                v-for="item in items"
-                :key="item.id"
-                @click="edit(item)"
-                class="cursor-pointer px-3 py-2 rounded-lg flex justify-between items-center hover:bg-slate-50"
-                :class="activeId === item.id ? 'bg-indigo-50 text-indigo-700' : ''"
-              >
-                <span class="text-sm truncate">
-                  {{ item.caption || 'Untitled image' }}
-                </span>
-                <ImageIcon class="w-4 h-4 opacity-50" />
-              </li>
-            </ul>
+            <draggable
+              :list="items"
+              item-key="id"
+              handle=".drag"
+              @end="saveOrder(items)"
+              class="space-y-1"
+            >
+              <template #item="{ element }">
+                <li
+                  @click="edit(element)"
+                  class="cursor-pointer px-3 py-2 rounded-lg flex items-center justify-between hover:bg-slate-50"
+                  :class="[
+                    activeId === element.id
+                      ? 'bg-indigo-50 text-indigo-700'
+                      : '',
+                    !element.is_active ? 'opacity-50' : '',
+                  ]"
+                >
+                  <div class="flex items-center gap-2 min-w-0">
+                    <GripVertical class="w-4 h-4 text-slate-400 drag cursor-grab" />
+                    <span class="text-sm truncate">
+                      {{ element.caption || 'Untitled image' }}
+                    </span>
+                  </div>
+
+                  <div class="flex items-center gap-2">
+                    <button
+                      @click.stop="toggleActive(element)"
+                      class="p-1 rounded hover:bg-slate-100"
+                    >
+                      <Eye v-if="element.is_active" class="w-4 h-4 text-emerald-600" />
+                      <EyeOff v-else class="w-4 h-4 text-slate-400" />
+                    </button>
+                    <ImageIcon class="w-4 h-4 opacity-50" />
+                  </div>
+                </li>
+              </template>
+            </draggable>
           </div>
         </div>
 
@@ -248,4 +290,7 @@ const remove = (id) => {
 </template>
 
 <style scoped>
+.drag {
+  cursor: grab;
+}
 </style>
