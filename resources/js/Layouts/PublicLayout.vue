@@ -36,7 +36,7 @@ onMounted(() => {
       <div class="max-w-screen-2xl mx-auto px-6 md:px-12 flex items-center justify-between">
 
         <Link href="/" class="group flex items-center gap-4">
-          <div class="relative w-10 h-10 overflow-hidden rounded-full border border-slate-200 transition-transform group-hover:scale-110">
+          <div class="relative w-10 h-10 overflow-hidden  border-slate-200 transition-transform group-hover:scale-110">
             <img
               v-if="logo"
               :src="logo"
