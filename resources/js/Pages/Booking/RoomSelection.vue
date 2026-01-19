@@ -1,6 +1,7 @@
 <script setup>
 import { router, useForm } from '@inertiajs/vue3';
 import { defineProps, reactive } from 'vue';
+import PublicLayout from '@/Layouts/PublicLayout.vue';
 import { 
   BedDouble, 
   Users, 
@@ -45,6 +46,7 @@ const getAmenityLabel = (name) => {
 </script>
 
 <template>
+  <PublicLayout>
   <div class="max-w-5xl mx-auto px-4 py-12 md:py-20">
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
       <div>
@@ -142,6 +144,7 @@ const getAmenityLabel = (name) => {
       </button>
     </div>
   </div>
+  </PublicLayout>
 </template>
 
 <style scoped>

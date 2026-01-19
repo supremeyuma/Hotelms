@@ -1,7 +1,7 @@
 <script setup>
 import { defineProps } from 'vue';
 import { useForm, router } from '@inertiajs/vue3';
-import GuestLayout from '@/Layouts/GuestLayout.vue';
+import PublicLayout from '@/Layouts/PublicLayout.vue';
 import { 
   User, 
   Mail, 
@@ -31,7 +31,7 @@ function submit() {
 </script>
 
 <template>
-  <GuestLayout>
+  <PublicLayout>
     <div class="min-h-screen bg-slate-50/50 py-12 px-4">
       <div class="max-w-2xl mx-auto">
         
@@ -166,7 +166,7 @@ function submit() {
         </button>
       </div>
     </div>
-  </GuestLayout>
+  </PublicLayout>
 </template>
 
 <style scoped>

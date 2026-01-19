@@ -1,5 +1,5 @@
 <template>
-  <GuestLayout>
+  <PublicLayout>
     <div class="max-w-xl mx-auto bg-white p-6 rounded shadow">
       <h2 class="text-2xl mb-4">Book a Room</h2>
 
@@ -32,13 +32,14 @@
         </div>
       </form>
     </div>
-  </GuestLayout>
+  </PublicLayout>
 </template>
 
 <script setup>
 import { ref } from 'vue';
 import GuestLayout from '@/Layouts/GuestLayout.vue';
 import {  } from '@inertiajs/vue3';
+import PublicLayout from '@/Layouts/PublicLayout.vue';
 
 const props = usePage().props;
 const rooms = props.rooms ?? [];

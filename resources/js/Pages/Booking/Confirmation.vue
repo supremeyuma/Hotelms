@@ -1,6 +1,6 @@
 <script setup>
 import { defineProps } from 'vue';
-import GuestLayout from '@/Layouts/GuestLayout.vue';
+import PublicLayout from '@/Layouts/PublicLayout.vue';
 import { router } from '@inertiajs/vue3';
 import { 
   CheckCircle2, 
@@ -40,7 +40,7 @@ function printPage() {
 </script>
 
 <template>
-  <GuestLayout>
+  <PublicLayout>
     <div class="min-h-screen bg-slate-50/50 py-12 md:py-20 px-4">
       <div class="max-w-2xl mx-auto">
         
@@ -125,5 +125,5 @@ function printPage() {
         </div>
       </div>
     </div>
-  </GuestLayout>
+  </PublicLayout>
 </template>

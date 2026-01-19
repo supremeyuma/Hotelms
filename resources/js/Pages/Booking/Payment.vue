@@ -1,6 +1,6 @@
 <script setup>
 import { router } from '@inertiajs/vue3';
-import GuestLayout from '@/Layouts/GuestLayout.vue';
+import PublicLayout from '@/Layouts/PublicLayout.vue';
 import { 
   CreditCard, 
   Clock, 
@@ -10,6 +10,7 @@ import {
   ArrowRight,
   Receipt
 } from 'lucide-vue-next';
+import PublicLayout from '@/Layouts/PublicLayout.vue';
 
 const props = defineProps({
   booking: Object,
@@ -27,7 +28,7 @@ const formatExpiry = (timeStr) => {
 </script>
 
 <template>
-  <GuestLayout>
+  <PublicLayout>
     <div class="min-h-[85vh] bg-slate-50/50 flex items-center justify-center px-4 py-12">
       <div class="w-full max-w-md">
         
@@ -105,5 +106,5 @@ const formatExpiry = (timeStr) => {
         </p>
       </div>
     </div>
-  </GuestLayout>
+  </PublicLayout>
 </template>

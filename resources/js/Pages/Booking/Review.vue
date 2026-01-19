@@ -1,7 +1,7 @@
 <script setup>
 import { defineProps } from 'vue';
 import { useForm } from '@inertiajs/vue3';
-import GuestLayout from '@/Layouts/GuestLayout.vue';
+import PublicLayout from '@/Layouts/PublicLayout.vue';
 import { 
   CreditCard, 
   Calendar, 
@@ -39,7 +39,7 @@ function proceed() {
 </script>
 
 <template>
-  <GuestLayout>
+  <PublicLayout>
     <div class="min-h-screen bg-slate-50/50 py-12 px-4">
       <div class="max-w-3xl mx-auto">
         
@@ -167,7 +167,7 @@ function proceed() {
         </div>
       </div>
     </div>
-  </GuestLayout>
+  </PublicLayout>
 </template>
 
 <style scoped>

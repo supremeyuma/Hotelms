@@ -1,6 +1,7 @@
 <script setup>
 import { useForm } from '@inertiajs/vue3';
 import GuestLayout from '@/Layouts/GuestLayout.vue';
+import PublicLayout from '@/Layouts/PublicLayout.vue';
 import { 
   CalendarDays, 
   Users, 
@@ -29,7 +30,7 @@ function submit() {
 </script>
 
 <template>
-  <GuestLayout>
+  <PublicLayout>
     <div class="min-h-[80vh] flex items-center justify-center px-4 py-12 bg-slate-50">
       <div class="w-full max-w-xl">
         <div class="text-center mb-10">
@@ -135,7 +136,7 @@ function submit() {
         </p>
       </div>
     </div>
-  </GuestLayout>
+  </PublicLayout>
 </template>
 
 <style scoped>

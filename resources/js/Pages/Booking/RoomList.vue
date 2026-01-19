@@ -1,7 +1,7 @@
 <script setup>
 import { router, useForm } from '@inertiajs/vue3';
 import { defineProps, reactive } from 'vue';
-import GuestLayout from '@/Layouts/GuestLayout.vue';
+import PublicLayout from '@/Layouts/PublicLayout.vue';
 import { 
   BedDouble, 
   Users, 
@@ -47,7 +47,7 @@ const formatDate = (dateStr) => {
 </script>
 
 <template>
-  <GuestLayout>
+  <PublicLayout>
     <div class="min-h-screen bg-slate-50/50 pb-20">
       <div class="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm">
         <div class="max-w-5xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-4">
@@ -163,7 +163,7 @@ const formatDate = (dateStr) => {
         </div>
       </div>
     </div>
-  </GuestLayout>
+  </PublicLayout>
 </template>
 
 <style scoped>
