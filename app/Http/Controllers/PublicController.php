@@ -9,7 +9,25 @@ class PublicController extends Controller
 {
     public function home()
     {
-        return Inertia::render('Public/Home');
+        
+        return Inertia::render('Public/Home', [
+            'gallery' => [
+                'hero' => Gallery::where('category', 'home.hero')
+                    ->where('is_active', true)
+                    ->orderBy('order')
+                    ->get(),
+
+                'beach' => Gallery::where('category', 'beach')
+                    ->where('is_active', true)
+                    ->orderBy('order')
+                    ->get(),
+
+                'club' => Gallery::where('category', 'club')
+                    ->where('is_active', true)
+                    ->orderBy('order')
+                    ->get(),
+            ],
+        ]);
     }
 
     public function gallery()

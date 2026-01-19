@@ -22,8 +22,10 @@
     },
     "dependencies": {
         "@inertiajs/progress": "^0.1.2",
+        "@studio-freight/lenis": "^1.0.42",
         "@tiptap/starter-kit": "^3.15.3",
         "@tiptap/vue-3": "^3.15.3",
+        "aos": "^2.3.4",
         "chart.js": "^4.5.1",
         "date-fns": "^4.1.0",
         "laravel-echo": "^2.2.6",

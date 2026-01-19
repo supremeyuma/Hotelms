@@ -41,7 +41,7 @@ class GalleryController extends Controller
         $data = $request->validate([
             'category' => 'required|string|max:100',
             'caption'  => 'nullable|string|max:255',
-            'image'    => 'nullable|image|max:5120',
+            'image'    => 'nullable|image|max:10240',
         ]);
 
         if ($request->hasFile('image')) {
