@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { usePage, Head, Link } from '@inertiajs/vue3'
-import { MapPin, Phone, Mail, Instagram, Facebook } from 'lucide-vue-next'
+import { MapPin, Phone, Mail, Instagram, Facebook, MessageCircle } from 'lucide-vue-next'
 
 const page = usePage()
 const isScrolled = ref(false)
@@ -13,6 +13,7 @@ const logo = computed(() => {
 
 const phone = computed(() => page.props.settings?.hotel_phone ?? null)
 const email = computed(() => page.props.settings?.contact_email ?? null)
+const whatsapp = computed(() =>page.props.settings?.site_whatsapp ?? null)
 
 onMounted(() => {
   window.addEventListener('scroll', () => {
@@ -162,6 +163,27 @@ onMounted(() => {
         </div>
       </div>
     </footer>
+    
+    <!-- WHATSAPP FLOATING BUTTON -->
+    <a
+      v-if="whatsapp"
+      :href="`https://wa.me/${whatsapp.replace(/[^0-9]/g, '')}`"
+      target="_blank"
+      class="fixed bottom-8 right-8 z-[100] group flex items-center"
+    >
+      <span class="mr-4 px-4 py-2 rounded-xl bg-slate-900/80 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-[0.2em] opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-4 group-hover:translate-x-0 pointer-events-none border border-white/10">
+        Chat with Concierge
+      </span>
+
+      <div class="relative w-16 h-16 flex items-center justify-center">
+        <span class="absolute inset-0 rounded-full bg-emerald-500/30 animate-ping"></span>
+        <span class="absolute inset-0 rounded-full bg-emerald-500/20 animate-pulse-slow"></span>
+
+        <div class="relative w-full h-full rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-[0_20px_50px_rgba(5,150,105,0.3)] group-hover:bg-emerald-500 transition-all duration-500 border border-emerald-400/20 group-hover:rotate-[360deg]">
+          <MessageCircle class="w-7 h-7 fill-white/10" />
+        </div>
+      </div>
+    </a>
   </div>
 </template>
 

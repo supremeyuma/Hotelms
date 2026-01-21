@@ -36,11 +36,12 @@ class SettingController extends Controller
             'contact_phone' => 'nullable|string',
             'logo' => 'nullable|file|image|max:2048',
             'banner' => 'nullable|file|image|max:4096',
-            'room_service_menu' => 'nullable|array'
+            'room_service_menu' => 'nullable|array',
+            'site_whatsapp' => 'nullable|string'
         ]);
 
         // Save simple string settings
-        foreach (['site_name','contact_email','contact_phone'] as $key) {
+        foreach (['site_name','contact_email','contact_phone', 'site_whatsapp'] as $key) {
             if (isset($data[$key])) {
                 Setting::updateOrCreate(['key'=>$key], ['value'=>$data[$key]]);
             }

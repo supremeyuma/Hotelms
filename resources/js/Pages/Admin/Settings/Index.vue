@@ -21,6 +21,12 @@
           <TextInput id="contact_phone" v-model="form.contact_phone" />
           <InputError :message="form.errors.contact_phone" />
 
+          <!-- Whatsapp Phone -->
+          <FormLabel for="site_whatsapp">Whatsapp</FormLabel>
+          <TextInput id="site_whatsapp" v-model="form.site_whatsapp" />
+          <InputError :message="form.errors.site_whatsapp" />
+
+
           <!-- Logo -->
           <FormLabel>Logo</FormLabel>
           <input type="file" accept="image/*" @change="e => form.logo = e.target.files[0]" />
@@ -81,11 +87,13 @@ const form = useForm({
   site_name: props.settings.site_name || '',
   contact_email: props.settings.contact_email || '',
   contact_phone: props.settings.contact_phone || '',
+  site_whatsapp: props.settings.site_whatsapp || '',
   logo: null,
   banner: null,
   room_service_menu: null
 })
 
+console.log(props.settings);
 const roomServiceString = ref(
   props.settings.room_service_menu
     ? JSON.stringify(props.settings.room_service_menu, null, 2)
