@@ -10,7 +10,6 @@ import {
   ArrowRight,
   Receipt
 } from 'lucide-vue-next';
-import PublicLayout from '@/Layouts/PublicLayout.vue';
 
 const props = defineProps({
   booking: Object,
