@@ -4,17 +4,14 @@
 namespace App\Services;
 
 use App\Models\InventoryItem;
-use App\Models\InventoryLog;
+use App\Models\InventoryLocation;
+use App\Models\InventoryMovement;
+use App\Models\InventoryStock;
 use App\Services\AuditLoggerService;
-use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Exception;
+use App\Exceptions\InsufficientInventoryException;
 
-/**
- * InventoryService
- *
- * CRUD and stock operations for inventory items, including low stock alerts.
- */
 class InventoryService
 {
     protected AuditLoggerService $audit;
@@ -24,26 +21,28 @@ class InventoryService
         $this->audit = $audit;
     }
 
-    /**
-     * Create inventory item.
-     *
-     * @param array $data
-     * @return InventoryItem
-     */
+    /* =====================================================
+     * ITEM MANAGEMENT
+     * ===================================================== */
+
     public function createItem(array $data): InventoryItem
     {
-        $item = InventoryItem::create($data);
-        $this->audit->log('inventory_item_created', $item, $item->id, ['data' => $data]);
-        return $item;
+        return DB::transaction(function () use ($data) {
+            $item = InventoryItem::create($data);
+
+            foreach (InventoryLocation::all() as $location) {
+                InventoryStock::firstOrCreate([
+                    'inventory_item_id' => $item->id,
+                    'inventory_location_id' => $location->id
+                ]);
+            }
+
+            $this->audit->log('inventory_item_created', 'InventoryItem', $item->id, $data);
+
+            return $item;
+        });
     }
 
-    /**
-     * Update inventory item.
-     *
-     * @param InventoryItem $item
-     * @param array $data
-     * @return InventoryItem
-     */
     public function updateItem(InventoryItem $item, array $data): InventoryItem
     {
         $before = $item->toArray();
@@ -52,86 +51,110 @@ class InventoryService
         return $item;
     }
 
-    /**
-     * Deduct stock and create log.
-     *
-     * @param int $itemId
-     * @param int $quantity
-     * @param int|null $staffId
-     * @return InventoryLog
-     * @throws Exception
-     */
-    public function deductStock(int $itemId, int $quantity, ?int $staffId = null): InventoryLog
-    {
-        return DB::transaction(function () use ($itemId, $quantity, $staffId) {
-            $item = InventoryItem::lockForUpdate()->find($itemId);
-            if (! $item) throw new Exception('Inventory item not found.');
+    /* =====================================================
+     * STOCK MOVEMENTS
+     * ===================================================== */
 
-            $before = $item->quantity;
-            $item->decrement('quantity', $quantity);
-            $item->refresh();
+    public function addStock(
+        InventoryItem $item,
+        InventoryLocation $location,
+        int $quantity,
+        ?int $staffId = null,
+        ?string $reason = null
+    ) {
 
-            $log = InventoryLog::create([
+    //dd($item->id);
+        return DB::transaction(function () use ($item, $location, $quantity, $staffId, $reason) {
+
+            $stock = InventoryStock::firstOrCreate(
+                [
+                    'inventory_item_id' => $item->id,
+                    'inventory_location_id' => $location->id,
+                ],
+                [
+                    'quantity' => 0,
+                ]
+            );
+
+            $stock->increment('quantity', $quantity);
+
+            InventoryMovement::create([
                 'inventory_item_id' => $item->id,
+                'inventory_location_id' => $location->id,
                 'staff_id' => $staffId,
-                'change' => -abs($quantity),
-                'meta' => ['before' => $before, 'after' => $item->quantity]
+                'type' => 'in',
+                'quantity' => $quantity,
+                'reason' => $reason,
             ]);
-
-            $this->audit->log('inventory_stock_deducted', $item, $item->id, ['change' => $quantity, 'staff' => $staffId]);
-
-            return $log;
         });
     }
 
-    /**
-     * Add stock
-     *
-     * @param int $itemId
-     * @param int $quantity
-     * @param int|null $staffId
-     * @return InventoryLog
-     */
-    public function addStock(int $itemId, int $quantity, ?int $staffId = null): InventoryLog
-    {
-        return DB::transaction(function () use ($itemId, $quantity, $staffId) {
-            $item = InventoryItem::lockForUpdate()->findOrFail($itemId);
-            $before = $item->quantity;
-            $item->increment('quantity', $quantity);
-            $item->refresh();
 
-            $log = InventoryLog::create([
+    public function consumeStock(
+        InventoryItem $item,
+        InventoryLocation $location,
+        int $quantity,
+        ?int $staffId = null,
+        ?string $reason = null
+    ) {
+        return DB::transaction(function () use ($item, $location, $quantity, $staffId, $reason) {
+
+            $stock = InventoryStock::firstOrCreate(
+                [
+                    'inventory_item_id' => $item->id,
+                    'inventory_location_id' => $location->id,
+                ],
+                [
+                    'quantity' => 0,
+                ]
+            );
+
+            if ($stock->quantity < $quantity) {
+                throw new InsufficientInventoryException($stock->quantity);
+            }
+
+            $stock->decrement('quantity', $quantity);
+
+            InventoryMovement::create([
                 'inventory_item_id' => $item->id,
+                'inventory_location_id' => $location->id,
                 'staff_id' => $staffId,
-                'change' => abs($quantity),
-                'meta' => ['before' => $before, 'after' => $item->quantity]
+                'type' => 'out',
+                'quantity' => $quantity,
+                'reason' => $reason,
             ]);
-
-            $this->audit->log('inventory_stock_added', $item, $item->id, ['change' => $quantity, 'staff' => $staffId]);
-
-            return $log;
         });
     }
 
-    /**
-     * Low stock items
-     *
-     * @param int $threshold
-     * @return \Illuminate\Database\Eloquent\Collection
-     */
-    public function lowStock(int $threshold = 10)
-    {
-        return InventoryItem::where('quantity', '<=', $threshold)->get();
-    }
+    public function reconcileStock(
+        InventoryItem $item,
+        InventoryLocation $location,
+        int $actualQuantity,
+        ?int $staffId,
+        string $note
+    ): InventoryMovement {
+        return DB::transaction(function () use ($item, $location, $actualQuantity, $staffId, $note) {
+            $stock = InventoryStock::where([
+                'inventory_item_id' => $item->id,
+                'inventory_location_id' => $location->id
+            ])->lockForUpdate()->firstOrFail();
 
-    /**
-     * Paginated list
-     *
-     * @param int $perPage
-     * @return LengthAwarePaginator
-     */
-    public function list(int $perPage = 25): LengthAwarePaginator
-    {
-        return InventoryItem::latest()->paginate($perPage);
+            $difference = $actualQuantity - $stock->quantity;
+
+            $stock->update(['quantity' => $actualQuantity]);
+
+            return InventoryMovement::create([
+                'inventory_item_id' => $item->id,
+                'inventory_location_id' => $location->id,
+                'staff_id' => $staffId,
+                'type' => 'adjustment',
+                'quantity' => abs($difference),
+                'meta' => [
+                    'note' => $note,
+                    'before' => $stock->quantity,
+                    'after' => $actualQuantity
+                ]
+            ]);
+        });
     }
 }

@@ -42,7 +42,7 @@ onMounted(() => {
         <div class="max-w-3xl" data-aos="fade-right">
           <span class="text-indigo-400 font-black text-[10px] uppercase tracking-[0.5em] mb-4 block">Exceptional Living</span>
           <h1 class="text-6xl md:text-8xl font-black text-white tracking-tighter leading-none">
-            The Facilities.
+            Our Facilities.
           </h1>
         </div>
       </div>

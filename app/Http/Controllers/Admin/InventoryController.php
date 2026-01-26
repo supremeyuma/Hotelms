@@ -1,42 +1,59 @@
 <?php
-// ========================================================
-// Admin\InventoryController.php
-// Namespace: App\Http\Controllers\Admin
-// ========================================================
+
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\InventoryItem;
-use App\Models\InventoryLog;
+use App\Models\InventoryLocation;
+use App\Models\InventoryMovement;
 use App\Services\InventoryService;
-use App\Services\AuditLoggerService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Illuminate\Support\Facades\DB;
+use App\Exceptions\InsufficientInventoryException;
 
 class InventoryController extends Controller
 {
-    protected InventoryService $service;
-    protected AuditLoggerService $auditLogger;
+    protected InventoryService $inventory;
 
-    public function __construct(InventoryService $service, AuditLoggerService $auditLogger)
+    public function __construct(InventoryService $inventory)
     {
-        $this->middleware(['auth','role:manager|md']);
-        $this->service = $service;
-        $this->auditLogger = $auditLogger;
+        $this->middleware(['auth', 'role:manager|md']);
+        $this->inventory = $inventory;
     }
+
+    /* =====================================================
+     * INDEX
+     * ===================================================== */
 
     public function index()
     {
-        $items = InventoryItem::paginate(25)->through(fn ($item) => [
-        // Spreads the existing model attributes
-        ...$item->toArray(),
-        // Adds the custom calculated field
-        'low_stock' => $item->isLowStock(), 
-    ]);
-    //dd($items->toArray());
-        return Inertia::render('Admin/Inventory/Index', compact('items'));
+        $items = InventoryItem::with('stocks.location')
+            ->paginate(25)
+            ->through(fn ($item) => [
+                'id' => $item->id,
+                'name' => $item->name,
+                'sku' => $item->sku,
+                'unit' => $item->unit,
+                'total_stock' => $item->totalStock(),
+                'low_stock' => $item->isLowStock(),
+                'stocks' => $item->stocks->map(fn ($s) => [
+                    'location_id' => $s->location->id,
+                    'location' => $s->location->name,
+                    'quantity' => $s->quantity,
+                ])
+            ]);
+
+        $locations = InventoryLocation::all(['id', 'name']);
+
+        return Inertia::render('Admin/Inventory/Index', [
+            'items' => $items,
+            'locations' => $locations,
+        ]);
     }
+
+    /* =====================================================
+     * CREATE
+     * ===================================================== */
 
     public function create()
     {
@@ -46,130 +63,150 @@ class InventoryController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'name'=>'required|string|max:191',
-            'sku'=>'required|string|unique:inventory_items,sku',
-            'quantity'=>'required|integer|min:0',
-            'unit'=>'nullable|string',
-            'meta'=>'nullable|array',]);
-        $item = $this->service->createItem($data);
+            'name' => 'required|string|max:191',
+            'sku' => 'required|string|unique:inventory_items,sku',
+            'unit' => 'nullable|string|max:50',
+            'low_stock_threshold' => 'required|integer|min:0',
+            'meta' => 'nullable|array',
+        ]);
 
-        $this->auditLogger->log('inventory_created', 'InventoryItem', $item->id, ['data' => $data]);
+        $this->inventory->createItem($data);
 
-        return redirect()->route('admin.inventory.index')->with('success','Inventory item created.');
+        return redirect()
+            ->route('admin.inventory.index')
+            ->with('success', 'Inventory item created.');
     }
+
+    /* =====================================================
+     * EDIT
+     * ===================================================== */
 
     public function edit(InventoryItem $inventory)
     {
-        return Inertia::render('Admin/Inventory/Edit', ['item'=>$inventory]);
+        return Inertia::render('Admin/Inventory/Edit', [
+            'item' => $inventory
+        ]);
     }
 
     public function update(Request $request, InventoryItem $inventory)
     {
         $data = $request->validate([
-            'name'=>'required|string|max:191',
-            'sku'=>'required|string|unique:inventory_items,sku,'.$inventory->id,
-            'quantity'=>'required|integer|min:0',
-            'unit'=>'nullable|string',
-            'meta'=>'nullable|array',]);
-        $this->service->updateItem($inventory, $data);
-
-        $this->auditLogger->log('inventory_updated', 'InventoryItem', $inventory->id, ['data'=>$data]);
-
-        return redirect()->route('admin.inventory.index')->with('success','Inventory updated.');
-
-    }
-
-    /**
-     * usage - deduct stock and record log
-     */
-    public function useItem(Request $request, InventoryItem $inventory)
-    {
-        $data = $request->validate([
-            'quantity' => 'required|integer|min:1',
-            'reason' => 'nullable|string'
+            'name' => 'required|string|max:191',
+            'sku' => 'required|string|unique:inventory_items,sku,' . $inventory->id,
+            'unit' => 'nullable|string|max:50',
+            'low_stock_threshold' => 'required|integer|min:0',
+            'meta' => 'nullable|array',
         ]);
 
-        $before = $inventory->quantity;
-        $inventory->decrement('quantity', $data['quantity']);
+        $this->inventory->updateItem($inventory, $data);
 
-        $log = InventoryLog::create([
-            'inventory_item_id' => $inventory->id,
-            'staff_id' => $request->user()->id,
-            'change' => -abs($data['quantity']),
-            'type' => 'usage',
-            'meta' => ['reason' => $data['reason'] ?? null, 
-                        'department_id' => $data['department_id'] ?? null,
-                        'before' => $before, 
-                        'after' => $inventory->quantity]]);
-        $this->auditLogger->log('inventory_used', 'InventoryItem', $inventory->id, ['change' => $data['quantity']]);
-
-        return back()->with('success','Inventory updated.');
+        return redirect()
+            ->route('admin.inventory.index')
+            ->with('success', 'Inventory item updated.');
     }
+
+    /* =====================================================
+     * SHOW
+     * ===================================================== */
 
     public function show(InventoryItem $inventory)
     {
         $inventory->load([
-            'logs.staff',
-            'logs' => fn ($q) => $q->latest()
+            'stocks.location',
+            'movements.staff'
         ]);
 
         return Inertia::render('Admin/Inventory/Show', [
-            'item' => $inventory
+            'item' => [
+                'id' => $inventory->id,
+                'name' => $inventory->name,
+                'sku' => $inventory->sku,
+                'unit' => $inventory->unit,
+                'updated_at' => $inventory->updated_at,
+                'total_stock' => $inventory->totalStock(),
+                'low_stock' => $inventory->isLowStock(),
+                'stocks' => $inventory->stocks->map(fn ($s) => [
+                    'location_id' => $s->location->id,
+                    'location' => $s->location->name,
+                    'quantity' => $s->quantity,
+                ]),
+                'movements' => $inventory->movements
+                    ->sortByDesc('created_at')
+                    ->map(fn ($m) => [
+                        'id' => $m->id,
+                        'type' => $m->type,
+                        'quantity' => $m->quantity,
+                        'reason' => $m->reason,
+                        'location' => $m->location->name ?? null,
+                        'staff' => $m->staff,
+                        'created_at' => $m->created_at,
+                    ])
+            ]
         ]);
     }
 
-    public function undoLog(InventoryLog $log)
+    /* =====================================================
+     * STOCK OPERATIONS
+     * ===================================================== */
+
+    public function addStock(Request $request, $inventoryId)
     {
-        abort_if($log->change >= 0, 403);
 
-        $item = $log->inventoryItem;
-        //dd($item);
+        
+        $data = $request->validate([
+            'inventory_location_id' => 'required|exists:inventory_locations,id',
+            'quantity' => 'required|integer|min:1',
+            'reason' => 'nullable|string',
+        ]);
+        
+        // explicit lookup (will throw 404 if not found)
+        $inventory = InventoryItem::findOrFail($inventoryId);
 
-        DB::transaction(function () use ($item, $log) {
-            $item->increment('quantity', abs($log->change));
+        
 
-            InventoryLog::create([
-                'inventory_item_id' => $item->id,
-                'staff_id' => auth()->id(),
-                'change' => abs($log->change),
-                'type' => 'undo_usage',
-                'meta' => [
-                    'undo_log_id' => $log->id
-                ]
-            ]);
+        $location = InventoryLocation::findOrFail($data['inventory_location_id']);
 
-            $log->update(['meta->undone' => true]);
-        });
+        $this->inventory->addStock(
+            item: $inventory,
+            location: $location,
+            quantity: $data['quantity'],
+            staffId: $request->user()->id,
+            reason: $data['reason']
+        );
 
-        return back()->with('success', 'Inventory usage undone.');
+        return back()->with('success', 'Stock added.');
     }
 
-    public function reconcile(Request $request, InventoryItem $inventory)
+    public function useItem(Request $request, $inventoryId)
     {
         $data = $request->validate([
-            'actual_quantity' => 'required|integer|min:0',
-            'note' => 'required|string'
+            'inventory_location_id' => 'required|exists:inventory_locations,id',
+            'quantity' => 'required|integer|min:1',
+            'reason' => 'nullable|string',
         ]);
 
-        $difference = $data['actual_quantity'] - $inventory->quantity;
+        try {
 
-        DB::transaction(function () use ($inventory, $difference, $data) {
-            $inventory->update(['quantity' => $data['actual_quantity']]);
+            // explicit lookup (will throw 404 if not found)
+            $inventory = InventoryItem::findOrFail($inventoryId);
 
-            InventoryLog::create([
-                'inventory_item_id' => $inventory->id,
-                'staff_id' => auth()->id(),
-                'change' => $difference,
-                'meta' => [
-                    'type' => 'reconciliation',
-                    'note' => $data['note']
-                ]
-            ]);
-        });
+            $location = InventoryLocation::findOrFail($data['inventory_location_id']);
 
-        return back()->with('success', 'Inventory reconciled.');
+            $this->inventory->consumeStock(
+                item: $inventory,
+                location: $location,
+                quantity: $data['quantity'],
+                staffId: $request->user()->id,
+                reason: $data['reason']
+            );
+
+            return back()->with('success', 'Inventory consumed.');
+        }
+        catch (InsufficientInventoryException $e) {
+
+            return back()->withErrors([
+                'quantity' => "Only {$e->available} item(s) available in this location."
+            ])->withInput();
+        }
     }
-
-
-
 }

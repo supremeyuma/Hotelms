@@ -92,9 +92,9 @@ Route::prefix('frontdesk')->middleware(['auth', 'role:frontdesk'])->name('frontd
     Route::get('billing/{booking}', [BillingController::class, 'viewBill']);
     Route::post('billing/{booking}/pay', [BillingController::class, 'acceptPayment']);
 
-    Route::get('reports/occupancy', [ReportController::class, 'occupancyReport']);
-    Route::get('reports/revenue', [ReportController::class, 'revenueReport']);
-    Route::get('reports/bookings', [ReportController::class, 'bookingHistoryReport'])->name('reports.bookings');
+    //Route::get('reports/occupancy', [ReportController::class, 'occupancyReport']);
+    //Route::get('reports/revenue', [ReportController::class, 'revenueReport']);
+    //Route::get('reports/bookings', [ReportController::class, 'bookingHistoryReport'])->name('reports.bookings');
 
     Route::get('/laundry-requests', [FrontDeskLaundryController::class, 'index'])->name('laundry.index');
     Route::get('/laundry-requests/{guestRequest}', [FrontDeskLaundryController::class, 'show'])->name('frontdesk.laundry.show');

@@ -1,44 +1,41 @@
 <?php
+// app/Models/InventoryItem.php
 
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class InventoryItem extends Model
 {
-    use HasFactory, SoftDeletes;
-
     protected $fillable = [
         'name',
         'sku',
-        'quantity',
         'unit',
         'meta',
+        'low_stock_threshold'
     ];
 
     protected $casts = [
-        'meta' => 'array',
+        'meta' => 'array'
     ];
 
-    /* ---------------- Relationships ---------------- */
-
-    public function logs()
+    public function stocks()
     {
-        return $this->hasMany(InventoryLog::class);
+        return $this->hasMany(InventoryStock::class);
     }
 
-    /* ---------------- Scopes ---------------- */
-
-    public function scopeLowStock($query, $threshold = 10)
+    public function movements()
     {
-        return $query->where('quantity', '<=', $threshold);
+        return $this->hasMany(InventoryMovement::class);
+    }
+
+    public function totalStock(): int
+    {
+        return (int) $this->stocks()->sum('quantity');
     }
 
     public function isLowStock(): bool
     {
-        return $this->quantity <= $this->low_stock_threshold;
+        return $this->totalStock() <= $this->low_stock_threshold;
     }
-
 }

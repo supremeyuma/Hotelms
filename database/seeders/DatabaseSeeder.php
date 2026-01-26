@@ -52,6 +52,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             WebsiteContentSeeder::class,
             GallerySeeder::class,
+            InventoryStockSeeder::class,
         ]);
     }
 }

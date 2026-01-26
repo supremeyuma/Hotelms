@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\{
     SettingController,
     StaffThreadController,
     StaffThreadMessagesController,
+    InventoryLocationController,
 };
 use App\Http\Controllers\Admin\ReportDashboardController;
 use App\Http\Controllers\Admin\Reports\StaffReportController;
@@ -43,9 +44,6 @@ Route::middleware(['auth', 'role:manager|md'])
         Route::get('bookings/{booking}/edit', [BookingAdminController::class, 'edit'])->name('bookings.edit');
         Route::put('bookings/{booking}', [BookingAdminController::class, 'update'])->name('bookings.update');
 
-        Route::get('orders', [OrderAdminController::class, 'index'])->name('orders.index');
-        Route::put('orders/{order}/status', [OrderAdminController::class, 'updateStatus'])->name('orders.updateStatus');
-
         Route::prefix('staff')->name('staff.')->middleware(['auth','role:manager|md'])->group(function(){
             Route::resource('', StaffController::class)->parameters([
                 '' => 'staff'
@@ -61,12 +59,15 @@ Route::middleware(['auth', 'role:manager|md'])
 
         });
 
-        Route::resource('inventory', InventoryController::class);
+        Route::get('inventory',[InventoryController::class, 'index'])->name('inventory.index');
+        Route::get('inventory/create', [InventoryController::class, 'create'])->name('inventory.create');
+        Route::post('inventory',[InventoryController::class, 'store'])->name('inventory.store');
+        Route::get('inventory/{inventory}/edit',[InventoryController::class, 'edit'])->name('inventory.edit');
+        Route::put('inventory/{inventory}',[InventoryController::class, 'update'])->name('inventory.update');
         Route::post('inventory/{inventory}/use', [InventoryController::class,'useItem'])->name('inventory.useItem');
         Route::get('inventory/{inventory}', [InventoryController::class, 'show'])->name('inventory.show');
-        Route::post('inventory/{inventory}/use',[InventoryController::class, 'useItem'])->name('inventory.useItem');
-        Route::post('inventory/logs/{log}/undo', [InventoryController::class, 'undoLog'])->name('inventory.logs.undo');
-
+        Route::post('inventory/{inventory}/add-stock',[InventoryController::class, 'addStock'])->name('inventory.addStock');
+        Route::resource('inventory-locations',InventoryLocationController::class)->except(['show']);
 
 
 
@@ -97,8 +98,8 @@ Route::middleware(['auth', 'role:manager|md'])
                     Route::get('/inventory', [ChartController::class, 'inventory']);
                 });
 
-            Route::get('/maintenance', [MaintenanceReportController::class, 'index'])->name('maintenance');
-            Route::get('/maintenance/export/{format}', [MaintenanceReportController::class, 'export'])->name('maintenance.export');
+            //Route::get('/maintenance', [MaintenanceReportController::class, 'index'])->name('maintenance');
+            //Route::get('/maintenance/export/{format}', [MaintenanceReportController::class, 'export'])->name('maintenance.export');
         });
 
         Route::get('audit-logs', [AuditLogController::class, 'index'])->name('audit.index');
