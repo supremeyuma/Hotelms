@@ -1,6 +1,6 @@
 <!-- resources/js/Pages/Admin/Reports/Dashboard.vue -->
 <script setup>
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
+import ManagerLayout from '@/Layouts/Staff/ManagerLayout.vue'
 import KpiCard from '@/Components/KpiCard.vue'
 import TrendChart from '@/Components/TrendChart.vue'
 import { Link } from '@inertiajs/vue3'
@@ -11,7 +11,7 @@ defineProps({
 </script>
 
 <template>
-  <AuthenticatedLayout>
+  <ManagerLayout>
     <div class="space-y-6">
       <h1 class="text-2xl font-semibold text-gray-800">
         Reports Dashboard
@@ -64,5 +64,5 @@ defineProps({
         />
       </div>
     </div>
-  </AuthenticatedLayout>
+  </ManagerLayout>
 </template>

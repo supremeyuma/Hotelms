@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useForm, usePage } from '@inertiajs/vue3'
-import AdminLayout from '@/Layouts/AdminLayout.vue'
+import ManagerLayout from '@/Layouts/Staff/ManagerLayout.vue'
 import Wysiwyg from '@/Components/Admin/Wysiwyg.vue'
 import { 
   Image as ImageIcon, 
@@ -106,7 +106,7 @@ const save = () => {
 </script>
 
 <template>
-  <AdminLayout title="Website Content">
+  <ManagerLayout title="Website Content">
     <div class="max-w-[1600px] mx-auto p-4 md:p-8">
       
       <div class="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
@@ -260,7 +260,7 @@ const save = () => {
 
       </div>
     </div>
-  </AdminLayout>
+  </ManagerLayout>
 </template>
 
 

@@ -1,6 +1,6 @@
 <!-- resources/js/Pages/Admin/Reports/Occupancy.vue -->
 <script setup>
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
+import ManagerLayout from '@/Layouts/Staff/ManagerLayout.vue'
 import TrendChart from '@/Components/TrendChart.vue'
 
 defineProps({
@@ -10,7 +10,7 @@ defineProps({
 </script>
 
 <template>
-  <AuthenticatedLayout>
+  <ManagerLayout>
     <div class="space-y-6">
       <h1 class="text-2xl font-semibold text-gray-800 dark:text-gray-100">
         Occupancy Report
@@ -44,5 +44,5 @@ defineProps({
         </table>
       </div>
     </div>
-  </AuthenticatedLayout>
+  </ManagerLayout>
 </template>

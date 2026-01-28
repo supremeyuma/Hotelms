@@ -1,5 +1,5 @@
 <template>
-  <AuthenticatedLayout>
+  <ManagerLayout>
     <div class="space-y-6">
 
       <!-- Header + Search -->
@@ -214,13 +214,13 @@
       </Modal>
 
     </div>
-  </AuthenticatedLayout>
+  </ManagerLayout>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
 import { Link, useForm } from '@inertiajs/vue3'
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
+import ManagerLayout from '@/Layouts/Staff/ManagerLayout.vue'
 import Pagination from '@/Components/Pagination.vue'
 import Modal from '@/Components/Modal.vue'
 import PrimaryButton from '@/Components/PrimaryButton.vue'

@@ -1,11 +1,11 @@
 <!-- resources/js/Pages/Admin/Reports/CleanerPerformance.vue -->
 <script setup>
 defineProps({ rows: Array })
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import ManagerLayout from '@/Layouts/Staff/ManagerLayout.vue';
 </script>
 
 <template>
-    <AuthenticatedLayout>
+    <ManagerLayout>
       <h1 class="text-2xl font-bold mb-6">Cleaner Performance Report</h1>
 <table class="w-full bg-white rounded shadow">
   <thead>
@@ -23,5 +23,5 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
     </tr>
   </tbody>
 </table>
-    </AuthenticatedLayout>
+    </ManagerLayout>
 </template>

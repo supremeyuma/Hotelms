@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useForm, router } from '@inertiajs/vue3'
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
+import ManagerLayout from '@/Layouts/Staff/ManagerLayout.vue'
 import PrimaryButton from '@/Components/PrimaryButton.vue'
 
 const props = defineProps({
@@ -76,7 +76,7 @@ function cloneTemplates() {
 </script>
 
 <template>
-  <AuthenticatedLayout>
+  <ManagerLayout>
     <div class="space-y-6">
 
       <!-- Header -->
@@ -186,5 +186,5 @@ function cloneTemplates() {
       </div>
 
     </div>
-  </AuthenticatedLayout>
+  </ManagerLayout>
 </template>

@@ -1,5 +1,5 @@
 <template>
-<AuthenticatedLayout>
+<ManagerLayout>
 <div class="space-y-6">
 <h1 class="text-2xl font-bold">Reports Dashboard</h1>
 
@@ -15,12 +15,12 @@
 <Chart title="Occupancy Trend" endpoint="/admin/reports/occupancy" />
 <Chart title="Revenue Trend" endpoint="/admin/reports/revenue" />
 </div>
-</AuthenticatedLayout>
+</ManagerLayout>
 </template>
 
 
 <script setup>
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
+import ManagerLayout from '@/Layouts/Staff/ManagerLayout.vue'
 import Chart from '@/Components/Chart.vue'
 import Stat from '@/Components/Stat.vue'
 

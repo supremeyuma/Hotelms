@@ -1,5 +1,5 @@
 <template>
-  <AuthenticatedLayout>
+  <ManagerLayout>
     <div class="space-y-6">
 
       <div class="flex justify-between items-center">
@@ -42,12 +42,12 @@
 
       <Pagination :links="locations.links" />
     </div>
-  </AuthenticatedLayout>
+  </ManagerLayout>
 </template>
 
 <script setup>
 import { router, Link } from '@inertiajs/vue3'
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
+import ManagerLayout from '@/Layouts/Staff/ManagerLayout.vue'
 import Pagination from '@/Components/Pagination.vue'
 
 defineProps({

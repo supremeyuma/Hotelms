@@ -1,6 +1,6 @@
 <!-- resources/js/Pages/Admin/Reports/Inventory.vue -->
 <script setup>
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
+import ManagerLayout from '@/Layouts/Staff/ManagerLayout.vue'
 import Pagination from '@/Components/Pagination.vue'
 import { ref, onMounted } from 'vue'
 
@@ -25,7 +25,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <AuthenticatedLayout>
+  <ManagerLayout>
     <div class="space-y-4">
       <div class="flex justify-between items-center">
         <h1 class="text-2xl font-semibold text-gray-800 ">
@@ -69,5 +69,5 @@ onMounted(() => {
         <Pagination :data="rows" :links="rows.links"/>
       </div>
     </div>
-  </AuthenticatedLayout>
+  </ManagerLayout>
 </template>

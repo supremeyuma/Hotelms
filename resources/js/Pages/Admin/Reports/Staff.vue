@@ -1,6 +1,6 @@
 <!-- resources/js/Pages/Admin/Reports/Staff.vue -->
 <script setup>
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
+import ManagerLayout from '@/Layouts/Staff/ManagerLayout.vue'
 import { ref } from 'vue'
 
 const props = defineProps({
@@ -13,7 +13,7 @@ const search = ref(props.filters?.search ?? '')
 </script>
 
 <template>
-  <AuthenticatedLayout>
+  <ManagerLayout>
     <div class="space-y-4">
       <div class="flex justify-between items-center">
         <h1 class="text-2xl font-semibold text-gray-800 dark:text-gray-100">
@@ -56,5 +56,5 @@ const search = ref(props.filters?.search ?? '')
         <pagination :data="rows" />
       </div>
     </div>
-  </AuthenticatedLayout>
+  </ManagerLayout>
 </template>

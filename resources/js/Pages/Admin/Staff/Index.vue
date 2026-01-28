@@ -1,5 +1,5 @@
 <template>
-  <AuthenticatedLayout>
+  <ManagerLayout>
     <div>
       <div class="flex justify-between items-center mb-4">
         <h2 class="text-2xl">Staff</h2>
@@ -70,12 +70,12 @@
 
       <pagination :links="staff.links" />
     </div>
-  </AuthenticatedLayout>
+  </ManagerLayout>
 </template>
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import ManagerLayout from '@/Layouts/Staff/ManagerLayout.vue';
 import Table from '@/Components/Ui/Table.vue';
 import Pagination from '@/Components/Pagination.vue';
 import { usePage, router, Link } from '@inertiajs/vue3';

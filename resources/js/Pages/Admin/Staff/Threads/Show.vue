@@ -1,5 +1,5 @@
 <template>
-  <AuthenticatedLayout>
+  <ManagerLayout>
     <div class="max-w-4xl mx-auto">
 
       <h2 class="text-xl font-semibold mb-4">
@@ -67,12 +67,12 @@
     </form>
 
   </div>
-  </AuthenticatedLayout>
+  </ManagerLayout>
 </template>
 
 <script setup>
 import { useForm } from '@inertiajs/vue3'
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
+import ManagerLayout from '@/Layouts/Staff/ManagerLayout.vue'
 
 const props = defineProps({
   thread: Object,

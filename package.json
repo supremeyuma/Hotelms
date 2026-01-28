@@ -29,7 +29,7 @@
         "chart.js": "^4.5.1",
         "date-fns": "^4.1.0",
         "laravel-echo": "^2.2.6",
-        "lucide-vue-next": "^0.562.0",
+        "lucide-vue-next": "^0.563.0",
         "pusher-js": "^8.4.0",
         "vuedraggable": "^4.1.0"
     }

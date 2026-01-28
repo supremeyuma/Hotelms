@@ -3,7 +3,7 @@
 import { ref, computed } from 'vue'
 import { useForm, router } from '@inertiajs/vue3'
 import draggable from 'vuedraggable'
-import AdminLayout from '@/Layouts/AdminLayout.vue'
+import ManagerLayout from '@/Layouts/Staff/ManagerLayout.vue'
 import {
   Image as ImageIcon,
   Upload,
@@ -115,7 +115,7 @@ const saveOrder = (items) => {
 </script>
 
 <template>
-  <AdminLayout>
+  <ManagerLayout>
     <div class="max-w-7xl mx-auto p-8 space-y-10">
 
       <!-- HEADER -->
@@ -286,7 +286,7 @@ const saveOrder = (items) => {
 
       </div>
     </div>
-  </AdminLayout>
+  </ManagerLayout>
 </template>
 
 <style scoped>

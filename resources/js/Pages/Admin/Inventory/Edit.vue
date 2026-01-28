@@ -1,5 +1,5 @@
 <template>
-  <AuthenticatedLayout>
+  <ManagerLayout>
     <div class="max-w-xl space-y-6">
       <h1 class="text-2xl font-semibold">Edit Inventory Item</h1>
 
@@ -26,17 +26,18 @@
         </PrimaryButton>
       </form>
     </div>
-  </AuthenticatedLayout>
+  </ManagerLayout>
 </template>
 
 <script setup>
 import { ref, watch } from 'vue'
 import { useForm } from '@inertiajs/vue3'
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
+import ManagerLayout from '@/Layouts/Staff/ManagerLayout.vue'
 import TextInput from '@/Components/TextInput.vue'
 import Textarea from '@/Components/Textarea.vue'
 import InputError from '@/Components/InputError.vue'
 import PrimaryButton from '@/Components/PrimaryButton.vue'
+import ManagerLayout from '@/Layouts/Staff/ManagerLayout.vue'
 
 const props = defineProps({
   item: Object

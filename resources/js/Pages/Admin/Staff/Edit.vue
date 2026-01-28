@@ -1,5 +1,5 @@
 <template>
-  <AuthenticatedLayout>
+  <ManagerLayout>
     <div>
       <h2 class="text-2xl mb-4">Edit Staff {{ staff.name }}</h2>
 
@@ -46,11 +46,11 @@
         </div>
       </section>
     </div>
-  </AuthenticatedLayout>
+  </ManagerLayout>
 </template>
 
 <script setup>
-    import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+    import ManagerLayout from '@/Layouts/Staff/ManagerLayout.vue';
 import { ref,computed } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import { FormSection, FormLabel, TextInput, Textarea, SelectInput, PrimaryButton } from '@/Components/';

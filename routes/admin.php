@@ -135,7 +135,7 @@ Route::middleware(['auth','role:manager|md'])->prefix('admin/website')->group(fu
 
         Route::post('/content/image', [ContentController::class, 'uploadImage']);
 
-        Route::get('/gallery', [GalleryController::class, 'index']);
+        Route::get('/gallery', [GalleryController::class, 'index'])->name('admin.website.gallery');
         Route::post('/gallery', [GalleryController::class, 'store']);
         Route::delete('/gallery/{gallery}', [GalleryController::class, 'destroy']);
         Route::put('/gallery/{gallery}', [GalleryController::class, 'update']);
@@ -145,6 +145,6 @@ Route::middleware(['auth','role:manager|md'])->prefix('admin/website')->group(fu
 
 
 Route::middleware(['auth','role:manager|md'])->group(function () {
-    Route::get('/admin/events', [EventController::class,'index']);
+    Route::get('/admin/events', [EventController::class,'index'])->name('admin.events.index');
     Route::post('/admin/events', [EventController::class,'store']);
 });

@@ -1,5 +1,5 @@
 <template>
-  <AuthenticatedLayout>
+  <ManagerLayout>
     <div class="max-w-6xl mx-auto">
       <h2 class="text-2xl font-semibold mb-4">Bookings</h2>
 
@@ -35,17 +35,18 @@
 
       <pagination :links="bookings.links" class="mt-4"/>
     </div>
-  </AuthenticatedLayout>
+  </ManagerLayout>
 </template>
 
 <script setup>
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import ManagerLayout from '@/Layouts/Staff/ManagerLayout.vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
 import Pagination from '@/Components/Pagination.vue';
 
+
 const props = usePage().props;
 const bookings = props.bookings;
-console.log(bookings);
+//console.log(bookings);
 
 function deleteBooking(id) {
   if (!confirm('Are you sure you want to delete this booking?')) return;

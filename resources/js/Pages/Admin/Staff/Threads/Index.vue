@@ -1,5 +1,5 @@
 <template>
-  <AuthenticatedLayout>
+  <ManagerLayout>
     <div>
       <div class="flex justify-between items-center mb-4">
         <h2 class="text-2xl">Staff Queries & Commendations</h2>
@@ -39,11 +39,11 @@
 
       <pagination :links="threads.links" />
     </div>
-  </AuthenticatedLayout>
+  </ManagerLayout>
 </template>
 
 <script setup>
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import ManagerLayout from '@/Layouts/Staff/ManagerLayout.vue';
 import { Link, usePage, router } from '@inertiajs/vue3';
 import Pagination from '@/Components/Pagination.vue';
 

@@ -1,5 +1,5 @@
 <template>
-  <AuthenticatedLayout>
+  <ManagerLayout>
     <div class="max-w-3xl mx-auto">
       <h2 class="text-2xl font-semibold mb-6">
         New {{ form.type === 'commendation' ? 'Commendation' : 'Query' }}
@@ -72,11 +72,11 @@
         </div>
       </form>
     </div>
-  </AuthenticatedLayout>
+  </ManagerLayout>
 </template>
 
 <script setup>
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import ManagerLayout from '@/Layouts/Staff/ManagerLayout.vue';
 import { useForm, Link, usePage } from '@inertiajs/vue3';
 import {
   FormLabel,

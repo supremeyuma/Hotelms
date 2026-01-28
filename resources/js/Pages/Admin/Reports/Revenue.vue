@@ -1,6 +1,6 @@
 <!-- resources/js/Pages/Admin/Reports/Revenue.vue -->
 <script setup>
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
+import ManagerLayout from '@/Layouts/Staff/ManagerLayout.vue'
 import TrendChart from '@/Components/TrendChart.vue'
 import { ref } from 'vue'
 
@@ -20,7 +20,7 @@ function formatDate(dateString) {
 </script>
 
 <template>
-  <AuthenticatedLayout>
+  <ManagerLayout>
     <div class="space-y-6">
       <div class="flex justify-between items-center">
         <h1 class="text-2xl font-semibold text-gray-800 dark:text-gray-100">
@@ -65,5 +65,5 @@ function formatDate(dateString) {
         <pagination :data="rows" />
       </div>
     </div>
-  </AuthenticatedLayout>
+  </ManagerLayout>
 </template>

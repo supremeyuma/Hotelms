@@ -1,5 +1,5 @@
 <template>
-  <AuthenticatedLayout>
+  <ManagerLayout>
     <div>
       <h2 class="text-2xl mb-4">Edit Room {{ room.name }}</h2>
 
@@ -57,12 +57,12 @@
         </FormSection>
       </form>
     </div>
-  </AuthenticatedLayout>
+  </ManagerLayout>
 </template>
 
 <script setup>
 import { ref, watch } from 'vue';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import ManagerLayout from '@/Layouts/Staff/ManagerLayout.vue';
 import { useForm } from '@inertiajs/vue3';
 import { FormSection, FormLabel, TextInput, Textarea, SelectInput, InputError, PrimaryButton } from '@/Components/';
 

@@ -1,6 +1,6 @@
 <!-- resources/js/Pages/Admin/Events/Index.vue -->
 <script setup>
-import AdminLayout from '@/Layouts/AdminLayout.vue'
+import ManagerLayout from '@/Layouts/Staff/ManagerLayout.vue'
 import { useForm } from '@inertiajs/vue3'
 
 defineProps({ events: Array })
@@ -17,7 +17,7 @@ const submit = () => form.post('/admin/events')
 </script>
 
 <template>
-  <AdminLayout>
+  <ManagerLayout>
     <div class="max-w-5xl mx-auto p-6 space-y-8">
       <h1 class="text-2xl font-black">Club Events</h1>
 
@@ -37,5 +37,5 @@ const submit = () => form.post('/admin/events')
         </div>
       </div>
     </div>
-  </AdminLayout>
+  </ManagerLayout>
 </template>

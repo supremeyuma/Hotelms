@@ -1,6 +1,6 @@
 <!-- resources/js/Pages/Admin/Bookings/Edit.vue -->
 <template>
-  <AuthenticatedLayout>
+  <ManagerLayout>
     <div class="max-w-4xl mx-auto">
       <h2 class="text-2xl font-semibold mb-4">Edit Booking #{{ booking.id }}</h2>
 
@@ -33,14 +33,15 @@
         <PrimaryButton :disabled="form.processing">Update Booking</PrimaryButton>
       </form>
     </div>
-  </AuthenticatedLayout>
+  </ManagerLayout>
 </template>
 
 <script setup>
 import { useForm } from '@inertiajs/vue3';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import ManagerLayout from '@/Layouts/Staff/ManagerLayout.vue';
 import { FormLabel, TextInput, SelectInput, PrimaryButton } from '@/Components/Index';
 import { usePage } from '@inertiajs/vue3';
+import ManagerLayout from '@/Layouts/Staff/ManagerLayout.vue';
 
 const props = defineProps({
   booking: Object,
