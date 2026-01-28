@@ -18,6 +18,8 @@ use App\Http\Controllers\Admin\{
     StaffThreadController,
     StaffThreadMessagesController,
     InventoryLocationController,
+    CleaningInventoryTemplateController,
+    MenuInventoryRecipeController,
 };
 use App\Http\Controllers\Admin\ReportDashboardController;
 use App\Http\Controllers\Admin\Reports\StaffReportController;
@@ -30,10 +32,7 @@ use App\Http\Controllers\Admin\ContentController;
 use App\Http\Controllers\Admin\GalleryController;
 use App\Http\Controllers\Admin\EventController;
 
-Route::middleware(['auth', 'role:manager|md'])
-    ->prefix('admin')
-    ->as('admin.')
-    ->group(function () {
+Route::middleware(['auth', 'role:manager|md'])->prefix('admin')->as('admin.')->group(function () {
 
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
@@ -69,7 +68,20 @@ Route::middleware(['auth', 'role:manager|md'])
         Route::post('inventory/{inventory}/add-stock',[InventoryController::class, 'addStock'])->name('inventory.addStock');
         Route::resource('inventory-locations',InventoryLocationController::class)->except(['show']);
 
+        Route::get('cleaning-templates',[CleaningInventoryTemplateController::class, 'index'])->name('cleaning-templates.index');
+        Route::post('cleaning-templates',[CleaningInventoryTemplateController::class, 'store'])->name('cleaning-templates.store');
+        Route::delete('cleaning-templates/{template}',[CleaningInventoryTemplateController::class, 'destroy'])->name('cleaning-templates.destroy');
 
+        Route::post('cleaning-templates/{template}',[CleaningInventoryTemplateController::class, 'update'])->name('cleaning-templates.update');
+
+        Route::post('cleaning-templates/clone',[CleaningInventoryTemplateController::class, 'clone'])->name('cleaning-templates.clone');
+
+
+        Route::get('menu-recipes',[MenuInventoryRecipeController::class, 'index'])->name('menu-recipes.index');
+
+        Route::post('menu-recipes',[MenuInventoryRecipeController::class, 'store'])->name('menu-recipes.store');
+
+        Route::delete('menu-recipes/{recipe}',[MenuInventoryRecipeController::class, 'destroy'])->name('menu-recipes.destroy');
 
 
         Route::get('maintenance', [MaintenanceAdminController::class, 'index'])->name('maintenance.index');

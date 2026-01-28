@@ -11,6 +11,7 @@ use App\Models\StaffProfile;
 use Inertia\Inertia;
 use Illuminate\Validation\ValidationException;
 use App\Models\CleaningLog;
+use App\Services\CleaningInventoryService;
 
 
 class CleaningDashboardController extends Controller
@@ -26,7 +27,7 @@ class CleaningDashboardController extends Controller
         ]);
     }
 
-    public function update(Request $request)
+    public function update(Request $request, CleaningInventoryService $inventoryService)
     {
         $data = $request->validate([
             'room_id'     => ['required', 'exists:rooms,id'],
@@ -35,24 +36,26 @@ class CleaningDashboardController extends Controller
         ]);
 
         // 🔐 Verify staff via action code
-        $staff = StaffProfile::whereNotNull('action_code')
+        $staffProfile = StaffProfile::whereNotNull('action_code')
             ->get()
             ->first(fn ($p) => password_verify($data['action_code'], $p->action_code));
 
-        if (! $staff) {
+        if (! $staffProfile) {
             throw ValidationException::withMessages([
                 'action_code' => 'Invalid action code.'
             ]);
         }
 
-        // 🧹 Create or update cleaning record
+        $room = Room::findOrFail($data['room_id']);
+
+        // 🧹 Create or fetch active cleaning record
         $cleaning = RoomCleaning::firstOrCreate(
             [
-                'room_id' => $data['room_id'],
+                'room_id' => $room->id,
                 'cleaned_at' => null,
             ],
             [
-                'staff_id' => $staff->user_id,
+                'staff_id' => $staffProfile->user_id,
                 'status' => 'dirty',
             ]
         );
@@ -60,24 +63,31 @@ class CleaningDashboardController extends Controller
         if ($data['action'] === 'cleaning') {
             $cleaning->update([
                 'status' => 'cleaning',
-                'staff_id' => $staff->user_id,
+                'staff_id' => $staffProfile->user_id,
             ]);
         }
 
         if ($data['action'] === 'clean') {
             $cleaning->update([
                 'status' => 'clean',
-                'staff_id' => $staff->user_id,
+                'staff_id' => $staffProfile->user_id,
                 'cleaned_at' => now(),
             ]);
+
+            // 📦 AUTO-DEDUCT CLEANING INVENTORY
+            $inventoryService->consumeForRoom(
+                room: $room,
+                staffId: $staffProfile->user_id
+            );
         }
 
+        // 🧾 Activity log
         CleaningLog::create([
-            'room_id' => $cleaning->room_id,
-            'user_id' => $staff->user_id,
+            'room_id' => $room->id,
+            'user_id' => $staffProfile->user_id,
             'action'  => $data['action'],
         ]);
 
-        return back();
+        return back()->with('success', 'Cleaning status updated.');
     }
 }

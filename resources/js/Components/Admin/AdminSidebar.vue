@@ -26,9 +26,9 @@ import Icon from '@/Components/Icon.vue'
         <Icon name="calendar" /> Bookings
       </Link>
 
-      <Link :href="route('admin.orders.index')" class="nav-item">
+      <!--<Link :href="route('admin.orders.index')" class="nav-item">
         <Icon name="clipboard" /> Orders
-      </Link>
+      </Link>-->
 
       <Link :href="route('admin.inventory.index')" class="nav-item">
         <Icon name="box" /> Inventory

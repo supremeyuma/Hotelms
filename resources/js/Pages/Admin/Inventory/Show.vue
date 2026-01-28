@@ -95,5 +95,5 @@ const props = defineProps({
   item: Object
 })
 
-console.log(props.item);
+//console.log(props.item);
 </script>

@@ -8,6 +8,7 @@ use App\Events\OrderStatusUpdated;
 use App\Services\OrderChargeService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use App\Services\KitchenInventoryService;
 
 class KitchenOrderController extends Controller
 {
@@ -35,7 +36,7 @@ class KitchenOrderController extends Controller
     }
 
 
-    public function updateStatus(Request $request, Order $order)
+    public function updateStatus(Request $request, Order $order, KitchenInventoryService $inventory)
     {
         $request->validate([
             'status' => 'required|in:preparing,ready,delivered'
@@ -55,6 +56,8 @@ class KitchenOrderController extends Controller
 
         if ($request->status === 'preparing') {
             app(OrderChargeService::class)->post($order);
+
+            $inventory->consumeForOrder($order);
         }
 
         return back();
