@@ -47,6 +47,8 @@ class Kernel extends ConsoleKernel
         $schedule->job(new PurgeOldNotificationsJob())->dailyAt('05:30');
 
         $schedule->command('billing:charge-rooms')->dailyAt('14:00');
+
+        $schedule->command('hotel:night-audit')->dailyAt('02:00');
     }
 
     protected function commands(): void

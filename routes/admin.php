@@ -1,7 +1,6 @@
 
 
 <?php
-
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\{
     DashboardController,
@@ -20,6 +19,9 @@ use App\Http\Controllers\Admin\{
     InventoryLocationController,
     CleaningInventoryTemplateController,
     MenuInventoryRecipeController,
+    OutstandingBalancesController,
+    AccountingPeriodController,
+    EventController,
 };
 use App\Http\Controllers\Admin\ReportDashboardController;
 use App\Http\Controllers\Admin\Reports\StaffReportController;
@@ -31,6 +33,7 @@ use App\Http\Controllers\Admin\Reports\ChartController;
 use App\Http\Controllers\Admin\ContentController;
 use App\Http\Controllers\Admin\GalleryController;
 use App\Http\Controllers\Admin\EventController;
+use App\Http\Controllers\Reports\ProfitAndLossController;
 
 Route::middleware(['auth', 'role:manager|md'])->prefix('admin')->as('admin.')->group(function () {
 
@@ -103,6 +106,9 @@ Route::middleware(['auth', 'role:manager|md'])->prefix('admin')->as('admin.')->g
             Route::get('/inventory', [InventoryReportController::class, 'index'])->name('inventory');
             Route::get('/inventory/export/{format}', [InventoryReportController::class, 'export'])->name('inventory.export');
 
+            Route::get('profit-loss', [ProfitAndLossController::class, 'index'])->name('profit-loss');
+            Route::get('balance-sheet', [\App\Http\Controllers\Reports\BalanceSheetController::class, 'index'])->name('balance-sheet');
+            Route::get('daily-revenue', [\App\Http\Controllers\Reports\DailyRevenueController::class, 'index'])->name('daily-revenue');
 
                 Route::prefix('charts')->group(function () {
                     Route::get('/revenue', [ChartController::class, 'revenue']);
@@ -118,6 +124,20 @@ Route::middleware(['auth', 'role:manager|md'])->prefix('admin')->as('admin.')->g
 
         Route::get('settings', [SettingController::class, 'index'])->name('settings.index');
         Route::put('settings', [SettingController::class, 'update'])->name('settings.update');
+
+        // Outstanding Balances
+        Route::get('outstanding-balances', [OutstandingBalancesController::class, 'index'])->name('outstanding-balances.index');
+        Route::get('outstanding-balances/export', [OutstandingBalancesController::class, 'export'])->name('outstanding-balances.export');
+
+        // Accounting Periods
+        Route::get('accounting-periods', [AccountingPeriodController::class, 'index'])->name('accounting-periods.index');
+        Route::post('accounting-periods', [AccountingPeriodController::class, 'store'])->name('accounting-periods.store');
+        Route::post('accounting-periods/{period}/close', [AccountingPeriodController::class, 'close'])->name('accounting-periods.close');
+        Route::post('accounting-periods/{period}/reopen', [AccountingPeriodController::class, 'reopen'])->name('accounting-periods.reopen');
+        Route::get('accounting-periods/{period}', [AccountingPeriodController::class, 'show'])->name('accounting-periods.show');
+        Route::post('accounting-periods/initialize-tax-accounts', [AccountingPeriodController::class, 'initializeTaxAccounts'])->name('accounting-periods.initialize-tax-accounts');
+        Route::get('accounting-periods/check-status', [AccountingPeriodController::class, 'checkPeriodStatus'])->name('accounting-periods.check-status');
+        Route::post('accounting-periods/auto-close-expired', [AccountingPeriodController::class, 'autoCloseExpired'])->name('accounting-periods.auto-close-expired');
     });
 
 
@@ -144,7 +164,19 @@ Route::middleware(['auth','role:manager|md'])->prefix('admin/website')->group(fu
     });
 
 
-Route::middleware(['auth','role:manager|md'])->group(function () {
+    Route::middleware(['auth','role:manager|md'])->group(function () {
     Route::get('/admin/events', [EventController::class,'index'])->name('admin.events.index');
     Route::post('/admin/events', [EventController::class,'store']);
-});
+    Route::get('/admin/events/create', [EventController::class,'create'])->name('admin.events.create');
+    Route::get('/admin/events/{event}', [EventController::class,'show'])->name('admin.events.show');
+    Route::get('/admin/events/{event}/edit', [EventController::class,'edit'])->name('admin.events.edit');
+    Route::put('/admin/events/{event}', [EventController::class,'update'])->name('admin.events.update');
+    Route::delete('/admin/events/{event}', [EventController::class,'destroy'])->name('admin.events.destroy');
+    
+    Route::post('/admin/events/{event}/ticket-types', [EventController::class,'storeTicketTypes'])->name('admin.events.ticket-types.store');
+    Route::post('/admin/events/{event}/upload-media', [EventController::class,'uploadPromotionalMedia'])->name('admin.events.upload-media');
+    Route::delete('/admin/events/{event}/media/{media}', [EventController::class,'deletePromotionalMedia'])->name('admin.events.delete-media');
+    Route::post('/admin/events/{event}/media/reorder', [EventController::class,'reorderPromotionalMedia'])->name('admin.events.reorder-media');
+    Route::post('/admin/events/{event}/feature', [EventController::class,'featureEvent'])->name('admin.events.feature');
+    Route::post('/admin/events/{event}/unfeature', [EventController::class,'unfeatureEvent'])->name('admin.events.unfeature');
+    });

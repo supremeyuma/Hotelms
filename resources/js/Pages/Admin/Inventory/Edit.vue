@@ -37,8 +37,6 @@ import TextInput from '@/Components/TextInput.vue'
 import Textarea from '@/Components/Textarea.vue'
 import InputError from '@/Components/InputError.vue'
 import PrimaryButton from '@/Components/PrimaryButton.vue'
-import ManagerLayout from '@/Layouts/Staff/ManagerLayout.vue'
-
 const props = defineProps({
   item: Object
 })

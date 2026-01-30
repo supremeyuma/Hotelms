@@ -10,40 +10,37 @@ use App\Services\BillingService;
 
 class BillingController extends Controller
 {
-    protected BillingService $billingService;
-
-    public function __construct(BillingService $billingService)
-    {
-        $this->billingService = $billingService;
-    }
+    public function __construct(
+        protected BillingService $billingService
+    ) {}
 
     public function viewBill(Booking $booking)
     {
-        $billing = $this->billingService->getBillingHistory($booking);
-
         return Inertia::render('FrontDesk/Billing/Show', [
             'booking' => $booking,
-            'billing' => $billing,
+            'billing' => $this->billingService->getBillingHistory($booking),
         ]);
     }
 
     public function acceptPayment(Request $request, Booking $booking)
     {
         $data = $request->validate([
+            'room_id' => 'required|integer',
             'amount' => 'required|numeric|min:0.01',
             'method' => 'required|string|max:50',
+            'reference' => 'nullable|string|max:100',
             'notes' => 'nullable|string|max:255',
         ]);
 
-        $this->billingService->addPayment($booking, $data['amount'], $data['method'], $data['notes'] ?? null);
+        $this->billingService->addPayment(
+            booking: $booking,
+            roomId: $data['room_id'],
+            amount: $data['amount'],
+            method: $data['method'],
+            reference: $data['reference'] ?? null,
+            notes: $data['notes'] ?? null
+        );
 
         return back()->with('success', 'Payment recorded successfully.');
-    }
-
-    public function settleFull(Booking $booking)
-    {
-        $this->billingService->settleFullAmount($booking, 'Cash'); // or method passed from request
-
-        return back()->with('success', 'Outstanding balance fully settled.');
     }
 }

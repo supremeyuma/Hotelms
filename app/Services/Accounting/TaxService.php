@@ -1,0 +1,234 @@
+<?php
+
+namespace App\Services\Accounting;
+
+use App\Models\Account;
+use App\Services\AccountingService;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
+use Exception;
+
+class TaxService
+{
+    public const VAT_RATE = 0.075; // 7.5%
+    public const SERVICE_CHARGE_RATE = 0.10;
+
+    protected AccountingService $accountingService;
+
+    public function __construct(AccountingService $accountingService)
+    {
+        $this->accountingService = $accountingService;
+    }
+
+    public function calculateVAT(float $amount): float
+    {
+        return round($amount * self::VAT_RATE, 2);
+    }
+
+    public function calculateServiceCharge(float $amount): float
+    {
+        return round($amount * self::SERVICE_CHARGE_RATE, 2);
+    }
+
+    public function calculateTotalTaxes(float $amount): array
+    {
+        return [
+            'vat' => $this->calculateVAT($amount),
+            'service_charge' => $this->calculateServiceCharge($amount),
+            'total' => $this->calculateVAT($amount) + $this->calculateServiceCharge($amount),
+        ];
+    }
+
+    public function postVAT(
+        float $amount,
+        string $referenceType,
+        int $referenceId,
+        string $description,
+        ?int $userId = null,
+        ?Carbon $date = null
+    ): void {
+        $vatAmount = $this->calculateVAT($amount);
+
+        if ($vatAmount <= 0) {
+            return;
+        }
+
+        $vatPayableAccount = $this->getAccountByCode('2001'); // VAT Payable
+        $salesTaxAccount = $this->getAccountByCode('5001'); // Sales Tax Expense
+
+        if (!$vatPayableAccount || !$salesTaxAccount) {
+            throw new Exception('Tax accounts not configured. Please create accounts with codes 2001 (VAT Payable) and 5001 (Sales Tax Expense).');
+        }
+
+        $lines = [
+            [
+                'account_id' => $salesTaxAccount->id,
+                'debit' => $vatAmount,
+                'credit' => 0,
+            ],
+            [
+                'account_id' => $vatPayableAccount->id,
+                'debit' => 0,
+                'credit' => $vatAmount,
+            ],
+        ];
+
+        $this->accountingService->postEntry(
+            $referenceType,
+            $referenceId,
+            "VAT: {$description}",
+            $lines,
+            $userId,
+            $date
+        );
+    }
+
+    public function postServiceCharge(
+        float $amount,
+        string $referenceType,
+        int $referenceId,
+        string $description,
+        ?int $userId = null,
+        ?Carbon $date = null
+    ): void {
+        $serviceChargeAmount = $this->calculateServiceCharge($amount);
+
+        if ($serviceChargeAmount <= 0) {
+            return;
+        }
+
+        $serviceChargeReceivableAccount = $this->getAccountByCode('1002'); // Service Charge Receivable
+        $serviceChargeRevenueAccount = $this->getAccountByCode('4001'); // Service Charge Revenue
+
+        if (!$serviceChargeReceivableAccount || !$serviceChargeRevenueAccount) {
+            throw new Exception('Service charge accounts not configured. Please create accounts with codes 1002 (Service Charge Receivable) and 4001 (Service Charge Revenue).');
+        }
+
+        $lines = [
+            [
+                'account_id' => $serviceChargeReceivableAccount->id,
+                'debit' => $serviceChargeAmount,
+                'credit' => 0,
+            ],
+            [
+                'account_id' => $serviceChargeRevenueAccount->id,
+                'debit' => 0,
+                'credit' => $serviceChargeAmount,
+            ],
+        ];
+
+        $this->accountingService->postEntry(
+            $referenceType,
+            $referenceId,
+            "Service Charge: {$description}",
+            $lines,
+            $userId,
+            $date
+        );
+    }
+
+    public function postAllTaxes(
+        float $amount,
+        string $referenceType,
+        int $referenceId,
+        string $description,
+        ?int $userId = null,
+        ?Carbon $date = null
+    ): void {
+        DB::transaction(function () use ($amount, $referenceType, $referenceId, $description, $userId, $date) {
+            $this->postVAT($amount, $referenceType, $referenceId, $description, $userId, $date);
+            $this->postServiceCharge($amount, $referenceType, $referenceId, $description, $userId, $date);
+        });
+    }
+
+    protected function getAccountByCode(string $code): ?Account
+    {
+        return Account::where('code', $code)->first();
+    }
+
+    public function createDefaultTaxAccounts(): void
+    {
+        $accounts = [
+            ['code' => '2001', 'name' => 'VAT Payable', 'type' => 'liability', 'is_system' => true],
+            ['code' => '1002', 'name' => 'Service Charge Receivable', 'type' => 'asset', 'is_system' => true],
+            ['code' => '4001', 'name' => 'Service Charge Revenue', 'type' => 'revenue', 'is_system' => true],
+            ['code' => '5001', 'name' => 'Sales Tax Expense', 'type' => 'expense', 'is_system' => true],
+        ];
+
+        foreach ($accounts as $accountData) {
+            Account::firstOrCreate(
+                ['code' => $accountData['code']],
+                $accountData
+            );
+        }
+    }
+
+    public function reverseTaxEntry(
+        string $referenceType,
+        int $referenceId,
+        string $reason,
+        ?int $userId = null
+    ): void {
+        // Find the original tax journal entries
+        $entries = DB::table('journal_entries')
+            ->where('reference_type', $referenceType)
+            ->where('reference_id', $referenceId)
+            ->where('description', 'like', 'VAT:%')
+            ->orWhere('description', 'like', 'Service Charge:%')
+            ->get();
+
+        foreach ($entries as $entry) {
+            // Create reversal lines
+            $lines = DB::table('journal_lines')
+                ->where('journal_entry_id', $entry->id)
+                ->get()
+                ->map(function ($line) {
+                    return [
+                        'account_id' => $line->account_id,
+                        'debit' => $line->credit, // Reverse debit/credit
+                        'credit' => $line->debit,
+                    ];
+                })
+                ->toArray();
+
+            if (!empty($lines)) {
+                $this->accountingService->postEntry(
+                    $referenceType,
+                    $referenceId,
+                    "Reversal: {$entry->description} - {$reason}",
+                    $lines,
+                    $userId,
+                    now()
+                );
+            }
+        }
+    }
+
+    public function getTaxLiabilityBalance(?Carbon $asOf = null): array
+    {
+        $asOf = $asOf ?? now();
+
+        $vatPayable = $this->getAccountBalance('2001', $asOf);
+        $serviceChargeReceivable = $this->getAccountBalance('1002', $asOf);
+
+        return [
+            'vat_payable' => abs($vatPayable),
+            'service_charge_receivable' => abs($serviceChargeReceivable),
+            'total_tax_liability' => abs($vatPayable) + abs($serviceChargeReceivable),
+        ];
+    }
+
+    protected function getAccountBalance(string $code, Carbon $asOf): float
+    {
+        $account = $this->getAccountByCode($code);
+        if (!$account) {
+            return 0;
+        }
+
+        return DB::table('journal_lines')
+            ->join('journal_entries', 'journal_entries.id', '=', 'journal_lines.journal_entry_id')
+            ->where('journal_lines.account_id', $account->id)
+            ->whereDate('journal_entries.entry_date', '<=', $asOf)
+            ->sum(DB::raw('journal_lines.debit - journal_lines.credit'));
+    }
+}

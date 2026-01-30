@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PublicController;
+use App\Http\Controllers\Public\PublicEventController;
 use App\Http\Controllers\RoomServiceController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\GuestLaundryController;
@@ -26,6 +27,20 @@ Route::post('/contact', [PublicController::class, 'submitContactForm'])->name('p
 
 // Public booking endpoints
 //Route::post('/bookings/check-availability', [BookingController::class, 'checkAvailability'])->name('public.booking.check');
+
+// Event routes
+Route::get('/events', [PublicEventController::class, 'index'])->name('events.index');
+Route::get('/events/{event}', [PublicEventController::class, 'show'])->name('events.show');
+Route::get('/events/{event}/tickets', [PublicEventController::class, 'showTicketPurchase'])->name('events.tickets');
+Route::post('/events/{event}/tickets/purchase', [PublicEventController::class, 'processTicketPurchase'])->name('events.tickets.purchase');
+Route::get('/events/purchase/success', [PublicEventController::class, 'purchaseSuccess'])->name('events.purchase.success');
+Route::get('/events/{event}/reserve-table', [PublicEventController::class, 'showTableReservation'])->name('events.tables.reserve');
+Route::post('/events/{event}/tables/reserve', [PublicEventController::class, 'processTableReservation'])->name('events.tables.reserve');
+Route::get('/events/reservation/success', [PublicEventController::class, 'reservationSuccess'])->name('events.reservation.success');
+Route::get('/events/payment/process', [PublicEventController::class, 'paymentProcess'])->name('events.payment.process');
+Route::get('/events/payment/callback', [PublicEventController::class, 'paymentCallback'])->name('events.payment.callback');
+Route::get('/events/payment/failed', [PublicEventController::class, 'paymentFailed'])->name('events.payment.failed');
+Route::get('/events/checkin', [PublicEventController::class, 'checkIn'])->name('events.checkin');
 
 Route::prefix('booking')->name('booking.')->group(function () {
     Route::get('/', [BookingController::class, 'searchForm'])->name('search');

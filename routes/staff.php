@@ -27,6 +27,7 @@ use App\Http\Controllers\Staff\MenuItemController;
 use App\Http\Controllers\Staff\CleaningDashboardController;
 use App\Http\Controllers\Staff\CleaningActionController;
 use App\Http\Controllers\Staff\StaffChargeController;
+use App\Http\Controllers\Staff\EventCheckInController;
 
 
 
@@ -206,3 +207,12 @@ Route::post(
     '/staff/charges/{charge}/mark-paid',
     [StaffChargeController::class, 'markAsPaid']
 )->middleware(['auth', 'role:kitchen|bar|staff|manager|md|laundry'])->name('staff.charges.markPaid');
+
+// Event Check-In Routes
+Route::middleware(['auth', 'role:staff|manager|md|frontdesk'])->prefix('staff')->name('staff.')->group(function () {
+    Route::get('/events/check-in', [EventCheckInController::class, 'index'])->name('events.check-in.index');
+    Route::get('/events/scan', [EventCheckInController::class, 'scan'])->name('events.check-in.scan');
+    Route::post('/events/validate', [EventCheckInController::class, 'validate'])->name('events.check-in.validate');
+    Route::post('/events/check-in', [EventCheckInController::class, 'checkIn'])->name('events.check-in.process');
+    Route::get('/events/stats/today', [EventCheckInController::class, 'todayStats'])->name('events.check-in.stats');
+});

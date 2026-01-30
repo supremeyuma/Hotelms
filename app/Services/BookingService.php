@@ -288,34 +288,74 @@ class BookingService
     {
         return DB::transaction(function () use ($booking, $room) {
 
+            // -----------------------------------------
+            // ROOM-LEVEL CHECKOUT
+            // -----------------------------------------
             if ($room) {
-                // ROOM-LEVEL CHECKOUT
+
+                // 1. Finalize nightly revenue (idempotent)
+                app(NightlyRoomChargeService::class)
+                    ->finalize($booking, $room);
+
+                // 2. Enforce GL-based room balance
+                if (! app(RoomBalanceService::class)
+                    ->roomCanCheckout($booking, $room)) {
+
+                    throw new \Exception(
+                        "Room {$room->name} has an outstanding balance."
+                    );
+                }
+
+                // 3. Update pivot
                 $booking->rooms()->updateExistingPivot($room->id, [
                     'status'         => 'checked_out',
                     'checked_out_at' => now(),
                 ]);
 
-                // 🧹 Mark room dirty
+                // 4. Mark room dirty
                 $room->update(['status' => 'dirty']);
+            }
 
-            } else {
-                // BOOKING-LEVEL CHECKOUT
+            // -----------------------------------------
+            // BOOKING-LEVEL CHECKOUT
+            // -----------------------------------------
+            else {
+
                 foreach ($booking->rooms as $r) {
+
+                    // Finalize nightly revenue per room
+                    app(NightlyRoomChargeService::class)
+                        ->finalize($booking, $r);
+
+                    // Enforce GL-based balance per room
+                    if (! app(RoomBalanceService::class)
+                        ->roomCanCheckout($booking, $r)) {
+
+                        throw new \Exception(
+                            "Room {$r->name} has an outstanding balance."
+                        );
+                    }
+
+                    // Update pivot
                     $booking->rooms()->updateExistingPivot($r->id, [
                         'status'         => 'checked_out',
                         'checked_out_at' => now(),
                     ]);
 
-                    // 🧹 Mark all rooms dirty
+                    // Mark room dirty
                     $r->update(['status' => 'dirty']);
                 }
 
+                // Mark booking checked out only when all rooms pass
                 $booking->update([
                     'status'         => 'checked_out',
                     'checked_out_at' => now(),
                 ]);
             }
 
+            // -----------------------------------------
+            // AUDIT
+            // -----------------------------------------
             $this->audit->log('booking_checked_out', $booking, $booking->id, [
                 'room' => $room?->name,
             ]);
@@ -323,6 +363,7 @@ class BookingService
             return $booking;
         });
     }
+
 
 
     /**

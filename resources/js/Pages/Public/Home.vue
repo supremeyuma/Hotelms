@@ -6,9 +6,10 @@ import AOS from 'aos'
 import Lenis from '@studio-freight/lenis'
 import 'aos/dist/aos.css'
 import { 
-  ChevronDown, Star, Waves, Wifi, Car, Sparkles, 
-  Music, WavesLadder, Martini, ArrowRight, ShieldCheck,
-} from 'lucide-vue-next'
+   ChevronDown, Star, Waves, Wifi, Car, Sparkles, 
+   Music, WavesLadder, Martini, ArrowRight, ShieldCheck,
+   Calendar as CalendarIcon, Clock, Users, Ticket,
+ } from 'lucide-vue-next'
 
 const page = usePage()
 const isLoading = ref(true)
@@ -16,6 +17,9 @@ const mouseX = ref(0)
 const mouseY = ref(0)
 const isHoveringImage = ref(false)
 const scrollProgress = ref(0)
+
+// Featured events from page props
+const featuredEvents = page.props.featured_events ?? []
 
 const gallery = page.props.gallery ?? {
   hero: [],
@@ -237,6 +241,116 @@ onMounted(() => {
               <h4 class="text-2xl font-black mb-4">{{ amenity.label }}</h4>
               <p class="text-slate-500 font-light leading-relaxed">{{ amenity.desc }}</p>
               <div class="absolute bottom-0 left-0 w-0 h-1 bg-indigo-500 group-hover:w-full transition-all duration-700"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Featured Events Section -->
+      <section v-if="featuredEvents.length > 0" class="py-40 bg-gradient-to-b from-slate-50 to-white">
+        <div class="container mx-auto px-6">
+          <div class="flex flex-col md:flex-row md:items-end justify-between mb-32 gap-10">
+            <div class="space-y-6">
+              <div class="h-1 w-20 bg-indigo-600"></div>
+              <h2 class="text-5xl md:text-8xl font-black text-slate-900 leading-[0.9] tracking-tighter">
+                Upcoming <br/> Events
+              </h2>
+            </div>
+            <Link href="/events" class="inline-flex items-center gap-3 px-8 py-4 bg-slate-900 text-white font-black rounded-full text-sm uppercase tracking-widest hover:scale-105 transition-transform">
+              View All Events
+              <ArrowRight class="w-4 h-4" />
+            </Link>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div 
+              v-for="event in featuredEvents" 
+              :key="event.id"
+              class="group bg-white rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden hover:-translate-y-2"
+              data-aos="fade-up"
+            >
+              <!-- Event Image -->
+              <div class="relative h-64 overflow-hidden">
+                <img 
+                  :src="event.promotional_media?.[0]?.image_url ?? '/images/default-event.jpg'"
+                  :alt="event.title"
+                  class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                />
+                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                
+                <!-- Event Date Badge -->
+                <div class="absolute top-6 left-6">
+                  <div class="bg-white/95 backdrop-blur-sm rounded-2xl p-3 text-center min-w-[60px] shadow-lg">
+                    <div class="text-2xl font-black text-slate-900">
+                      {{ new Date(event.start_datetime).getDate() }}
+                    </div>
+                    <div class="text-xs font-black text-indigo-600 uppercase tracking-wider">
+                      {{ new Date(event.start_datetime).toLocaleString('en-US', { month: 'short' }) }}
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Featured Badge -->
+                <div v-if="event.is_featured" class="absolute top-6 right-6">
+                  <div class="bg-amber-500 text-white px-4 py-2 rounded-full text-xs font-black uppercase tracking-wider shadow-lg">
+                    Featured
+                  </div>
+                </div>
+              </div>
+
+              <!-- Event Content -->
+              <div class="p-8 space-y-6">
+                <div class="space-y-4">
+                  <h3 class="text-2xl font-black text-slate-900 leading-tight">
+                    {{ event.title }}
+                  </h3>
+                  <p class="text-slate-600 font-light line-clamp-3 leading-relaxed">
+                    {{ event.description }}
+                  </p>
+                </div>
+
+                <!-- Event Details -->
+                <div class="space-y-3">
+                  <div class="flex items-center gap-3 text-sm text-slate-500">
+                    <CalendarIcon class="w-4 h-4" />
+                    <span class="font-medium">
+                      {{ new Date(event.start_datetime).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) }}
+                    </span>
+                  </div>
+                  <div class="flex items-center gap-3 text-sm text-slate-500">
+                    <Clock class="w-4 h-4" />
+                    <span class="font-medium">
+                      {{ new Date(event.start_datetime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) }}
+                      {{ event.end_datetime ? `- ${new Date(event.end_datetime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}` : '' }}
+                    </span>
+                  </div>
+                  <div v-if="event.venue" class="flex items-center gap-3 text-sm text-slate-500">
+                    <Users class="w-4 h-4" />
+                    <span class="font-medium">{{ event.venue }}</span>
+                  </div>
+                  <div v-if="event.ticket_types?.length > 0" class="flex items-center gap-3 text-sm text-slate-500">
+                    <Ticket class="w-4 h-4" />
+                    <span class="font-medium">Tickets from ₦{{ Math.min(...event.ticket_types.map(t => t.price)).toLocaleString() }}</span>
+                  </div>
+                </div>
+
+                <!-- CTA Buttons -->
+                <div class="flex gap-4 pt-4">
+                  <Link 
+                    :href="`/events/${event.id}`" 
+                    class="flex-1 text-center px-6 py-3 bg-slate-900 text-white font-black rounded-full text-sm uppercase tracking-wider hover:scale-105 transition-transform"
+                  >
+                    View Details
+                  </Link>
+                  <Link 
+                    v-if="event.ticket_types?.length > 0"
+                    :href="`/events/${event.id}/tickets`"
+                    class="flex-1 text-center px-6 py-3 bg-indigo-600 text-white font-black rounded-full text-sm uppercase tracking-wider hover:bg-indigo-700 transition-colors"
+                  >
+                    Get Tickets
+                  </Link>
+                </div>
+              </div>
             </div>
           </div>
         </div>

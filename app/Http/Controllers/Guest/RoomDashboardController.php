@@ -49,25 +49,20 @@ class RoomDashboardController extends Controller
         $room = $request->room;
         $booking = $request->booking;
 
-        $accessToken = $room->roomAccessToken?->token;
-
-        $orders = Order::where('room_id', $room->id)
-            ->where('booking_id', $booking->id)
-            ->get();
-
-        $cleaningRequest = RoomCleaning::where('room_id', $room->id)
-            ->whereNull('cleaned_at')
-            ->latest()
-            ->first();
-
         return Inertia::render('Guest/RoomDashboard', [
             'room' => $room,
             'booking' => $booking,
-            'accessToken' => $accessToken,
-            'outstandingBill' => $this->outstandingForRoom($room),
+            'accessToken' => $room->roomAccessToken?->token,
+            'outstandingBill' => $this->billingService
+                ->outstandingForRoom($booking, $room->id),
             'laundryItems' => LaundryItem::all(),
-            'cleaningStatus' => $cleaningRequest?->status,
-            'orders' => $orders,
+            'cleaningStatus' => RoomCleaning::where('room_id', $room->id)
+                ->whereNull('cleaned_at')
+                ->latest()
+                ->value('status'),
+            'orders' => Order::where('room_id', $room->id)
+                ->where('booking_id', $booking->id)
+                ->get(),
             'showOrders' => request()->boolean('showOrders'),
         ]);
     }
@@ -89,44 +84,38 @@ class RoomDashboardController extends Controller
     public function billHistory(Request $request)
     {
         $room = $request->room;
-
-        $charges = $room->charges()
-            ->select('id', 'description', 'amount', 'created_at')
-            ->get()
-            ->map(fn ($c) => [
-                'id' => $c->id,
-                'type' => 'charge',
-                'description' => $c->description,
-                'amount' => $c->amount,
-                'created_at' => $c->created_at,
-            ]);
-
-        $payments = $room->payments()
-            ->select('id', 'amount', 'created_at')
-            ->get()
-            ->map(fn ($p) => [
-                'id' => $p->id,
-                'type' => 'payment',
-                'description' => 'Payment',
-                'amount' => $p->amount,
-                'created_at' => $p->created_at,
-            ]);
+        $booking = $request->booking;
 
         return response()->json([
-            'history' => $charges
-                ->merge($payments)
+            'history' => $room->charges()
+                ->select('id', 'description', 'amount', 'created_at')
+                ->get()
+                ->map(fn ($c) => [
+                    'type' => 'charge',
+                    'description' => $c->description,
+                    'amount' => $c->amount,
+                    'created_at' => $c->created_at,
+                ])
+                ->merge(
+                    $room->payments()
+                        ->select('id', 'amount', 'created_at')
+                        ->get()
+                        ->map(fn ($p) => [
+                            'type' => 'payment',
+                            'description' => 'Payment',
+                            'amount' => $p->amount,
+                            'created_at' => $p->created_at,
+                        ])
+                )
                 ->sortBy('created_at')
                 ->values(),
-            'outstanding' => $this->outstandingForRoom($room),
+            'outstanding' => $this->billingService
+                ->outstandingForRoom($booking, $room->id),
             'currency' => 'NGN',
         ]);
     }
 
-    /**
-     * MOCK PAYMENT (ROOM + BOOKING)
-     * Later replaced by Paystack / Flutterwave
-     */
-    public function payBill(Request $request)
+     public function payBill(Request $request)
     {
         $request->validate([
             'amount' => 'required|numeric|min:1',
@@ -138,35 +127,27 @@ class RoomDashboardController extends Controller
 
         $reference = $request->reference ?? 'MOCK-' . strtoupper(uniqid());
 
-        // ✅ IDEMPOTENCY CHECK
         if (\DB::table('payments')->where('reference', $reference)->exists()) {
             return response()->json([
                 'success' => true,
-                'outstanding' => $this->outstandingForRoom($room),
+                'outstanding' => $this->billingService
+                    ->outstandingForRoom($booking, $room->id),
                 'message' => 'Payment already processed.',
             ]);
         }
 
-        \DB::transaction(function () use ($room, $booking, $request, $reference) {
-            $outstanding = $this->outstandingForRoom($room);
-
-            if ($request->amount > $outstanding) {
-                throw new \Exception('Payment exceeds outstanding balance.');
-            }
-
-            $room->payments()->create([
-                'booking_id' => $booking->id,
-                'amount' => $request->amount,
-                'reference' => $reference,
-                'method' => 'guest_portal',
-            ]);
-        });
-
-        event(new BillingUpdated($booking));
+        $this->billingService->addPayment(
+            booking: $booking,
+            roomId: $room->id,
+            amount: $request->amount,
+            method: 'guest_portal',
+            reference: $reference
+        );
 
         return response()->json([
             'success' => true,
-            'outstanding' => $this->outstandingForRoom($room),
+            'outstanding' => $this->billingService
+                ->outstandingForRoom($booking, $room->id),
         ]);
     }
 
@@ -181,7 +162,6 @@ class RoomDashboardController extends Controller
             'type' => 'required|string|in:cleaning,kitchen,bar,laundry',
             'notes' => 'nullable|string|max:500',
         ]);
-        
 
         $serviceRequest = $this->roomService->createRequest(
             $request->booking,
@@ -199,14 +179,12 @@ class RoomDashboardController extends Controller
         $request->validate([
             'type' => 'required|string|in:plumbing,electrical,furniture,other',
             'description' => 'required|string|max:1000',
-            'file' => 'nullable|file|mimes:jpg,png,jpeg|max:5120',
         ]);
 
         $ticket = $this->maintenanceService->reportIssue(
             $request->booking,
             $request->type,
-            $request->description,
-            $request->file('file')
+            $request->description
         );
 
         event(new MaintenanceReported($ticket));
@@ -230,14 +208,8 @@ class RoomDashboardController extends Controller
 
     public function checkout(Request $request)
     {
-        try {
-            $this->checkoutService->checkout($request->booking);
+        $this->checkoutService->checkout($request->booking);
 
-            return redirect()
-                ->route('guest.room.dashboard', ['token' => $request->room->roomAccessToken->token])
-                ->with('success', 'Checked out successfully.');
-        } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage());
-        }
+        return back()->with('success', 'Checked out successfully.');
     }
 }

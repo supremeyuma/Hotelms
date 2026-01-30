@@ -10,9 +10,14 @@ use App\Models\LaundryOrder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use App\Events\LaundryOrderUpdated;
+use App\Services\LaundryAccountingService;
 
 class LaundryOrderService
 {
+    public function __construct(
+        private LaundryAccountingService $accountingService
+    ) {}
+
     /**
      * Create a new laundry order from guest input
      */
@@ -158,6 +163,11 @@ class LaundryOrderService
                     'status' => $newStatus->value,
                 ]);
             }
+
+            if ($order->wasChanged('status') && $order->status === 'completed') {
+                $this->accountingService->handleCompleted($order);
+            }
+
 
             event(new LaundryOrderUpdated($order));
 

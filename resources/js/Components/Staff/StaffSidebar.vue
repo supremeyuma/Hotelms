@@ -30,7 +30,12 @@ import {
   ShieldCheck,
   FileEdit,
   Image as ImageIcon, // Aliased to avoid conflict with browser Image object
-  Settings
+  Settings,
+  FileText,
+  Calendar as CalendarIcon,
+  TrendingUp,
+  Lock,
+  AlertTriangle
 } from 'lucide-vue-next'
 
 // The keys here MUST match the 'icon' strings in the nav computed property below
@@ -61,6 +66,11 @@ const ICONS = {
   edit: FileEdit,
   image: ImageIcon,
   settings: Settings,
+  'file-text': FileText,
+  'calendar-icon': CalendarIcon,
+  'trending-up': TrendingUp,
+  lock: Lock,
+  'alert-triangle': AlertTriangle,
 }
 
 const page = usePage()
@@ -95,10 +105,15 @@ const nav = computed(() => {
           { label: 'Menu Recipes', route: 'admin.menu-recipes.index', icon: 'utensils' },
           { label: 'Maintenance', route: 'admin.maintenance.index', icon: 'wrench' },
           { label: 'Reports Dashboard', route: 'admin.reports.dashboard', icon: 'bar-chart' },
+          { label: 'Profit & Loss', route: 'admin.reports.profit-loss', icon: 'trending-up' },
+          { label: 'Balance Sheet', route: 'admin.reports.balance-sheet', icon: 'file-text' },
+          { label: 'Daily Revenue', route: 'admin.reports.daily-revenue', icon: 'dollar-sign' },
           { label: 'Staff Reports', route: 'admin.reports.staff', icon: 'user-check' },
           { label: 'Revenue Reports', route: 'admin.reports.revenue', icon: 'dollar-sign' },
           { label: 'Occupancy Reports', route: 'admin.reports.occupancy', icon: 'hotel' },
           { label: 'Inventory Reports', route: 'admin.reports.inventory', icon: 'archive' },
+          { label: 'Outstanding Balances', route: 'admin.outstanding-balances.index', icon: 'alert-triangle' },
+          { label: 'Accounting Periods', route: 'admin.accounting-periods.index', icon: 'lock' },
           { label: 'Audit Logs', route: 'admin.audit.index', icon: 'shield' },
           { label: 'Website Content', route: 'admin.website.content', icon: 'edit' },
           { label: 'Gallery', route: 'admin.website.gallery', icon: 'image' },

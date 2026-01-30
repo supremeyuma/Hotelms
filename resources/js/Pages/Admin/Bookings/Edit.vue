@@ -41,7 +41,6 @@ import { useForm } from '@inertiajs/vue3';
 import ManagerLayout from '@/Layouts/Staff/ManagerLayout.vue';
 import { FormLabel, TextInput, SelectInput, PrimaryButton } from '@/Components/Index';
 import { usePage } from '@inertiajs/vue3';
-import ManagerLayout from '@/Layouts/Staff/ManagerLayout.vue';
 
 const props = defineProps({
   booking: Object,

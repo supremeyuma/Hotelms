@@ -40,7 +40,6 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { useForm } from '@inertiajs/vue3'
-import ManagerLayout from '@/Layouts/Staff/ManagerLayout.vue'
 import TextInput from '@/Components/TextInput.vue'
 import Textarea from '@/Components/Textarea.vue'
 import InputError from '@/Components/InputError.vue'
