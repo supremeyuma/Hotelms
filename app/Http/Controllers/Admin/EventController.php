@@ -187,6 +187,31 @@ class EventController extends Controller
             }
         }
 
+        // Handle Existing Media Updates
+        if ($request->has('existing_media')) {
+            foreach ($request->existing_media as $mediaData) {
+                if (isset($mediaData['id'])) {
+                    $media = $event->promotionalMedia()->find($mediaData['id']);
+                    if ($media) {
+                        $updateData = [
+                            'title' => $mediaData['title'] ?? null,
+                            'description' => $mediaData['description'] ?? null,
+                            'is_main_image' => !empty($mediaData['is_main_image']),
+                        ];
+                        
+                        // If this media is set as main image, reset all others first
+                        if (!empty($mediaData['is_main_image'])) {
+                            EventPromotionalMedia::where('event_id', $event->id)
+                                ->where('id', '!=', $media->id)
+                                ->update(['is_main_image' => false]);
+                        }
+                        
+                        $media->update($updateData);
+                    }
+                }
+            }
+        }
+
         // Handle New Media
         if ($request->has('media')) {
             foreach ($request->media as $mediaData) {
