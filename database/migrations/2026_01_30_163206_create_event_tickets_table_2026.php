@@ -11,6 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // If the table already exists, skip (prevents duplicate-index/column errors)
+        if (Schema::hasTable('event_tickets')) {
+            return;
+        }
+
         Schema::create('event_tickets', function (Blueprint $table) {
             $table->id();
             $table->foreignId('event_id')->constrained()->onDelete('cascade');

@@ -129,7 +129,8 @@
 
 <script setup>
 import ManagerLayout from '@/Layouts/Staff/ManagerLayout.vue'
-import { useForm } from '@inertiajs/vue3'
+import { useForm, } from '@inertiajs/vue3'
+import { computed } from 'vue'
 
 const props = defineProps({
   revenue: Array,

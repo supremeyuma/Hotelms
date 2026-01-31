@@ -43,14 +43,15 @@ class PublicEventController extends Controller
 
     public function showTicketPurchase(Event $event)
     {
-        $event->load(['ticketTypes' => function ($query) {
-                    $query->where('is_active', true)
-                        ->where('is_on_sale', true)
-                        ->orderBy('price');
-                }]);
+        // Load the tickets and assign them to a variable
+        $tickets = $event->ticketTypes()
+            ->where('is_active', true)
+            ->orderBy('price')
+            ->get();
 
         return Inertia::render('Public/EventTicketPurchase', [
             'event' => $event,
+            'ticketTypes' => $tickets, // Now $tickets is defined
         ]);
     }
 
@@ -93,6 +94,10 @@ class PublicEventController extends Controller
             abort(404, 'This event does not support table reservations');
         }
 
+        $event->load(['tableTypes' => function ($query) {
+                    $query->orderBy('price');
+                }]);
+
         return Inertia::render('Public/EventTableReservation', [
             'event' => $event,
         ]);
@@ -103,27 +108,29 @@ class PublicEventController extends Controller
         $data = $request->validate([
             'guest_name' => 'required|string|max:255',
             'guest_email' => 'required|email|max:255',
-            'guest_phone' => 'nullable|string|max:20',
-            'number_of_guests' => 'required|integer|min:1|max:20',
-            'table_number' => 'nullable|string|max:10',
-            'special_requests' => 'nullable|string|max:1000',
-            'payment_method' => 'required|in:online,cash',
-            'notes' => 'nullable|string|max:1000',
+            'guest_phone' => 'required|string|max:20',
+            'table_type_id' => 'required|exists:event_table_types,id',
         ]);
+
+        // Verify table type belongs to this event
+        $tableType = \App\Models\EventTableType::where('id', $data['table_type_id'])
+            ->where('event_id', $event->id)
+            ->first();
+
+        if (!$tableType) {
+            return back()
+                ->with('error', 'Invalid table type selected')
+                ->withInput();
+        }
+
+        $data['payment_method'] = 'online'; // Force online payment only
+        $data['amount'] = $tableType->price;
 
         try {
             $reservation = $this->eventService->reserveTable($event, $data);
 
-            if ($data['payment_method'] === 'cash') {
-                // For cash payments, mark as confirmed
-                $this->eventService->confirmPayment($reservation->qr_code, 'cash', 'paid');
-                
-                return redirect()->route('events.reservation.success', ['reference' => $reservation->qr_code])
-                    ->with('success', 'Table reserved successfully!');
-            } else {
-                // For online payments, redirect to payment processor
-                return redirect()->route('events.payment.process', ['reference' => $reservation->qr_code]);
-            }
+            // Always redirect to payment processor for online payments
+            return redirect()->route('events.payment.process', ['reference' => $reservation->qr_code]);
 
         } catch (\Exception $e) {
             return back()

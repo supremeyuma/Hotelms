@@ -3,23 +3,27 @@ import ManagerLayout from '@/Layouts/Staff/ManagerLayout.vue'
 import { Link } from '@inertiajs/vue3'
 import { ref } from 'vue'
 
-defineProps({ events: Array })
+const props = defineProps({ events: Array })
+console.log(props.events);
 
 const searchQuery = ref('')
 const filterStatus = ref('all')
-const filterDate = ref('')
 
-const formatDate = (date) => {
-  return new Date(date).toLocaleDateString('en-US', {
+// Since the backend now sends 'start_datetime' as a formatted string "Y-m-d H:i"
+const formatDate = (dateTimeString) => {
+  if (!dateTimeString) return 'No Date Set'
+  const date = new Date(dateTimeString.replace(/-/g, "/")) // Better cross-browser parsing
+  return date.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
     day: 'numeric'
   })
 }
 
-const formatTime = (time) => {
-  if (!time) return 'TBD'
-  return new Date(`1970-01-01T${time}`).toLocaleTimeString('en-US', {
+const formatTime = (dateTimeString) => {
+  if (!dateTimeString) return 'TBD'
+  const date = new Date(dateTimeString.replace(/-/g, "/"))
+  return date.toLocaleTimeString('en-US', {
     hour: 'numeric',
     minute: '2-digit',
     hour12: true
@@ -35,7 +39,8 @@ const formatCurrency = (amount) => {
 
 const getEventStatus = (event) => {
   const now = new Date()
-  const eventDate = new Date(event.event_date)
+  // Use start_datetime instead of event_date
+  const eventDate = new Date(event.start_datetime?.replace(/-/g, "/"))
   
   if (!event.is_active) return { text: 'Inactive', color: 'bg-gray-500' }
   if (event.status === 'cancelled') return { text: 'Cancelled', color: 'bg-red-500' }
@@ -45,44 +50,41 @@ const getEventStatus = (event) => {
 }
 
 const getMainImage = (event) => {
-  if (event.image) {
-    return `/storage/${event.image}`
-  }
+  // 1. Look for a record marked as 'is_main_image'
+  const mainMedia = event.promotional_media?.find(m => m.is_main_image === 1 || m.is_main_image === true)
   
-  const mainMedia = event.promotional_media?.find(media => media.is_main_image)
   if (mainMedia) {
     return `/storage/${mainMedia.media_url}`
   }
   
-  const firstImage = event.promotional_media?.find(media => media.media_type === 'image')
+  // 2. Fallback: If no main image is set, just take the first image found in the collection
+  const firstImage = event.promotional_media?.find(m => m.media_type === 'image')
+  
   if (firstImage) {
     return `/storage/${firstImage.media_url}`
   }
   
+  // 3. Last Resort: Placeholder
   return 'https://via.placeholder.com/400x250?text=' + encodeURIComponent(event.title)
 }
 
-const filteredEvents = (events) => {
-  let filtered = [...events]
+const filteredEvents = () => {
+  let filtered = [...props.events]
   
-  // Search filter
   if (searchQuery.value) {
     filtered = filtered.filter(event => 
-      event.title.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      event.description?.toLowerCase().includes(searchQuery.value.toLowerCase())
+      event.title.toLowerCase().includes(searchQuery.value.toLowerCase())
     )
   }
   
-  // Status filter
   if (filterStatus.value !== 'all') {
-    const status = getEventStatus({ status: filterStatus.value }).text.toLowerCase()
     filtered = filtered.filter(event => 
-      getEventStatus(event).text.toLowerCase() === status
+      getEventStatus(event).text.toLowerCase() === filterStatus.value.toLowerCase()
     )
   }
   
-  // Sort by date (upcoming first)
-  filtered.sort((a, b) => new Date(a.event_date) - new Date(b.event_date))
+  // Sort by the new start_datetime
+  filtered.sort((a, b) => new Date(a.start_datetime) - new Date(b.start_datetime))
   
   return filtered
 }
@@ -172,14 +174,14 @@ const filteredEvents = (events) => {
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
-                {{ formatDate(event.event_date) }}
+                {{ formatDate(event.start_datetime) }}
               </div>
               
               <div class="flex items-center text-sm text-slate-600">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                {{ formatTime(event.start_time) }}
+                {{ formatTime(event.start_datetime) }}
               </div>
               
               <div v-if="event.venue" class="flex items-center text-sm text-slate-600">

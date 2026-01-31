@@ -1,15 +1,28 @@
 <script setup>
 import ManagerLayout from '@/Layouts/Staff/ManagerLayout.vue'
 import { useForm, Link } from '@inertiajs/vue3'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
+
+// Helper to format any date/time string for the datetime-local input
+const formatForDateTimeInput = (dateTimeString) => {
+  if (!dateTimeString) return ''
+  const date = new Date(dateTimeString)
+  if (isNaN(date.getTime())) return ''
+  
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  
+  return `${year}-${month}-${day}T${hours}:${minutes}`
+}
 
 const form = useForm({
   title: '',
   description: '',
-  event_date: '',
-  start_time: '',
-  end_date: '',
-  end_time: '',
+  start_datetime: '',
+  end_datetime: '',
   venue: '',
   capacity: '',
   is_active: true,
@@ -29,8 +42,6 @@ const form = useForm({
       price: 0,
       quantity_available: 100,
       max_per_person: 10,
-      sales_start: '',
-      sales_end: '',
       color_code: '#3B82F6'
     }
   ],
@@ -39,10 +50,7 @@ const form = useForm({
       name: '',
       description: '',
       price: 0,
-      capacity: 10,
-      sales_start: '',
-      sales_end: '',
-      color_code: '#3B82F6'
+      capacity: 10
     }
   ]
 })
@@ -102,9 +110,7 @@ const addTicketType = () => {
     price: 0,
     quantity_available: 100,
     max_per_person: 10,
-    sales_start: '',
-    sales_end: '',
-    color_code: '#' + Math.floor(Math.random()*16777215).toString(16)
+    color_code: '#3B82F6'
   })
 }
 
@@ -120,27 +126,7 @@ const addTableType = () => {
     description: '',
     price: 0,
     capacity: 10,
-    sales_start: '',
-    sales_end: '',
-    color_code: '#' + Math.floor(Math.random()*16777215).toString(16)
-  })
-}
-
-const removeTableType = (index) => {
-  if (form.table_types.length > 1) {
-    form.table_types.splice(index, 1)
-  }
-}
-
-const addTableType = () => {
-  form.table_types.push({
-    name: '',
-    description: '',
-    price: 0,
-    capacity: 10,
-    sales_start: '',
-    sales_end: '',
-    color_code: '#' + Math.floor(Math.random()*16777215).toString(16)
+    color_code: '#3B82F6'
   })
 }
 
@@ -151,54 +137,57 @@ const removeTableType = (index) => {
 }
 
 const submit = () => {
-  // Convert media files to form data
-  const formData = new FormData()
-  
-  // Combine end_date and end_time for backend compatibility
-  if (form.end_date && form.end_time) {
-    formData.append('end_time', new Date(`${form.end_date}T${form.end_time}`).toISOString())
-  } else if (form.end_time) {
-    // If only end_time is provided, assume same day as event_date
-    formData.append('end_time', new Date(`${form.event_date}T${form.end_time}`).toISOString())
-  }
-  
-  // Add all form fields
-  Object.keys(form.data()).forEach(key => {
-    if (key !== 'promotional_media' && key !== 'ticket_types' && key !== 'image' && key !== 'end_date' && key !== 'end_time') {
-      formData.append(key, form[key])
-    }
-  })
+  // 1. Prepare media arrays
+  form.promotional_media = mediaFiles.value.map(m => ({
+    file: m.file,
+    media_type: m.media_type,
+    title: m.title,
+    description: m.description,
+    is_main_image: m.is_main_image
+  }))
 
-  // Add image if exists
-  if (form.image) {
-    formData.append('image', form.image)
+  // 2. Handle Table Reservations Logic
+  let processedTableTypes = []
+  if (form.has_table_reservations) {
+    processedTableTypes = form.table_types.filter(t => t.name && t.name.trim() !== '')
   }
 
-  // Add promotional media
-  mediaFiles.value.forEach((media, index) => {
-    formData.append(`media[${index}][file]`, media.file)
-    formData.append(`media[${index}][media_type]`, media.media_type)
-    formData.append(`media[${index}][title]`, media.title)
-    formData.append(`media[${index}][description]`, media.description)
-    if (media.is_main_image) {
-      formData.append(`media[${index}][is_main_image]`, true)
+  // 3. POST with transformed data
+  form.transform((data) => ({
+    ...data,
+    table_types: processedTableTypes, // Send filtered tables
+  })).post('/admin/events', {
+    forceFormData: true,
+    preserveScroll: true,
+    onError: (errors) => {
+        console.error("Validation Errors:", errors);
     }
-  })
-
-  // Add ticket types
-  form.ticket_types.forEach((ticket, index) => {
-    Object.keys(ticket).forEach(key => {
-      formData.append(`ticket_types[${index}][${key}]`, ticket[key])
-    })
-  })
-
-  form.post('/admin/events', {
-    forceFormData: true
   })
 }
 
+const isDateSequenceValid = computed(() => {
+  if (!form.start_datetime || !form.end_datetime) return true
+  return new Date(form.start_datetime) < new Date(form.end_datetime)
+})
+
 const isFormValid = computed(() => {
-  return form.title && form.event_date && form.description
+  return (
+    form.title && 
+    form.description && 
+    form.start_datetime && 
+    form.end_datetime &&
+    isDateSequenceValid.value
+  )
+})
+
+// Update main image when it changes
+watch(mainImageIndex, (newIndex) => {
+  const totalMedia = mediaFiles.value.length
+  if (newIndex < totalMedia) {
+    mediaFiles.value.forEach((media, i) => {
+      media.is_main_image = i === newIndex
+    })
+  }
 })
 </script>
 
@@ -245,18 +234,6 @@ const isFormValid = computed(() => {
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-slate-700 mb-2">Event Date *</label>
-              <input 
-                v-model="form.event_date" 
-                type="date" 
-                class="input w-full"
-                :min="new Date().toISOString().split('T')[0]"
-                required
-              />
-              <p v-if="form.errors.event_date" class="text-red-500 text-sm mt-1">{{ form.errors.event_date }}</p>
-            </div>
-
-            <div>
               <label class="block text-sm font-medium text-slate-700 mb-2">Venue</label>
               <input 
                 v-model="form.venue" 
@@ -266,36 +243,29 @@ const isFormValid = computed(() => {
               />
               <p v-if="form.errors.venue" class="text-red-500 text-sm mt-1">{{ form.errors.venue }}</p>
             </div>
-
+            
             <div>
-              <label class="block text-sm font-medium text-slate-700 mb-2">Start Time</label>
+              <label class="block text-sm font-medium text-slate-700 mb-2">Event Starts *</label>
               <input 
-                v-model="form.start_time" 
-                type="time" 
+                v-model="form.start_datetime" 
+                type="datetime-local" 
                 class="input w-full"
+                :min="formatForDateTimeInput(new Date())"
+                required
               />
-              <p v-if="form.errors.start_time" class="text-red-500 text-sm mt-1">{{ form.errors.start_time }}</p>
+              <p v-if="form.errors.start_datetime" class="text-red-500 text-sm mt-1">{{ form.errors.start_datetime }}</p>
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-slate-700 mb-2">End Date</label>
+              <label class="block text-sm font-medium text-slate-700 mb-2">Event Ends *</label>
               <input 
-                v-model="form.end_date" 
-                type="date" 
+                v-model="form.end_datetime" 
+                type="datetime-local" 
                 class="input w-full"
-                :min="form.event_date"
+                :min="form.start_datetime || formatForDateTimeInput(new Date())"
+                required
               />
-              <p v-if="form.errors.end_date" class="text-red-500 text-sm mt-1">{{ form.errors.end_date }}</p>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-2">End Time</label>
-              <input 
-                v-model="form.end_time" 
-                type="time" 
-                class="input w-full"
-              />
-              <p v-if="form.errors.end_time" class="text-red-500 text-sm mt-1">{{ form.errors.end_time }}</p>
+              <p v-if="form.errors.end_datetime" class="text-red-500 text-sm mt-1">{{ form.errors.end_datetime }}</p>
             </div>
 
             <div>
@@ -555,24 +525,6 @@ const isFormValid = computed(() => {
                 </div>
 
                 <div>
-                  <label class="block text-sm font-medium text-slate-700 mb-2">Sales Start</label>
-                  <input 
-                    v-model="ticket.sales_start" 
-                    type="date" 
-                    class="input w-full"
-                  />
-                </div>
-                
-                <div>
-                  <label class="block text-sm font-medium text-slate-700 mb-2">Sales End</label>
-                  <input 
-                    v-model="ticket.sales_end" 
-                    type="date" 
-                    class="input w-full"
-                  />
-                </div>
-
-                <div>
                   <label class="block text-sm font-medium text-slate-700 mb-2">Color Code</label>
                   <input 
                     v-model="ticket.color_code" 
@@ -599,32 +551,7 @@ const isFormValid = computed(() => {
               <span class="ml-2 text-sm font-medium text-slate-700">Enable Table Reservations</span>
             </label>
 
-            <div v-if="form.has_table_reservations" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label class="block text-sm font-medium text-slate-700 mb-2">Table Capacity</label>
-                <input 
-                  v-model.number="form.table_capacity" 
-                  type="number" 
-                  min="1"
-                  class="input w-full"
-                  placeholder="Number of tables available"
-                />
-                <p v-if="form.errors.table_capacity" class="text-red-500 text-sm mt-1">{{ form.errors.table_capacity }}</p>
-              </div>
 
-              <div>
-                <label class="block text-sm font-medium text-slate-700 mb-2">Table Price (₦)</label>
-                <input 
-                  v-model.number="form.table_price" 
-                  type="number" 
-                  min="0" 
-                  step="0.01"
-                  class="input w-full"
-                  placeholder="0.00"
-                />
-                <p v-if="form.errors.table_price" class="text-red-500 text-sm mt-1">{{ form.errors.table_price }}</p>
-              </div>
-            </div>
           </div>
         </section>
 
@@ -658,49 +585,49 @@ const isFormValid = computed(() => {
                   Remove
                 </button>
               </div>
-            </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-slate-700 mb-2">Name *</label>
-                <input 
-                  v-model="tableType.name" 
-                  type="text" 
-                  class="input w-full"
-                  placeholder="e.g., VIP Table, Premium Booth"
-                />
-              </div>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-2">Name *</label>
+                  <input 
+                    v-model="tableType.name" 
+                    type="text" 
+                    class="input w-full"
+                    placeholder="e.g., VIP Table, Premium Booth"
+                  />
+                </div>
 
-              <div>
-                <label class="block text-sm font-medium text-slate-700 mb-2">Description</label>
-                <textarea 
-                  v-model="tableType.description" 
-                  class="input w-full h-20 resize-none"
-                  placeholder="Describe this table type..."
-                ></textarea>
-              </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-2">Description</label>
+                  <textarea 
+                    v-model="tableType.description" 
+                    class="input w-full h-20 resize-none"
+                    placeholder="Describe this table type..."
+                  ></textarea>
+                </div>
 
-              <div>
-                <label class="block text-sm font-medium text-slate-700 mb-2">Price (₦) *</label>
-                <input 
-                  v-model.number="tableType.price" 
-                  type="number" 
-                  min="0" 
-                  step="0.01"
-                  class="input w-full"
-                  placeholder="0.00"
-                />
-              </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-2">Price (₦) *</label>
+                  <input 
+                    v-model.number="tableType.price" 
+                    type="number" 
+                    min="0" 
+                    step="0.01"
+                    class="input w-full"
+                    placeholder="0.00"
+                  />
+                </div>
 
-              <div>
-                <label class="block text-sm font-medium text-slate-700 mb-2">Capacity *</label>
-                <input 
-                  v-model.number="tableType.capacity" 
-                  type="number" 
-                  min="1"
-                  class="input w-full"
-                  placeholder="Number of seats"
-                />
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-2">Capacity *</label>
+                  <input 
+                    v-model.number="tableType.capacity" 
+                    type="number" 
+                    min="1"
+                    class="input w-full"
+                    placeholder="Number of seats"
+                  />
+                </div>
               </div>
             </div>
           </div>

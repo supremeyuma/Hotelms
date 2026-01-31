@@ -7,6 +7,11 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
+        // If the table already exists (created by an earlier migration), skip
+        if (Schema::hasTable('maintenance_tickets')) {
+            return;
+        }
+
         Schema::create('maintenance_tickets', function (Blueprint $table) {
             $table->id();
             $table->foreignId('booking_id')->constrained()->cascadeOnDelete();

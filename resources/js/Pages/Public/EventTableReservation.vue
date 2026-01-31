@@ -1,5 +1,6 @@
 <template>
-  <div class="min-h-screen bg-gray-50 py-12">
+  <PublicLayout>
+    <div class="py-12">
     <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
       <div class="bg-white rounded-lg shadow-md overflow-hidden">
         <!-- Event Header -->
@@ -42,88 +43,70 @@
                 </div>
                 
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
-                  <input v-model="form.guest_phone" type="tel"
+                  <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number *</label>
+                  <input v-model="form.guest_phone" type="tel" required
                          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
                 </div>
                 
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Number of Guests *</label>
-                  <input v-model="form.number_of_guests" type="number" :min="1" :max="10" required
-                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                </div>
-                
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Preferred Table Number</label>
-                  <input v-model="form.table_number" type="text" placeholder="e.g., Table 1"
-                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                </div>
-              </div>
-
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Special Requests</label>
-                <textarea v-model="form.special_requests" rows="3" placeholder="Any special dietary or seating requirements?"
-                          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></textarea>
-              </div>
-
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Payment Method *</label>
-                  <select v-model="form.payment_method" required
+                  <label class="block text-sm font-medium text-gray-700 mb-2">Table Type *</label>
+                  <select v-model="form.table_type_id" required
                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                    <option value="online">Pay Online</option>
-                    <option value="cash">Pay at Venue</option>
+                    <option value="">Select a table type</option>
+                    <option v-for="tableType in event.table_types" :key="tableType.id" :value="tableType.id">
+                      {{ tableType.name }} - ₦{{ formatNumber(tableType.price) }} 
+                      <span v-if="tableType.capacity">({{ tableType.capacity }} guests)</span>
+                    </option>
                   </select>
-                </div>
-                
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Additional Notes</label>
-                  <textarea v-model="form.notes" rows="2" placeholder="Any additional information?"
-                          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></textarea>
                 </div>
               </div>
 
               <!-- Price Summary -->
-              <div class="bg-gray-50 p-4 rounded-lg">
+              <div class="bg-gray-50 p-4 rounded-lg" v-if="selectedTableType">
                 <h4 class="text-lg font-semibold text-gray-900 mb-4">Reservation Summary</h4>
                 <div class="space-y-2">
                   <div class="flex justify-between">
-                    <span class="text-gray-600">Table Price:</span>
-                    <span class="font-medium text-gray-900">₦{{ formatNumber(event.table_price) }}</span>
+                    <span class="text-gray-600">Table Type:</span>
+                    <span class="font-medium text-gray-900">{{ selectedTableType.name }}</span>
                   </div>
                   <div class="flex justify-between">
-                    <span class="text-gray-600">Number of Guests:</span>
-                    <span class="font-medium text-gray-900">{{ form.number_of_guests }}</span>
+                    <span class="text-gray-600">Price:</span>
+                    <span class="font-medium text-gray-900">₦{{ formatNumber(selectedTableType.price) }}</span>
+                  </div>
+                  <div v-if="selectedTableType.capacity" class="flex justify-between">
+                    <span class="text-gray-600">Capacity:</span>
+                    <span class="font-medium text-gray-900">{{ selectedTableType.capacity }} guests</span>
                   </div>
                   <div class="flex justify-between text-lg font-bold text-gray-900 pt-2 border-t">
                     <span>Total:</span>
-                    <span>₦{{ formatNumber(event.table_price * form.number_of_guests) }}</span>
+                    <span>₦{{ formatNumber(selectedTableType.price) }}</span>
                   </div>
                 </div>
               </div>
 
-              <button type="submit" :disabled="processing"
+              <button type="submit" :disabled="processing || !selectedTableType"
                       class="w-full flex items-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
                 <svg v-if="!processing" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7m-7 4V3m7 4v4m0-4h18m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                 </svg>
                 <svg v-else class="w-5 h-5 mr-2 animate-spin" fill="none" viewBox="0 0 24 24">
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V8C4 5.79 5.79 4 8h13C19.79 4 21 5.79 21 8v13a8 8 0 01-8 8H4z"></path>
                 </svg>
-                {{ processing ? 'Processing...' : 'Reserve Table' }}
+                {{ processing ? 'Processing...' : 'Pay Online & Reserve Table' }}
               </button>
             </form>
           </div>
         </div>
       </div>
     </div>
-  </div>
+  </PublicLayout>
 </template>
 
 <script setup>
 import { router } from '@inertiajs/vue3'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import PublicLayout from '@/Layouts/PublicLayout.vue'
 
 const props = defineProps({
   event: Object,
@@ -135,10 +118,12 @@ const form = ref({
   guest_name: '',
   guest_email: '',
   guest_phone: '',
-  number_of_guests: 1,
-  table_number: '',
-  special_requests: '',
-  payment_method: 'online',
+  table_type_id: '',
+})
+
+const selectedTableType = computed(() => {
+  if (!form.value.table_type_id || !props.event.table_types) return null
+  return props.event.table_types.find(type => type.id === form.value.table_type_id)
 })
 
 const submitReservation = () => {

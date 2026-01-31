@@ -9,6 +9,8 @@ const props = defineProps({
   qr_code: String
 })
 
+console.log(props.event)
+
 const deleteForm = useForm({})
 const showDeleteModal = ref(false)
 const activeTab = ref('overview')
@@ -38,7 +40,7 @@ const formatDate = (date) => {
 
 const formatTime = (time) => {
   if (!time) return 'Not set'
-  return new Date(`1970-01-01T${time}`).toLocaleTimeString('en-US', {
+  return new Date(time).toLocaleTimeString('en-US', {
     hour: 'numeric',
     minute: '2-digit',
     hour12: true
@@ -298,19 +300,32 @@ const getMainImage = () => {
               <p class="text-sm">Create ticket types to start selling tickets</p>
             </div>
           </section>
-
-          <!-- Table Reservations -->
-          <section v-if="event.has_table_reservations" class="bg-white rounded-lg border border-slate-200 p-6">
+          
+          <section class="bg-white rounded-lg border border-slate-200 p-6">
             <h2 class="text-xl font-semibold text-slate-900 mb-4">Table Reservations</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h3 class="text-sm font-medium text-slate-500 mb-1">Table Capacity</h3>
-                <p class="text-slate-900">{{ event.table_capacity }} tables</p>
+            <div v-if="event.table_types && event.table_types.length > 0" class="space-y-4">
+              <div 
+                v-for="table in event.table_types" 
+                :key="table.id"
+                class="border border-slate-200 rounded-lg p-4"
+              >
+                <div class="flex items-center justify-between">
+                  <div>
+                    <h3 class="font-medium text-slate-900">{{ table.name }}</h3>
+                    <p class="text-sm text-slate-600">{{ table.description }}</p>
+                  </div>
+                  <div class="text-right">
+                    <p class="text-lg font-bold text-slate-900">{{ formatCurrency(table.price) }}</p>
+                    <p class="text-sm text-slate-600">{{ table.quantity_available }} available</p>
+                  </div>
+                </div>
               </div>
-              <div>
-                <h3 class="text-sm font-medium text-slate-500 mb-1">Price per Table</h3>
-                <p class="text-slate-900">{{ formatCurrency(event.table_price) }}</p>
-              </div>
+            </div>
+            
+            <div v-else class="text-center py-12 text-slate-400">
+              <div class="text-6xl mb-4">🎫</div>
+              <p class="text-lg font-medium mb-2">No table types configured</p>
+              <p class="text-sm">Create table types to start selling tables</p>
             </div>
           </section>
         </div>

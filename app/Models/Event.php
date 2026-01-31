@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Carbon\Carbon;
+use App\Models\EventTableType;
 
 class Event extends Model
 {
@@ -15,8 +16,8 @@ class Event extends Model
         'title',
         'description', 
         'event_date',
-        'start_time',
-        'end_time',
+        'start_datetime',
+        'end_datetime',
         'image',
         'is_active',
         'is_featured',
@@ -34,8 +35,8 @@ class Event extends Model
 
     protected $casts = [
         'event_date' => 'date',
-        'start_time' => 'datetime',
-        'end_time' => 'datetime',
+        'start_datetime' => 'datetime',
+        'end_datetime' => 'datetime',
         'ticket_sales_start' => 'datetime',
         'ticket_sales_end' => 'datetime',
         'is_active' => 'boolean',
@@ -64,6 +65,11 @@ class Event extends Model
     public function promotionalMedia()
     {
         return $this->hasMany(EventPromotionalMedia::class);
+    }
+
+    public function tableTypes()
+    {
+        return $this->hasMany(EventTableType::class);
     }
 
     public function getFormattedDateAttribute()

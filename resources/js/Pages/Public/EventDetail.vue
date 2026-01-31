@@ -1,6 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <!-- Event Hero -->
+  <PublicLayout>
     <div class="relative">
       <img v-if="event.image" :src="'/storage/' + event.image" 
            :alt="event.title" class="w-full h-96 object-cover">
@@ -9,18 +8,19 @@
       <div class="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
         <div class="text-center text-white px-4">
           <h1 class="text-4xl md:text-5xl font-extrabold mb-4">{{ event.title }}</h1>
+          
           <div class="flex flex-col md:flex-row md:space-x-8 justify-center text-lg">
             <div class="flex items-center">
               <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
-              {{ formatEventDateTime(event).date }}
+              <span>{{ eventTiming.dateLabel }}</span>
             </div>
             <div class="flex items-center">
               <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 00-9-9v9m0-6v3m0-6h6m-9 6v6m0-6h9" />
               </svg>
-              {{ formatEventDateTime(event).time }}
+              <span>{{ eventTiming.timeLabel }}</span>
             </div>
             <div v-if="event.venue" class="flex items-center">
               <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -60,27 +60,28 @@
           <!-- Promotional Media -->
           <div v-if="event.promotional_media && event.promotional_media.length > 0" class="bg-white rounded-lg shadow-md p-8">
             <h2 class="text-2xl font-bold text-gray-900 mb-6">Event Gallery</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div v-for="media in event.promotional_media" :key="media.id" class="relative group">
-                <div v-if="media.is_image">
-                  <img :src="'/storage/' + media.media_url" 
-                       :alt="media.title" 
-                       class="w-full h-48 object-cover rounded-lg">
-                </div>
-                <div v-else class="relative">
-                  <video :src="'/storage/' + media.media_url" 
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div v-for="media in event.promotional_media" :key="media.id" class="flex flex-col">
+                <div class="relative overflow-hidden rounded-lg bg-gray-100 aspect-video">
+                  
+                  <template v-if="media.media_type === 'image' || isImageFile(media.media_url)">
+                    <img :src="'/storage/' + media.media_url" 
+                        :alt="media.title" 
+                        class="w-full h-full object-cover transition-transform duration-300 hover:scale-105">
+                  </template>
+
+                  <template v-else-if="media.media_type === 'video' || isVideoFile(media.media_url)">
+                    <video :src="'/storage/' + media.media_url" 
                           controls
-                          class="w-full h-48 object-cover rounded-lg">
-                  </video>
-                  <div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 rounded-lg">
-                    <svg class="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M10 18a8 8 0 100-16 9.732 4H7.268A8 8 0 006 18v2h4v-2z"/>
-                    </svg>
-                  </div>
+                          class="w-full h-full object-cover">
+                    </video>
+                  </template>
+
                 </div>
+                
                 <div v-if="media.title || media.description" class="mt-3">
-                  <h3 v-if="media.title" class="text-lg font-semibold text-gray-900">{{ media.title }}</h3>
-                  <p v-if="media.description" class="text-sm text-gray-600">{{ media.description }}</p>
+                  <h3 v-if="media.title" class="text-lg font-semibold text-gray-900 leading-tight">{{ media.title }}</h3>
+                  <p v-if="media.description" class="text-sm text-gray-600 mt-1">{{ media.description }}</p>
                 </div>
               </div>
             </div>
@@ -154,61 +155,79 @@
         </div>
       </div>
     </div>
-  </div>
+  </PublicLayout>
 </template>
 
 <script setup>
-import { Link } from '@inertiajs/vue3'
+ import { computed } from 'vue' // Import computed
+ import { Link } from '@inertiajs/vue3'
+ import PublicLayout from '@/Layouts/PublicLayout.vue'
 
 const props = defineProps({
   event: Object,
   qr_code: String,
 })
 
+const isImageFile = (url) => {
+  if (!url) return false;
+  const extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
+  return extensions.some(ext => url.toLowerCase().endsWith(ext));
+}
+
+const isVideoFile = (url) => {
+  if (!url) return false;
+  const extensions = ['mp4', 'mov', 'avi', 'wmv', 'webm'];
+  return extensions.some(ext => url.toLowerCase().endsWith(ext));
+}
+
 const formatNumber = (num) => {
   return new Intl.NumberFormat('en-NG').format(num)
 }
 
-// Helper functions for improved date/time formatting
-const formatEventDateTime = (event) => {
-  if (!event.start_time || !event.end_time) {
+/**
+ * Modern Date/Time Formatter
+ * Uses the new start_datetime and end_datetime fields
+ */
+const eventTiming = computed(() => {
+  if (!props.event.start_datetime) {
+    return { dateLabel: 'Date TBD', timeLabel: 'Time TBD' }
+  }
+
+  const start = new Date(props.event.start_datetime)
+  const end = props.event.end_datetime ? new Date(props.event.end_datetime) : null
+  
+  // Formatters
+  const fullDate = (d) => d.toLocaleDateString('en-US', { 
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+  })
+  const shortDate = (d) => d.toLocaleDateString('en-US', { 
+    month: 'short', day: 'numeric' 
+  })
+  const timeOnly = (d) => d.toLocaleTimeString('en-US', { 
+    hour: 'numeric', minute: '2-digit', hour12: true 
+  })
+
+  // Case 1: No end time provided
+  if (!end) {
     return {
-      date: event.formatted_date || 'Date TBD',
-      time: 'Time TBD'
+      dateLabel: fullDate(start),
+      timeLabel: `Starts at ${timeOnly(start)}`
     }
   }
 
-  const startDate = new Date(event.start_time)
-  const endDate = new Date(event.end_time)
-  
-  // Check if it's a cross-day event
-  const isCrossDay = startDate.toDateString() !== endDate.toDateString()
-  
-  if (isCrossDay) {
+  // Case 2: Multi-day event
+  const isMultiDay = start.toDateString() !== end.toDateString()
+  if (isMultiDay) {
     return {
-      date: event.formatted_date,
-      time: `${formatTime(startDate)} – ${formatMonthDay(endDate)} • ${formatTime(endDate)}`
-    }
-  } else {
-    return {
-      date: event.formatted_date,
-      time: `${formatTime(startDate)} – ${formatTime(endDate)}`
+      dateLabel: `${shortDate(start)} – ${shortDate(end)}`,
+      timeLabel: `${timeOnly(start)} (Start) to ${timeOnly(end)} (End)`
     }
   }
-}
 
-const formatTime = (date) => {
-  return date.toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true
-  })
-}
-
-const formatMonthDay = (date) => {
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric'
-  })
-}
+  // Case 3: Standard single-day event
+  return {
+    dateLabel: fullDate(start),
+    timeLabel: `${timeOnly(start)} – ${timeOnly(end)}`
+  }
+})
 </script>

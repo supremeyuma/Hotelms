@@ -32,8 +32,8 @@ class EventService
             // Validate ticket availability
             $ticketType = EventTicketType::findOrFail($data['ticket_type_id']);
             
-            if (!$ticketType->is_on_sale) {
-                throw new \Exception('This ticket type is not currently available');
+            if (!$ticketType->is_active) {
+                throw new \Exception('This ticket type is no longer active');
             }
 
             if ($ticketType->available_quantity < $data['quantity']) {
@@ -91,22 +91,20 @@ class EventService
                 throw new \Exception('This event does not support table reservations');
             }
 
-            // Check table availability (simplified - in real app, you'd check specific table availability)
-            $existingReservations = EventTableReservation::where('event_id', $event->id)
-                ->where('status', '!=', 'cancelled')
-                ->sum('number_of_guests');
+            // Get table type
+            $tableType = \App\Models\EventTableType::where('id', $data['table_type_id'])
+                ->where('event_id', $event->id)
+                ->first();
 
-            $totalGuests = $existingReservations + $data['number_of_guests'];
-            
-            if ($totalGuests > ($event->table_capacity ?? 100)) {
-                throw new \Exception('Not enough table capacity available');
+            if (!$tableType) {
+                throw new \Exception('Invalid table type selected');
             }
 
             // Generate unique QR code
             $qrCode = $this->generateQRCode();
 
-            // Calculate amount
-            $totalAmount = $event->table_price * $data['number_of_guests'];
+            // Use provided amount or table type price
+            $totalAmount = $data['amount'] ?? $tableType->price;
 
             // Create reservation
             $reservation = EventTableReservation::create([
@@ -114,16 +112,16 @@ class EventService
                 'guest_name' => $data['guest_name'],
                 'guest_email' => $data['guest_email'],
                 'guest_phone' => $data['guest_phone'] ?? null,
-                'table_number' => $data['table_number'] ?? 'TBD',
-                'number_of_guests' => $data['number_of_guests'],
+                'table_number' => $tableType->name,
+                'number_of_guests' => $tableType->capacity ?? 1,
                 'amount_paid' => $totalAmount,
                 'payment_method' => $data['payment_method'] ?? 'online',
                 'payment_reference' => $data['payment_reference'] ?? null,
                 'payment_status' => 'pending',
                 'status' => 'pending',
                 'qr_code' => $qrCode,
-                'special_requests' => $data['special_requests'] ?? null,
-                'notes' => $data['notes'] ?? null,
+                'special_requests' => 'Table Type: ' . $tableType->name,
+                'notes' => 'Price: ₦' . number_format($tableType->price, 2),
             ]);
 
             return $reservation;
