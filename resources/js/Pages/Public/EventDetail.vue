@@ -14,13 +14,13 @@
               <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
-              {{ event.formatted_date }}
+              {{ formatEventDateTime(event).date }}
             </div>
             <div class="flex items-center">
               <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 00-9-9v9m0-6v3m0-6h6m-9 6v6m0-6h9" />
               </svg>
-              {{ event.start_time }} - {{ event.end_time }}
+              {{ formatEventDateTime(event).time }}
             </div>
             <div v-if="event.venue" class="flex items-center">
               <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -167,5 +167,48 @@ const props = defineProps({
 
 const formatNumber = (num) => {
   return new Intl.NumberFormat('en-NG').format(num)
+}
+
+// Helper functions for improved date/time formatting
+const formatEventDateTime = (event) => {
+  if (!event.start_time || !event.end_time) {
+    return {
+      date: event.formatted_date || 'Date TBD',
+      time: 'Time TBD'
+    }
+  }
+
+  const startDate = new Date(event.start_time)
+  const endDate = new Date(event.end_time)
+  
+  // Check if it's a cross-day event
+  const isCrossDay = startDate.toDateString() !== endDate.toDateString()
+  
+  if (isCrossDay) {
+    return {
+      date: event.formatted_date,
+      time: `${formatTime(startDate)} – ${formatMonthDay(endDate)} • ${formatTime(endDate)}`
+    }
+  } else {
+    return {
+      date: event.formatted_date,
+      time: `${formatTime(startDate)} – ${formatTime(endDate)}`
+    }
+  }
+}
+
+const formatTime = (date) => {
+  return date.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  })
+}
+
+const formatMonthDay = (date) => {
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric'
+  })
 }
 </script>

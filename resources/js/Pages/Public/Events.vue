@@ -1,5 +1,7 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <PublicLayout>
+    <Head title="Events | MooreLife Resort" />
+    <div class="min-h-screen bg-gray-50">
     <!-- Hero Section -->
     <div class="bg-gradient-to-r from-purple-900 to-indigo-900 text-white">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
@@ -42,8 +44,8 @@
               <div class="flex items-center justify-between mb-4">
                 <h3 class="text-xl font-bold text-gray-900">{{ event.title }}</h3>
                 <div class="text-sm text-gray-600">
-                  <div>{{ event.formatted_date }}</div>
-                  <div>{{ event.start_time }} - {{ event.end_time }}</div>
+                  <div>{{ formatEventDateTime(event).date }}</div>
+                  <div>{{ formatEventDateTime(event).time }}</div>
                 </div>
               </div>
               
@@ -93,7 +95,8 @@
               <div class="flex items-center justify-between mb-4">
                 <h3 class="text-lg font-bold text-gray-900">{{ event.title }}</h3>
                 <div class="text-sm text-gray-600">
-                  <div>{{ event.formatted_date }}</div>
+                  <div>{{ formatEventDateTime(event).date }}</div>
+                  <div>{{ formatEventDateTime(event).time }}</div>
                 </div>
               </div>
               
@@ -132,11 +135,57 @@
         </div>
       </div>
     </div>
-  </div>
+    </div>
+  </PublicLayout>
 </template>
 
 <script setup>
 import { Link } from '@inertiajs/vue3'
+import PublicLayout from '@/Layouts/PublicLayout.vue'
+import { Head } from '@inertiajs/vue3'
+
+// Helper functions for improved date/time formatting
+const formatEventDateTime = (event) => {
+  if (!event.start_time || !event.end_time) {
+    return {
+      date: event.formatted_date || 'Date TBD',
+      time: 'Time TBD'
+    }
+  }
+
+  const startDate = new Date(event.start_time)
+  const endDate = new Date(event.end_time)
+  
+  // Check if it's a cross-day event
+  const isCrossDay = startDate.toDateString() !== endDate.toDateString()
+  
+  if (isCrossDay) {
+    return {
+      date: event.formatted_date,
+      time: `${formatTime(startDate)} – ${formatMonthDay(endDate)} • ${formatTime(endDate)}`
+    }
+  } else {
+    return {
+      date: event.formatted_date,
+      time: `${formatTime(startDate)} – ${formatTime(endDate)}`
+    }
+  }
+}
+
+const formatTime = (date) => {
+  return date.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  })
+}
+
+const formatMonthDay = (date) => {
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric'
+  })
+}
 
 defineProps({
   featuredEvents: Array,
