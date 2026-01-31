@@ -15,7 +15,6 @@ class Event extends Model
     protected $fillable = [
         'title',
         'description', 
-        'event_date',
         'start_datetime',
         'end_datetime',
         'image',
@@ -34,7 +33,6 @@ class Event extends Model
     ];
 
     protected $casts = [
-        'event_date' => 'date',
         'start_datetime' => 'datetime',
         'end_datetime' => 'datetime',
         'ticket_sales_start' => 'datetime',
