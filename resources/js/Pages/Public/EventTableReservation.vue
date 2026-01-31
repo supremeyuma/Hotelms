@@ -100,6 +100,7 @@
         </div>
       </div>
     </div>
+    </div>
   </PublicLayout>
 </template>
 
