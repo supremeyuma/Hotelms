@@ -66,64 +66,19 @@
                   <div class="text-3xl font-bold text-indigo-600">₦{{ formatNumber(item.amount) }}</div>
                 </div>
 
-                <!-- Mock Payment Form -->
-                <form @submit.prevent="processMockPayment" class="space-y-6">
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
-                    <select v-model="form.payment_method" required
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                      <option value="flutterwave">Flutterwave</option>
-                      <option value="paystack">Paystack</option>
-                      <option value="card">Credit Card</option>
-                      <option value="bank">Bank Transfer</option>
-                    </select>
-                  </div>
+                <!-- Real Flutterwave Checkout -->
+                <div class="space-y-6">
+                  <p class="text-sm text-gray-600 mb-4">You will be redirected to a secure payment gateway to complete the transaction.</p>
 
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Card Number</label>
-                    <input v-model="form.card_number" type="text" placeholder="4111 1111 1111 1111"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                  </div>
-
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label class="block text-sm font-medium text-gray-700 mb-2">Expiry Date</label>
-                      <input v-model="form.expiry_date" type="text" placeholder="MM/YY"
-                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                    </div>
-                    <div>
-                      <label class="block text-sm font-medium text-gray-700 mb-2">CVV</label>
-                      <input v-model="form.cvv" type="text" placeholder="123"
-                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                    </div>
-                  </div>
-
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Cardholder Name</label>
-                    <input v-model="form.cardholder_name" type="text" placeholder="John Doe"
-                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                  </div>
-
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
-                    <input v-model="form.email" type="email" placeholder="john@example.com"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                  </div>
-
-                  <div class="text-sm text-gray-600 mb-6">
-                    <p class="font-semibold text-yellow-800">⚠️ Demo Mode</p>
-                    <p>This is a mock payment processor. In production, this would integrate with Flutterwave API for real payment processing.</p>
-                  </div>
-
-                  <button type="submit" :disabled="processing"
+                  <button @click.prevent="processPayment" :disabled="processing"
                           class="w-full flex items-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
                     <svg v-if="!processing" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h18a1 1 0 001 1v16a1 1 0 001-1H3a1 1 0 00-1-1V3a1 1 0 00-1-1z" />
                     </svg>
-                    <span v-if="processing">Processing...</span>
-                    <span v-else>Process Payment - ₦{{ formatNumber(item.amount) }}</span>
+                    <span v-if="processing">Redirecting...</span>
+                    <span v-else>Pay Now - ₦{{ formatNumber(item.amount) }}</span>
                   </button>
-                </form>
+                </div>
               </div>
             </div>
           </div>
@@ -155,14 +110,71 @@ const form = ref({
   email: props.item.guest_email,
 })
 
-const processMockPayment = () => {
+const loadFlutterwave = () => {
+  return new Promise((resolve, reject) => {
+    if (window.FlutterwaveCheckout) return resolve(window.FlutterwaveCheckout)
+
+    const script = document.createElement('script')
+    script.src = 'https://checkout.flutterwave.com/v3.js'
+    script.async = true
+    script.onload = () => resolve(window.FlutterwaveCheckout)
+    script.onerror = () => reject(new Error('Failed to load Flutterwave script'))
+    document.head.appendChild(script)
+  })
+}
+
+const processPayment = async () => {
   processing.value = true
-  
-  // Simulate payment processing
-  setTimeout(() => {
-    // Simulate successful payment
-    window.location.href = `/events/payment/callback?tx_ref=${props.reference}&status=success&payment_method=flutterwave`
-  }, 2000) // 2 seconds
+
+  try {
+    const payload = {
+      amount: item.amount,
+      currency: 'NGN',
+      tx_ref: props.reference,
+      description: `${props.type} payment`,
+      customer_email: form.value.email,
+      customer_name: form.value.cardholder_name || form.value.email,
+    }
+
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+    const initRes = await fetch('/payments/initialize', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': csrf || '' },
+      body: JSON.stringify(payload),
+    })
+
+    if (!initRes.ok) {
+      const err = await initRes.json().catch(() => ({}))
+      throw new Error(err.message || 'Failed to initialize payment')
+    }
+
+    const data = await initRes.json()
+
+    await loadFlutterwave()
+
+    window.FlutterwaveCheckout({
+      public_key: data.public_key,
+      tx_ref: data.tx_ref,
+      amount: data.amount,
+      currency: data.currency || 'NGN',
+      payment_options: 'card,bank,ussd',
+      customer: data.customer,
+      customizations: { title: 'MooreLife Resort', description: data.description || '' },
+      callback: function (resp) {
+        // Redirect to server-side callback to finalize
+        const tx = encodeURIComponent(resp.tx_ref || data.tx_ref)
+        const status = encodeURIComponent(resp.status || 'unknown')
+        window.location.href = `/events/payment/callback?tx_ref=${tx}&status=${status}&payment_method=flutterwave`
+      },
+      onclose: function () {
+        processing.value = false
+      }
+    })
+
+  } catch (e) {
+    alert(e.message || 'Payment initialization failed')
+    processing.value = false
+  }
 }
 
 const formatNumber = (num) => {

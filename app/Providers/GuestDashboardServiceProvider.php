@@ -6,6 +6,7 @@ use Illuminate\Support\ServiceProvider;
 use App\Services\RoomServiceService;
 use App\Services\MaintenanceService;
 use App\Services\BillingService;
+use App\Services\PaymentAccountingService;
 use App\Services\BookingExtensionService;
 use App\Services\CheckoutService;
 
@@ -22,7 +23,7 @@ class GuestDashboardServiceProvider extends ServiceProvider
         });
 
         $this->app->singleton(BillingService::class, function ($app) {
-            return new BillingService();
+            return new BillingService($app->make(PaymentAccountingService::class));
         });
 
         $this->app->singleton(BookingExtensionService::class, function ($app) {

@@ -22,6 +22,14 @@ class Order extends Model
         'notes',
         'cancelable_until',
         'completed_at',
+        'payment_method',
+        'payment_status',
+        'payment_reference',
+        'department',
+        'tracking_code',
+        'processing_at',
+        'ready_at',
+        'delivered_at',
     ];
 
     protected $casts = [
@@ -92,5 +100,8 @@ class Order extends Model
         return $this->morphOne(Charge::class, 'billable');
     }
 
-
+    public function payments()
+    {
+        return $this->hasMany(\App\Models\Payment::class);
+    }
 }

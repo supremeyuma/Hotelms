@@ -10,6 +10,7 @@ use App\Models\Booking;
 use App\Models\Room;
 use App\Services\BookingService;
 use App\Services\AuditLogger;
+use App\Services\PaymentAccountingService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Services\RoomAvailabilityService;
@@ -253,6 +254,41 @@ class BookingController extends Controller
         $this->bookingService->confirmBooking($booking);
 
         return redirect()->route('booking.confirmation', $booking);
+    }
+
+    public function paymentCallback(Request $request, Booking $booking)
+    {
+        abort_if($booking->status !== 'pending_payment', 404);
+
+        $reference = $request->input('tx_ref');
+        $status = $request->input('status');
+
+        if ($status === 'successful' || $status === 'completed') {
+            // Verify payment via Flutterwave
+            try {
+                $payment = $booking->payments()->where('reference', $reference)->first();
+                if ($payment) {
+                    $payment->update([
+                        'status' => 'successful',
+                        'paid_at' => now(),
+                    ]);
+
+                    // Wire to accounting
+                    resolve(PaymentAccountingService::class)->handleSuccessful($payment);
+                }
+
+                // Confirm booking
+                $this->bookingService->confirmBooking($booking);
+            } catch (\Exception $e) {
+                \Log::error('Booking payment callback failed', ['error' => $e->getMessage()]);
+            }
+
+            return redirect()->route('booking.confirmation', $booking)
+                ->with('success', 'Payment confirmed');
+        }
+
+        return redirect()->route('booking.payment', $booking)
+            ->with('error', 'Payment failed or was cancelled');
     }
 
 

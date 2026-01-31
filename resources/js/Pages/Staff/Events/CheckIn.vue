@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { Head, router } from '@inertiajs/vue3'
-import StaffLayout from '@/Layouts/StaffLayout.vue'
+import ManagerLayout from '@/Layouts/Staff/ManagerLayout.vue'
 import { 
   QrCode, Check, X, Clock, Users, Ticket, 
   Camera, AlertCircle, CheckCircle, AlertTriangle
@@ -193,7 +193,7 @@ const formatCurrency = (amount) => {
 </script>
 
 <template>
-  <StaffLayout>
+  <ManagerLayout>
     <Head title="Event Check-In" />
 
     <div class="min-h-screen bg-gray-50 py-8">
@@ -462,5 +462,5 @@ const formatCurrency = (amount) => {
         </div>
       </div>
     </div>
-  </StaffLayout>
+  </ManagerLayout>
 </template>

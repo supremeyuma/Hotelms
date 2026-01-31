@@ -12,7 +12,9 @@ const extractTimeFromDateTime = (dateTimeString) => {
   if (!dateTimeString) return ''
   const date = new Date(dateTimeString)
   if (isNaN(date.getTime())) return ''
-  return date.toTimeString().substring(0, 5) // HH:mm format
+  // Returns HH:mm in 24-hour format
+  return date.getHours().toString().padStart(2, '0') + ':' + 
+         date.getMinutes().toString().padStart(2, '0')
 }
 
 // Helper to format date for date input
@@ -34,8 +36,13 @@ const form = useForm({
   capacity: props.event.capacity || '',
   is_active: props.event.is_active,
   is_featured: props.event.is_featured,
-  ticket_sales_start: formatDateForInput(props.event.ticket_sales_start) + 'T' + extractTimeFromDateTime(props.event.ticket_sales_start),
-  ticket_sales_end: formatDateForInput(props.event.ticket_sales_end) + 'T' + extractTimeFromDateTime(props.event.ticket_sales_end),
+  ticket_sales_start: (formatDateForInput(props.event.ticket_sales_start) && extractTimeFromDateTime(props.event.ticket_sales_start)) 
+      ? formatDateForInput(props.event.ticket_sales_start) + 'T' + extractTimeFromDateTime(props.event.ticket_sales_start)
+      : '',
+
+  ticket_sales_end: (formatDateForInput(props.event.ticket_sales_end) && extractTimeFromDateTime(props.event.ticket_sales_end)) 
+      ? formatDateForInput(props.event.ticket_sales_end) + 'T' + extractTimeFromDateTime(props.event.ticket_sales_end)
+      : '',
   max_tickets_per_person: props.event.max_tickets_per_person || 10,
   has_table_reservations: props.event.has_table_reservations || false,
   table_capacity: props.event.table_capacity || 0,

@@ -81,7 +81,7 @@ onMounted(() => {
             <h2 class="text-5xl font-black text-white tracking-tighter">Upcoming Events</h2>
             <p class="text-indigo-300/50 mt-2 font-light uppercase tracking-widest text-xs">Curated weekly lineups</p>
           </div>
-          <Link href="/booking" class="text-indigo-400 font-black text-xs uppercase tracking-widest hover:text-white transition-colors">
+          <Link href="/events" class="text-indigo-400 font-black text-xs uppercase tracking-widest hover:text-white transition-colors">
             Book a Table →
           </Link>
         </div>

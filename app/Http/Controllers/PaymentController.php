@@ -15,20 +15,24 @@ class PaymentController extends Controller
     public function initialize(Request $request)
     {
         $request->validate([
-            'booking_id' => 'required|exists:bookings,id',
-            'room_id' => 'required|exists:rooms,id',
-            'amount' => 'required|numeric|min:100',
+            'booking_id' => 'nullable|exists:bookings,id',
+            'room_id' => 'nullable|exists:rooms,id',
+            'amount' => 'required|numeric|min:1',
+            'tx_ref' => 'nullable|string|max:191',
+            'description' => 'nullable|string|max:1000',
         ]);
 
-        $reference = 'PAY-' . Str::uuid();
+        // Allow caller to pass an external tx_ref (e.g. event ticket QR code)
+        $reference = $request->input('tx_ref') ?: ('PAY-' . Str::uuid());
 
         $payment = Payment::create([
-            'booking_id' => $request->booking_id,
+            'booking_id' => $request->booking_id ?? null,
             'room_id' => $request->room_id ?? null,
             'amount' => $request->amount,
             'currency' => 'NGN',
             'reference' => $reference,
             'status' => 'pending',
+            'raw_response' => null,
         ]);
 
         return response()->json([
@@ -36,9 +40,10 @@ class PaymentController extends Controller
             'tx_ref' => $reference,
             'amount' => $payment->amount,
             'currency' => 'NGN',
+            'description' => $request->input('description') ?? null,
             'customer' => [
-                'email' => $request->user()->email ?? 'guest@hotel.com',
-                'name' => $request->user()->name ?? 'Hotel Guest',
+                'email' => $request->user()->email ?? $request->input('customer_email') ?? 'guest@hotel.com',
+                'name' => $request->user()->name ?? $request->input('customer_name') ?? 'Hotel Guest',
             ],
         ]);
     }
@@ -69,6 +74,11 @@ class PaymentController extends Controller
             ]);
 
             // TODO: mark booking bill as paid / reduce outstanding balance
+            try {
+                resolve(\App\Services\PaymentAccountingService::class)->handleSuccessful($payment);
+            } catch (\Exception $e) {
+                // non-fatal, ensure payment remains recorded
+            }
 
             return response()->json(['message' => 'Payment verified']);
         }

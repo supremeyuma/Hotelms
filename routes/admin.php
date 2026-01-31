@@ -32,7 +32,6 @@ use App\Http\Controllers\Admin\Reports\OccupancyReportController;
 use App\Http\Controllers\Admin\Reports\ChartController;
 use App\Http\Controllers\Admin\ContentController;
 use App\Http\Controllers\Admin\GalleryController;
-use App\Http\Controllers\Admin\EventController;
 use App\Http\Controllers\Reports\ProfitAndLossController;
 
 Route::middleware(['auth', 'role:manager|md'])->prefix('admin')->as('admin.')->group(function () {

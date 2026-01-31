@@ -52,6 +52,7 @@ Route::prefix('booking')->name('booking.')->group(function () {
     Route::post('/create', [BookingController::class, 'createBooking'])->name('create');
     Route::get('/payment/{booking}', [BookingController::class, 'payment'])->name('payment');
     Route::post('/payment/{booking}/confirm', [BookingController::class, 'confirmPayment'])->name('payment.confirm');
+    Route::get('/payment/{booking}/callback', [BookingController::class, 'paymentCallback'])->name('payment.callback');
     Route::get('/confirmation/{booking}', [BookingController::class, 'confirmation'])->name('confirmation');
 });
 

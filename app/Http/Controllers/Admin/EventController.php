@@ -59,7 +59,7 @@ class EventController extends Controller
             'description' => 'nullable|string',
             'event_date' => 'required|date|after_or_equal:today',
             'start_time' => 'nullable|date_format:H:i',
-            'end_time' => 'nullable|date_format:H:i|after:start_time',
+            'end_time' => 'nullable|date_format:H:i',
             'venue' => 'nullable|string|max:255',
             'capacity' => 'nullable|integer|min:1',
             'is_active' => 'boolean',
@@ -70,7 +70,15 @@ class EventController extends Controller
             'has_table_reservations' => 'boolean',
             'table_capacity' => 'nullable|integer|min:1',
             'table_price' => 'nullable|numeric|min:0',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'table_types' => 'nullable|array',
+            'ticket_types.*.name' => 'nullable|string|max:255',
+            'ticket_types.*.description' => 'nullable|string',
+            'ticket_types.*.price' => 'nullable|numeric|min:0',
+            'ticket_types.*.quantity_available' => 'nullable|integer|min:1',
+            'ticket_types.*.max_per_person' => 'nullable|integer|min:1|max:20',
+            'ticket_types.*.sales_start' => 'nullable|date',
+            'ticket_types.*.sales_end' => 'nullable|date|after:ticket_types.*.sales_start',
+            'ticket_types.*.color_code' => 'nullable|string|max:7',
         ]);
 
         // Handle image upload
@@ -81,8 +89,55 @@ class EventController extends Controller
 
         $event = Event::create($data);
 
-        return redirect()->route('admin.events.index')
-            ->with('success', 'Event created successfully!');
+        // Handle promotional media
+        if ($request->has('media')) {
+            foreach ($request->media as $mediaData) {
+                if (isset($mediaData['file']) && $mediaData['file'] instanceof \Illuminate\Http\UploadedFile) {
+                    $filePath = $mediaData['file']->store('events/promotional', 'public');
+                    
+                    // If this is set as main image, unset any existing main image
+                    if (!empty($mediaData['is_main_image'])) {
+                        EventPromotionalMedia::where('event_id', $event->id)
+                            ->update(['is_main_image' => false]);
+                    }
+                    
+                    EventPromotionalMedia::create([
+                        'event_id' => $event->id,
+                        'media_type' => $mediaData['media_type'] ?? 'image',
+                        'media_url' => $filePath,
+                        'title' => $mediaData['title'] ?? null,
+                        'description' => $mediaData['description'] ?? null,
+                        'sort_order' => EventPromotionalMedia::where('event_id', $event->id)->max('sort_order') + 1,
+                        'is_main_image' => !empty($mediaData['is_main_image']),
+                    ]);
+                }
+            }
+        }
+
+        // Handle ticket types
+        if ($request->has('ticket_types')) {
+            foreach ($request->ticket_types as $ticketTypeData) {
+                if (!empty($ticketTypeData['name'])) {
+                    EventTicketType::create(array_merge($ticketTypeData, [
+                        'event_id' => $event->id,
+                    ]));
+                }
+            }
+        }
+
+        // Handle table types
+        if ($request->has('table_types')) {
+            foreach ($request->table_types as $tableTypeData) {
+                if (!empty($tableTypeData['name'])) {
+                    EventTicketType::create(array_merge($tableTypeData, [
+                        'event_id' => $event->id,
+                    ]));
+                }
+            }
+        }
+
+        return redirect()->route('admin.events.show', $event)
+            ->with('success', 'Event updated successfully!');
     }
 
     public function show(Event $event)
@@ -113,7 +168,7 @@ class EventController extends Controller
             'description' => 'nullable|string',
             'event_date' => 'required|date|after_or_equal:today',
             'start_time' => 'nullable|date_format:H:i',
-            'end_time' => 'nullable|date_format:H:i|after:start_time',
+            'end_time' => 'nullable|date_format:H:i',
             'venue' => 'nullable|string|max:255',
             'capacity' => 'nullable|integer|min:1',
             'is_active' => 'boolean',
@@ -125,6 +180,34 @@ class EventController extends Controller
             'table_capacity' => 'nullable|integer|min:1',
             'table_price' => 'nullable|numeric|min:0',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'removed_media' => 'nullable|array',
+            'removed_media.*' => 'integer',
+            'media' => 'nullable|array',
+            'media.*.file' => 'nullable|file|mimes:jpeg,png,jpg,gif,mp4,mov,avi|max:10240',
+            'media.*.media_type' => 'nullable|in:image,video',
+            'media.*.title' => 'nullable|string|max:255',
+            'media.*.description' => 'nullable|string',
+            'media.*.is_main_image' => 'nullable|boolean',
+            'existing_media' => 'nullable|array',
+            'existing_media.*.id' => 'integer',
+            'existing_media.*.title' => 'nullable|string|max:255',
+            'existing_media.*.description' => 'nullable|string',
+            'existing_media.*.is_main_image' => 'nullable|boolean',
+            'table_types' => 'nullable|array',
+            'table_types.*.name' => 'nullable|string|max:255',
+            'table_types.*.description' => 'nullable|string',
+            'table_types.*.price' => 'nullable|numeric|min:0',
+            'table_types.*.capacity' => 'nullable|integer|min:1',
+            'ticket_types' => 'nullable|array',
+            'ticket_types.*.id' => 'nullable|integer',
+            'ticket_types.*.name' => 'nullable|string|max:255',
+            'ticket_types.*.description' => 'nullable|string',
+            'ticket_types.*.price' => 'nullable|numeric|min:0',
+            'ticket_types.*.quantity_available' => 'nullable|integer|min:1',
+            'ticket_types.*.max_per_person' => 'nullable|integer|min:1|max:20',
+            'ticket_types.*.sales_start' => 'nullable|date',
+            'ticket_types.*.sales_end' => 'nullable|date|after:ticket_types.*.sales_start',
+            'ticket_types.*.color_code' => 'nullable|string|max:7',
         ]);
 
         // Handle image upload
@@ -140,7 +223,86 @@ class EventController extends Controller
 
         $event->update($data);
 
-        return redirect()->route('admin.events.index')
+        // Handle removed media
+        if ($request->has('removed_media')) {
+            foreach ($request->removed_media as $mediaId) {
+                $media = EventPromotionalMedia::find($mediaId);
+                if ($media && $media->event_id === $event->id) {
+                    Storage::disk('public')->delete($media->media_url);
+                    $media->delete();
+                }
+            }
+        }
+
+        // Handle new media
+        if ($request->has('media')) {
+            foreach ($request->media as $mediaData) {
+                if (isset($mediaData['file']) && $mediaData['file'] instanceof \Illuminate\Http\UploadedFile) {
+                    $filePath = $mediaData['file']->store('events/promotional', 'public');
+                    
+                    // If this is set as main image, unset any existing main image
+                    if (!empty($mediaData['is_main_image'])) {
+                        EventPromotionalMedia::where('event_id', $event->id)
+                            ->update(['is_main_image' => false]);
+                    }
+                    
+                    EventPromotionalMedia::create([
+                        'event_id' => $event->id,
+                        'media_type' => $mediaData['media_type'] ?? 'image',
+                        'media_url' => $filePath,
+                        'title' => $mediaData['title'] ?? null,
+                        'description' => $mediaData['description'] ?? null,
+                        'sort_order' => EventPromotionalMedia::where('event_id', $event->id)->max('sort_order') + 1,
+                        'is_main_image' => !empty($mediaData['is_main_image']),
+                    ]);
+                }
+            }
+        }
+
+        // Handle existing media updates
+        if ($request->has('existing_media')) {
+            foreach ($request->existing_media as $mediaData) {
+                if (!empty($mediaData['id'])) {
+                    $media = EventPromotionalMedia::find($mediaData['id']);
+                    if ($media && $media->event_id === $event->id) {
+                        // If this is set as main image, unset any existing main image
+                        if (!empty($mediaData['is_main_image'])) {
+                            EventPromotionalMedia::where('event_id', $event->id)
+                                ->where('id', '!=', $media->id)
+                                ->update(['is_main_image' => false]);
+                        }
+                        
+                        $media->update([
+                            'title' => $mediaData['title'] ?? $media->title,
+                            'description' => $mediaData['description'] ?? $media->description,
+                            'is_main_image' => !empty($mediaData['is_main_image']),
+                        ]);
+                    }
+                }
+            }
+        }
+
+        // Handle ticket types
+        if ($request->has('ticket_types')) {
+            foreach ($request->ticket_types as $ticketTypeData) {
+                if (!empty($ticketTypeData['name'])) {
+                    if (!empty($ticketTypeData['id'])) {
+                        // Update existing
+                        $ticketType = EventTicketType::find($ticketTypeData['id']);
+                        if ($ticketType && $ticketType->event_id === $event->id) {
+                            $ticketType->update($ticketTypeData);
+                        }
+                    } else {
+                        // Create new
+                        EventTicketType::create(array_merge($ticketTypeData, [
+                            'event_id' => $event->id,
+                        ]));
+                    }
+                }
+            }
+        }
+
+        return redirect()->route('admin.events.show', $event)
             ->with('success', 'Event updated successfully!');
     }
 
@@ -201,10 +363,17 @@ class EventController extends Controller
             'media.*.title' => 'nullable|string|max:255',
             'media.*.description' => 'nullable|string',
             'media.*.file' => 'required|file|mimes:jpeg,png,jpg,gif,mp4,mov,avi|max:10240', // 10MB max
+            'media.*.is_main_image' => 'nullable|boolean',
         ]);
 
-        foreach ($data['media'] as $mediaData) {
+        foreach ($data['media'] as $index => $mediaData) {
             $filePath = $mediaData['file']->store('events/promotional', 'public');
+            
+            // If this is set as main image, unset any existing main image
+            if (!empty($mediaData['is_main_image'])) {
+                EventPromotionalMedia::where('event_id', $event->id)
+                    ->update(['is_main_image' => false]);
+            }
             
             EventPromotionalMedia::create([
                 'event_id' => $event->id,
@@ -213,6 +382,7 @@ class EventController extends Controller
                 'title' => $mediaData['title'],
                 'description' => $mediaData['description'],
                 'sort_order' => EventPromotionalMedia::where('event_id', $event->id)->max('sort_order') + 1,
+                'is_main_image' => !empty($mediaData['is_main_image']),
             ]);
         }
 

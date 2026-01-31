@@ -155,7 +155,6 @@
                     <option value="cash">Pay at Venue</option>
                     <option value="points">Use Payment Points</option>
                   </select>
-                  </div>
               </div>
 
               <div>
@@ -179,16 +178,16 @@
               </div>
             </div>
 
-            <button type="submit" :disabled="processing"
+            <button type="submit" :disabled="processingPurchase"
                     class="w-full flex items-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed">
-              <svg v-if="!processing" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg v-if="!processingPurchase" class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7m-7 4m0 4l8-4m-8 4v6m0 4h18" />
               </svg>
-              {{ processing ? 'Processing...' : 'Complete Purchase' }}
               <svg v-else class="w-5 h-5 mr-2 animate-spin" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V8C4 5.79 5.79 4 8h13C19.79 4 21 5.79 21 8v13a8 8 0 01-8 8H4z"></path>
               </svg>
+              {{ processingPurchase ? 'Processing...' : 'Complete Purchase' }}
             </button>
           </div>
         </div>
@@ -205,7 +204,7 @@ const props = defineProps({
   event: Object,
 })
 
-        const selectedTicket = ref(null)
+const selectedTicket = ref(null)
 const processingPurchase = ref(false)
 const form = ref({
   ticket_type_id: '',
@@ -216,6 +215,11 @@ const form = ref({
   payment_method: 'online',
   notes: '',
 })
+
+const selectTicket = (ticket) => {
+  selectedTicket.value = ticket
+  form.value.ticket_type_id = ticket.id
+}
 
 const submitPurchase = () => {
   if (!selectedTicket.value) return
@@ -228,39 +232,6 @@ const submitPurchase = () => {
     },
     onError: () => {
       processingPurchase.value = false
-    },
-  })
-  })
-}
-
-const formatNumber = (num) => {
-  return new Intl.NumberFormat('en-NG').format(num)
-}
-
-const formatDate = (dateString) => {
-  return new Date(dateString).toLocaleDateString('en-GB', {
-    day: 'numeric', 
-    month: 'short', 
-    year: 'numeric'
-  })
-}
-
-const selectTicket = (ticket) => {
-  selectedTicket.value = ticket
-  form.value.ticket_type_id = ticket.id
-}
-
-const submitPurchase = () => {
-  if (!selectedTicket.value) return
-  
-  processing.value = true
-  
-  router.post(`/events/${props.event.id}/tickets/purchase`, form.value, {
-    onSuccess: () => {
-      processing.value = false
-    },
-    onError: () => {
-      processing.value = false
     },
   })
 }

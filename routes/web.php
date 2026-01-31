@@ -28,6 +28,11 @@ Route::get('/pages/{pageKey}', [PublicController::class, 'staticPage'])->name('p
 Route::post('/payments/initialize', [PaymentController::class, 'initialize']);
 Route::get('/payments/verify/{reference}', [PaymentController::class, 'verify']);
 
+// Flutterwave webhook
+Route::post('/webhooks/flutterwave', [App\Http\Controllers\Webhook\FlutterwaveWebhookController::class, 'handle'])
+    ->name('webhooks.flutterwave')
+    ->middleware(['web']);
+
 
 require __DIR__ . '/admin.php';
 require __DIR__ . '/auth.php';

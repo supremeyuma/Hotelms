@@ -212,7 +212,7 @@ Route::post(
 Route::middleware(['auth', 'role:staff|manager|md|frontdesk'])->prefix('staff')->name('staff.')->group(function () {
     Route::get('/events/check-in', [EventCheckInController::class, 'index'])->name('events.check-in.index');
     Route::get('/events/scan', [EventCheckInController::class, 'scan'])->name('events.check-in.scan');
-    Route::post('/events/validate', [EventCheckInController::class, 'validate'])->name('events.check-in.validate');
+    Route::post('/events/validate', [EventCheckInController::class, 'validateQrCode'])->name('events.check-in.validate');
     Route::post('/events/check-in', [EventCheckInController::class, 'checkIn'])->name('events.check-in.process');
     Route::get('/events/stats/today', [EventCheckInController::class, 'todayStats'])->name('events.check-in.stats');
 });

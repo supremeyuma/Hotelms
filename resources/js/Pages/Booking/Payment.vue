@@ -1,4 +1,5 @@
 <script setup>
+import { ref } from 'vue'
 import { router } from '@inertiajs/vue3';
 import PublicLayout from '@/Layouts/PublicLayout.vue';
 import { 
@@ -16,8 +17,64 @@ const props = defineProps({
   expires_at: String,
 })
 
-function pay() {
-  router.post(`/booking/payment/${props.booking.id}/confirm`)
+const paymentMethod = ref('offline')
+const processing = ref(false)
+
+const loadFlutterwave = () => {
+  return new Promise((resolve, reject) => {
+    if (window.FlutterwaveCheckout) return resolve(window.FlutterwaveCheckout)
+    const script = document.createElement('script')
+    script.src = 'https://checkout.flutterwave.com/v3.js'
+    script.async = true
+    script.onload = () => resolve(window.FlutterwaveCheckout)
+    script.onerror = () => reject(new Error('Failed to load Flutterwave'))
+    document.head.appendChild(script)
+  })
+}
+
+const processPayment = async () => {
+  processing.value = true
+  try {
+    if (paymentMethod.value === 'offline') {
+      router.post(`/booking/payment/${props.booking.id}/confirm`)
+      return
+    }
+
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+    const initRes = await fetch('/payments/initialize', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': csrf || '' },
+      body: JSON.stringify({
+        booking_id: props.booking.id,
+        amount: props.booking.total_amount,
+        tx_ref: `BK-${props.booking.id}`,
+        description: `Booking #${props.booking.id}`,
+        customer_email: props.booking.guest_email,
+        customer_name: props.booking.guest_name,
+      }),
+    })
+
+    if (!initRes.ok) throw new Error('Failed to initialize payment')
+    const data = await initRes.json()
+    await loadFlutterwave()
+
+    window.FlutterwaveCheckout({
+      public_key: data.public_key,
+      tx_ref: data.tx_ref,
+      amount: data.amount,
+      currency: 'NGN',
+      payment_options: 'card,bank,ussd',
+      customer: data.customer,
+      customizations: { title: 'MooreLife Resort', description: 'Room Booking' },
+      callback: (resp) => {
+        window.location.href = `/booking/payment/${props.booking.id}/callback?tx_ref=${resp.tx_ref}&status=${resp.status}`
+      },
+      onclose: () => { processing.value = false }
+    })
+  } catch (e) {
+    alert(e.message || 'Payment processing failed')
+    processing.value = false
+  }
 }
 
 // Simple formatter for the expiration time
@@ -73,11 +130,28 @@ const formatExpiry = (timeStr) => {
             </div>
 
             <div class="space-y-4">
+              <div class="space-y-3">
+                <label class="block text-sm font-semibold text-slate-700 mb-3">Payment Method</label>
+                <div class="space-y-2">
+                  <label class="flex items-center gap-3 p-3 border-2 rounded-xl cursor-pointer transition" :class="paymentMethod === 'offline' ? 'border-emerald-500 bg-emerald-50' : 'border-slate-200'">
+                    <input v-model="paymentMethod" type="radio" value="offline" class="w-4 h-4">
+                    <span class="font-semibold text-slate-700">Pay at Checkout</span>
+                    <span class="ml-auto text-xs text-slate-500">Cash or card on arrival</span>
+                  </label>
+                  <label class="flex items-center gap-3 p-3 border-2 rounded-xl cursor-pointer transition" :class="paymentMethod === 'flutterwave' ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200'">
+                    <input v-model="paymentMethod" type="radio" value="flutterwave" class="w-4 h-4">
+                    <span class="font-semibold text-slate-700">Pay Online Now</span>
+                    <span class="ml-auto text-xs text-slate-500">Card, Bank, USSD</span>
+                  </label>
+                </div>
+              </div>
               <button
-                @click="pay"
-                class="w-full group flex items-center justify-center gap-3 py-5 bg-emerald-600 text-white rounded-[2rem] font-black text-lg hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-100 active:scale-[0.98]"
+                @click="processPayment"
+                :disabled="processing"
+                class="w-full group flex items-center justify-center gap-3 py-5 bg-emerald-600 text-white rounded-[2rem] font-black text-lg hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-100 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Confirm Payment
+                <span v-if="processing">Processing...</span>
+                <span v-else>Proceed to Payment</span>
                 <ArrowRight class="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
 

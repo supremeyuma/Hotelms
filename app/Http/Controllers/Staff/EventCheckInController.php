@@ -7,6 +7,7 @@ use App\Models\EventTicket;
 use App\Models\EventTableReservation;
 use App\Models\Event;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class EventCheckInController extends Controller
@@ -29,7 +30,7 @@ class EventCheckInController extends Controller
         return Inertia::render('Staff/Events/Scan');
     }
 
-    public function validate(Request $request)
+    public function validateQrCode(Request $request)
     {
         $request->validate([
             'qr_code' => 'required|string',
@@ -198,21 +199,19 @@ class EventCheckInController extends Controller
         ]);
 
         try {
-            \DB::beginTransaction();
+            DB::beginTransaction();
 
             if ($request->type === 'ticket') {
                 $ticket = EventTicket::where('id', $request->id)
                     ->where('qr_code', $request->qr_code)
                     ->first();
 
-                if (!$ticket || $ticket->check_in_status) {
+                if (!$ticket || $ticket->checked_in_at) {
                     throw new \Exception('Ticket not found or already checked in');
                 }
 
                 $ticket->update([
-                    'check_in_status' => true,
-                    'check_in_time' => now(),
-                    'checked_in_by' => auth()->id(),
+                    'checked_in_at' => now(),
                 ]);
 
                 $message = 'Ticket checked in successfully';
@@ -221,20 +220,18 @@ class EventCheckInController extends Controller
                     ->where('qr_code', $request->qr_code)
                     ->first();
 
-                if (!$reservation || $reservation->check_in_status) {
+                if (!$reservation || $reservation->checked_in_at) {
                     throw new \Exception('Table reservation not found or already checked in');
                 }
 
                 $reservation->update([
-                    'check_in_status' => true,
-                    'check_in_time' => now(),
-                    'checked_in_by' => auth()->id(),
+                    'checked_in_at' => now(),
                 ]);
 
                 $message = 'Table reservation checked in successfully';
             }
 
-            \DB::commit();
+            DB::commit();
 
             return response()->json([
                 'success' => true,
@@ -242,12 +239,12 @@ class EventCheckInController extends Controller
                 'type' => 'success',
                 'data' => [
                     'checked_in_at' => now()->format('Y-m-d H:i:s'),
-                    'checked_in_by' => auth()->user()->full_name,
+                    'checked_in_by' => auth()->user()?->name ?? 'Staff',
                 ]
             ]);
 
         } catch (\Exception $e) {
-            \DB::rollBack();
+            DB::rollBack();
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),

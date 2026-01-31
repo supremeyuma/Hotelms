@@ -12,6 +12,7 @@ use App\Enums\OrderStatus;
 use App\Services\OrderService;
 use App\Services\StaffActionService;
 use App\Services\AuditLogger;
+use App\Services\PaymentAccountingService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
@@ -41,7 +42,9 @@ class OrderController extends Controller
                 'status'        => OrderStatus::PENDING,
                 'notes'         => $validated['notes'] ?? null,
                 'tracking_code' => $trackingCode,
-                'total_amount'  => 0,
+                'total'         => 0,
+                'payment_method' => $validated['payment_method'] ?? 'postpaid',
+                'payment_status' => $validated['payment_method'] === 'online' ? 'pending' : 'not_required',
             ]);
 
             $total = 0;
@@ -57,7 +60,7 @@ class OrderController extends Controller
                 $total += $line->subtotal;
             }
 
-            $order->update(['total_amount' => $total]);
+            $order->update(['total' => $total]);
 
             // Staff action code (optional)
             if ($request->filled('action_code') && Auth::check()) {
@@ -228,5 +231,42 @@ class OrderController extends Controller
         return Inertia::render('Orders/MaintenanceQueue', [
             'orders' => $orders,
         ]);
+    }
+
+    /**
+     * Order payment callback (Flutterwave)
+     */
+    public function paymentCallback(Request $request, Order $order)
+    {
+        $reference = $request->input('tx_ref');
+        $status = $request->input('status');
+
+        if ($status === 'successful' || $status === 'completed') {
+            $order->update([
+                'payment_status' => 'paid',
+                'payment_reference' => $reference,
+            ]);
+
+            // Create a payment record for accounting
+            $payment = $order->payments()->create([
+                'amount' => $order->total,
+                'currency' => 'NGN',
+                'reference' => $reference,
+                'status' => 'successful',
+                'flutterwave_tx_ref' => $reference,
+                'paid_at' => now(),
+            ]);
+
+            try {
+                resolve(PaymentAccountingService::class)->handleSuccessful($payment);
+            } catch (\Exception $e) {
+                // Non-fatal; order remains recorded
+            }
+
+            return response()->json(['success' => true, 'message' => 'Order payment confirmed']);
+        }
+
+        $order->update(['payment_status' => 'failed']);
+        return response()->json(['success' => false, 'message' => 'Payment failed'], 422);
     }
 }
