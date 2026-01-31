@@ -255,8 +255,7 @@ const submit = () => {
     }
   })
 
-  form.post(`/admin/events/${props.event.id}`, {
-    method: 'put',
+  form.put(`/admin/events/${props.event.id}`, {
     forceFormData: true
   })
 }
