@@ -31,20 +31,50 @@ const downloadQRCode = () => {
 }
 
 const formatDate = (date) => {
-  return new Date(date).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  })
+  if (!date) return 'Invalid Date'
+  try {
+    return new Date(date).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    })
+  } catch (error) {
+    console.error('Date formatting error:', error, 'Input:', date)
+    return 'Invalid Date'
+  }
 }
 
 const formatTime = (time) => {
   if (!time) return 'Not set'
-  return new Date(time).toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true
-  })
+  try {
+    return new Date(time).toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    })
+  } catch (error) {
+    console.error('Time formatting error:', error, 'Input:', time)
+    return 'Invalid Time'
+  }
+}
+
+const formatDateTime = (dateTime) => {
+  if (!dateTime) return 'Invalid Date'
+  try {
+    const date = new Date(dateTime)
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    }) + ' at ' + date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    })
+  } catch (error) {
+    console.error('DateTime formatting error:', error, 'Input:', dateTime)
+    return 'Invalid Date'
+  }
 }
 
 const formatCurrency = (amount) => {
@@ -81,8 +111,7 @@ const getMainImage = () => {
         <div>
           <h1 class="text-3xl font-black text-slate-900">{{ event.title }}</h1>
           <div class="flex items-center gap-4 mt-2 text-sm text-slate-600">
-            <span>{{ formatDate(event.event_date) }}</span>
-            <span v-if="event.start_time">{{ formatTime(event.start_time) }}</span>
+            <span>{{ formatDateTime(event.start_datetime) }}</span>
             <span v-if="event.venue">• {{ event.venue }}</span>
           </div>
         </div>
@@ -163,7 +192,7 @@ const getMainImage = () => {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <h3 class="text-sm font-medium text-slate-500 mb-1">Date & Time</h3>
-                <p class="text-slate-900">{{ formatDate(event.start_datetime) }} at {{ formatTime(event.start_datetime) }}</p>
+                <p class="text-slate-900">{{ formatDateTime(event.start_datetime) }}</p>
               </div>
               <div>
                 <h3 class="text-sm font-medium text-slate-500 mb-1">Venue</h3>
