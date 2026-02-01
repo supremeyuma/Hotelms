@@ -182,16 +182,6 @@ class FlutterwaveService
                     'unionpay' => 'UnionPay',
                 ],
             ],
-            [
-                'value' => 'cash',
-                'label' => 'Pay at Venue',
-                'description' => 'Pay with cash, card, or mobile money at the hotel front desk',
-                'icon' => 'banknote',
-                'fees' => [
-                    'nigeria' => 'Bank Transfer',
-                    'mobile_money' => 'Mobile Money',
-                ],
-            ],
         ];
     }
 

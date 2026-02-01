@@ -131,7 +131,7 @@ class PublicEventController extends Controller
             return Inertia::render('Public/PaymentProcess', [
                 'type'      => 'ticket',
                 'reference' => $reference,
-                'amount'    => $amount,
+                'amount'    => (float)$amount,
                 'customer'  => [
                     'email' => $ticket->guest_email,
                     'name'  => $ticket->guest_name,

@@ -13,6 +13,9 @@ use App\Services\ContentService;
 use App\Services\Accounting\TaxService;
 use App\Services\AccountingService;
 use App\Services\PricingService;
+use App\Services\PaymentProviderManager;
+use App\Services\PaystackService;
+use App\Services\FlutterwaveService;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -29,6 +32,23 @@ class AppServiceProvider extends ServiceProvider
         // Register PricingService with TaxService dependency
         $this->app->singleton(PricingService::class, function ($app) {
             return new PricingService($app->make(TaxService::class));
+        });
+
+        // Register payment providers
+        $this->app->singleton(FlutterwaveService::class, function ($app) {
+            return new FlutterwaveService();
+        });
+
+        $this->app->singleton(PaystackService::class, function ($app) {
+            return new PaystackService();
+        });
+
+        // Register payment provider manager
+        $this->app->singleton(PaymentProviderManager::class, function ($app) {
+            return new PaymentProviderManager(
+                $app->make(FlutterwaveService::class),
+                $app->make(PaystackService::class)
+            );
         });
     }
 

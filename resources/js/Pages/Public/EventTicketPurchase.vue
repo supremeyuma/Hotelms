@@ -16,7 +16,7 @@
           <div v-else class="w-full h-48 bg-gradient-to-br from-purple-400 to-indigo-400"></div>
           <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white p-4">
             <h2 class="text-xl font-bold">{{ event.title }}</h2>
-            <div class="text-sm mt-1">{{ event.formatted_date }} • {{ event.start_time }}</div>
+            <div class="text-sm mt-1">{{ formattedStartDateTime }}</div>
           </div>
         </div>
 
@@ -111,14 +111,14 @@
                         class="w-full px-3 py-2 border border-gray-300 rounded-md">
                 </div>
 
-                <div>
+                <!--<div>
                   <label class="block text-sm font-medium text-gray-700 mb-2">Payment Method *</label>
                   <div
                     class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-700"
                   >
                     Pay Online (Flutterwave)
                   </div>
-                </div>
+                </div>-->
               </div>
 
               <div class="p-4 bg-white rounded-lg border">
@@ -205,8 +205,20 @@ const formatDate = (dateString) => {
 }
 
 // Format the display date for the header
-const displayDate = computed(() => {
-  const dateSource = props.event.start_datetime || props.event.event_date
-  return formatDate(dateSource)
+const formattedStartDateTime = computed(() => {
+  if (!props.event.start_datetime) return 'TBD'
+
+  const date = new Date(props.event.start_datetime)
+
+  return date.toLocaleString('en-NG', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  })
 })
+
 </script>

@@ -25,14 +25,19 @@ Route::post('/order', [OrderController::class, 'store'])->name('order.store');
 // Fallback static pages (terms, privacy)
 Route::get('/pages/{pageKey}', [PublicController::class, 'staticPage'])->name('pages.static');
 
+// Payment initialization and verification (multi-provider)
 Route::post('/payments/initialize', [PaymentController::class, 'initialize']);
-Route::get('/payments/verify/{reference}', [PaymentController::class, 'verify']);
+Route::post('/payments/verify', [PaymentController::class, 'verify'])->name('payments.verify');
 Route::post('/payments/initialize-by-reference', [PaymentController::class, 'initializeByReference'])
     ->name('payments.initialize.by.reference');
 
-// Flutterwave webhook
-Route::post('/webhooks/flutterwave', [App\Http\Controllers\Webhook\FlutterwaveWebhookController::class, 'handle'])
+// Payment webhooks - multi-provider support
+Route::post('/webhooks/flutterwave', [App\Http\Controllers\WebhookController::class, 'handleFlutterwaveWebhook'])
     ->name('webhooks.flutterwave')
+    ->middleware(['web']);
+
+Route::post('/webhooks/paystack', [App\Http\Controllers\WebhookController::class, 'handlePaystackWebhook'])
+    ->name('webhooks.paystack')
     ->middleware(['web']);
 
 
