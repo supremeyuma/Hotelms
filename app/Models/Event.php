@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Carbon\Carbon;
-use App\Models\EventTableType;
 
 class Event extends Model
 {
@@ -45,6 +44,8 @@ class Event extends Model
         'status' => 'string',
     ];
 
+    // --- Relationships ---
+
     public function ticketTypes()
     {
         return $this->hasMany(EventTicketType::class);
@@ -70,14 +71,24 @@ class Event extends Model
         return $this->hasMany(EventTableType::class);
     }
 
+    // --- Accessors ---
+
+    /**
+     * Replaces old event_date logic by formatting the start_datetime
+     */
     public function getFormattedDateAttribute()
     {
-        return $this->event_date->format('F j, Y');
+        return $this->start_datetime ? $this->start_datetime->format('F j, Y') : 'N/A';
     }
 
+    /**
+     * Replaces start_time and end_time logic by pulling time from datetimes
+     */
     public function getFormattedTimeAttribute()
     {
-        return $this->start_time->format('g:i A') . ' - ' . $this->end_time->format('g:i A');
+        if (!$this->start_datetime || !$this->end_datetime) return 'N/A';
+        
+        return $this->start_datetime->format('g:i A') . ' - ' . $this->end_datetime->format('g:i A');
     }
 
     public function getIsSalesOpenAttribute()
@@ -87,11 +98,6 @@ class Event extends Model
                $this->ticket_sales_start && 
                $this->ticket_sales_end &&
                $now->between($this->ticket_sales_start, $this->ticket_sales_end);
-    }
-
-    public function getTableReservationsAttribute()
-    {
-        return $this->hasMany(EventTableReservation::class);
     }
 
     public function getTotalTicketsSoldAttribute()
@@ -111,6 +117,8 @@ class Event extends Model
         return $this->tableReservations()->where('status', 'confirmed')->count();
     }
 
+    // --- Scopes ---
+
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
@@ -121,13 +129,19 @@ class Event extends Model
         return $query->where('is_featured', true);
     }
 
+    /**
+     * Fixed: Now uses start_datetime
+     */
     public function scopeUpcoming($query)
     {
-        return $query->where('event_date', '>=', now());
+        return $query->where('start_datetime', '>=', now());
     }
 
+    /**
+     * Fixed: Now uses start_datetime
+     */
     public function scopePast($query)
     {
-        return $query->where('event_date', '<', now());
+        return $query->where('start_datetime', '<', now());
     }
 }

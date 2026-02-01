@@ -11,6 +11,7 @@ use App\Models\InventoryItem;
 use App\Models\InventoryLog;
 use App\Services\AuditLoggerService;
 use App\Services\NotificationService;
+use App\Services\PricingService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -27,11 +28,13 @@ class OrderService
 {
     protected AuditLoggerService $audit;
     protected NotificationService $notifier;
+    protected PricingService $pricingService;
 
-    public function __construct(AuditLoggerService $audit, NotificationService $notifier)
+    public function __construct(AuditLoggerService $audit, NotificationService $notifier, PricingService $pricingService)
     {
         $this->audit = $audit;
         $this->notifier = $notifier;
+        $this->pricingService = $pricingService;
     }
 
     /**
@@ -90,7 +93,11 @@ class OrderService
                 }
             }
 
-            $order->update(['total' => $total]);
+            // Calculate final total with 7.5% VAT and 1% service charge for food, drinks, laundry orders
+            $pricing = $this->pricingService->calculatePricing($total, 0.075, 0.01);
+            $finalTotal = $pricing['total'];
+
+            $order->update(['total' => $finalTotal]);
 
             // Notify department staff
             $this->notifier->notifyDepartment($department, "New order #{$order->order_code}", [

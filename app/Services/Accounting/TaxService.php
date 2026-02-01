@@ -10,9 +10,6 @@ use Exception;
 
 class TaxService
 {
-    public const VAT_RATE = 0.075; // 7.5%
-    public const SERVICE_CHARGE_RATE = 0.10;
-
     protected AccountingService $accountingService;
 
     public function __construct(AccountingService $accountingService)
@@ -20,14 +17,30 @@ class TaxService
         $this->accountingService = $accountingService;
     }
 
+    /**
+     * Get VAT rate from config
+     */
+    protected function getVatRate(): float
+    {
+        return config('tax.vat_rate', 0.075);
+    }
+
+    /**
+     * Get service charge rate from config
+     */
+    protected function getServiceChargeRate(): float
+    {
+        return config('tax.service_charge_rate', 0.10);
+    }
+
     public function calculateVAT(float $amount): float
     {
-        return round($amount * self::VAT_RATE, 2);
+        return round($amount * $this->getVatRate(), 2);
     }
 
     public function calculateServiceCharge(float $amount): float
     {
-        return round($amount * self::SERVICE_CHARGE_RATE, 2);
+        return round($amount * $this->getServiceChargeRate(), 2);
     }
 
     public function calculateTotalTaxes(float $amount): array
@@ -53,11 +66,14 @@ class TaxService
             return;
         }
 
-        $vatPayableAccount = $this->getAccountByCode('2001'); // VAT Payable
-        $salesTaxAccount = $this->getAccountByCode('5001'); // Sales Tax Expense
+        $vatPayableCode = config('tax.accounts.vat_payable', '2001');
+        $salesTaxExpenseCode = config('tax.accounts.sales_tax_expense', '5001');
+
+        $vatPayableAccount = $this->getAccountByCode($vatPayableCode);
+        $salesTaxAccount = $this->getAccountByCode($salesTaxExpenseCode);
 
         if (!$vatPayableAccount || !$salesTaxAccount) {
-            throw new Exception('Tax accounts not configured. Please create accounts with codes 2001 (VAT Payable) and 5001 (Sales Tax Expense).');
+            throw new Exception("Tax accounts not configured. Please create accounts with codes {$vatPayableCode} (VAT Payable) and {$salesTaxExpenseCode} (Sales Tax Expense).");
         }
 
         $lines = [
@@ -97,11 +113,14 @@ class TaxService
             return;
         }
 
-        $serviceChargeReceivableAccount = $this->getAccountByCode('1002'); // Service Charge Receivable
-        $serviceChargeRevenueAccount = $this->getAccountByCode('4001'); // Service Charge Revenue
+        $serviceChargeReceivableCode = config('tax.accounts.service_charge_receivable', '1002');
+        $serviceChargeRevenueCode = config('tax.accounts.service_charge_revenue', '4001');
+
+        $serviceChargeReceivableAccount = $this->getAccountByCode($serviceChargeReceivableCode);
+        $serviceChargeRevenueAccount = $this->getAccountByCode($serviceChargeRevenueCode);
 
         if (!$serviceChargeReceivableAccount || !$serviceChargeRevenueAccount) {
-            throw new Exception('Service charge accounts not configured. Please create accounts with codes 1002 (Service Charge Receivable) and 4001 (Service Charge Revenue).');
+            throw new Exception("Service charge accounts not configured. Please create accounts with codes {$serviceChargeReceivableCode} (Service Charge Receivable) and {$serviceChargeRevenueCode} (Service Charge Revenue).");
         }
 
         $lines = [
@@ -149,10 +168,30 @@ class TaxService
     public function createDefaultTaxAccounts(): void
     {
         $accounts = [
-            ['code' => '2001', 'name' => 'VAT Payable', 'type' => 'liability', 'is_system' => true],
-            ['code' => '1002', 'name' => 'Service Charge Receivable', 'type' => 'asset', 'is_system' => true],
-            ['code' => '4001', 'name' => 'Service Charge Revenue', 'type' => 'revenue', 'is_system' => true],
-            ['code' => '5001', 'name' => 'Sales Tax Expense', 'type' => 'expense', 'is_system' => true],
+            [
+                'code' => config('tax.accounts.vat_payable', '2001'),
+                'name' => 'VAT Payable',
+                'type' => 'liability',
+                'is_system' => true,
+            ],
+            [
+                'code' => config('tax.accounts.service_charge_receivable', '1002'),
+                'name' => 'Service Charge Receivable',
+                'type' => 'asset',
+                'is_system' => true,
+            ],
+            [
+                'code' => config('tax.accounts.service_charge_revenue', '4001'),
+                'name' => 'Service Charge Revenue',
+                'type' => 'revenue',
+                'is_system' => true,
+            ],
+            [
+                'code' => config('tax.accounts.sales_tax_expense', '5001'),
+                'name' => 'Sales Tax Expense',
+                'type' => 'expense',
+                'is_system' => true,
+            ],
         ];
 
         foreach ($accounts as $accountData) {
@@ -208,8 +247,11 @@ class TaxService
     {
         $asOf = $asOf ?? now();
 
-        $vatPayable = $this->getAccountBalance('2001', $asOf);
-        $serviceChargeReceivable = $this->getAccountBalance('1002', $asOf);
+        $vatPayableCode = config('tax.accounts.vat_payable', '2001');
+        $serviceChargeReceivableCode = config('tax.accounts.service_charge_receivable', '1002');
+
+        $vatPayable = $this->getAccountBalance($vatPayableCode, $asOf);
+        $serviceChargeReceivable = $this->getAccountBalance($serviceChargeReceivableCode, $asOf);
 
         return [
             'vat_payable' => abs($vatPayable),

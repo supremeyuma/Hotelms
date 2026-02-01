@@ -11,11 +11,13 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use App\Events\LaundryOrderUpdated;
 use App\Services\LaundryAccountingService;
+use App\Services\PricingService;
 
 class LaundryOrderService
 {
     public function __construct(
-        private LaundryAccountingService $accountingService
+        private LaundryAccountingService $accountingService,
+        private PricingService $pricingService
     ) {}
 
     /**
@@ -59,12 +61,16 @@ class LaundryOrderService
                 ];
             }
 
+            // Calculate final total with 7.5% VAT and 1% service charge for laundry
+            $pricing = $this->pricingService->calculatePricing($totalAmount, 0.075, 0.01);
+            $finalTotal = $pricing['total'];
+
             // 3️⃣ Create Laundry Order
             $order = LaundryOrder::create([
                 'order_code'    => $orderCode,
                 'room_id'       => $roomId,
                 'status'        => LaundryStatus::REQUESTED,
-                'total_amount'  => $totalAmount,
+                'total_amount'  => $finalTotal,
             ]);
 
             // 4️⃣ Create Order Items
@@ -95,7 +101,7 @@ class LaundryOrderService
                 //'order_id'     => $order->id,
                 'booking_id'   => $bookingId,
                 'room_id'      => $roomId,
-                'amount'       => $totalAmount,
+                'amount'       => $finalTotal,
                 'status'       => 'unpaid',
                 'payment_mode' => $paymentMode, // prepaid | pay_on_delivery | postpaid
                 'type'         => 'laundry',

@@ -17,7 +17,10 @@ class EventTicket extends Model
         'guest_email',
         'guest_phone',
         'quantity',
-        'amount_paid',
+        'amount',
+        'base_amount',
+        'vat_amount',
+        'service_charge_amount',
         'payment_method',
         'payment_reference',
         'payment_status',
@@ -31,7 +34,10 @@ class EventTicket extends Model
 
     protected $casts = [
         'quantity' => 'integer',
-        'amount_paid' => 'decimal:2',
+        'amount' => 'decimal:2',
+        'base_amount' => 'decimal:2',
+        'vat_amount' => 'decimal:2',
+        'service_charge_amount' => 'decimal:2',
         'checked_in_at' => 'datetime',
         'refund_requested_at' => 'datetime',
         'refunded_at' => 'datetime',

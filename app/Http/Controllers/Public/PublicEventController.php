@@ -8,6 +8,7 @@ use App\Models\EventTicket;
 use App\Models\EventTableReservation;
 use App\Services\EventService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Inertia\Inertia;
 
 class PublicEventController extends Controller
@@ -16,42 +17,38 @@ class PublicEventController extends Controller
         protected EventService $eventService
     ) {}
 
+    /* ===================== EVENTS ===================== */
+
     public function index()
     {
-        $featuredEvents = $this->eventService->getFeaturedEvents();
-        $allEvents = $this->eventService->getAvailableEvents();
-
         return Inertia::render('Public/Events', [
-            'featuredEvents' => $featuredEvents,
-            'allEvents' => $allEvents,
+            'featuredEvents' => $this->eventService->getFeaturedEvents(),
+            'allEvents'      => $this->eventService->getAvailableEvents(),
         ]);
     }
 
     public function show(Event $event)
     {
-        $event->load(['ticketTypes' => function ($query) {
-                    $query->where('is_active', true)
-                        ->orderBy('price');
-                }, 'promotionalMedia' => function ($query) {
-                    $query->active()->ordered();
-                }]);
+        $event->load([
+            'ticketTypes' => fn ($q) => $q->where('is_active', true)->orderBy('price'),
+            'promotionalMedia' => fn ($q) => $q->active()->ordered(),
+        ]);
 
         return Inertia::render('Public/EventDetail', [
             'event' => $event,
         ]);
     }
 
+    /* ===================== TICKETS ===================== */
+
     public function showTicketPurchase(Event $event)
     {
-        // Load the tickets and assign them to a variable
-        $tickets = $event->ticketTypes()
-            ->where('is_active', true)
-            ->orderBy('price')
-            ->get();
-
         return Inertia::render('Public/EventTicketPurchase', [
-            'event' => $event,
-            'ticketTypes' => $tickets, // Now $tickets is defined
+            'event'       => $event,
+            'ticketTypes' => $event->ticketTypes()
+                ->where('is_active', true)
+                ->orderBy('price')
+                ->get(),
         ]);
     }
 
@@ -59,44 +56,35 @@ class PublicEventController extends Controller
     {
         $data = $request->validate([
             'ticket_type_id' => 'required|exists:event_ticket_types,id',
-            'guest_name' => 'required|string|max:255',
-            'guest_email' => 'required|email|max:255',
-            'guest_phone' => 'nullable|string|max:20',
-            'quantity' => 'required|integer|min:1|max:10',
+            'guest_name'     => 'required|string|max:255',
+            'guest_email'    => 'required|email|max:255',
+            'guest_phone'    => 'nullable|string|max:20',
+            'quantity'       => 'required|integer|min:1|max:10',
             'payment_method' => 'required|in:online,cash',
-            'notes' => 'nullable|string|max:1000',
         ]);
 
-        try {
-            $ticket = $this->eventService->purchaseTicket($event, $data);
+        $ticket = $this->eventService->purchaseTicket($event, $data);
 
-            if ($data['payment_method'] === 'cash') {
-                // For cash payments, mark as confirmed (payment collected at venue)
-                $this->eventService->confirmPayment($ticket->qr_code, 'cash', 'paid');
-                
-                return redirect()->route('events.purchase.success', ['reference' => $ticket->qr_code])
-                    ->with('success', 'Ticket purchased successfully!');
-            } else {
-                // For online payments, redirect to payment processor
-                return redirect()->route('events.payment.process', ['reference' => $ticket->qr_code]);
-            }
+        if ($data['payment_method'] === 'cash') {
+            $this->eventService->confirmPayment($ticket->qr_code, 'cash', 'paid');
 
-        } catch (\Exception $e) {
-            return back()
-                ->with('error', $e->getMessage())
-                ->withInput();
+            return redirect()->route('events.purchase.success', [
+                'reference' => $ticket->qr_code,
+            ]);
         }
+
+        return redirect()->route('events.payment.process', [
+            'reference' => $ticket->qr_code,
+        ]);
     }
+
+    /* ===================== TABLES ===================== */
 
     public function showTableReservation(Event $event)
     {
-        if (!$event->has_table_reservations) {
-            abort(404, 'This event does not support table reservations');
-        }
+        abort_unless($event->has_table_reservations, 404);
 
-        $event->load(['tableTypes' => function ($query) {
-                    $query->orderBy('price');
-                }]);
+        $event->load(['tableTypes' => fn ($q) => $q->orderBy('price')]);
 
         return Inertia::render('Public/EventTableReservation', [
             'event' => $event,
@@ -106,181 +94,179 @@ class PublicEventController extends Controller
     public function processTableReservation(Request $request, Event $event)
     {
         $data = $request->validate([
-            'guest_name' => 'required|string|max:255',
-            'guest_email' => 'required|email|max:255',
-            'guest_phone' => 'required|string|max:20',
+            'guest_name'    => 'required|string|max:255',
+            'guest_email'   => 'required|email|max:255',
+            'guest_phone'   => 'required|string|max:20',
             'table_type_id' => 'required|exists:event_table_types,id',
         ]);
 
-        // Verify table type belongs to this event
-        $tableType = \App\Models\EventTableType::where('id', $data['table_type_id'])
-            ->where('event_id', $event->id)
-            ->first();
+        $tableType = $event->tableTypes()
+            ->where('id', $data['table_type_id'])
+            ->firstOrFail();
 
-        if (!$tableType) {
-            return back()
-                ->with('error', 'Invalid table type selected')
-                ->withInput();
-        }
-
-        $data['payment_method'] = 'online'; // Force online payment only
+        $data['payment_method'] = 'online';
         $data['amount'] = $tableType->price;
 
-        try {
-            $reservation = $this->eventService->reserveTable($event, $data);
+        $reservation = $this->eventService->reserveTable($event, $data);
 
-            // Always redirect to payment processor for online payments
-            return redirect()->route('events.payment.process', ['reference' => $reservation->qr_code]);
-
-        } catch (\Exception $e) {
-            return back()
-                ->with('error', $e->getMessage())
-                ->withInput();
-        }
-    }
-
-    public function purchaseSuccess(Request $request)
-    {
-        $reference = $request->get('reference');
-        $ticket = EventTicket::with(['event', 'ticketType'])
-            ->where('qr_code', $reference)
-            ->first();
-
-        if (!$ticket) {
-            abort(404, 'Ticket not found');
-        }
-
-        return Inertia::render('Public/TicketPurchaseSuccess', [
-            'ticket' => $ticket,
+        return redirect()->route('events.payment.process', [
+            'reference' => $reservation->qr_code,
         ]);
     }
 
-    public function reservationSuccess(Request $request)
-    {
-        $reference = $request->get('reference');
-        $reservation = EventTableReservation::with(['event'])
-            ->where('qr_code', $reference)
-            ->first();
-
-        if (!$reservation) {
-            abort(404, 'Reservation not found');
-        }
-
-        return Inertia::render('Public/TableReservationSuccess', [
-            'reservation' => $reservation,
-        ]);
-    }
+    /* ===================== PAYMENT ===================== */
 
     public function paymentProcess(Request $request)
     {
-        $reference = $request->get('reference');
-        
-        // Check if it's a ticket or table reservation
-        $ticket = EventTicket::with(['event', 'ticketType'])
-            ->where('qr_code', $reference)
-            ->first();
+        $reference = $request->query('reference');
 
-        $reservation = EventTableReservation::with(['event'])
+        $ticket = EventTicket::with(['event', 'ticketType'])
             ->where('qr_code', $reference)
             ->first();
 
         if ($ticket) {
-            // Mock Flutterwave integration
+            // Use the stored amount which includes taxes (1.5% VAT + 1% service charge)
+            $amount = $ticket->amount;
+
             return Inertia::render('Public/PaymentProcess', [
-                'type' => 'ticket',
-                'item' => $ticket,
-                'amount' => $ticket->amount_paid,
+                'type'      => 'ticket',
                 'reference' => $reference,
+                'amount'    => $amount,
+                'customer'  => [
+                    'email' => $ticket->guest_email,
+                    'name'  => $ticket->guest_name,
+                    'phone' => $ticket->guest_phone,
+                ],
+                'meta' => [
+                    'event'      => $ticket->event->title,
+                    'ticketType' => $ticket->ticketType->name,
+                    'quantity'   => $ticket->quantity,
+                ],
             ]);
-        } elseif ($reservation) {
-            // Mock Flutterwave integration
-            return Inertia::render('Public/PaymentProcess', [
-                'type' => 'table',
-                'item' => $reservation,
-                'amount' => $reservation->amount_paid,
-                'reference' => $reference,
-            ]);
-        } else {
-            abort(404, 'Payment reference not found');
         }
+
+        $reservation = EventTableReservation::with(['event',])
+            ->where('qr_code', $reference)
+            ->first();
+
+        if ($reservation) {
+
+        //dd($reservation);
+            return Inertia::render('Public/PaymentProcess', [
+                'type'      => 'table',
+                'reference' => $reference,
+                'amount'    => (float)($reservation->amount),
+                'customer'  => [
+                    'email' => $reservation->guest_email,
+                    'name'  => $reservation->guest_name,
+                    'phone' => $reservation->guest_phone,
+                ],
+                'meta' => [
+                    'event' => $reservation->event->title,
+                    'table' => $reservation->table_number ?? 'Table',
+                ],
+            ]);
+        }
+
+        abort(404);
+    }
+
+    public function flutterwaveInitialize(Request $request)
+    {
+        $data = $request->validate([
+            'reference' => 'required|string',
+            'amount'    => 'required|numeric|min:1',
+            'email'     => 'required|email',
+            'name'      => 'required|string',
+        ]);
+
+        $response = Http::withToken(config('services.flutterwave.secret_key'))
+            ->post('https://api.flutterwave.com/v3/payments', [
+                'tx_ref'   => $data['reference'],
+                'amount'   => $data['amount'],
+                'currency' => 'NGN',
+                'redirect_url' => route('events.payment.callback'),
+                'customer' => [
+                    'email' => $data['email'],
+                    'name'  => $data['name'],
+                ],
+                'customizations' => [
+                    'title'       => 'MooreLife Resort',
+                    'description' => 'Event Payment',
+                ],
+            ])
+            ->throw()
+            ->json();
+
+        return response()->json($response['data']);
     }
 
     public function paymentCallback(Request $request)
     {
-        // Mock Flutterwave callback handling
-        $reference = $request->input('tx_ref');
-        $status = $request->input('status'); // success, failed
-        
-        $paymentMethod = $request->input('payment_method', 'online');
-        
-        if ($status === 'success') {
-            $this->eventService->confirmPayment($reference, $paymentMethod, 'paid');
-            
-            return redirect()->route('events.purchase.success', ['reference' => $reference])
-                ->with('success', 'Payment processed successfully!');
-        } else {
-            $this->eventService->confirmPayment($reference, $paymentMethod, 'failed');
-            
-            return redirect()->route('events.payment.failed', ['reference' => $reference])
-                ->with('error', 'Payment failed. Please try again.');
-        }
-    }
+        $request->validate([
+            'transaction_id' => 'required',
+            'tx_ref'         => 'required|string',
+        ]);
 
-    public function paymentFailed(Request $request)
-    {
-        $reference = $request->get('reference');
-        
-        return Inertia::render('Public/PaymentFailed', [
-            'reference' => $reference,
+        $verify = Http::withToken(config('services.flutterwave.secret_key'))
+            ->get("https://api.flutterwave.com/v3/transactions/{$request->transaction_id}/verify")
+            ->throw()
+            ->json();
+
+        if (
+            $verify['status'] === 'success' &&
+            $verify['data']['status'] === 'successful'
+        ) {
+            $this->eventService->confirmPayment(
+                $request->tx_ref,
+                'flutterwave',
+                'paid',
+                $verify['data']['id']
+            );
+
+            return redirect()->route('events.purchase.success', [
+                'reference' => $request->tx_ref,
+            ]);
+        }
+
+        $this->eventService->confirmPayment(
+            $request->tx_ref,
+            'flutterwave',
+            'failed'
+        );
+
+        return redirect()->route('events.payment.failed', [
+            'reference' => $request->tx_ref,
         ]);
     }
 
+    /* ===================== CHECK-IN ===================== */
+
     public function checkIn(Request $request)
     {
-        $qrCode = $request->get('qr');
-        
-        // Check if it's a ticket or table reservation
-        $ticket = EventTicket::with(['event', 'ticketType'])
-            ->where('qr_code', $qrCode)
-            ->first();
+        $qr = $request->get('qr');
 
-        $reservation = EventTableReservation::with(['event'])
-            ->where('qr_code', $qrCode)
-            ->first();
-
+        $ticket = EventTicket::where('qr_code', $qr)->first();
         if ($ticket) {
-            try {
-                $checkedTicket = $this->eventService->checkInTicket($qrCode);
-                return Inertia::render('Public/CheckIn', [
-                    'type' => 'ticket',
-                    'item' => $checkedTicket,
-                    'success' => true,
-                ]);
-            } catch (\Exception $e) {
-                return Inertia::render('Public/CheckIn', [
-                    'error' => $e->getMessage(),
-                    'qr_code' => $qrCode,
-                ]);
-            }
-        } elseif ($reservation) {
-            try {
-                $checkedReservation = $this->eventService->checkInTableReservation($qrCode);
-                return Inertia::render('Public/CheckIn', [
-                    'type' => 'table',
-                    'item' => $checkedReservation,
-                    'success' => true,
-                ]);
-            } catch (\Exception $e) {
-                return Inertia::render('Public/CheckIn', [
-                    'error' => $e->getMessage(),
-                    'qr_code' => $qrCode,
-                ]);
-            }
-        } else {
             return Inertia::render('Public/CheckIn', [
-                'error' => 'Invalid QR code',
-                'qr_code' => $qrCode,
+                'type'    => 'ticket',
+                'item'    => $this->eventService->checkInTicket($qr),
+                'success' => true,
             ]);
         }
+
+        $reservation = EventTableReservation::where('qr_code', $qr)->first();
+        if ($reservation) {
+            return Inertia::render('Public/CheckIn', [
+                'type'    => 'table',
+                'item'    => $this->eventService->checkInTableReservation($qr),
+                'success' => true,
+            ]);
+        }
+
+        return Inertia::render('Public/CheckIn', [
+            'error'   => 'Invalid QR code',
+            'qr_code' => $qr,
+        ]);
     }
 }

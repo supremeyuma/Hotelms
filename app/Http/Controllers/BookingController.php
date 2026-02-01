@@ -9,6 +9,7 @@ use App\Http\Requests\BookingRequest;
 use App\Models\Booking;
 use App\Models\Room;
 use App\Services\BookingService;
+use App\Services\PricingService;
 use App\Services\AuditLogger;
 use App\Services\PaymentAccountingService;
 use Illuminate\Http\Request;
@@ -23,6 +24,7 @@ class BookingController extends Controller
 {
     protected BookingService $service;
     protected RoomAvailabilityService $availability;
+    protected PricingService $pricingService;
     
 
     /*public function __construct(BookingService $service)
@@ -31,10 +33,11 @@ class BookingController extends Controller
         $this->middleware('auth')->only(['createBooking','confirmBooking','viewBooking','cancelBooking']);
     }*/
 
-     public function __construct(RoomAvailabilityService $availability, BookingService $bookingService)
+     public function __construct(RoomAvailabilityService $availability, BookingService $bookingService, PricingService $pricingService)
     {
         $this->availability = $availability;
         $this->bookingService = $bookingService;
+        $this->pricingService = $pricingService;
     }
 
 
@@ -203,7 +206,12 @@ class BookingController extends Controller
         $nights = \Carbon\Carbon::parse($bookingData['check_in'])
             ->diffInDays(\Carbon\Carbon::parse($bookingData['check_out']));
 
-        $totalPrice = $roomType->base_price * $nights * $bookingData['quantity'];
+        $basePrice = $roomType->base_price * $nights * $bookingData['quantity'];
+        
+        // Calculate pricing with 1.5% VAT and 1% service charge for room bookings
+        $pricing = $this->pricingService->calculatePricing($basePrice, 0.015, 0.01);
+        $totalPrice = $pricing['total'];
+        
         //dd($bookingData, $totalPrice, $roomType, $nights);
         try {
             $booking = $this->bookingService->createBooking([

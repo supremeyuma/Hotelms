@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Booking;
 use App\Observers\BookingObserver;
 use App\Services\ContentService;
+use App\Services\Accounting\TaxService;
+use App\Services\AccountingService;
+use App\Services\PricingService;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -18,7 +21,15 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Register TaxService with its dependency
+        $this->app->singleton(TaxService::class, function ($app) {
+            return new TaxService($app->make(AccountingService::class));
+        });
+
+        // Register PricingService with TaxService dependency
+        $this->app->singleton(PricingService::class, function ($app) {
+            return new PricingService($app->make(TaxService::class));
+        });
     }
 
     /**

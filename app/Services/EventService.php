@@ -6,6 +6,7 @@ use App\Models\Event;
 use App\Models\EventTicket;
 use App\Models\EventTableReservation;
 use App\Models\EventTicketType;
+use App\Services\Accounting\TaxService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Mail;
@@ -15,6 +16,11 @@ use App\Mail\EventTableReservationConfirmation;
 
 class EventService
 {
+    public function __construct(
+        protected TaxService $taxService,
+        protected PricingService $pricingService,
+    ) {}
+
     public function createTicketTypes(Event $event, array $ticketTypes): void
     {
         DB::transaction(function () use ($event, $ticketTypes) {
@@ -57,8 +63,11 @@ class EventService
             // Generate unique QR code
             $qrCode = $this->generateQRCode();
 
-            // Calculate amount
-            $totalAmount = $ticketType->price * $data['quantity'];
+            // Calculate base amount
+            $baseAmount = $ticketType->price * $data['quantity'];
+
+            // Calculate pricing with tax breakdown (1.5% VAT, 1% service charge for tickets)
+            $pricing = $this->pricingService->calculatePricing($baseAmount, 0.015, 0.01);
 
             // Create ticket
             $ticket = EventTicket::create([
@@ -68,7 +77,10 @@ class EventService
                 'guest_email' => $data['guest_email'],
                 'guest_phone' => $data['guest_phone'] ?? null,
                 'quantity' => $data['quantity'],
-                'amount_paid' => $totalAmount,
+                'base_amount' => $pricing['base_amount'],
+                'vat_amount' => $pricing['vat'],
+                'service_charge_amount' => $pricing['service_charge'],
+                'amount' => $pricing['total'],
                 'payment_method' => $data['payment_method'] ?? 'online',
                 'payment_reference' => $data['payment_reference'] ?? null,
                 'payment_status' => 'pending',
@@ -103,8 +115,12 @@ class EventService
             // Generate unique QR code
             $qrCode = $this->generateQRCode();
 
-            // Use provided amount or table type price
-            $totalAmount = $data['amount'] ?? $tableType->price;
+            // Calculate base amount (table price is fixed, not dependent on number of guests)
+            $numberOfGuests = $data['number_of_guests'] ?? null;
+            $baseAmount = $tableType->price;
+
+            // Calculate pricing with tax breakdown (1.5% VAT, 1% service charge for table reservations)
+            $pricing = $this->pricingService->calculatePricing($baseAmount, 0.015, 0.01);
 
             // Create reservation
             $reservation = EventTableReservation::create([
@@ -113,8 +129,11 @@ class EventService
                 'guest_email' => $data['guest_email'],
                 'guest_phone' => $data['guest_phone'] ?? null,
                 'table_number' => $tableType->name,
-                'number_of_guests' => $tableType->capacity ?? 1,
-                'amount_paid' => $totalAmount,
+                'number_of_guests' => $numberOfGuests,
+                'base_amount' => $pricing['base_amount'],
+                'vat_amount' => $pricing['vat'],
+                'service_charge_amount' => $pricing['service_charge'],
+                'amount' => $pricing['total'],
                 'payment_method' => $data['payment_method'] ?? 'online',
                 'payment_reference' => $data['payment_reference'] ?? null,
                 'payment_status' => 'pending',
@@ -143,8 +162,16 @@ class EventService
                     'status' => $status === 'paid' ? 'confirmed' : 'pending',
                 ]);
 
-                // Send confirmation email if payment is paid
+                // Post taxes to accounting system on successful payment
                 if ($status === 'paid') {
+                    $this->taxService->postAllTaxes(
+                        $ticket->base_amount,
+                        'EventTicket',
+                        $ticket->id,
+                        "Ticket: {$ticket->event->title}",
+                        auth()?->id()
+                    );
+                    
                     $this->sendTicketConfirmationEmail($ticket);
                 }
             }
@@ -161,8 +188,16 @@ class EventService
                     'status' => $status === 'paid' ? 'confirmed' : 'pending',
                 ]);
 
-                // Send confirmation email if payment is paid
+                // Post taxes to accounting system on successful payment
                 if ($status === 'paid') {
+                    $this->taxService->postAllTaxes(
+                        $reservation->base_amount,
+                        'EventTableReservation',
+                        $reservation->id,
+                        "Table Reservation: {$reservation->event->title}",
+                        auth()?->id()
+                    );
+                    
                     $this->sendTableReservationConfirmationEmail($reservation);
                 }
             }
@@ -335,7 +370,7 @@ class EventService
             }])
             ->active()
             ->upcoming()
-            ->orderBy('event_date')
+            ->orderBy('start_datetime')
             ->get();
     }
 
@@ -345,7 +380,7 @@ class EventService
             ->active()
             ->featured()
             ->upcoming()
-            ->orderBy('event_date')
+            ->orderBy('start_datetime')
             ->take(6)
             ->get();
     }

@@ -27,6 +27,8 @@ Route::get('/pages/{pageKey}', [PublicController::class, 'staticPage'])->name('p
 
 Route::post('/payments/initialize', [PaymentController::class, 'initialize']);
 Route::get('/payments/verify/{reference}', [PaymentController::class, 'verify']);
+Route::post('/payments/initialize-by-reference', [PaymentController::class, 'initializeByReference'])
+    ->name('payments.initialize.by.reference');
 
 // Flutterwave webhook
 Route::post('/webhooks/flutterwave', [App\Http\Controllers\Webhook\FlutterwaveWebhookController::class, 'handle'])
