@@ -2,154 +2,112 @@
   <PublicLayout>
     <Head title="Payment | MooreLife Resort" />
 
-    <div class="min-h-screen bg-gray-50 py-12">
+    <div class="min-h-screen bg-slate-50 py-8 md:py-12">
       <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- Header -->
-        <div class="text-center mb-8">
-          <h1 class="text-3xl font-bold text-gray-900">Complete Payment</h1>
-          <p class="mt-2 text-gray-600">
-            Secure payment processing for your reservation
-          </p>
+        
+        <div class="bg-indigo-950 rounded-t-3xl overflow-hidden relative">
+          <div class="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+          <div class="relative z-10 p-6 md:p-8 flex flex-col md:flex-row gap-6 items-center">
+            <div class="w-16 h-16 md:w-20 md:h-20 shrink-0 rounded-xl bg-white/10 flex items-center justify-center shadow-xl border border-white/10">
+              <svg class="w-10 h-10 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 002 2z" />
+              </svg>
+            </div>
+            <div class="text-center md:text-left">
+              <p class="text-indigo-400 text-[10px] font-black uppercase tracking-[0.2em] mb-1">Secure Checkout</p>
+              <h1 class="text-2xl md:text-3xl font-black text-white tracking-tighter">Complete Payment</h1>
+              <div class="flex flex-wrap justify-center md:justify-start gap-4 text-indigo-100/60 text-xs font-bold mt-2">
+                <span class="flex items-center capitalize">
+                  <svg class="w-3.5 h-3.5 mr-1.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+                  {{ type }} Reservation
+                </span>
+                <span v-if="meta.event" class="flex items-center">
+                  <svg class="w-3.5 h-3.5 mr-1.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                  {{ meta.event }}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <!-- Details -->
-        <div class="bg-white rounded-lg shadow-md overflow-hidden mb-8">
-          <div class="p-8">
-            <!-- Ticket -->
-            <div v-if="type === 'ticket'" class="mb-8">
-              <h2 class="text-xl font-bold text-gray-900 mb-4">Ticket Details</h2>
-
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <span class="text-gray-600">Event:</span>
-                  <span class="font-medium text-gray-900">
-                    {{ meta.event }}
-                  </span>
-                </div>
-
-                <div>
-                  <span class="text-gray-600">Ticket Type:</span>
-                  <span class="font-medium text-gray-900">
-                    {{ meta.ticketType }}
-                  </span>
-                </div>
-
-                <div>
-                  <span class="text-gray-600">Quantity:</span>
-                  <span class="font-medium text-gray-900">
-                    {{ meta.quantity }}
-                  </span>
-                </div>
-
-                <div>
-                  <span class="text-gray-600">Guest:</span>
-                  <span class="font-medium text-gray-900">
-                    {{ customer.name }}
-                  </span>
+        <div class="bg-white rounded-b-3xl shadow-2xl shadow-slate-200/60 border-x border-b border-slate-100 overflow-hidden">
+          <div class="p-8 md:p-12">
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-12">
+              
+              <div>
+                <h3 class="text-sm font-black text-indigo-600 uppercase tracking-widest mb-6 flex items-center">
+                  <span class="w-6 h-6 rounded bg-indigo-50 flex items-center justify-center mr-3 text-[10px]">01</span>
+                  Booking Review
+                </h3>
+                
+                <div class="space-y-4">
+                  <div v-for="(val, label) in getSummaryItems" :key="label" class="flex justify-between items-center p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <span class="text-[10px] font-black uppercase text-slate-400 tracking-wider">{{ label }}</span>
+                    <span class="text-sm font-bold text-slate-900">{{ val }}</span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <!-- Table -->
-            <div v-if="type === 'table'" class="mb-8">
-              <h2 class="text-xl font-bold text-gray-900 mb-4">
-                Table Reservation
-              </h2>
+              <div>
+                <h3 class="text-sm font-black text-indigo-600 uppercase tracking-widest mb-6 flex items-center">
+                  <span class="w-6 h-6 rounded bg-indigo-50 flex items-center justify-center mr-3 text-[10px]">02</span>
+                  Payment Gateway
+                </h3>
 
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <span class="text-gray-600">Event:</span>
-                  <span class="font-medium text-gray-900">
-                    {{ meta.event }}
-                  </span>
-                </div>
-
-                <div>
-                  <span class="text-gray-600">Table:</span>
-                  <span class="font-medium text-gray-900">
-                    {{ meta.table }}
-                  </span>
-                </div>
-
-                <div>
-                  <span class="text-gray-600">Guest:</span>
-                  <span class="font-medium text-gray-900">
-                    {{ customer.name }}
-                  </span>
-                </div>
-
-                <div>
-                  <span class="text-gray-600">Phone number:</span>
-                  <span class="font-medium text-gray-900">
-                    {{ customer.phone }}
-                  </span>
-                </div>
-
-                <div>
-                  <span class="text-gray-600">Guest:</span>
-                  <span class="font-medium text-gray-900">
-                    {{ customer.email }}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Payment -->
-            <div class="space-y-6">
-              <h3 class="text-xl font-bold text-gray-900">
-                Payment Information
-              </h3>
-
-              <div class="bg-gray-50 p-6 rounded-lg">
-                <div class="mb-6">
-                  <div class="text-2xl font-bold text-gray-900">
-                    Total Amount
-                  </div>
-                  <div class="text-3xl font-bold text-indigo-600">
-                    ₦{{ formatNumber(amount) }}
+                <div class="bg-slate-900 rounded-3xl p-8 text-white relative overflow-hidden mb-6">
+                  <div class="relative z-10 text-center">
+                    <p class="text-xs font-bold text-white/40 uppercase tracking-[0.2em] mb-2">Amount Payable</p>
+                    <p class="text-5xl font-black tracking-tighter mb-2">₦{{ formatNumber(amount) }}</p>
+                    <div class="inline-flex items-center px-3 py-1 rounded-full bg-white/10 text-[10px] font-bold uppercase tracking-wider text-indigo-300">
+                      Transaction Ref: {{ reference }}
+                    </div>
                   </div>
                 </div>
 
-                <!-- Provider Selection (when multiple providers enabled) -->
-                <div v-if="paymentData && paymentData.show_provider_options" class="mb-6 p-4 bg-white rounded-lg border-2 border-indigo-100">
-                  <label class="block text-sm font-bold text-gray-700 mb-3">Choose Payment Method:</label>
-                  <div class="grid grid-cols-2 gap-3">
-                    <button
-                      v-for="prov in paymentData.available_providers"
-                      :key="prov.value"
-                      @click.prevent="selectedProvider = prov.value"
-                      :class="{
-                        'ring-2 ring-indigo-600 bg-indigo-50': selectedProvider === prov.value,
-                        'border-2 border-gray-300 hover:border-indigo-300': selectedProvider !== prov.value,
-                      }"
-                      class="px-4 py-3 rounded-lg font-medium transition-all"
-                    >
-                      {{ prov.label }}
-                    </button>
-                  </div>
+                <div v-if="paymentData?.show_provider_options" class="space-y-3 mb-6">
+                  <button
+                    v-for="prov in paymentData.available_providers"
+                    :key="prov.value"
+                    @click.prevent="selectedProvider = prov.value"
+                    :class="[
+                      'w-full flex items-center justify-between px-6 py-4 rounded-2xl border-2 transition-all duration-300',
+                      selectedProvider === prov.value 
+                        ? 'border-indigo-600 bg-indigo-50/50 ring-4 ring-indigo-500/10 text-indigo-900' 
+                        : 'border-slate-100 bg-slate-50 text-slate-600 hover:border-slate-300'
+                    ]"
+                  >
+                    <span class="font-bold text-sm uppercase tracking-wider">{{ prov.label }}</span>
+                    <div v-if="selectedProvider === prov.value" class="w-5 h-5 bg-indigo-600 rounded-full flex items-center justify-center">
+                      <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                    </div>
+                  </button>
                 </div>
 
-                <!-- Payment Method Info -->
-                <div v-if="selectedProvider" class="mb-4 p-3 bg-blue-50 border-l-4 border-blue-500 rounded text-sm text-blue-700">
-                  <span v-if="selectedProvider === 'flutterwave'">
-                    You will be redirected to Flutterwave to complete payment.
-                  </span>
-                  <span v-else-if="selectedProvider === 'paystack'">
-                    You will be redirected to Paystack to complete payment.
-                  </span>
+                <div v-if="selectedProvider" class="mb-8 flex items-start gap-3 p-4 bg-indigo-50 rounded-2xl border border-indigo-100 text-xs font-bold text-indigo-700">
+                  <svg class="w-5 h-5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
+                  <span>Redirecting you to {{ selectedProvider }} secure terminal. Do not close this page after clicking pay.</span>
                 </div>
 
                 <button
                   @click.prevent="processPayment"
                   :disabled="processing || !selectedProvider"
-                  class="w-full flex items-center justify-center px-4 py-3 rounded-md text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50"
+                  class="group relative w-full flex items-center justify-center px-8 py-6 bg-indigo-600 text-white rounded-2xl font-black text-sm uppercase tracking-[0.2em] transition-all hover:bg-indigo-700 disabled:opacity-50"
                 >
-                  <span v-if="processing">Processing…</span>
-                  <span v-else>
-                    Pay Now – ₦{{ formatNumber(amount) }}
+                  <span v-if="!processing" class="flex items-center">
+                    Pay Now
+                    <svg class="w-5 h-5 ml-3 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+                  </span>
+                  <span v-else class="flex items-center">
+                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    Authorizing...
                   </span>
                 </button>
               </div>
+            </div>
+
+            <div class="pt-8 border-t border-slate-100 text-center">
+              <p class="text-[10px] text-slate-400 font-black uppercase tracking-[0.3em]">MooreLife Resort &bull; 100% Secure Transaction</p>
             </div>
           </div>
         </div>
@@ -159,7 +117,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { Head } from '@inertiajs/vue3'
 import PublicLayout from '@/Layouts/PublicLayout.vue'
 
@@ -177,16 +135,29 @@ const selectedProvider = ref(null)
 const flutterwaveReady = ref(false)
 const paystackReady = ref(false)
 
-/**
- * Load Flutterwave script
- */
+const getSummaryItems = computed(() => {
+  const items = {
+    'Customer': props.customer.name,
+    'Email': props.customer.email,
+  }
+  
+  if (props.type === 'ticket') {
+    items['Category'] = props.meta.ticketType
+    items['Quantity'] = props.meta.quantity
+  } else {
+    items['Table Tier'] = props.meta.table
+    items['Phone'] = props.customer.phone
+  }
+  
+  return items
+})
+
 const loadFlutterwave = () =>
   new Promise((resolve, reject) => {
     if (window.FlutterwaveCheckout) {
       flutterwaveReady.value = true
       return resolve()
     }
-
     const script = document.createElement('script')
     script.src = 'https://checkout.flutterwave.com/v3.js'
     script.onload = () => {
@@ -197,16 +168,12 @@ const loadFlutterwave = () =>
     document.head.appendChild(script)
   })
 
-/**
- * Load Paystack script
- */
 const loadPaystack = () =>
   new Promise((resolve, reject) => {
     if (window.PaystackPop) {
       paystackReady.value = true
       return resolve()
     }
-
     const script = document.createElement('script')
     script.src = 'https://js.paystack.co/v1/inline.js'
     script.onload = () => {
@@ -219,11 +186,7 @@ const loadPaystack = () =>
 
 onMounted(async () => {
   try {
-    // Initialize payment to get provider options
-    const csrf = document
-      .querySelector('meta[name="csrf-token"]')
-      ?.getAttribute('content')
-
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
     const res = await fetch('/payments/initialize-by-reference', {
       method: 'POST',
       headers: {
@@ -231,18 +194,13 @@ onMounted(async () => {
         'X-CSRF-TOKEN': csrf,
         'X-Requested-With': 'XMLHttpRequest',
       },
-      body: JSON.stringify({
-        reference: props.reference,
-      }),
+      body: JSON.stringify({ reference: props.reference }),
     })
 
-    if (!res.ok) {
-      throw new Error('Failed to load payment data')
-    }
+    if (!res.ok) throw new Error('Failed to load payment data')
 
     paymentData.value = await res.json()
     
-    // Filter out manual/venue payments for tickets and tables - only allow online providers
     if (props.type === 'ticket' || props.type === 'table') {
       paymentData.value.available_providers = paymentData.value.available_providers.filter(
         p => p.value !== 'manual' && p.value !== 'venue'
@@ -251,13 +209,12 @@ onMounted(async () => {
     
     selectedProvider.value = paymentData.value.provider
 
-    // Pre-load payment libraries based on available providers
     const promises = []
     if (paymentData.value.available_providers.some(p => p.value === 'flutterwave')) {
-      promises.push(loadFlutterwave().catch(() => console.warn('Flutterwave failed to load')))
+      promises.push(loadFlutterwave().catch(() => console.warn('Flutterwave load failed')))
     }
     if (paymentData.value.available_providers.some(p => p.value === 'paystack')) {
-      promises.push(loadPaystack().catch(() => console.warn('Paystack failed to load')))
+      promises.push(loadPaystack().catch(() => console.warn('Paystack load failed')))
     }
 
     await Promise.all(promises)
@@ -266,33 +223,14 @@ onMounted(async () => {
   }
 })
 
-/**
- * Initialize payment and redirect to appropriate provider
- */
 const processPayment = async () => {
-  if (!selectedProvider.value) {
-    alert('Please select a payment method')
-    return
-  }
-
-  // Check if required library is loaded
-  if (selectedProvider.value === 'flutterwave' && !flutterwaveReady.value) {
-    alert('Flutterwave payment gateway not ready. Please refresh.')
-    return
-  }
-
-  if (selectedProvider.value === 'paystack' && !paystackReady.value) {
-    alert('Paystack payment gateway not ready. Please refresh.')
-    return
-  }
+  if (!selectedProvider.value) return
+  if (selectedProvider.value === 'flutterwave' && !flutterwaveReady.value) return
+  if (selectedProvider.value === 'paystack' && !paystackReady.value) return
 
   processing.value = true
-
   try {
-    const csrf = document
-      .querySelector('meta[name="csrf-token"]')
-      ?.getAttribute('content')
-
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
     const res = await fetch('/payments/initialize-by-reference', {
       method: 'POST',
       headers: {
@@ -312,12 +250,6 @@ const processPayment = async () => {
     }
 
     const data = await res.json()
-    console.log('Payment Config:', data)
-
-    if (!data.customer || !data.customer.email) {
-      throw new Error('Customer information missing from server response')
-    }
-
     if (selectedProvider.value === 'flutterwave') {
       handleFlutterwave(data)
     } else if (selectedProvider.value === 'paystack') {
@@ -329,9 +261,6 @@ const processPayment = async () => {
   }
 }
 
-/**
- * Handle Flutterwave checkout
- */
 const handleFlutterwave = (data) => {
   window.FlutterwaveCheckout({
     public_key: data.public_key,
@@ -355,19 +284,15 @@ const handleFlutterwave = (data) => {
   })
 }
 
-/**
- * Handle Paystack checkout
- */
 const handlePaystack = (data) => {
   const handler = window.PaystackPop.setup({
     key: data.public_key,
     email: data.customer.email,
-    amount: parseFloat(data.amount) * 100, // Paystack expects amount in kobo
+    amount: parseFloat(data.amount) * 100,
     currency: data.currency || 'NGN',
     ref: data.reference,
     onClose: () => {
       processing.value = false
-      alert('Payment cancelled')
     },
     onSuccess: (response) => {
       window.location.href = `/events/payment/callback?transaction_id=${response.reference}&tx_ref=${data.reference}&provider=paystack`
@@ -376,7 +301,5 @@ const handlePaystack = (data) => {
   handler.openIframe()
 }
 
-const formatNumber = (n) =>
-  new Intl.NumberFormat('en-NG').format(n)
+const formatNumber = (n) => new Intl.NumberFormat('en-NG').format(n)
 </script>
-
