@@ -230,7 +230,7 @@ class EventController extends Controller
             'has_media' => $request->has('media'),
             'media_data' => $request->input('media'),
             'all_request_data' => $request->all(),
-            'files' => $request->files(),
+            'files' => $request->allFiles(),
         ]);
 
         if ($request->has('media')) {

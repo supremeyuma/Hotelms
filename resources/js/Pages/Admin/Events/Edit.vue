@@ -7,48 +7,30 @@ const props = defineProps({
   event: Object
 })
 
-// Helper to extract time from datetime string
-const extractTimeFromDateTime = (dateTimeString) => {
+// Helper to format datetime string to datetime-local input format
+const formatDateTimeForInput = (dateTimeString) => {
   if (!dateTimeString) return ''
   const date = new Date(dateTimeString)
   if (isNaN(date.getTime())) return ''
-  // Returns HH:mm in 24-hour format
-  return date.getHours().toString().padStart(2, '0') + ':' + 
-         date.getMinutes().toString().padStart(2, '0')
-}
-
-// Helper to format date for date input
-const formatDateForInput = (dateString) => {
-  if (!dateString) return ''
-  const date = new Date(dateString)
-  if (isNaN(date.getTime())) return ''
-  return date.toISOString().split('T')[0] // YYYY-MM-DD format
+  // Format as YYYY-MM-DDTHH:mm for datetime-local input
+  return date.toISOString().slice(0, 16)
 }
 
 const form = useForm({
   title: props.event.title,
   description: props.event.description,
-  event_date: formatDateForInput(props.event.event_date),
-  start_time: extractTimeFromDateTime(props.event.start_time),
-  end_date: formatDateForInput(props.event.end_time),
-  end_time: extractTimeFromDateTime(props.event.end_time),
+  start_datetime: formatDateTimeForInput(props.event.start_datetime),
+  end_datetime: formatDateTimeForInput(props.event.end_datetime),
   venue: props.event.venue || '',
   capacity: props.event.capacity || '',
   is_active: props.event.is_active,
   is_featured: props.event.is_featured,
-  ticket_sales_start: (formatDateForInput(props.event.ticket_sales_start) && extractTimeFromDateTime(props.event.ticket_sales_start)) 
-      ? formatDateForInput(props.event.ticket_sales_start) + 'T' + extractTimeFromDateTime(props.event.ticket_sales_start)
-      : '',
-
-  ticket_sales_end: (formatDateForInput(props.event.ticket_sales_end) && extractTimeFromDateTime(props.event.ticket_sales_end)) 
-      ? formatDateForInput(props.event.ticket_sales_end) + 'T' + extractTimeFromDateTime(props.event.ticket_sales_end)
-      : '',
+  ticket_sales_start: formatDateTimeForInput(props.event.ticket_sales_start),
+  ticket_sales_end: formatDateTimeForInput(props.event.ticket_sales_end),
   max_tickets_per_person: props.event.max_tickets_per_person || 10,
   has_table_reservations: props.event.has_table_reservations || false,
-  table_capacity: props.event.table_capacity || 0,
-  table_price: props.event.table_price || 0,
   image: undefined,
-  promotional_media: [],
+  media: [],
   ticket_types: props.event.ticket_types?.length > 0 ? props.event.ticket_types.map(type => ({
     id: type.id,
     name: type.name,
@@ -298,15 +280,25 @@ watch(mainImageIndex, (newIndex) => {
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-slate-700 mb-2">Event Date *</label>
+              <label class="block text-sm font-medium text-slate-700 mb-2">Start Date & Time *</label>
               <input 
-                v-model="form.event_date" 
-                type="date" 
+                v-model="form.start_datetime" 
+                type="datetime-local" 
                 class="input w-full"
-                :min="new Date().toISOString().split('T')[0]"
                 required
               />
-              <p v-if="form.errors.event_date" class="text-red-500 text-sm mt-1">{{ form.errors.event_date }}</p>
+              <p v-if="form.errors.start_datetime" class="text-red-500 text-sm mt-1">{{ form.errors.start_datetime }}</p>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-2">End Date & Time *</label>
+              <input 
+                v-model="form.end_datetime" 
+                type="datetime-local" 
+                class="input w-full"
+                required
+              />
+              <p v-if="form.errors.end_datetime" class="text-red-500 text-sm mt-1">{{ form.errors.end_datetime }}</p>
             </div>
 
             <div>
@@ -318,37 +310,6 @@ watch(mainImageIndex, (newIndex) => {
                 placeholder="Event venue"
               />
               <p v-if="form.errors.venue" class="text-red-500 text-sm mt-1">{{ form.errors.venue }}</p>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-2">Start Time</label>
-              <input 
-                v-model="form.start_time" 
-                type="time" 
-                class="input w-full"
-              />
-              <p v-if="form.errors.start_time" class="text-red-500 text-sm mt-1">{{ form.errors.start_time }}</p>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-2">End Date</label>
-              <input 
-                v-model="form.end_date" 
-                type="date" 
-                class="input w-full"
-                :min="form.event_date"
-              />
-              <p v-if="form.errors.end_date" class="text-red-500 text-sm mt-1">{{ form.errors.end_date }}</p>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-2">End Time</label>
-              <input 
-                v-model="form.end_time" 
-                type="time" 
-                class="input w-full"
-              />
-              <p v-if="form.errors.end_time" class="text-red-500 text-sm mt-1">{{ form.errors.end_time }}</p>
             </div>
 
             <div>
