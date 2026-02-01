@@ -171,12 +171,15 @@ class EventController extends Controller
 
         ]);
 
-        if ($request->file('image') instanceof \Illuminate\Http\UploadedFile) {
+        if ($request->hasFile('image')) {
             if ($event->image) {
                 Storage::disk('public')->delete($event->image);
             }
 
             $data['image'] = $request->file('image')->store('events', 'public');
+        } else {
+            // Preserve existing image if no new one uploaded
+            unset($data['image']);
         }
 
         // 5. Normalizing date formats
