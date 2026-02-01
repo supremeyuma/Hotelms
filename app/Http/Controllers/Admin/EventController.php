@@ -8,6 +8,7 @@ use App\Models\EventPromotionalMedia;
 use App\Services\EventService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class EventController extends Controller
@@ -225,22 +226,70 @@ class EventController extends Controller
         }
 
         // Handle New Media
+        \Log::info('Media upload debug', [
+            'has_media' => $request->has('media'),
+            'media_data' => $request->input('media'),
+            'all_request_data' => $request->all(),
+            'files' => $request->files(),
+        ]);
+
         if ($request->has('media')) {
-            foreach ($request->media as $mediaData) {
-                if (isset($mediaData['file']) && $mediaData['file'] instanceof \Illuminate\Http\UploadedFile) {
-                    $filePath = $mediaData['file']->store('events/promotional', 'public');
-                    if (!empty($mediaData['is_main_image'])) {
-                        EventPromotionalMedia::where('event_id', $event->id)->update(['is_main_image' => false]);
+            \Log::info('Processing media array', ['media' => $request->media]);
+            
+            foreach ($request->media as $index => $mediaData) {
+                \Log::info("Processing media item {$index}", ['data' => $mediaData]);
+                
+                if (isset($mediaData['file'])) {
+                    if ($mediaData['file'] instanceof \Illuminate\Http\UploadedFile) {
+                        \Log::info('Valid uploaded file found', [
+                            'index' => $index,
+                            'original_name' => $mediaData['file']->getClientOriginalName(),
+                            'size' => $mediaData['file']->getSize(),
+                            'mime_type' => $mediaData['file']->getMimeType(),
+                        ]);
+                        
+                        try {
+                            $filePath = $mediaData['file']->store('events/promotional', 'public');
+                            \Log::info('File stored successfully', ['path' => $filePath]);
+                            
+                            if (!empty($mediaData['is_main_image'])) {
+                                \Log::info('Setting as main image, resetting others');
+                                EventPromotionalMedia::where('event_id', $event->id)->update(['is_main_image' => false]);
+                            }
+                            
+                            $createdMedia = $event->promotionalMedia()->create([
+                                'media_type' => $mediaData['media_type'] ?? 'image',
+                                'media_url' => $filePath,
+                                'title' => $mediaData['title'] ?? null,
+                                'description' => $mediaData['description'] ?? null,
+                                'is_main_image' => !empty($mediaData['is_main_image']),
+                            ]);
+                            
+                            \Log::info('Media record created', ['id' => $createdMedia->id]);
+                        } catch (\Exception $e) {
+                            \Log::error('Error storing media file', [
+                                'index' => $index,
+                                'error' => $e->getMessage(),
+                                'trace' => $e->getTraceAsString(),
+                            ]);
+                            return back()->with('error', 'Failed to upload media file: ' . $e->getMessage());
+                        }
+                    } else {
+                        \Log::warning('Invalid file object at index', [
+                            'index' => $index,
+                            'file_type' => gettype($mediaData['file']),
+                            'file_data' => $mediaData['file']
+                        ]);
                     }
-                    $event->promotionalMedia()->create([
-                        'media_type' => $mediaData['media_type'] ?? 'image',
-                        'media_url' => $filePath,
-                        'title' => $mediaData['title'] ?? null,
-                        'description' => $mediaData['description'] ?? null,
-                        'is_main_image' => !empty($mediaData['is_main_image']),
+                } else {
+                    \Log::warning('No file found in media data at index', [
+                        'index' => $index,
+                        'media_data_keys' => array_keys($mediaData)
                     ]);
                 }
             }
+        } else {
+            \Log::info('No media data in request');
         }
 
         // Sync Ticket Types

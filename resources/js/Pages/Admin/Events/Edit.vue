@@ -17,21 +17,6 @@ const extractTimeFromDateTime = (dateTimeString) => {
          date.getMinutes().toString().padStart(2, '0')
 }
 
-// Add this helper to format any date/time string for the datetime-local input
-const formatForDateTimeInput = (dateTimeString) => {
-  if (!dateTimeString) return ''
-  const date = new Date(dateTimeString)
-  if (isNaN(date.getTime())) return ''
-  
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  const hours = String(date.getHours()).padStart(2, '0')
-  const minutes = String(date.getMinutes()).padStart(2, '0')
-  
-  return `${year}-${month}-${day}T${hours}:${minutes}`
-}
-
 // Helper to format date for date input
 const formatDateForInput = (dateString) => {
   if (!dateString) return ''
@@ -44,8 +29,9 @@ const form = useForm({
   title: props.event.title,
   description: props.event.description,
   event_date: formatDateForInput(props.event.event_date),
-  start_datetime: formatForDateTimeInput(props.event.start_datetime || props.event.event_date + ' ' + props.event.start_time),
-  end_datetime: formatForDateTimeInput(props.event.end_datetime || props.event.end_time),
+  start_time: extractTimeFromDateTime(props.event.start_time),
+  end_date: formatDateForInput(props.event.end_time),
+  end_time: extractTimeFromDateTime(props.event.end_time),
   venue: props.event.venue || '',
   capacity: props.event.capacity || '',
   is_active: props.event.is_active,
@@ -61,7 +47,7 @@ const form = useForm({
   has_table_reservations: props.event.has_table_reservations || false,
   table_capacity: props.event.table_capacity || 0,
   table_price: props.event.table_price || 0,
-  image: null,
+  image: undefined,
   promotional_media: [],
   ticket_types: props.event.ticket_types?.length > 0 ? props.event.ticket_types.map(type => ({
     id: type.id,
@@ -205,46 +191,55 @@ const removeTableType = (index) => {
 }
 
 const submit = () => {
-  form.media = mediaFiles.value.length
-    ? mediaFiles.value.map(m => ({
-        file: m.file,
-        media_type: m.media_type,
-        title: m.title,
-        description: m.description,
-        is_main_image: m.is_main_image
-      }))
-    : undefined
+  console.log('Submit function called')
+  console.log('Form image:', form.image)
+  console.log('Image type:', typeof form.image)
+  console.log('Is File?', form.image instanceof File)
+  
+  // Only include image if a new file was actually selected
+  if (form.image && form.image instanceof File) {
+    console.log('Keeping new image in form')
+    // Keep the image file in form for upload
+  } else {
+    console.log('Removing image from form data')
+    // Remove image from form data if no new file was selected
+    delete form.image
+  }
 
-  form.existing_media = existingMedia.value.length
-    ? existingMedia.value.map(m => ({
-        id: m.id,
-        title: m.title,
-        description: m.description,
-        is_main_image: m.is_main_image ? 1 : 0
-      }))
-    : undefined
+  // Sync new media into the form so Inertia's Form handles file uploads
+  form.media = mediaFiles.value.map(m => ({
+    file: m.file,
+    media_type: m.media_type,
+    title: m.title,
+    description: m.description,
+    is_main_image: m.is_main_image
+  }))
 
-  form.removed_media = removedMedia.value.length
-    ? removedMedia.value
-    : undefined
+  console.log('Media files being sent:', form.media.length)
+  console.log('Existing media being sent:', form.existing_media?.length || 0)
 
+  // Provide existing media meta and removed ids for backend processing
+  form.existing_media = existingMedia.value.map(m => ({
+    id: m.id,
+    title: m.title || '',
+    description: m.description || '',
+    is_main_image: m.is_main_image ? 1 : 0
+  }))
+  form.removed_media = removedMedia.value
 
-const isDateSequenceValid = computed(() => {
-  if (!form.start_datetime || !form.end_datetime) return true
-  return new Date(form.start_datetime) < new Date(form.end_datetime)
-})
+  // Submit using Inertia Form's put helper; it will build FormData automatically
+  form.put(`/admin/events/${props.event.id}`, {
+    forceFormData: true,
+    preserveScroll: true,
+    onError: (errors) => {
+      console.error('Form submission errors:', errors)
+    }
+  })
+}
 
-// Then update your main validation
 const isFormValid = computed(() => {
-  return (
-    form.title && 
-    form.description && 
-    form.start_datetime && 
-    form.end_datetime &&
-    isDateSequenceValid.value
-  )
+  return form.title && form.start_datetime && form.end_datetime && form.description
 })
-
 
 // Update existing media when main image changes
 watch(mainImageIndex, (newIndex) => {
@@ -303,6 +298,18 @@ watch(mainImageIndex, (newIndex) => {
             </div>
 
             <div>
+              <label class="block text-sm font-medium text-slate-700 mb-2">Event Date *</label>
+              <input 
+                v-model="form.event_date" 
+                type="date" 
+                class="input w-full"
+                :min="new Date().toISOString().split('T')[0]"
+                required
+              />
+              <p v-if="form.errors.event_date" class="text-red-500 text-sm mt-1">{{ form.errors.event_date }}</p>
+            </div>
+
+            <div>
               <label class="block text-sm font-medium text-slate-700 mb-2">Venue</label>
               <input 
                 v-model="form.venue" 
@@ -312,29 +319,38 @@ watch(mainImageIndex, (newIndex) => {
               />
               <p v-if="form.errors.venue" class="text-red-500 text-sm mt-1">{{ form.errors.venue }}</p>
             </div>
-            
+
             <div>
-              <label class="block text-sm font-medium text-slate-700 mb-2">Event Starts *</label>
+              <label class="block text-sm font-medium text-slate-700 mb-2">Start Time</label>
               <input 
-                v-model="form.start_datetime" 
-                type="datetime-local" 
+                v-model="form.start_time" 
+                type="time" 
                 class="input w-full"
-                required
               />
-              <p v-if="form.errors.start_datetime" class="text-red-500 text-sm mt-1">{{ form.errors.start_datetime }}</p>
+              <p v-if="form.errors.start_time" class="text-red-500 text-sm mt-1">{{ form.errors.start_time }}</p>
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-slate-700 mb-2">Event Ends *</label>
+              <label class="block text-sm font-medium text-slate-700 mb-2">End Date</label>
               <input 
-                v-model="form.end_datetime" 
-                type="datetime-local" 
+                v-model="form.end_date" 
+                type="date" 
                 class="input w-full"
-                required
+                :min="form.event_date"
               />
-              <p v-if="form.errors.end_datetime" class="text-red-500 text-sm mt-1">{{ form.errors.end_datetime }}</p>
+              <p v-if="form.errors.end_date" class="text-red-500 text-sm mt-1">{{ form.errors.end_date }}</p>
             </div>
-            
+
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-2">End Time</label>
+              <input 
+                v-model="form.end_time" 
+                type="time" 
+                class="input w-full"
+              />
+              <p v-if="form.errors.end_time" class="text-red-500 text-sm mt-1">{{ form.errors.end_time }}</p>
+            </div>
+
             <div>
               <label class="block text-sm font-medium text-slate-700 mb-2">Capacity</label>
               <input 
@@ -678,7 +694,7 @@ watch(mainImageIndex, (newIndex) => {
               <span class="ml-2 text-sm font-medium text-slate-700">Enable Table Reservations</span>
             </label>
 
-            <!--<div v-if="form.has_table_reservations" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div v-if="form.has_table_reservations" class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label class="block text-sm font-medium text-slate-700 mb-2">Table Capacity</label>
                 <input 
@@ -703,7 +719,7 @@ watch(mainImageIndex, (newIndex) => {
                 />
                 <p v-if="form.errors.table_price" class="text-red-500 text-sm mt-1">{{ form.errors.table_price }}</p>
               </div>
-            </div>-->
+            </div>
           </div>
         </section>
 
@@ -759,15 +775,6 @@ watch(mainImageIndex, (newIndex) => {
                     class="input w-full"
                     placeholder="0.00"
                   />
-                </div>
-
-                <div class="md:col-span-2">
-                  <label class="block text-sm font-medium text-slate-700 mb-2">Description</label>
-                  <textarea 
-                    v-model="tableType.description" 
-                    class="input w-full h-20 resize-none"
-                    placeholder="Describe this table type..."
-                  ></textarea>
                 </div>
 
                 <div>
