@@ -66,7 +66,27 @@ class PublicController extends Controller
 
     public function club()
     {
-        return Inertia::render('Public/ClubLounge');
+        $upcomingEvents = Event::where('is_active', true)
+            ->where('start_datetime', '>', now())
+            ->with(['promotionalMedia', 'ticketTypes'])
+            ->orderBy('start_datetime', 'asc')
+            ->get()
+            ->map(function ($event) {
+                return [
+                    'id' => $event->id,
+                    'title' => $event->title,
+                    'description' => $event->description,
+                    'event_date' => $event->start_datetime->format('M d, Y'),
+                    'start_time' => $event->start_datetime->format('g:i A'),
+                    'end_time' => $event->end_datetime->format('g:i A'),
+                    'venue' => $event->venue,
+                    'promotional_media' => $event->promotionalMedia,
+                ];
+            });
+
+        return Inertia::render('Public/ClubLounge', [
+            'events' => $upcomingEvents,
+        ]);
     }
 
     public function policies()
