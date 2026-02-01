@@ -205,48 +205,29 @@ const removeTableType = (index) => {
 }
 
 const submit = () => {
-  // 1. Prepare media arrays
-  form.media = mediaFiles.value.map(m => ({
-    file: m.file,
-    media_type: m.media_type,
-    title: m.title,
-    description: m.description,
-    is_main_image: m.is_main_image
-  }))
+  form.media = mediaFiles.value.length
+    ? mediaFiles.value.map(m => ({
+        file: m.file,
+        media_type: m.media_type,
+        title: m.title,
+        description: m.description,
+        is_main_image: m.is_main_image
+      }))
+    : undefined
 
-  form.existing_media = existingMedia.value.map(m => ({
-    id: m.id,
-    title: m.title || '',
-    description: m.description || '',
-    is_main_image: m.is_main_image ? 1 : 0
-  }))
-  
-  form.removed_media = removedMedia.value
+  form.existing_media = existingMedia.value.length
+    ? existingMedia.value.map(m => ({
+        id: m.id,
+        title: m.title,
+        description: m.description,
+        is_main_image: m.is_main_image ? 1 : 0
+      }))
+    : undefined
 
-  // 2. Handle Table Reservations Logic
-  let processedTableTypes = []
-  if (form.has_table_reservations) {
-    processedTableTypes = form.table_types.filter(t => t.name && t.name.trim() !== '')
-  }
+  form.removed_media = removedMedia.value.length
+    ? removedMedia.value
+    : undefined
 
-  // 3. POST with Method Spoofing
-  form.transform((data) => ({
-    ...data,
-    table_types: processedTableTypes, // Send filtered tables
-    _method: 'PUT', 
-    // Explicitly remove old keys if they still haunt the form object
-    event_date: undefined, 
-    start_time: undefined,
-    end_date: undefined,
-    end_time: undefined,
-  })).post(`/admin/events/${props.event.id}`, {
-    forceFormData: true,
-    preserveScroll: true,
-    onError: (errors) => {
-        console.error("Validation Errors:", errors);
-    }
-  })
-}
 
 const isDateSequenceValid = computed(() => {
   if (!form.start_datetime || !form.end_datetime) return true

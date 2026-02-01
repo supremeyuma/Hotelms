@@ -159,14 +159,23 @@ class EventController extends Controller
             'has_table_reservations' => 'boolean',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'removed_media' => 'nullable|array',
-            'media' => 'nullable|array',
             'existing_media' => 'nullable|array',
             'table_types' => 'nullable|array',
             'ticket_types' => 'nullable|array',
+            'media' => 'nullable|array',
+            'media.*.file' => 'nullable|file|mimes:jpg,jpeg,png,webp,mp4|max:20480',
+            'media.*.media_type' => 'required|string',
+            'media.*.title' => 'nullable|string',
+            'media.*.description' => 'nullable|string',
+            'media.*.is_main_image' => 'boolean',
+
         ]);
 
-        if ($request->hasFile('image')) {
-            if ($event->image) Storage::disk('public')->delete($event->image);
+        if ($request->file('image') instanceof \Illuminate\Http\UploadedFile) {
+            if ($event->image) {
+                Storage::disk('public')->delete($event->image);
+            }
+
             $data['image'] = $request->file('image')->store('events', 'public');
         }
 
@@ -177,7 +186,7 @@ class EventController extends Controller
         $event->update($data);
 
         // Handle Media Removal
-        if ($request->has('removed_media')) {
+        if (is_array($request->removed_media) && count($request->removed_media)) {
             foreach ($request->removed_media as $mediaId) {
                 $media = EventPromotionalMedia::find($mediaId);
                 if ($media && $media->event_id === $event->id) {

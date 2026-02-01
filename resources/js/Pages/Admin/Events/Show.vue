@@ -163,7 +163,7 @@ const getMainImage = () => {
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <h3 class="text-sm font-medium text-slate-500 mb-1">Date & Time</h3>
-                <p class="text-slate-900">{{ formatDate(event.event_date) }} at {{ formatTime(event.start_time) }}</p>
+                <p class="text-slate-900">{{ formatDate(event.start_datetime) }} at {{ formatTime(event.start_datetime) }}</p>
               </div>
               <div>
                 <h3 class="text-sm font-medium text-slate-500 mb-1">Venue</h3>
