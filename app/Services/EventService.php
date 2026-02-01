@@ -13,6 +13,11 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use App\Mail\EventTicketPurchaseConfirmation;
 use App\Mail\EventTableReservationConfirmation;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use BaconQrCode\Renderer\ImageRenderer;
+use BaconQrCode\Renderer\Image\GDImageBackEnd;
+use BaconQrCode\Renderer\RendererStyle\RendererStyle;
+
 
 class EventService
 {
@@ -264,7 +269,7 @@ class EventService
             }
 
             // Mock Flutterwave refund processing
-            $this->processRefund($ticket->payment_reference, $ticket->amount_paid, $reason);
+            $this->processRefund($ticket->payment_reference, $ticket->amount, $reason);
 
             return $ticket;
         });
@@ -277,7 +282,7 @@ class EventService
         $totalTablesReserved = $event->total_tables_reserved;
         $totalTableRevenue = $event->tableReservations()
             ->where('status', 'confirmed')
-            ->sum('amount_paid');
+            ->sum('amount');
 
         $ticketTypes = $event->ticketTypes()->withCount(['tickets' => function ($query) {
             $query->where('status', 'confirmed');
@@ -293,7 +298,7 @@ class EventService
                 return [
                     'name' => $type->name,
                     'total_sold' => $type->tickets_count,
-                    'revenue' => $type->tickets()->confirmed()->sum('amount_paid'),
+                    'revenue' => $type->tickets()->confirmed()->sum('amount'),
                     'remaining' => $type->available_quantity,
                 ];
             }),
@@ -329,29 +334,23 @@ class EventService
 
     protected function generateQRCodeForUrl(string $url): string
     {
-        try {
-            // Create a simple QR code using data URI format
-            $qrCodeData = "QR:$url";
-            $fileName = 'qr-codes/' . Str::random(10) . '.txt';
-            
-            // Create a simple placeholder QR code content
-            $content = "Event QR Code\nURL: $url\nReference: " . Str::random(8) . "\n\nPlease check in at the event with this reference.";
-            
-            Storage::disk('public')->put($fileName, $content);
-            
-            return Storage::url($fileName);
-        } catch (\Exception $e) {
-            // Fallback: create simple text-based QR code placeholder
-            logger()->error('QR code generation failed: ' . $e->getMessage());
-            
-            $fileName = 'qr-codes/placeholder-' . Str::random(10) . '.txt';
-            $content = "QR Code for: $url\n\n(This is a placeholder - QR code generation service temporarily unavailable)";
-            
-            Storage::disk('public')->put($fileName, $content);
-            
-            return Storage::url($fileName);
-        }
+        $fileName = 'qr-codes/' . Str::uuid() . '.png';
+
+        $qrImage = QrCode::format('png')
+            ->size(400)
+            ->margin(2)
+            ->errorCorrection('H')
+            ->style('square')
+            ->eye('square')
+            ->encoding('UTF-8')
+            ->generate($url);
+
+
+        Storage::disk('public')->put($fileName, $qrImage);
+
+        return Storage::url($fileName);
     }
+
 
     protected function processRefund(string $reference, float $amount, string $reason): void
     {

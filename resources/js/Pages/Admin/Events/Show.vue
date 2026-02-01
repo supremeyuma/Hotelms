@@ -9,7 +9,7 @@ const props = defineProps({
   qr_code: String
 })
 
-console.log(props.event)
+console.log(props.qr_code)
 
 const deleteForm = useForm({})
 const showDeleteModal = ref(false)

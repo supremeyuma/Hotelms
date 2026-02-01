@@ -109,7 +109,7 @@ class Event extends Model
     {
         return $this->tickets()
             ->where('status', 'confirmed')
-            ->sum('amount_paid');
+            ->sum('amount');
     }
 
     public function getTotalTablesReservedAttribute()
