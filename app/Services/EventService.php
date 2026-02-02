@@ -334,22 +334,21 @@ class EventService
 
     protected function generateQRCodeForUrl(string $url): string
     {
-        $fileName = 'qr-codes/' . Str::uuid() . '.png';
+        $fileName = 'qr-codes/' . Str::uuid() . '.svg';
 
-        $qrImage = QrCode::format('png')
+        $qrSvg = QrCode::format('svg')
             ->size(400)
             ->margin(2)
-            ->errorCorrection('H')
-            ->style('square')
-            ->eye('square')
             ->encoding('UTF-8')
             ->generate($url);
 
-
-        Storage::disk('public')->put($fileName, $qrImage);
+        Storage::disk('public')->put($fileName, $qrSvg);
 
         return Storage::url($fileName);
     }
+
+
+
 
 
     protected function processRefund(string $reference, float $amount, string $reason): void

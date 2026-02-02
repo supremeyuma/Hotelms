@@ -26,8 +26,10 @@ const deleteEvent = () => {
 const downloadQRCode = () => {
   const link = document.createElement('a')
   link.href = props.qr_code
-  link.download = `event-${props.event.id}-qr.png`
+  link.download = `event-${props.event.id}-qr.svg`
+  document.body.appendChild(link)
   link.click()
+  document.body.removeChild(link)
 }
 
 const formatDate = (date) => {
