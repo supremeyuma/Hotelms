@@ -34,7 +34,7 @@
             @endif
             <p><strong>Table Number:</strong> {{ $reservation->table_number }}</p>
             <p><strong>Number of Guests:</strong> {{ $reservation->number_of_guests }}</p>
-            <p><strong>Amount Paid:</strong> ₦{{ number_format($reservation->amount_paid, 2) }}</p>
+            <p><strong>Amount Paid:</strong> ₦{{ number_format($reservation->amount, 2) }}</p>
         </section>
 
         <section style="text-align: center; margin-bottom: 30px;">
@@ -60,7 +60,7 @@
                 <li>Bring a valid ID for verification</li>
                 <li>Take a screenshot of this QR code as backup</li>
                 <li>This reservation is confirmed and your table will be held for 30 minutes</li>
-                @if($reservation->amount_paid > 0)
+                @if($reservation->amount > 0)
                     <li>Your table payment has been confirmed</li>
                 @endif
             </ul>

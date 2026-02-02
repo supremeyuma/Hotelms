@@ -48,7 +48,7 @@ class EventTicketPurchaseConfirmation extends Mailable
                 'ticket' => $this->ticket,
                 'event' => $this->event,
                 'qrCodeUrl' => $this->qrCodeUrl,
-                'totalAmount' => $this->ticket->amount_paid * $this->ticket->quantity,
+                'totalAmount' => $this->ticket->amount * $this->ticket->quantity,
             ]
         );
     }
