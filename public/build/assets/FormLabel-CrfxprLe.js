@@ -1,0 +1,1 @@
+import{d as t,C as r,o as s}from"./app-7INxFsEz.js";const a=["for"],c={__name:"FormLabel",props:{for:String},setup(e){return(o,l)=>(s(),t("label",{for:e.for,class:"block text-sm font-medium text-gray-700 mb-1"},[r(o.$slots,"default")],8,a))}};export{c as _};
