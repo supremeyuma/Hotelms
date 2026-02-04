@@ -17,8 +17,8 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->validateCsrfTokens(except: [
-            'webhooks/flutterwave',
-            'webhooks/paystack',
+            '/webhooks/flutterwave',
+            '/webhooks/paystack',
         ]);
 
          $middleware->alias([

@@ -72,6 +72,21 @@ class WebhookController extends Controller
      */
     public function handlePaystackWebhook(Request $request)
     {
+
+        if (!$request->hasHeader('x-paystack-signature')) {
+        return response()->json(['error' => 'Missing signature'], 400);
+        }
+
+        if ($request->input('event') !== 'charge.success') {
+            return response()->json(['status' => 'ignored']);
+        }
+
+        $reference = $request->input('data.reference');
+
+        if (!$reference) {
+            return response()->json(['error' => 'Missing reference'], 400);
+        }
+
         try {
             $signature = $request->header('x-paystack-signature');
             $payload = $request->getContent();
