@@ -1,0 +1,1 @@
+import{B as t}from"./BaseStaffLayout-Becdpfsl.js";import{c as e,o,w as r,C as s}from"./app-BSdlelmR.js";const u={__name:"ManagerLayout",setup(n){return(a,_)=>(o(),e(t,null,{default:r(()=>[s(a.$slots,"default")]),_:3}))}};export{u as _};
