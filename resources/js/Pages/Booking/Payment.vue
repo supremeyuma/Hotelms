@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref,onMounted } from 'vue'
 import { router } from '@inertiajs/vue3';
 import PublicLayout from '@/Layouts/PublicLayout.vue';
 import { 
@@ -16,21 +16,90 @@ const props = defineProps({
   booking: Object,
   expires_at: String,
 })
+console.log(props.booking)
 
 const paymentMethod = ref('offline')
 const processing = ref(false)
 
+const paymentData = ref(null)
+const selectedProvider = ref(null)
+const flutterwaveReady = ref(false)
+const paystackReady = ref(false)
+
 const loadFlutterwave = () => {
   return new Promise((resolve, reject) => {
-    if (window.FlutterwaveCheckout) return resolve(window.FlutterwaveCheckout)
+    if (window.FlutterwaveCheckout) {
+      flutterwaveReady.value = true
+      return resolve(window.FlutterwaveCheckout)
+    }
+
     const script = document.createElement('script')
     script.src = 'https://checkout.flutterwave.com/v3.js'
     script.async = true
-    script.onload = () => resolve(window.FlutterwaveCheckout)
+    script.onload = () => {
+      flutterwaveReady.value = true // 👈 THIS WAS MISSING
+      resolve(window.FlutterwaveCheckout)
+    }
     script.onerror = () => reject(new Error('Failed to load Flutterwave'))
     document.head.appendChild(script)
   })
 }
+
+
+const loadPaystack = () =>
+  new Promise((resolve, reject) => {
+    if (window.PaystackPop) {
+      paystackReady.value = true
+      return resolve()
+    }
+    const script = document.createElement('script')
+    script.src = 'https://js.paystack.co/v1/inline.js'
+    script.onload = () => {
+      paystackReady.value = true
+      resolve()
+    }
+    script.onerror = reject
+    document.head.appendChild(script)
+  })
+
+
+  onMounted(async () => {
+  try {
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+    const res = await fetch('/payments/initialize-booking', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': csrf || '',
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+      body: JSON.stringify({
+        booking_id: props.booking.id,
+        provider: selectedProvider.value, // optional on first load
+      }),
+    })
+
+
+    if (!res.ok) throw new Error('Failed to load payment data')
+
+    paymentData.value = await res.json()
+    selectedProvider.value = paymentData.value.provider
+
+    
+
+    const promises = []
+    if (paymentData.value.available_providers.some(p => p.value === 'flutterwave')) {
+      promises.push(loadFlutterwave().catch(() => console.warn('Flutterwave load failed')))
+    }
+    if (paymentData.value.available_providers.some(p => p.value === 'paystack')) {
+      promises.push(loadPaystack().catch(() => console.warn('Paystack load failed')))
+    }
+
+    await Promise.all(promises)
+  } catch (e) {
+    console.error('Payment initialization error:', e)
+  }
+})
 
 const processPayment = async () => {
   processing.value = true
@@ -40,41 +109,95 @@ const processPayment = async () => {
       return
     }
 
+    if (!selectedProvider.value) {
+      alert('Please select a payment provider')
+      processing.value = false
+      return
+    }
+
+    if (selectedProvider.value === 'flutterwave' && !flutterwaveReady.value) {
+      alert('Flutterwave is not ready. Please try again.')
+      processing.value = false
+      return
+    }
+
+    if (selectedProvider.value === 'paystack' && !paystackReady.value) {
+      alert('Paystack is not ready. Please try again.')
+      processing.value = false
+      return
+    }
+
     const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-    const initRes = await fetch('/payments/initialize', {
+    const initRes = await fetch('/payments/initialize-booking', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': csrf || '' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': csrf || '',
+        'X-Requested-With': 'XMLHttpRequest',
+      },
       body: JSON.stringify({
         booking_id: props.booking.id,
-        amount: props.booking.total_amount,
-        tx_ref: `BK-${props.booking.id}`,
-        description: `Booking #${props.booking.id}`,
-        customer_email: props.booking.guest_email,
-        customer_name: props.booking.guest_name,
+        provider: selectedProvider.value, // optional on first load
       }),
     })
 
-    if (!initRes.ok) throw new Error('Failed to initialize payment')
-    const data = await initRes.json()
-    await loadFlutterwave()
 
-    window.FlutterwaveCheckout({
-      public_key: data.public_key,
-      tx_ref: data.tx_ref,
-      amount: data.amount,
-      currency: 'NGN',
-      payment_options: 'card,bank,ussd',
-      customer: data.customer,
-      customizations: { title: 'MooreLife Resort', description: 'Room Booking' },
-      callback: (resp) => {
-        window.location.href = `/booking/payment/${props.booking.id}/callback?tx_ref=${resp.tx_ref}&status=${resp.status}`
-      },
-      onclose: () => { processing.value = false }
-    })
+    if (!initRes.ok) {
+      const err = await initRes.json().catch(() => ({}))
+      throw new Error(err.message || 'Payment initialization failed')
+    }
+
+    const data = await initRes.json()
+
+    if (selectedProvider.value === 'flutterwave') {
+      handleFlutterwave(data)
+    } else if (selectedProvider.value === 'paystack') {
+      handlePaystack(data)
+    }
+
   } catch (e) {
     alert(e.message || 'Payment processing failed')
     processing.value = false
   }
+}
+
+const handleFlutterwave = (data) => {
+  window.FlutterwaveCheckout({
+    public_key: data.public_key,
+    tx_ref: data.tx_ref,
+    amount: parseFloat(data.amount),
+    currency: data.currency || 'NGN',
+    payment_options: 'card,ussd,banktransfer',
+    customer: data.customer,
+    customizations: {
+      title: 'MooreLife Resort',
+      description: data.description || 'Room Booking',
+      logo: 'https://mooreliferesort.com/storage/settings/1oKHlZ7TWLOGGuvBjENzXqDS0k9haZBoqoj2w4le.png',
+    },
+    callback: (res) => {
+      window.location.href = `/booking/payment/callback?transaction_id=${res.transaction_id}&tx_ref=${res.tx_ref}`
+    },
+    onclose: () => {
+      processing.value = false
+    },
+  })
+}
+
+const handlePaystack = (data) => {
+  const handler = window.PaystackPop.setup({
+    key: data.public_key,
+    email: data.customer.email,
+    amount: parseFloat(data.amount) * 100,
+    currency: data.currency || 'NGN',
+    ref: data.reference,
+    onClose: () => {
+      processing.value = false
+    },
+    onSuccess: (response) => {
+      window.location.href = `/booking/payment/callback?transaction_id=${response.reference}&tx_ref=${data.reference}&provider=paystack`
+    },
+  })
+  handler.openIframe()
 }
 
 // Simple formatter for the expiration time
@@ -138,13 +261,37 @@ const formatExpiry = (timeStr) => {
                     <span class="font-semibold text-slate-700">Pay at Checkout</span>
                     <span class="ml-auto text-xs text-slate-500">Cash or card on arrival</span>
                   </label>
-                  <label class="flex items-center gap-3 p-3 border-2 rounded-xl cursor-pointer transition" :class="paymentMethod === 'flutterwave' ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200'">
-                    <input v-model="paymentMethod" type="radio" value="flutterwave" class="w-4 h-4">
+                  <label class="flex items-center gap-3 p-3 border-2 rounded-xl cursor-pointer transition" :class="paymentMethod === 'online' ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200'">
+                    <input v-model="paymentMethod" type="radio" value="online" class="w-4 h-4">
                     <span class="font-semibold text-slate-700">Pay Online Now</span>
                     <span class="ml-auto text-xs text-slate-500">Card, Bank, USSD</span>
                   </label>
                 </div>
               </div>
+
+              <!-- Provider Selection (shown when online payment is selected) -->
+              <div v-if="paymentMethod === 'online' && paymentData?.available_providers" class="space-y-3">
+                <label class="block text-sm font-semibold text-slate-700 mb-3">Payment Provider</label>
+                <div class="space-y-2">
+                  <button
+                    v-for="prov in paymentData.available_providers"
+                    :key="prov.value"
+                    @click="selectedProvider = prov.value"
+                    :class="[
+                      'w-full flex items-center justify-between px-4 py-3 border-2 rounded-xl transition-all',
+                      selectedProvider === prov.value 
+                        ? 'border-emerald-500 bg-emerald-50 text-emerald-900' 
+                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                    ]"
+                  >
+                    <span class="font-bold text-sm uppercase tracking-wider">{{ prov.label }}</span>
+                    <div v-if="selectedProvider === prov.value" class="w-5 h-5 bg-emerald-600 rounded-full flex items-center justify-center">
+                      <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
               <button
                 @click="processPayment"
                 :disabled="processing"

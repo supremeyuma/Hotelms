@@ -29,67 +29,35 @@ class PaymentController extends Controller
      * Initialize payment for standard bookings (rooms, invoices, etc.)
      * Returns available payment methods and initialization data
      */
-    public function initialize(Request $request)
-    {
-        try {
-            $data = $request->validate([
-                'booking_id'      => 'nullable|exists:bookings,id',
-                'room_id'         => 'nullable|exists:rooms,id',
-                'amount'          => 'required|numeric|min:1',
-                'tx_ref'          => 'nullable|string|max:191',
-                'description'     => 'nullable|string|max:1000',
-                'customer_email'  => 'nullable|email',
-                'customer_name'   => 'nullable|string|max:255',
-                'provider'        => 'nullable|string|in:flutterwave,paystack',
-            ]);
+    
+    public function initializeBooking(Request $request)
+{
+    $data = $request->validate([
+        'booking_id' => 'required|exists:bookings,id',
+        'provider'   => 'nullable|string|in:flutterwave,paystack',
+    ]);
 
-            $reference = $data['tx_ref'] ?? ('PAY-' . Str::uuid());
+    $booking = Booking::findOrFail($data['booking_id']);
 
-            $payment = Payment::create([
-                'booking_id' => $data['booking_id'] ?? null,
-                'room_id'    => $data['room_id'] ?? null,
-                'amount'     => $data['amount'],
-                'currency'   => 'NGN',
-                'reference'  => $reference,
-                'status'     => 'pending',
-                'provider'   => $data['provider'] ?? $this->paymentManager->getDefaultProvider(),
-            ]);
+    $provider = $data['provider']
+        ?? $this->paymentManager->getDefaultProvider();
 
-            // Determine which provider to use
-            $provider = $data['provider'] ?? $this->paymentManager->getDefaultProvider();
-            $showProviderOptions = $this->paymentManager->shouldShowProviderOptions();
+    return $this->buildPaymentResponse(
+        type: 'booking',
+        amount: (float) $booking->total_amount,
+        reference: $booking->booking_code, // 👈 IMPORTANT
+        provider: $provider,
+        customer: [
+            'email' => $booking->guest_email,
+            'name'  => $booking->guest_name,
+        ],
+        meta: [
+            'booking_id' => $booking->id,
+        ],
+        description: 'Room Booking Payment'
+    );
+}
 
-            return response()->json([
-                'success' => true,
-                'reference' => $reference,
-                'amount' => $payment->amount,
-                'currency' => 'NGN',
-                'provider' => $provider,
-                'show_provider_options' => $showProviderOptions,
-                'available_providers' => $this->paymentManager->getAvailablePaymentMethods(),
-                'public_key' => $this->paymentManager->getPublicKey($provider),
-                'description' => $data['description'] ?? null,
-                'customer' => [
-                    'email' => $data['customer_email']
-                        ?? $request->user()?->email
-                        ?? 'guest@hotel.com',
-                    'name'  => $data['customer_name']
-                        ?? $request->user()?->name
-                        ?? 'Hotel Guest',
-                ],
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Payment initialization failed', [
-                'error' => $e->getMessage(),
-                'request' => $request->all(),
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'error' => 'Payment initialization failed',
-            ], 422);
-        }
-    }
 
     /**
      * Initialize payment by reference (EVENTS, TABLES, BOOKINGS)

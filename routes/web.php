@@ -26,7 +26,7 @@ Route::post('/order', [OrderController::class, 'store'])->name('order.store');
 Route::get('/pages/{pageKey}', [PublicController::class, 'staticPage'])->name('pages.static');
 
 // Payment initialization and verification (multi-provider)
-Route::post('/payments/initialize', [PaymentController::class, 'initialize']);
+Route::post('/payments/initialize-booking', [PaymentController::class, 'initializeBooking']);
 Route::post('/payments/verify', [PaymentController::class, 'verify'])->name('payments.verify');
 Route::post('/payments/initialize-by-reference', [PaymentController::class, 'initializeByReference'])
     ->name('payments.initialize.by.reference');
