@@ -37,10 +37,12 @@ class PaymentController extends Controller
         'provider'   => 'nullable|string|in:flutterwave,paystack',
     ]);
 
-    $booking = Booking::findOrFail($data['booking_id']);
+        $booking = Booking::findOrFail($data['booking_id']);
 
     $provider = $data['provider']
         ?? $this->paymentManager->getDefaultProvider();
+
+    $callbackUrl = route('booking.payment.callback', $booking);
 
     return $this->buildPaymentResponse(
         type: 'booking',
@@ -54,7 +56,8 @@ class PaymentController extends Controller
         meta: [
             'booking_id' => $booking->id,
         ],
-        description: 'Room Booking Payment'
+        description: 'Room Booking Payment',
+        callbackUrl: $callbackUrl
     );
 }
 
@@ -73,6 +76,7 @@ class PaymentController extends Controller
 
             $reference = $request->reference;
             $provider = $request->provider ?? $this->paymentManager->getDefaultProvider();
+            $eventCallbackUrl = route('events.payment.callback', ['reference' => $reference]);
 
             // Try to find by event ticket
             if ($ticket = EventTicket::with(['ticketType', 'event'])
@@ -94,7 +98,8 @@ class PaymentController extends Controller
                         'ticketType' => $ticket->ticketType->name,
                         'quantity'   => $ticket->quantity,
                     ],
-                    "Event Ticket: {$ticket->event->title}"
+                    "Event Ticket: {$ticket->event->title}",
+                    $eventCallbackUrl
                 );
             }
 
@@ -117,7 +122,8 @@ class PaymentController extends Controller
                         'event' => $reservation->event->title,
                         'table' => $reservation->table_number ?? 'Table',
                     ],
-                    "Table Reservation: {$reservation->event->title}"
+                    "Table Reservation: {$reservation->event->title}",
+                    $eventCallbackUrl
                 );
             }
 
@@ -319,7 +325,8 @@ class PaymentController extends Controller
         string $provider,
         array $customer = [],
         array $meta = [],
-        string $description = ''
+        string $description = '',
+        ?string $callbackUrl = null
     ): \Illuminate\Http\JsonResponse {
         try {
             $showProviderOptions = $this->paymentManager->shouldShowProviderOptions();
@@ -337,6 +344,7 @@ class PaymentController extends Controller
                 'amount' => $amount,
                 'currency' => 'NGN',
                 'description' => $description,
+                'callback_url' => $callbackUrl,
                 'customer' => $customer,
                 'meta' => array_merge($meta, [
                     'type' => $type,

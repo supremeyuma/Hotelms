@@ -276,7 +276,18 @@ const handleFlutterwave = (data) => {
       logo: 'https://mooreliferesort.com/storage/settings/1oKHlZ7TWLOGGuvBjENzXqDS0k9haZBoqoj2w4le.png',
     },
     callback: (res) => {
-      window.location.href = `/events/payment/callback?transaction_id=${res.transaction_id}&tx_ref=${res.tx_ref}`
+      const callbackUrl = buildCallbackUrl(
+        data.callback_url || `/events/payment/callback`,
+        {
+          transaction_id: res.transaction_id,
+          tx_ref: res.tx_ref,
+          status: res.status,
+          provider: 'flutterwave',
+        }
+      )
+      if (callbackUrl) {
+        window.location.href = callbackUrl
+      }
     },
     onclose: () => {
       processing.value = false
@@ -295,11 +306,29 @@ const handlePaystack = (data) => {
       processing.value = false
     },
     onSuccess: (response) => {
-      window.location.href = `/events/payment/callback?transaction_id=${response.reference}&tx_ref=${data.reference}&provider=paystack`
+      const callbackUrl = buildCallbackUrl(
+        data.callback_url || `/events/payment/callback`,
+        {
+          transaction_id: response.reference,
+          tx_ref: data.reference,
+          provider: 'paystack',
+          status: 'successful',
+        }
+      )
+      if (callbackUrl) {
+        window.location.href = callbackUrl
+      }
     },
   })
   handler.openIframe()
 }
 
 const formatNumber = (n) => new Intl.NumberFormat('en-NG').format(n)
+
+const buildCallbackUrl = (baseUrl, params) => {
+  if (!baseUrl) return null
+  const hasQuery = baseUrl.includes('?')
+  const query = new URLSearchParams(params).toString()
+  return `${baseUrl}${hasQuery ? '&' : '?'}${query}`
+}
 </script>
