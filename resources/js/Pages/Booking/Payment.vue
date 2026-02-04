@@ -175,7 +175,7 @@ const handleFlutterwave = (data) => {
       logo: 'https://mooreliferesort.com/storage/settings/1oKHlZ7TWLOGGuvBjENzXqDS0k9haZBoqoj2w4le.png',
     },
     callback: (res) => {
-      window.location.href = `/booking/payment/callback?transaction_id=${res.transaction_id}&tx_ref=${res.tx_ref}`
+      window.location.href = `/booking/payment/${props.booking.id}/callback?transaction_id=${res.transaction_id}&tx_ref=${res.tx_ref}&status=${res.status}`
     },
     onclose: () => {
       processing.value = false
@@ -194,7 +194,7 @@ const handlePaystack = (data) => {
       processing.value = false
     },
     onSuccess: (response) => {
-      window.location.href = `/booking/payment/callback?transaction_id=${response.reference}&tx_ref=${data.reference}&provider=paystack`
+      window.location.href = `/booking/payment/${props.booking.id}/callback?transaction_id=${response.reference}&tx_ref=${data.reference}&provider=paystack&status=successful`
     },
   })
   handler.openIframe()

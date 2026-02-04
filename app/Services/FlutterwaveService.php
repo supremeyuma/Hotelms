@@ -299,16 +299,14 @@ class FlutterwaveService
     public function verifyWebhookSignature(string $payload, string $signature): bool
     {
         try {
-            $secretHash = config('flutterwave.secret_hash');
+            $secretHash = config('payment.flutterwave.secret_hash');
             
             if (!$secretHash) {
                 Log::warning('Flutterwave secret hash not configured');
                 return false;
             }
             
-            $computedSignature = hash_hmac('sha512', $payload, $secretHash);
-            
-            return hash_equals($computedSignature, $signature);
+            return hash_equals($secretHash, $signature);
         } catch (\Exception $e) {
             Log::error('Webhook signature verification failed: ' . $e->getMessage());
             return false;

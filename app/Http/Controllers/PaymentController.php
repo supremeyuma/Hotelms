@@ -122,7 +122,7 @@ class PaymentController extends Controller
             }
 
             // Try to find by room booking
-            if ($booking = Booking::where('reference', $reference)->first()) {
+            if ($booking = Booking::where('booking_code', $reference)->first()) {
                 return $this->buildPaymentResponse(
                     'booking',
                     $booking->total_amount,
@@ -233,7 +233,7 @@ class PaymentController extends Controller
             }
 
             // Room Booking
-            if ($booking = Booking::where('reference', $reference)->first()) {
+            if ($booking = Booking::where('booking_code', $reference)->first()) {
                 // Update booking payment status
                 $booking->update([
                     'payment_status' => 'paid',

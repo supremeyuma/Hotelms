@@ -4,8 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\EventTicket;
 use App\Models\EventTableReservation;
+use App\Models\Booking;
+use App\Models\Payment;
 use App\Services\PaymentProviderManager;
 use App\Services\EventService;
+use App\Services\PaymentAccountingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -124,6 +127,11 @@ class WebhookController extends Controller
                 return response()->json(['error' => 'Invalid payment status'], 400);
             }
 
+            $idempotencyKey = $this->buildIdempotencyKey('flutterwave', $data);
+            if ($idempotencyKey && $this->isIdempotencyKeyProcessed($idempotencyKey)) {
+                return response()->json(['status' => 'already_processed']);
+            }
+
             // Try event ticket
             if ($ticket = EventTicket::where('qr_code', $reference)->first()) {
                 if ($ticket->payment_status === 'paid') {
@@ -131,6 +139,13 @@ class WebhookController extends Controller
                 }
 
                 $this->eventService->confirmPayment($reference, 'flutterwave', 'paid');
+                $this->recordWebhookIdempotency($idempotencyKey, [
+                    'booking_id' => null,
+                    'reference' => $reference,
+                    'provider' => 'flutterwave',
+                    'payment_type' => 'event_ticket',
+                    'raw_response' => $data,
+                ]);
 
                 Log::info('Flutterwave event ticket payment confirmed', [
                     'reference' => $reference,
@@ -147,6 +162,13 @@ class WebhookController extends Controller
                 }
 
                 $this->eventService->confirmPayment($reference, 'flutterwave', 'paid');
+                $this->recordWebhookIdempotency($idempotencyKey, [
+                    'booking_id' => null,
+                    'reference' => $reference,
+                    'provider' => 'flutterwave',
+                    'payment_type' => 'event_table',
+                    'raw_response' => $data,
+                ]);
 
                 Log::info('Flutterwave table reservation payment confirmed', [
                     'reference' => $reference,
@@ -154,6 +176,11 @@ class WebhookController extends Controller
                 ]);
 
                 return response()->json(['status' => 'processed']);
+            }
+
+            // Try room booking
+            if ($booking = Booking::where('booking_code', $reference)->first()) {
+                return $this->handleBookingPaymentSuccess($booking, 'flutterwave', $data);
             }
 
             return response()->json(['status' => 'no_matching_transaction']);
@@ -186,6 +213,13 @@ class WebhookController extends Controller
                 $reservation->update(['payment_status' => 'failed']);
             }
 
+            if ($booking = Booking::where('booking_code', $reference)->first()) {
+                $booking->update([
+                    'payment_status' => 'failed',
+                    'payment_method' => 'flutterwave',
+                ]);
+            }
+
             return response()->json(['status' => 'processed']);
 
         } catch (\Exception $e) {
@@ -212,6 +246,11 @@ class WebhookController extends Controller
                 return response()->json(['error' => 'Invalid payment status'], 400);
             }
 
+            $idempotencyKey = $this->buildIdempotencyKey('paystack', $data);
+            if ($idempotencyKey && $this->isIdempotencyKeyProcessed($idempotencyKey)) {
+                return response()->json(['status' => 'already_processed']);
+            }
+
             // Try event ticket
             if ($ticket = EventTicket::where('qr_code', $reference)->first()) {
                 if ($ticket->payment_status === 'paid') {
@@ -219,6 +258,13 @@ class WebhookController extends Controller
                 }
 
                 $this->eventService->confirmPayment($reference, 'paystack', 'paid');
+                $this->recordWebhookIdempotency($idempotencyKey, [
+                    'booking_id' => null,
+                    'reference' => $reference,
+                    'provider' => 'paystack',
+                    'payment_type' => 'event_ticket',
+                    'raw_response' => $data,
+                ]);
 
                 Log::info('Paystack event ticket payment confirmed', [
                     'reference' => $reference,
@@ -235,6 +281,13 @@ class WebhookController extends Controller
                 }
 
                 $this->eventService->confirmPayment($reference, 'paystack', 'paid');
+                $this->recordWebhookIdempotency($idempotencyKey, [
+                    'booking_id' => null,
+                    'reference' => $reference,
+                    'provider' => 'paystack',
+                    'payment_type' => 'event_table',
+                    'raw_response' => $data,
+                ]);
 
                 Log::info('Paystack table reservation payment confirmed', [
                     'reference' => $reference,
@@ -242,6 +295,11 @@ class WebhookController extends Controller
                 ]);
 
                 return response()->json(['status' => 'processed']);
+            }
+
+            // Try room booking
+            if ($booking = Booking::where('booking_code', $reference)->first()) {
+                return $this->handleBookingPaymentSuccess($booking, 'paystack', $data);
             }
 
             return response()->json(['status' => 'no_matching_transaction']);
@@ -274,6 +332,13 @@ class WebhookController extends Controller
                 $reservation->update(['payment_status' => 'failed']);
             }
 
+            if ($booking = Booking::where('booking_code', $reference)->first()) {
+                $booking->update([
+                    'payment_status' => 'failed',
+                    'payment_method' => 'paystack',
+                ]);
+            }
+
             return response()->json(['status' => 'processed']);
 
         } catch (\Exception $e) {
@@ -283,13 +348,141 @@ class WebhookController extends Controller
     }
 
     /**
+     * Handle successful booking payment (room bookings)
+     */
+    private function handleBookingPaymentSuccess(Booking $booking, string $provider, array $data): \Illuminate\Http\JsonResponse
+    {
+        if ($booking->payment_status === 'paid') {
+            return response()->json(['status' => 'already_processed']);
+        }
+
+        $payloadData = $data['data'] ?? [];
+        $amount = $payloadData['amount'] ?? $booking->total_amount;
+        $currency = $payloadData['currency'] ?? 'NGN';
+        $idempotencyKey = $this->buildIdempotencyKey($provider, $data);
+
+        if ($idempotencyKey && $this->isIdempotencyKeyProcessed($idempotencyKey)) {
+            return response()->json(['status' => 'already_processed']);
+        }
+
+        $booking->update([
+            'payment_status' => 'paid',
+            'payment_method' => $provider,
+            'status' => 'confirmed',
+            'expires_at' => null,
+        ]);
+
+        $payment = Payment::updateOrCreate(
+            [
+                'booking_id' => $booking->id,
+                'reference' => $booking->booking_code,
+            ],
+            [
+                'provider' => $provider,
+                'amount' => $booking->total_amount,
+                'amount_paid' => $amount,
+                'currency' => $currency,
+                'status' => 'completed',
+                'payment_type' => 'booking',
+                'verified_at' => now(),
+                'external_reference' => $payloadData['id'] ?? null,
+                'flutterwave_tx_ref' => $provider === 'flutterwave' ? ($payloadData['tx_ref'] ?? $booking->booking_code) : null,
+                'flutterwave_tx_id' => $provider === 'flutterwave' ? ($payloadData['id'] ?? null) : null,
+                'flutterwave_tx_status' => $provider === 'flutterwave' ? ($payloadData['status'] ?? null) : null,
+                'idempotency_key' => $idempotencyKey,
+                'raw_response' => $payloadData ?: $data,
+                'paid_at' => now(),
+            ]
+        );
+
+        try {
+            resolve(PaymentAccountingService::class)->handleSuccessful($payment);
+        } catch (\Exception $e) {
+            Log::error('Payment accounting handler failed: ' . $e->getMessage(), [
+                'payment_id' => $payment->id,
+            ]);
+        }
+
+        Log::info('Booking payment confirmed via webhook', [
+            'booking_id' => $booking->id,
+            'reference' => $booking->booking_code,
+            'provider' => $provider,
+        ]);
+
+        return response()->json(['status' => 'processed']);
+    }
+
+    /**
+     * Store idempotency key for non-booking webhook events
+     */
+    private function recordWebhookIdempotency(?string $idempotencyKey, array $data): void
+    {
+        if (!$idempotencyKey) {
+            return;
+        }
+
+        if ($this->isIdempotencyKeyProcessed($idempotencyKey)) {
+            return;
+        }
+
+        Payment::create([
+            'booking_id' => $data['booking_id'] ?? null,
+            'reference' => $data['reference'] ?? null,
+            'provider' => $data['provider'] ?? null,
+            'status' => 'completed',
+            'payment_type' => $data['payment_type'] ?? null,
+            'idempotency_key' => $idempotencyKey,
+            'raw_response' => $data['raw_response'] ?? null,
+            'paid_at' => now(),
+            'verified_at' => now(),
+        ]);
+    }
+
+    /**
+     * Build a stable idempotency key for webhook payloads
+     */
+    private function buildIdempotencyKey(string $provider, array $data): ?string
+    {
+        $payload = $data['data'] ?? [];
+        $event = $data['event'] ?? 'unknown';
+        $reference = $payload['tx_ref'] ?? $payload['reference'] ?? null;
+        $transactionId = $payload['id'] ?? $payload['transaction_id'] ?? null;
+
+        if (!$reference && !$transactionId) {
+            return null;
+        }
+
+        $raw = implode('|', [
+            $provider,
+            $event,
+            $reference ?? 'no-ref',
+            $transactionId ?? 'no-tx',
+        ]);
+
+        return hash('sha256', $raw);
+    }
+
+    /**
+     * Check if an idempotency key has already been processed
+     */
+    private function isIdempotencyKeyProcessed(string $idempotencyKey): bool
+    {
+        return Payment::where('idempotency_key', $idempotencyKey)->exists();
+    }
+
+    /**
      * Validate Flutterwave webhook signature
      */
     private function validateFlutterwaveSignature(string $signature, string $payload): bool
     {
         try {
-            $hash = hash_hmac('sha256', $payload, config('payment.flutterwave.secret_hash'));
-            return hash_equals($hash, $signature);
+            $secretHash = config('payment.flutterwave.secret_hash');
+            if (!$secretHash) {
+                Log::warning('Flutterwave secret hash not configured');
+                return false;
+            }
+
+            return hash_equals($secretHash, $signature);
         } catch (\Exception $e) {
             Log::error('Flutterwave signature validation failed: ' . $e->getMessage());
             return false;
@@ -302,7 +495,13 @@ class WebhookController extends Controller
     private function validatePaystackSignature(string $signature, string $payload): bool
     {
         try {
-            $hash = hash_hmac('sha512', $payload, config('payment.paystack.webhook_secret'));
+            $secret = config('payment.paystack.webhook_secret') ?: config('payment.paystack.secret_key');
+            if (!$secret) {
+                Log::warning('Paystack secret key not configured');
+                return false;
+            }
+
+            $hash = hash_hmac('sha512', $payload, $secret);
             return hash_equals($hash, $signature);
         } catch (\Exception $e) {
             Log::error('Paystack signature validation failed: ' . $e->getMessage());

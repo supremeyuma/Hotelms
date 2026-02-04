@@ -214,7 +214,7 @@ class PaystackService
     public function validateWebhookSignature(string $signature, string $payload): bool
     {
         try {
-            $webhookSecret = config('payment.paystack.webhook_secret');
+            $webhookSecret = config('payment.paystack.webhook_secret') ?: $this->secretKey;
 
             if (!$webhookSecret) {
                 Log::warning('Paystack webhook secret not configured');
