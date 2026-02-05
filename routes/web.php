@@ -31,14 +31,7 @@ Route::post('/payments/verify', [PaymentController::class, 'verify'])->name('pay
 Route::post('/payments/initialize-by-reference', [PaymentController::class, 'initializeByReference'])
     ->name('payments.initialize.by.reference');
 
-// Payment webhooks - multi-provider support
-Route::post('/webhooks/flutterwave', [App\Http\Controllers\WebhookController::class, 'handleFlutterwaveWebhook'])
-    ->name('webhooks.flutterwave')
-    ->middleware(['web']);
 
-Route::post('/webhooks/paystack', [App\Http\Controllers\WebhookController::class, 'handlePaystackWebhook'])
-    ->name('webhooks.paystack')
-    ->middleware(['web']);
 
 
 require __DIR__ . '/admin.php';

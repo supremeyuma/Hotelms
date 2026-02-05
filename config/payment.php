@@ -16,7 +16,7 @@ return [
      */
     'providers' => [
         'flutterwave' => env('PAYMENT_FLUTTERWAVE_ENABLED', true),
-        'paystack' => env('PAYMENT_PAYSTACK_ENABLED', false),
+        'paystack' => env('PAYMENT_PAYSTACK_ENABLED', true),
     ],
 
     /**
