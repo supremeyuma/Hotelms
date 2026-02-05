@@ -99,26 +99,35 @@ const nav = computed(() => {
           { label: 'Rooms', route: 'admin.rooms.index', icon: 'bed' },
           { label: 'Room Types', route: 'admin.room-types.index', icon: 'layers' },
           { label: 'Staff Management', route: 'admin.staff.index', icon: 'users' },
-          { label: 'Inventory', route: 'admin.inventory.index', icon: 'boxes' },
-          { label: 'Inventory Locations', route: 'admin.inventory-locations.index', icon: 'map-pin' },
           { label: 'Cleaning Templates', route: 'admin.cleaning-templates.index', icon: 'brush-cleaning' },
           { label: 'Menu Recipes', route: 'admin.menu-recipes.index', icon: 'utensils' },
           { label: 'Maintenance', route: 'admin.maintenance.index', icon: 'wrench' },
           { label: 'Reports Dashboard', route: 'admin.reports.dashboard', icon: 'bar-chart' },
-          { label: 'Profit & Loss', route: 'admin.reports.profit-loss', icon: 'trending-up' },
-          { label: 'Balance Sheet', route: 'admin.reports.balance-sheet', icon: 'file-text' },
-          { label: 'Daily Revenue', route: 'admin.reports.daily-revenue', icon: 'dollar-sign' },
           { label: 'Staff Reports', route: 'admin.reports.staff', icon: 'user-check' },
-          { label: 'Revenue Reports', route: 'admin.reports.revenue', icon: 'dollar-sign' },
           { label: 'Occupancy Reports', route: 'admin.reports.occupancy', icon: 'hotel' },
-          { label: 'Inventory Reports', route: 'admin.reports.inventory', icon: 'archive' },
-          { label: 'Outstanding Balances', route: 'admin.outstanding-balances.index', icon: 'alert-triangle' },
-          { label: 'Accounting Periods', route: 'admin.accounting-periods.index', icon: 'lock' },
-          { label: 'Audit Logs', route: 'admin.audit.index', icon: 'shield' },
           { label: 'Website Content', route: 'admin.website.content', icon: 'edit' },
           { label: 'Gallery', route: 'admin.website.gallery', icon: 'image' },
           { label: 'Events', route: 'admin.events.index', icon: 'calendar' },
           { label: 'Settings', route: 'admin.settings.index', icon: 'settings' },
+        ]
+      case 'inventory':
+        return [
+          { label: 'Admin Dashboard', route: 'admin.dashboard', icon: 'home' },
+          { label: 'Inventory', route: 'admin.inventory.index', icon: 'boxes' },
+          { label: 'Inventory Locations', route: 'admin.inventory-locations.index', icon: 'map-pin' },
+          { label: 'Inventory Reports', route: 'admin.reports.inventory', icon: 'archive' },
+        ]
+      case 'accountant':
+        return [
+          { label: 'Admin Dashboard', route: 'admin.dashboard', icon: 'home' },
+          { label: 'Reports Dashboard', route: 'admin.reports.dashboard', icon: 'bar-chart' },
+          { label: 'Profit & Loss', route: 'admin.reports.profit-loss', icon: 'trending-up' },
+          { label: 'Balance Sheet', route: 'admin.reports.balance-sheet', icon: 'file-text' },
+          { label: 'Daily Revenue', route: 'admin.reports.daily-revenue', icon: 'dollar-sign' },
+          { label: 'Revenue Reports', route: 'admin.reports.revenue', icon: 'dollar-sign' },
+          { label: 'Outstanding Balances', route: 'admin.outstanding-balances.index', icon: 'alert-triangle' },
+          { label: 'Accounting Periods', route: 'admin.accounting-periods.index', icon: 'lock' },
+          { label: 'Audit Logs', route: 'admin.audit.index', icon: 'shield' },
         ]
       default:
         return [{ label: 'Dashboard', route: 'staff.dashboard', icon: 'home' }]
