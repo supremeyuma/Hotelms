@@ -11,25 +11,55 @@ use Carbon\Carbon;
 
 class FlutterwaveService
 {
+    protected string $secretKey;
+    protected string $publicKey;
+    protected string $baseUrl;
+
+    public function __construct()
+    {
+        $this->secretKey = config('flutterwave.secret_key', '');
+        $this->publicKey = config('flutterwave.public_key', '');
+        $this->baseUrl = 'https://api.flutterwave.com/v3';
+    }
+
+    /**
+     * Initialize a payment transaction with Flutterwave
+     * 
+     * @param array $paymentData {
+     *     'email' => string (customer email),
+     *     'name' => string (customer name),
+     *     'amount' => float (amount in NGN),
+     *     'currency' => string (default: NGN),
+     *     'reference' => string (unique transaction reference),
+     *     'metadata' => array (optional metadata),
+     *     'description' => string (transaction description),
+     * }
+     * @return array Payment initialization response
+     */
     public function initializePayment(array $paymentData): array
     {
         try {
-            $response = Http::withToken(config('flutterwave.secret_key'))
-                ->post('https://api.flutterwave.com/v3/charges', $paymentData);
+            $response = Http::withToken($this->secretKey)
+                ->post("{$this->baseUrl}/charges", $paymentData);
 
             if ($response->successful()) {
                 return [
                     'success' => true,
                     'data' => $response->json(),
-                    'reference' => $response->data('data')['id'] ?? null,
-                    'amount' => $response->data('data')['amount'] ?? 0,
-                    'currency' => $response->data('data')['currency'] ?? 'NGN',
+                    'reference' => $response->json('data.id') ?? null,
+                    'amount' => $response->json('data.amount') ?? 0,
+                    'currency' => $response->json('data.currency') ?? 'NGN',
                 ];
             }
-        }
 
-        catch (\Exception $e) {
-            Log::error('Flutterwave payment initialization failed: ' . $e->getMessage(), [
+            return [
+                'success' => false,
+                'error' => $response->json('message') ?? 'Payment initialization failed',
+                'status_code' => $response->status(),
+            ];
+        } catch (\Exception $e) {
+            Log::error('Flutterwave payment initialization failed', [
+                'error' => $e->getMessage(),
                 'payment_data' => $paymentData,
             ]);
             
@@ -39,28 +69,35 @@ class FlutterwaveService
                 'message' => $e->getMessage(),
             ];
         }
-
-        return [
-            'success' => false,
-            'error' => 'Unknown error occurred',
-        ];
     }
 
+    /**
+     * Verify a payment transaction with Flutterwave
+     * 
+     * @param string $reference Unique transaction reference
+     * @return array Payment verification response with verified status
+     */
     public function verifyPayment(string $reference): array
     {
         try {
-            $response = Http::withToken(config('flutterwave.secret_key'))
-                ->get("https://api.flutterwave.com/v3/transactions/verify_by_reference/" . $reference);
+            $response = Http::withToken($this->secretKey)
+                ->get("{$this->baseUrl}/transactions/verify_by_reference/" . urlencode($reference));
 
-            if ($response->successful() && $response->json('data')['status'] === 'successful' && $response->json('data')['amount'] > 0) {
-                return [
-                    'success' => true,
-                    'verified' => true,
-                    'data' => $response->json('data'),
-                    'reference' => $reference,
-                    'amount' => $response->json('data')['amount'],
-                    'currency' => $response->json('data')['currency'],
-                ];
+            if ($response->successful()) {
+                $data = $response->json('data');
+                $status = $data['status'] ?? null;
+                $amount = $data['amount'] ?? 0;
+
+                if ($status === 'successful' && $amount > 0) {
+                    return [
+                        'success' => true,
+                        'verified' => true,
+                        'data' => $data,
+                        'reference' => $reference,
+                        'amount' => $amount,
+                        'currency' => $data['currency'] ?? 'NGN',
+                    ];
+                }
             }
 
             return [
@@ -70,7 +107,10 @@ class FlutterwaveService
                 'data' => $response->json('data') ?? [],
             ];
         } catch (\Exception $e) {
-            Log::error('Flutterwave payment verification failed: ' . $e->getMessage());
+            Log::error('Flutterwave payment verification failed', [
+                'error' => $e->getMessage(),
+                'reference' => $reference,
+            ]);
             
             return [
                 'success' => false,
@@ -80,7 +120,7 @@ class FlutterwaveService
         }
     }
 
-    public function getPaymentPoints(string $email = null): array
+    public function getPaymentPoints(?string $email = null): array
     {
         try {
             // Mock payment points logic - in real app, you would query a customer payment_points table
@@ -163,6 +203,11 @@ class FlutterwaveService
         }
     }
 
+    /**
+     * Get available payment methods for Flutterwave
+     * 
+     * @return array List of available payment methods
+     */
     public function getAvailablePaymentMethods(): array
     {
         return [
@@ -176,7 +221,7 @@ class FlutterwaveService
                     'mastercard' => 'Mastercard',
                     'verve' => 'Verve',
                     'amex' => 'American Express',
-                'discover' => 'Discover',
+                    'discover' => 'Discover',
                     'diners_club' => 'Diners Club',
                     'jcb' => 'JCB',
                     'unionpay' => 'UnionPay',
@@ -185,23 +230,37 @@ class FlutterwaveService
         ];
     }
 
+    /**
+     * Get transaction status from Flutterwave
+     * 
+     * @param string $reference Transaction reference
+     * @return array Transaction status data
+     */
     public function getFlutterwaveTransactionStatus(string $reference): array
     {
         try {
-            $response = Http::withToken(config('flutterwave.secret_key'))
-                ->get("https://api.flutterwave.com/v3/transactions/" . $reference);
+            $response = Http::withToken($this->secretKey)
+                ->get("{$this->baseUrl}/transactions/" . urlencode($reference));
 
             if ($response->successful()) {
                 return [
                     'success' => true,
-                    'status' => $response->json('data')['status'] ?? 'pending',
+                    'status' => $response->json('data.status') ?? 'pending',
                     'data' => $response->json('data'),
                 ];
             }
-        }
 
-        catch (\Exception $e) {
-            Log::error('Flutterwave status check failed: ' . $e->getMessage());
+            return [
+                'success' => false,
+                'status' => 'failed',
+                'error' => $response->json('message') ?? 'Status check failed',
+                'data' => [],
+            ];
+        } catch (\Exception $e) {
+            Log::error('Flutterwave status check failed', [
+                'error' => $e->getMessage(),
+                'reference' => $reference,
+            ]);
             
             return [
                 'success' => false,
@@ -210,31 +269,29 @@ class FlutterwaveService
                 'data' => [],
             ];
         }
-
-        return [
-            'success' => false,
-            'status' => 'failed',
-            'error' => 'Unknown error occurred',
-            'data' => [],
-        ];
     }
 
+    /**
+     * Process a refund for a payment
+     * 
+     * @param Payment $payment Payment model instance
+     * @param string $reason Reason for refund
+     * @return array Refund result
+     */
     public function refundPayment(Payment $payment, string $reason): array
     {
         try {
-            // Mock Flutterwave refund
-            $response = Http::withToken(config('flutterwave.secret_key'))
-                ->post('https://api.flutterwave.com/v3/refunds', [
+            $response = Http::withToken($this->secretKey)
+                ->post("{$this->baseUrl}/refunds", [
                     'transaction_id' => $payment->flutterwave_tx_id,
                     'reason' => $reason,
                 ]);
 
             if ($response->successful()) {
-                // Update payment status
                 $payment->update([
                     'status' => 'refunded',
                     'refunded_at' => now(),
-                    'flutterwave_refund_id' => $response->json('data')['id'] ?? null,
+                    'flutterwave_refund_id' => $response->json('data.id'),
                 ]);
                 
                 return [
@@ -242,15 +299,18 @@ class FlutterwaveService
                     'refunded' => true,
                     'message' => 'Payment refunded successfully',
                 ];
-            } else {
-                return [
-                    'success' => false,
-                    'refunded' => false,
-                    'error' => $response->json('message') ?? 'Refund failed',
-                ];
             }
+
+            return [
+                'success' => false,
+                'refunded' => false,
+                'error' => $response->json('message') ?? 'Refund failed',
+            ];
         } catch (\Exception $e) {
-            Log::error('Flutterwave refund failed: ' . $e->getMessage());
+            Log::error('Flutterwave refund failed', [
+                'error' => $e->getMessage(),
+                'payment_id' => $payment->id,
+            ]);
             
             return [
                 'success' => false,
@@ -258,6 +318,16 @@ class FlutterwaveService
                 'error' => $e->getMessage(),
             ];
         }
+    }
+
+    /**
+     * Get public key for frontend
+     * 
+     * @return string|null Public key or null if not configured
+     */
+    public function getPublicKey(): ?string
+    {
+        return $this->publicKey ?: null;
     }
 
     protected function getTierDescription(string $tier): string
@@ -296,6 +366,13 @@ class FlutterwaveService
         return $tiers[$nextTierKey] - $tiers[$currentTierKey];
     }
 
+    /**
+     * Verify webhook signature from Flutterwave
+     * 
+     * @param string $payload Webhook payload
+     * @param string $signature Signature to verify
+     * @return bool True if signature is valid
+     */
     public function verifyWebhookSignature(string $payload, string $signature): bool
     {
         try {
@@ -308,11 +385,19 @@ class FlutterwaveService
             
             return hash_equals($secretHash, $signature);
         } catch (\Exception $e) {
-            Log::error('Webhook signature verification failed: ' . $e->getMessage());
+            Log::error('Webhook signature verification failed', [
+                'error' => $e->getMessage(),
+            ]);
             return false;
         }
     }
 
+    /**
+     * Process incoming webhook from Flutterwave
+     * 
+     * @param array $webhookData Webhook payload data
+     * @return array Processing result
+     */
     public function processWebhook(array $webhookData): array
     {
         try {
@@ -333,7 +418,8 @@ class FlutterwaveService
                 ],
             };
         } catch (\Exception $e) {
-            Log::error('Webhook processing failed: ' . $e->getMessage(), [
+            Log::error('Webhook processing failed', [
+                'error' => $e->getMessage(),
                 'webhook_data' => $webhookData,
             ]);
             
@@ -345,6 +431,12 @@ class FlutterwaveService
         }
     }
 
+    /**
+     * Handle successful payment webhook event
+     * 
+     * @param array $data Webhook event data
+     * @return array Processing result
+     */
     protected function handleSuccessfulPayment(array $data): array
     {
         $paymentData = $data['data'] ?? [];
@@ -379,7 +471,10 @@ class FlutterwaveService
             try {
                 resolve(\App\Services\PaymentAccountingService::class)->handleSuccessful($payment);
             } catch (\Exception $e) {
-                Log::error('Payment accounting handler failed: ' . $e->getMessage(), ['payment_id' => $payment->id]);
+                Log::error('Payment accounting handler failed', [
+                    'error' => $e->getMessage(),
+                    'payment_id' => $payment->id,
+                ]);
             }
 
             // Confirm event ticket if this is an event payment
@@ -399,11 +494,19 @@ class FlutterwaveService
             resolve(EventService::class)->confirmPayment($reference, 'flutterwave', 'paid');
             return ['success' => true, 'message' => 'Event payment confirmed'];
         } catch (\Exception $e) {
-            Log::warning('Could not find payment or event ticket for reference: ' . $reference);
+            Log::warning('Could not find payment or event ticket for reference', [
+                'reference' => $reference,
+            ]);
             return ['success' => false, 'message' => 'Payment not found'];
         }
     }
 
+    /**
+     * Handle failed payment webhook event
+     * 
+     * @param array $data Webhook event data
+     * @return array Processing result
+     */
     protected function handleFailedPayment(array $data): array
     {
         $paymentData = $data['data'] ?? [];
@@ -435,18 +538,36 @@ class FlutterwaveService
         return ['success' => true, 'message' => 'Payment failure processed'];
     }
 
+    /**
+     * Handle transfer completed webhook event
+     * 
+     * @param array $data Webhook event data
+     * @return array Processing result
+     */
     protected function handleTransferCompleted(array $data): array
     {
         Log::info('Transfer completed', ['data' => $data]);
         return ['success' => true, 'message' => 'Transfer completed'];
     }
 
+    /**
+     * Handle transfer failed webhook event
+     * 
+     * @param array $data Webhook event data
+     * @return array Processing result
+     */
     protected function handleTransferFailed(array $data): array
     {
         Log::error('Transfer failed', ['data' => $data]);
         return ['success' => true, 'message' => 'Transfer failure processed'];
     }
 
+    /**
+     * Handle refund completed webhook event
+     * 
+     * @param array $data Webhook event data
+     * @return array Processing result
+     */
     protected function handleRefundCompleted(array $data): array
     {
         $refundData = $data['data'] ?? [];
@@ -465,9 +586,15 @@ class FlutterwaveService
         return ['success' => true, 'message' => 'Refund completed'];
     }
 
+    /**
+     * Handle refund failed webhook event
+     * 
+     * @param array $data Webhook event data
+     * @return array Processing result
+     */
     protected function handleRefundFailed(array $data): array
     {
         Log::error('Refund failed', ['data' => $data]);
         return ['success' => true, 'message' => 'Refund failure processed'];
-    }
-}
+    }}
+
