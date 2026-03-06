@@ -12,14 +12,63 @@ class RolesSeeder extends Seeder
     {
         $now = now();
 
-        /*$roles = [
-            ['name' => 'MD', 'slug' => 'md', 'permissions' => json_encode(['*']), 'created_at' => $now, 'updated_at' => $now],
-            ['name' => 'Manager', 'slug' => 'manager', 'permissions' => json_encode(['manage_bookings','manage_staff','view_reports']), 'created_at' => $now, 'updated_at' => $now],
-            ['name' => 'Staff', 'slug' => 'staff', 'permissions' => json_encode(['process_orders','update_maintenance']), 'created_at' => $now, 'updated_at' => $now],
-            ['name' => 'Guest', 'slug' => 'guest', 'permissions' => json_encode([]), 'created_at' => $now, 'updated_at' => $now],
-            ['name' => 'Inventory Manager', 'slug' => 'inventory_manager', 'permissions' => json_encode(['manage_inventory']), 'created_at' => $now, 'updated_at' => $now],
-        ];*/
+        $roles = [
+            [
+                'name' => 'Super Admin',
+                'guard_name' => 'web',
+                'created_at' => $now,
+                'updated_at' => $now
+            ],
+            [
+                'name' => 'Hotel Manager',
+                'guard_name' => 'web',
+                'created_at' => $now,
+                'updated_at' => $now
+            ],
+            [
+                'name' => 'Front Desk Staff',
+                'guard_name' => 'web',
+                'created_at' => $now,
+                'updated_at' => $now
+            ],
+            [
+                'name' => 'Housekeeping Staff',
+                'guard_name' => 'web',
+                'created_at' => $now,
+                'updated_at' => $now
+            ],
+            [
+                'name' => 'Inventory Manager',
+                'guard_name' => 'web',
+                'created_at' => $now,
+                'updated_at' => $now
+            ],
+            [
+                'name' => 'Accountant',
+                'guard_name' => 'web',
+                'created_at' => $now,
+                'updated_at' => $now
+            ],
+            [
+                'name' => 'Maintenance Staff',
+                'guard_name' => 'web',
+                'created_at' => $now,
+                'updated_at' => $now
+            ],
+            [
+                'name' => 'Restaurant Staff',
+                'guard_name' => 'web',
+                'created_at' => $now,
+                'updated_at' => $now
+            ],
+            [
+                'name' => 'Guest',
+                'guard_name' => 'web',
+                'created_at' => $now,
+                'updated_at' => $now
+            ],
+        ];
 
-        //DB::table('roles')->insert($roles);
+        DB::table('roles')->insert($roles);
     }
 }
