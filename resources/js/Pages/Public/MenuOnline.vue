@@ -188,15 +188,6 @@ function goHome() {
       </div>
     </div>
 
-        <button
-          @click="goHome"
-          class="text-gray-600 hover:text-gray-900 font-semibold text-sm transition"
-        >
-          ← Back Home
-        </button>
-      </div>
-    </div>
-
     <!-- TOAST -->
     <transition name="toast">
       <div
