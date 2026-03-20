@@ -1,8 +1,10 @@
 <script setup>
 import { ref, reactive, computed, watch } from 'vue'
 import { router, usePage } from '@inertiajs/vue3'
-import draggable from 'vuedraggable'
+import Draggable from 'vuedraggable/dist/vuedraggable.umd.js'
 import KitchenLayout from '@/Layouts/Staff/KitchenLayout.vue'
+
+const draggable = Draggable
 
 const props = defineProps({
   categories: Array,
