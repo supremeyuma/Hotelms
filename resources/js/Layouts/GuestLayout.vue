@@ -1,14 +1,16 @@
 <script setup>
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
-import { Link } from '@inertiajs/vue3';
-import { usePage } from '@inertiajs/vue3';
+import { Link, usePage } from '@inertiajs/vue3';
+
+const page = usePage();
+const siteName = page.props.settings?.site_name || 'HotelMS';
 </script>
 
 <template>
   <div class="min-h-screen bg-gray-50">
     <header class="bg-white shadow">
       <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-        <h1 class="text-xl font-semibold">HotelMS</h1>
+        <h1 class="text-xl font-semibold">{{ siteName }}</h1>
         <nav>
           <Link href="/" class="px-3">Home</Link>
           <Link href="/rooms" class="px-3">Rooms</Link>
@@ -21,7 +23,7 @@ import { usePage } from '@inertiajs/vue3';
       <slot />
     </main>
 
-    <footer class="text-center p-6 text-sm text-gray-500">© {{ new Date().getFullYear() }} HotelMS</footer>
+    <footer class="text-center p-6 text-sm text-gray-500">© {{ new Date().getFullYear() }} {{ siteName }}</footer>
   </div>
 </template>
 

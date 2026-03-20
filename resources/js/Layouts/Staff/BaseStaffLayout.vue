@@ -1,8 +1,11 @@
 <script setup>
 import { ref } from 'vue'
+import { usePage } from '@inertiajs/vue3'
 // Remove the vue-router import entirely
 import StaffSidebar from '@/Components/Staff/StaffSidebar.vue'
 
+const page = usePage();
+const siteName = page.props.settings?.site_name || 'HotelMS';
 const isMobileMenuOpen = ref(false)
 
 // Function to handle clicks on the sidebar links (to close it on mobile)
@@ -47,7 +50,7 @@ const closeMobileMenu = () => {
           <div class="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-200">
              <span class="text-white font-bold text-sm">H</span>
           </div>
-          <span class="font-bold text-slate-800 tracking-tight text-lg">HotelMS</span>
+          <span class="font-bold text-slate-800 tracking-tight text-lg">{{ siteName }}</span>
         </div>
         
         <button 
