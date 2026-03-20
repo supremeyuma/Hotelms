@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Booking;
+use App\Models\Order;
 use App\Models\Payment;
 use App\Models\EventTicket;
 use App\Models\EventTableReservation;
@@ -291,6 +292,62 @@ class PaymentController extends Controller
             return response()->json([
                 'success' => false,
                 'error' => 'Payment confirmation failed',
+            ], 422);
+        }
+    }
+
+    /**
+     * Initialize payment for public orders (online shop)
+     * Prepaid orders only
+     */
+    public function initializePublicOrder(Request $request)
+    {
+        try {
+            $request->validate([
+                'order_id' => 'required|exists:orders,id',
+                'provider' => 'nullable|string|in:flutterwave,paystack',
+            ]);
+
+            $order = Order::findOrFail($request->input('order_id'));
+
+            // Only allow public online orders (prepaid)
+            if ($order->payment_method !== 'online' || $order->payment_status !== 'pending') {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Invalid order for payment',
+                ], 422);
+            }
+
+            $provider = $request->input('provider')
+                ?? $this->paymentManager->getDefaultProvider();
+
+            $callbackUrl = route('public.payment.callback', ['order' => $order->id]);
+
+            return $this->buildPaymentResponse(
+                type: 'public_order',
+                amount: (float) $order->total,
+                reference: $order->order_code,
+                provider: $provider,
+                customer: [
+                    'email' => 'guest@hotel.com',
+                    'name' => 'Guest Customer',
+                ],
+                meta: [
+                    'order_id' => $order->id,
+                    'department' => $order->department,
+                ],
+                description: ucfirst($order->department) . ' Order - ' . $order->order_code,
+                callbackUrl: $callbackUrl
+            );
+
+        } catch (\Exception $e) {
+            Log::error('Public order payment initialization failed', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => 'Payment initialization failed',
             ], 422);
         }
     }

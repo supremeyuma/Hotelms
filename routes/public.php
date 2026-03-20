@@ -3,6 +3,9 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PublicController;
 use App\Http\Controllers\Public\PublicEventController;
+use App\Http\Controllers\Public\PublicMenuOnlineController;
+use App\Http\Controllers\Public\PublicMenuViewOnlyController;
+use App\Http\Controllers\Public\PublicOrderController;
 use App\Http\Controllers\RoomServiceController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\GuestLaundryController;
@@ -55,4 +58,17 @@ Route::prefix('booking')->name('booking.')->group(function () {
     Route::get('/payment/{booking}/callback', [BookingController::class, 'paymentCallback'])->name('payment.callback');
     Route::get('/confirmation/{booking}', [BookingController::class, 'confirmation'])->name('confirmation');
 });
+
+// Public menu routes - Online ordering (prepaid)
+Route::prefix('menu/online')->name('menu.online.')->group(function () {
+    Route::get('/{type?}', [PublicMenuOnlineController::class, 'index'])->name('show');
+});
+
+// Public menu routes - View only (walk-in)
+Route::prefix('menu/view')->name('menu.view.')->group(function () {
+    Route::get('/{type?}', [PublicMenuViewOnlyController::class, 'index'])->name('show');
+});
+
+// Public order endpoint
+Route::post('/public/orders', [PublicOrderController::class, 'store'])->name('public.orders.store');
 

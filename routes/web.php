@@ -22,11 +22,10 @@ use App\Http\Controllers\PaymentController;
 // Order placement (public or authenticated)
 Route::post('/order', [OrderController::class, 'store'])->name('order.store');
 
-// Fallback static pages (terms, privacy)
-Route::get('/pages/{pageKey}', [PublicController::class, 'staticPage'])->name('pages.static');
-
 // Payment initialization and verification (multi-provider)
 Route::post('/payments/initialize-booking', [PaymentController::class, 'initializeBooking']);
+Route::post('/payments/initialize-public-order', [PaymentController::class, 'initializePublicOrder'])
+    ->name('payments.initialize.public.order');
 Route::post('/payments/verify', [PaymentController::class, 'verify'])->name('payments.verify');
 Route::post('/payments/initialize-by-reference', [PaymentController::class, 'initializeByReference'])
     ->name('payments.initialize.by.reference');

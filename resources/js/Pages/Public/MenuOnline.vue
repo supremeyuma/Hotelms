@@ -6,8 +6,8 @@ import {
   Plus,
   Minus,
   X,
-  ArrowLeft,
-  ClipboardList,
+  ShoppingCart,
+  CheckCircle,
 } from 'lucide-vue-next'
 
 /* ================= PROPS ================= */
@@ -16,33 +16,46 @@ const page = usePage()
 const props = defineProps({
   categories: Array,
   type: String,
-  accessToken: String,
 })
 
 /* ================= STATE ================= */
 const activeCategory = ref(props.categories?.[0] || null)
 const activeSubcategory = ref(null)
 const cart = ref([])
-
 const showPreview = ref(false)
 const submitting = ref(false)
-const paymentMode = ref('prepaid') // prepaid | pay_on_delivery
-
-/* ================= UI ================= */
 const toast = ref(null)
 const toastType = ref('success')
 const showConfirm = ref(false)
 
-/* ================= FLASH ================= */
+/* ================= CART PERSISTENCE ================= */
+onMounted(() => {
+  const saved = sessionStorage.getItem('public-online-cart')
+  if (saved) {
+    try {
+      cart.value = JSON.parse(saved)
+    } catch {
+      sessionStorage.removeItem('public-online-cart')
+    }
+  }
+})
+
+watch(
+  cart,
+  (val) => sessionStorage.setItem('public-online-cart', JSON.stringify(val)),
+  { deep: true }
+)
+
+/* ================= FLASH MESSAGES ================= */
 watch(
   () => page.props.flash,
   (flash) => {
-    if (flash?.success && paymentMode.value === 'pay_on_delivery') {
+    if (flash?.success) {
       toastType.value = 'success'
       toast.value = flash.success
       showConfirm.value = true
       cart.value = []
-      sessionStorage.removeItem('guest-cart')
+      sessionStorage.removeItem('public-online-cart')
     }
 
     if (flash?.error) {
@@ -55,24 +68,6 @@ watch(
     }
   },
   { deep: true, immediate: true }
-)
-
-/* ================= CART ================= */
-onMounted(() => {
-  const saved = sessionStorage.getItem('guest-cart')
-  if (saved) {
-    try {
-      cart.value = JSON.parse(saved)
-    } catch {
-      sessionStorage.removeItem('guest-cart')
-    }
-  }
-})
-
-watch(
-  cart,
-  (val) => sessionStorage.setItem('guest-cart', JSON.stringify(val)),
-  { deep: true }
 )
 
 /* ================= COMPUTED ================= */
@@ -89,6 +84,10 @@ const total = computed(() =>
   cart.value.reduce((t, i) => t + i.price * i.quantity, 0)
 )
 
+const itemCount = computed(() =>
+  cart.value.reduce((sum, i) => sum + i.quantity, 0)
+)
+
 /* ================= CART ACTIONS ================= */
 function add(item) {
   const found = cart.value.find(i => i.id === item.id)
@@ -103,6 +102,10 @@ function remove(item) {
     : (cart.value = cart.value.filter(i => i.id !== item.id))
 }
 
+function removeFromCart(itemId) {
+  cart.value = cart.value.filter(i => i.id !== itemId)
+}
+
 /* ================= ORDER FLOW ================= */
 function openPreview() {
   if (!cart.value.length) return
@@ -114,10 +117,9 @@ function confirmOrder() {
   submitting.value = true
 
   router.post(
-    `/guest/room/${props.accessToken}/orders`,
+    route('public.orders.store'),
     {
       department: props.type,
-      payment_mode: paymentMode.value,
       items: cart.value.map(i => ({
         name: i.name,
         price: i.price,
@@ -129,10 +131,6 @@ function confirmOrder() {
       onFinish: () => {
         submitting.value = false
         showPreview.value = false
-        if (paymentMode.value === 'pay_on_delivery') {
-          cart.value = []
-          sessionStorage.removeItem('guest-cart')
-        }
       },
       onError: () => {
         submitting.value = false
@@ -143,38 +141,30 @@ function confirmOrder() {
   )
 }
 
-function goBack() {
-  router.visit(route('guest.room.dashboard', props.accessToken))
-}
-
-function openHistory() {
-  router.visit(route('guest.room.dashboard', props.accessToken), {
-    data: { showOrders: true },
-    preserveState: false,
-  })
+function goHome() {
+  router.visit(route('home'))
 }
 </script>
 
 <template>
   <GuestLayout>
-    <Head :title="`${type} Menu`" />
+    <Head title="Order Online" />
 
     <!-- HEADER -->
     <div class="sticky top-0 z-30 bg-white border-b border-gray-200">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
         <button
-          @click="goBack"
-          class="flex items-center gap-2 text-sm font-bold text-gray-600 hover:text-gray-900 transition"
+          @click="goHome"
+          class="text-gray-600 hover:text-gray-900 font-semibold text-sm transition"
         >
-          <ArrowLeft class="w-4 h-4" />
-          Back
+          ← Back Home
         </button>
 
         <div class="text-center">
-          <h1 class="text-2xl font-black text-gray-900">{{ type }} Menu</h1>
+          <h1 class="text-2xl font-black text-gray-900">Order Online</h1>
           <div class="flex items-center justify-center gap-2 mt-2">
             <button
-              @click="router.visit(route('guest.room.dashboard', props.accessToken) + '/menu/kitchen')"
+              @click="router.visit(route('menu.online.show', { type: 'kitchen' }))"
               class="px-4 py-1.5 rounded-full text-xs font-bold transition"
               :class="type === 'kitchen' 
                 ? 'bg-black text-white' 
@@ -183,7 +173,7 @@ function openHistory() {
               🍽️ Kitchen
             </button>
             <button
-              @click="router.visit(route('guest.room.dashboard', props.accessToken) + '/menu/bar')"
+              @click="router.visit(route('menu.online.show', { type: 'bar' }))"
               class="px-4 py-1.5 rounded-full text-xs font-bold transition"
               :class="type === 'bar' 
                 ? 'bg-black text-white' 
@@ -194,12 +184,15 @@ function openHistory() {
           </div>
         </div>
 
+        <div class="w-20"></div>
+      </div>
+    </div>
+
         <button
-          @click="openHistory"
-          class="flex items-center gap-2 text-sm font-bold text-gray-600 hover:text-gray-900 transition"
+          @click="goHome"
+          class="text-gray-600 hover:text-gray-900 font-semibold text-sm transition"
         >
-          <ClipboardList class="w-4 h-4" />
-          <span class="hidden sm:inline">Orders</span>
+          ← Back Home
         </button>
       </div>
     </div>
@@ -222,36 +215,27 @@ function openHistory() {
     >
       <div class="bg-white rounded-2xl p-8 max-w-sm w-full text-center space-y-6">
         <div class="flex justify-center">
-          <svg class="w-16 h-16 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
+          <CheckCircle class="w-16 h-16 text-green-600" />
         </div>
         <div>
           <h2 class="font-black text-xl text-gray-900">Order Confirmed!</h2>
           <p class="text-gray-600 text-sm mt-2">
-            Your order has been sent to the {{ type }}. Check the status in Orders.
+            Your order has been received and will be prepared.
           </p>
         </div>
         <button
-          @click="openHistory"
-          class="w-full bg-black text-white py-3 rounded-lg font-semibold uppercase text-sm transition hover:bg-gray-800 flex items-center justify-center gap-2"
+          @click="goHome"
+          class="w-full bg-black text-white py-3 rounded-lg font-semibold uppercase text-sm transition hover:bg-gray-800"
         >
-          <ClipboardList class="w-4 h-4" />
-          View Orders
-        </button>
-        <button
-          @click="goBack"
-          class="w-full bg-gray-100 text-gray-900 py-3 rounded-lg font-semibold uppercase text-sm transition hover:bg-gray-200"
-        >
-          Back to Room
+          Back to Home
         </button>
       </div>
     </div>
 
     <!-- MAIN CONTENT -->
-    <div class="bg-gray-50 min-h-[calc(100vh-200px)]">
+    <div class="bg-gray-50 min-h-screen">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- CATEGORIES TABS -->
+        <!-- CATEGORIES SIDEBAR OR TOP TABS -->
         <div class="mb-8">
           <div class="flex gap-2 overflow-x-auto pb-2">
             <button
@@ -280,7 +264,7 @@ function openHistory() {
               class="px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition"
               :class="
                 activeSubcategory?.id === sub.id
-                  ? 'bg-gray-300 text-gray-900 font-semibold'
+                  ? 'bg-gray-300 text-gray-900'
                   : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
               "
             >
@@ -297,7 +281,7 @@ function openHistory() {
               <div
                 v-for="item in items"
                 :key="item.id"
-                class="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition group"
+                class="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition group cursor-pointer"
               >
                 <!-- IMAGE -->
                 <div class="relative overflow-hidden bg-gray-100 h-40">
@@ -353,13 +337,16 @@ function openHistory() {
             <div
               class="sticky top-24 bg-white rounded-xl shadow-lg p-6 space-y-4 border border-gray-100"
             >
-              <h2 class="font-black text-lg text-gray-900">Your Cart</h2>
+              <div class="flex items-center gap-2">
+                <ShoppingCart class="w-5 h-5 text-black" />
+                <h2 class="font-black text-lg text-gray-900">Your Cart</h2>
+              </div>
 
               <div
                 v-if="!cart.length"
                 class="text-center py-8 text-gray-500"
               >
-                <Plus class="w-12 h-12 mx-auto opacity-20 mb-3" />
+                <ShoppingCart class="w-12 h-12 mx-auto opacity-20 mb-3" />
                 <p class="text-sm">No items yet</p>
               </div>
 
@@ -378,7 +365,7 @@ function openHistory() {
                       </p>
                     </div>
                     <button
-                      @click="cart = cart.filter(i => i.id !== item.id)"
+                      @click="removeFromCart(item.id)"
                       class="text-gray-400 hover:text-red-600 transition"
                     >
                       <X class="w-4 h-4" />
@@ -408,9 +395,10 @@ function openHistory() {
               <button
                 v-if="cart.length"
                 @click="openPreview"
-                class="w-full bg-black text-white py-3 rounded-lg font-bold uppercase text-sm transition hover:bg-gray-800"
+                class="w-full bg-black text-white py-3 rounded-lg font-bold uppercase text-sm transition hover:bg-gray-800 flex items-center justify-center gap-2"
               >
-                Review Order
+                <ShoppingCart class="w-4 h-4" />
+                Proceed to Payment
               </button>
               <button
                 v-else
@@ -446,11 +434,6 @@ function openHistory() {
               <p class="text-xs text-gray-500">
                 {{ item.quantity }} × ₦{{ item.price }}
               </p>
-              <input
-                v-model="item.note"
-                placeholder="Item note (optional)"
-                class="w-full border border-gray-300 rounded p-2 text-xs mt-2 focus:outline-none focus:ring-2 focus:ring-black"
-              />
             </div>
             <p class="font-bold text-gray-900">₦{{ item.price * item.quantity }}</p>
           </div>
@@ -464,29 +447,15 @@ function openHistory() {
           </div>
         </div>
 
-        <!-- PAYMENT METHOD SELECTION -->
-        <div class="space-y-3 border-t border-gray-200 pt-4">
-          <p class="font-bold text-sm text-gray-900">Payment Method</p>
-          <label class="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition"
-            :class="paymentMode === 'prepaid' ? 'border-black bg-black/5' : 'border-gray-200 hover:border-gray-300'">
-            <input type="radio" value="prepaid" v-model="paymentMode" class="w-4 h-4" />
-            <div>
-              <p class="font-semibold text-sm text-gray-900">Pay Now</p>
-              <p class="text-xs text-gray-500">Online payment</p>
-            </div>
-          </label>
-          <label class="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition"
-            :class="paymentMode === 'pay_on_delivery' ? 'border-black bg-black/5' : 'border-gray-200 hover:border-gray-300'">
-            <input type="radio" value="pay_on_delivery" v-model="paymentMode" class="w-4 h-4" />
-            <div>
-              <p class="font-semibold text-sm text-gray-900">Pay on Delivery</p>
-              <p class="text-xs text-gray-500">Added to your room bill</p>
-            </div>
-          </label>
+        <!-- INFO -->
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <p class="text-sm text-blue-900">
+            <span class="font-semibold">Payment Method:</span> Online Payment (Prepaid)
+          </p>
         </div>
 
         <!-- ACTIONS -->
-        <div class="flex gap-3 pt-4">
+        <div class="flex gap-3">
           <button
             @click="showPreview = false"
             class="flex-1 py-3 bg-gray-100 text-gray-900 rounded-lg font-bold text-sm uppercase transition hover:bg-gray-200"
@@ -498,7 +467,7 @@ function openHistory() {
             :disabled="submitting"
             class="flex-1 py-3 bg-black text-white rounded-lg font-bold text-sm uppercase transition hover:bg-gray-800 disabled:opacity-50"
           >
-            {{ submitting ? 'Processing...' : 'Confirm' }}
+            {{ submitting ? 'Processing...' : 'Pay Now' }}
           </button>
         </div>
       </div>
@@ -515,5 +484,13 @@ function openHistory() {
 .toast-leave-to {
   opacity: 0;
   transform: translate(-50%, -10px);
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-clamp: 2;
+  overflow: hidden;
 }
 </style>
