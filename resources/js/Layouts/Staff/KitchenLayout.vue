@@ -14,7 +14,7 @@ const isMobileMenuOpen = ref(false)
 
 const kitchenNavigation = [
   { name: 'Live Orders', href: '/staff/kitchen/orders', icon: Utensils },
-  { name: 'Menu Editor', href: '/staff/menu', icon: ChefHat },
+  { name: 'Menu Editor', href: '/staff/kitchen/menu', icon: ChefHat },
   { name: 'Station Settings', href: '/staff/settings', icon: Settings },
 ]
 </script>

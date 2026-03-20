@@ -58,7 +58,7 @@ import {
         </Link>
 
         <Link 
-          href="/staff/kitchen/menu/" 
+          href="/staff/kitchen/menu" 
           class="group relative overflow-hidden bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl hover:border-orange-100 transition-all duration-300"
         >
           <div class="flex items-start justify-between">
