@@ -16,7 +16,7 @@ class NightlyRoomRevenueAudit extends Command
     {
         $today = Carbon::today();
 
-        Booking::where('status', 'checked_in')
+        Booking::whereIn('status', ['active', 'checked_in'])
             ->whereDate('check_in', '<=', $today)
             ->whereDate('check_out', '>', $today)
             ->each(fn ($booking) =>

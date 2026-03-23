@@ -23,7 +23,7 @@ class ValidateRoomToken
             abort(403, 'Token expired.');
         }
 
-        if ($access->booking->status !== 'active') {
+        if (! in_array($access->booking->status, ['active', 'checked_in'], true)) {
             abort(403, 'Booking is not active.');
         }
 

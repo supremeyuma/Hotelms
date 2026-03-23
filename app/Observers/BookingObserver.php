@@ -19,7 +19,7 @@ class BookingObserver
 
     public function updated(Booking $booking)
     {
-        if ($booking->isDirty('status') && $booking->status === 'active') {
+        if ($booking->isDirty('status') && in_array($booking->status, ['active', 'checked_in'], true)) {
             $booking->generateRoomAccessTokens();
         }
     }

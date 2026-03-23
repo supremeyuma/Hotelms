@@ -18,7 +18,7 @@ class ChargeOccupiedRooms extends Command
         $rooms = Room::where('status', 'occupied')
             ->with([
                 'roomType',
-                'bookings' => fn ($q) => $q->where('status', 'active')
+                'bookings' => fn ($q) => $q->whereIn('status', ['active', 'checked_in'])
             ])
             ->get();
 
@@ -32,4 +32,3 @@ class ChargeOccupiedRooms extends Command
         }
     }
 }
-

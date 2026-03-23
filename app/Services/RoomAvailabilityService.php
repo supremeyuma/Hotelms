@@ -53,7 +53,7 @@ class RoomAvailabilityService
     ): Collection {
         return Room::where('room_type_id', $roomTypeId)
             ->whereDoesntHave('bookings', function ($q) use ($checkIn, $checkOut) {
-                $q->whereIn('bookings.status', ['checked_in', 'confirmed'])
+                $q->whereIn('bookings.status', ['active', 'checked_in', 'confirmed'])
                   ->where(fn ($q) =>
                       $q->where('check_in', '<', $checkOut)
                         ->where('check_out', '>', $checkIn)
@@ -132,7 +132,7 @@ class RoomAvailabilityService
         return ! Booking::whereHas('rooms', fn ($q) =>
                 $q->where('rooms.id', $roomId)
             )
-            ->whereIn('status', ['checked_in', 'confirmed'])
+            ->whereIn('status', ['active', 'checked_in', 'confirmed'])
             ->where(fn ($q) =>
                 $q->where('check_in', '<', $to)
                   ->where('check_out', '>', $from)

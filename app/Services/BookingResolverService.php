@@ -12,7 +12,7 @@ class BookingResolverService
      */
     public function resolveActiveBookingForRoom(int $roomId): Booking
     {
-        $booking = Booking::where('status', 'checked_in')
+        $booking = Booking::whereIn('status', ['active', 'checked_in'])
             ->whereHas('rooms', fn ($q) => $q->where('rooms.id', $roomId))
             ->first();
 

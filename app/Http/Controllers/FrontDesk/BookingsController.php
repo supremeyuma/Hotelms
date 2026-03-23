@@ -42,7 +42,7 @@ class BookingsController extends Controller
         }
 
         if ($filter === 'active') {
-            $query->where('status', 'active');
+            $query->whereIn('status', ['active', 'checked_in']);
         }
 
         if ($filter === 'past') {

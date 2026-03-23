@@ -25,7 +25,7 @@ class DashboardController extends Controller
             ->where('status', 'confirmed')
             ->count();
         $guestsDeparting = Booking::where('check_out', $today)
-            ->where('status', 'active')
+            ->whereIn('status', ['active', 'checked_in'])
             ->count();
 
         // Outstanding bookings

@@ -32,7 +32,9 @@ class DispatchHousekeepingRemindersJob implements ShouldQueue
     {
         // Bookings checking out today
         $today = today();
-        $checkouts = Booking::whereDate('check_out', $today)->whereIn('status', ['checked_in','booked'])->get();
+        $checkouts = Booking::whereDate('check_out', $today)
+            ->whereIn('status', ['active', 'checked_in'])
+            ->get();
 
         foreach ($checkouts as $booking) {
             $notifier->notifyDepartment('housekeeping', "Room {$booking->room_id} has checkout today", ['booking_id' => $booking->id]);

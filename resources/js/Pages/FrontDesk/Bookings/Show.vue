@@ -36,6 +36,10 @@ const balanceDue = computed(() => totalCharges.value - totalPayments.value)
 
 /* ---------------- Actions ---------------- */
 
+const isInHouse = computed(() =>
+  ['active', 'checked_in'].includes(props.booking.status)
+)
+
 function checkIn() {
   router.post(route('frontdesk.bookings.checkIn', props.booking.id))
 }
@@ -100,7 +104,7 @@ function formatDate(dateString) {
           </button>
 
           <button
-            v-if="booking.status === 'active'"
+            v-if="isInHouse"
             @click="extendStay"
             class="flex items-center gap-2 px-6 py-3 bg-amber-100 text-amber-700 rounded-2xl font-black hover:bg-amber-200 transition-all"
           >
@@ -108,7 +112,7 @@ function formatDate(dateString) {
           </button>
 
           <button
-            v-if="booking.status === 'active'"
+            v-if="isInHouse"
             @click="checkOut"
             class="flex items-center gap-2 px-6 py-3 bg-rose-600 text-white rounded-2xl font-black hover:bg-rose-700 transition-all shadow-lg shadow-rose-100"
           >

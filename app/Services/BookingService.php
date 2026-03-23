@@ -264,7 +264,7 @@ class BookingService
 
             if ($booking->rooms()->count() === $booking->quantity) {
                 $booking->update([
-                    'status'        => 'checked_in',
+                    'status'        => 'active',
                     'checked_in_at' => now(),
                 ]);
             }
