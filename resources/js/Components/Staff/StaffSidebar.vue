@@ -76,11 +76,33 @@ const ICONS = {
 const page = usePage()
 const user = page.props.auth.user
 
+function normalizeRole(value) {
+  const normalized = String(value ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_-]+/g, '')
+
+  const roleAliases = {
+    ceo: 'md',
+    inventorymanager: 'inventory',
+    cleaner: 'clean',
+    cleaning: 'clean',
+    housekeeping: 'clean',
+    frontoffice: 'frontdesk',
+    reception: 'frontdesk',
+    receptionist: 'frontdesk',
+    frontdeskofficer: 'frontdesk',
+    laundrystaff: 'laundry',
+  }
+
+  return roleAliases[normalized] ?? normalized
+}
+
 const role = computed(() => {
   if (Array.isArray(user.roles) && user.roles.length) {
-    return user.roles[0].name ?? user.roles[0]
+    return normalizeRole(user.roles[0].name ?? user.roles[0])
   }
-  return user.role ?? 'staff'
+  return normalizeRole(user.role ?? 'staff')
 })
 
 function logout() {
@@ -94,50 +116,87 @@ const nav = computed(() => {
       case 'manager':
       case 'md':
         return [
-          { label: 'Admin Dashboard', route: 'admin.dashboard', icon: 'home' },
-          { label: 'Bookings', route: 'admin.bookings.index', icon: 'calendar' },
-          { label: 'Rooms', route: 'admin.rooms.index', icon: 'bed' },
-          { label: 'Room Types', route: 'admin.room-types.index', icon: 'layers' },
-          { label: 'Staff Management', route: 'admin.staff.index', icon: 'users' },
-          { label: 'Cleaning Templates', route: 'admin.cleaning-templates.index', icon: 'brush-cleaning' },
-          { label: 'Menu Recipes', route: 'admin.menu-recipes.index', icon: 'utensils' },
-          { label: 'Maintenance', route: 'admin.maintenance.index', icon: 'wrench' },
-          { label: 'Reports Dashboard', route: 'admin.reports.dashboard', icon: 'bar-chart' },
-          { label: 'Staff Reports', route: 'admin.reports.staff', icon: 'user-check' },
-          { label: 'Occupancy Reports', route: 'admin.reports.occupancy', icon: 'hotel' },
-          { label: 'Website Content', route: 'admin.website.content', icon: 'edit' },
-          { label: 'Gallery', route: 'admin.website.gallery', icon: 'image' },
-          { label: 'Events', route: 'admin.events.index', icon: 'calendar' },
-          { label: 'Settings', route: 'admin.settings.index', icon: 'settings' },
+          { label: 'Admin Dashboard', route: 'admin.dashboard', icon: 'home', activeRoute: 'admin.dashboard' },
+          { label: 'Bookings', route: 'admin.bookings.index', icon: 'calendar', activeRoute: 'admin.bookings.*' },
+          { label: 'Rooms', route: 'admin.rooms.index', icon: 'bed', activeRoute: 'admin.rooms.*' },
+          { label: 'Room Types', route: 'admin.room-types.index', icon: 'layers', activeRoute: 'admin.room-types.*' },
+          { label: 'Staff Management', route: 'admin.staff.index', icon: 'users', activeRoute: 'admin.staff.*' },
+          { label: 'Cleaning Templates', route: 'admin.cleaning-templates.index', icon: 'brush-cleaning', activeRoute: 'admin.cleaning-templates.*' },
+          { label: 'Menu Recipes', route: 'admin.menu-recipes.index', icon: 'utensils', activeRoute: 'admin.menu-recipes.*' },
+          { label: 'Maintenance', route: 'admin.maintenance.index', icon: 'wrench', activeRoute: 'admin.maintenance.*' },
+          { label: 'Reports Dashboard', route: 'admin.reports.dashboard', icon: 'bar-chart', activeRoute: 'admin.reports.*' },
+          { label: 'Staff Reports', route: 'admin.reports.staff', icon: 'user-check', activeRoute: 'admin.reports.staff*' },
+          { label: 'Occupancy Reports', route: 'admin.reports.occupancy', icon: 'hotel', activeRoute: 'admin.reports.occupancy*' },
+          { label: 'Website Content', route: 'admin.website.content', icon: 'edit', activeRoute: 'admin.website.*' },
+          { label: 'Gallery', route: 'admin.website.gallery', icon: 'image', activeRoute: 'admin.website.gallery*' },
+          { label: 'Events', route: 'admin.events.index', icon: 'calendar', activeRoute: 'admin.events.*' },
+          { label: 'Settings', route: 'admin.settings.index', icon: 'settings', activeRoute: 'admin.settings.*' },
         ]
       case 'inventory':
         return [
-          { label: 'Admin Dashboard', route: 'admin.dashboard', icon: 'home' },
-          { label: 'Inventory', route: 'admin.inventory.index', icon: 'boxes' },
-          { label: 'Inventory Locations', route: 'admin.inventory-locations.index', icon: 'map-pin' },
-          { label: 'Inventory Reports', route: 'admin.reports.inventory', icon: 'archive' },
+          { label: 'Admin Dashboard', route: 'admin.dashboard', icon: 'home', activeRoute: 'admin.dashboard' },
+          { label: 'Inventory', route: 'admin.inventory.index', icon: 'boxes', activeRoute: 'admin.inventory.*' },
+          { label: 'Inventory Locations', route: 'admin.inventory-locations.index', icon: 'map-pin', activeRoute: 'admin.inventory-locations.*' },
+          { label: 'Inventory Reports', route: 'admin.reports.inventory', icon: 'archive', activeRoute: 'admin.reports.inventory*' },
         ]
       case 'accountant':
         return [
-          { label: 'Admin Dashboard', route: 'admin.dashboard', icon: 'home' },
-          { label: 'Reports Dashboard', route: 'admin.reports.dashboard', icon: 'bar-chart' },
-          { label: 'Profit & Loss', route: 'admin.reports.profit-loss', icon: 'trending-up' },
-          { label: 'Balance Sheet', route: 'admin.reports.balance-sheet', icon: 'file-text' },
-          { label: 'Daily Revenue', route: 'admin.reports.daily-revenue', icon: 'dollar-sign' },
-          { label: 'Revenue Reports', route: 'admin.reports.revenue', icon: 'dollar-sign' },
-          { label: 'Outstanding Balances', route: 'admin.outstanding-balances.index', icon: 'alert-triangle' },
-          { label: 'Accounting Periods', route: 'admin.accounting-periods.index', icon: 'lock' },
-          { label: 'Audit Logs', route: 'admin.audit.index', icon: 'shield' },
+          { label: 'Admin Dashboard', route: 'admin.dashboard', icon: 'home', activeRoute: 'admin.dashboard' },
+          { label: 'Reports Dashboard', route: 'admin.reports.dashboard', icon: 'bar-chart', activeRoute: 'admin.reports.*' },
+          { label: 'Profit & Loss', route: 'admin.reports.profit-loss', icon: 'trending-up', activeRoute: 'admin.reports.profit-loss*' },
+          { label: 'Balance Sheet', route: 'admin.reports.balance-sheet', icon: 'file-text', activeRoute: 'admin.reports.balance-sheet*' },
+          { label: 'Daily Revenue', route: 'admin.reports.daily-revenue', icon: 'dollar-sign', activeRoute: 'admin.reports.daily-revenue*' },
+          { label: 'Revenue Reports', route: 'admin.reports.revenue', icon: 'dollar-sign', activeRoute: 'admin.reports.revenue*' },
+          { label: 'Outstanding Balances', route: 'admin.outstanding-balances.index', icon: 'alert-triangle', activeRoute: 'admin.outstanding-balances*' },
+          { label: 'Accounting Periods', route: 'admin.accounting-periods.index', icon: 'lock', activeRoute: 'admin.accounting-periods.*' },
+          { label: 'Audit Logs', route: 'admin.audit.index', icon: 'shield', activeRoute: 'admin.audit.*' },
+        ]
+      case 'frontdesk':
+        return [
+          { label: 'Front Desk Dashboard', route: 'frontdesk.dashboard', icon: 'home', activeRoute: 'frontdesk.dashboard' },
+          { label: 'Bookings', route: 'frontdesk.bookings.index', icon: 'calendar', activeRoute: 'frontdesk.bookings.*' },
+          { label: 'Rooms', route: 'frontdesk.rooms.index', icon: 'bed', activeRoute: 'frontdesk.rooms.*' },
+          { label: 'Guest Requests', route: 'frontdesk.guest-requests.index', icon: 'bell', activeRoute: 'frontdesk.guest-requests*' },
+          { label: 'Laundry Requests', route: 'frontdesk.laundry.index', icon: 'shirt', activeRoute: 'frontdesk.laundry*' },
+          { label: 'Event Check-In', route: 'staff.events.check-in.index', icon: 'user-check', activeRoute: 'staff.events.check-in.*' },
+        ]
+      case 'laundry':
+        return [
+          { label: 'Laundry Dashboard', route: 'staff.laundry.dashboard', icon: 'shirt', activeRoute: 'staff.laundry.*' },
+          { label: 'Laundry Items', route: 'staff.laundry-items.index', icon: 'tag', activeRoute: 'staff.laundry-items.*' },
+        ]
+      case 'clean':
+        return [
+          { label: 'Cleaning Dashboard', route: 'clean.dashboard', icon: 'brush-cleaning', activeRoute: 'clean.*' },
+        ]
+      case 'kitchen':
+        return [
+          { label: 'Kitchen Dashboard', route: 'staff.kitchen.dashboard', icon: 'utensils', activeRoute: 'staff.kitchen.dashboard' },
+          { label: 'Kitchen Orders', route: 'staff.kitchen.orders.index', icon: 'clipboard', activeRoute: 'staff.kitchen.orders.*' },
+          { label: 'Order History', route: 'staff.kitchen.orders.history', icon: 'clock', activeRoute: 'staff.kitchen.orders.history' },
+          { label: 'Kitchen Menu', route: 'staff.menu.kitchen', icon: 'menu', activeRoute: 'staff.menu.kitchen' },
+        ]
+      case 'bar':
+        return [
+          { label: 'Bar Dashboard', route: 'staff.bar.dashboard', icon: 'home', activeRoute: 'staff.bar.dashboard' },
+          { label: 'Bar Orders', route: 'staff.bar.orders.index', icon: 'clipboard', activeRoute: 'staff.bar.orders.*' },
+          { label: 'Order History', route: 'staff.bar.orders.history', icon: 'clock', activeRoute: 'staff.bar.orders.history' },
+          { label: 'Bar Menu', route: 'staff.menu.bar', icon: 'menu', activeRoute: 'staff.menu.bar' },
         ]
       default:
-        return [{ label: 'Dashboard', route: 'staff.dashboard', icon: 'home' }]
+        return [
+          { label: 'Dashboard', route: 'staff.dashboard', icon: 'home', activeRoute: 'staff.dashboard' },
+          { label: 'Orders Queue', route: 'staff.orders.queue', icon: 'clipboard', activeRoute: 'staff.orders.*' },
+          { label: 'Quick Action', route: 'staff.quick-action.index', icon: 'clock', activeRoute: 'staff.quick-action.*' },
+          { label: 'Event Check-In', route: 'staff.events.check-in.index', icon: 'user-check', activeRoute: 'staff.events.check-in.*' },
+        ]
     }
   })()
 
   return items.map(item => ({
     ...item,
     iconComponent: ICONS[item.icon],
-    active: route().current(item.route)
+    active: route().current(item.activeRoute ?? item.route)
   }))
 })
 </script>

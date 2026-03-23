@@ -14,7 +14,7 @@ const props = defineProps({
     v-if="item.route"
     :href="route(item.route)"
     class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition"
-    :class="route().current(item.route)
+    :class="item.active
       ? 'bg-blue-600 text-white'
       : 'text-gray-700 hover:bg-gray-100'"
   >
