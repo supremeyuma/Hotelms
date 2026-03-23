@@ -37,12 +37,13 @@ const extensionDate = ref('')
 const billHistory = ref([]) 
 
 const showOrdersHistory = ref(false)
+const currentCleaningStatus = ref(props.cleaningStatus)
 //const orders = ref([])
 
 //console.log(props.orders);
 
 const maintenance = reactive({ type: 'plumbing', description: '', file: null })
-const cleaningRequested = computed(() => props.cleaningStatus === 'cleaner_requested')
+const cleaningRequested = computed(() => currentCleaningStatus.value === 'cleaner_requested')
 
 /* ---------------- DATA FETCHING ---------------- */
 async function fetchBillHistory() {
@@ -80,10 +81,36 @@ watch(
   { immediate: true }
 )
 
+watch(
+  () => props.cleaningStatus,
+  (status) => {
+    currentCleaningStatus.value = status
+  }
+)
+
 
 /* ---------------- ACTIONS ---------------- */
 function openMenu(type) {
   router.visit(`/guest/room/${props.accessToken}/menu/${type}`)
+}
+
+function requestService(type, notes = '') {
+  if (type === 'cleaning' && cleaningRequested.value) {
+    return
+  }
+
+  router.post(
+    `/guest/room/${props.accessToken}/service-request`,
+    { type, notes },
+    {
+      preserveScroll: true,
+      onSuccess: () => {
+        if (type === 'cleaning') {
+          currentCleaningStatus.value = 'cleaner_requested'
+        }
+      },
+    }
+  )
 }
 
 // Maintenance Logic
