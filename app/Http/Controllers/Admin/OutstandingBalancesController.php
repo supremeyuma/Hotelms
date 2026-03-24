@@ -31,6 +31,7 @@ class OutstandingBalancesController extends Controller
             'search' => $search,
             'summary' => $data['summary'],
             'balances' => $data['balances'],
+            'routePrefix' => 'finance',
         ]);
     }
 
@@ -173,7 +174,6 @@ class OutstandingBalancesController extends Controller
     public function export(Request $request)
     {
         $view = $request->input('view', 'room');
-        $format = $request->input('format', 'xlsx');
 
         if ($view === 'booking') {
             $data = $this->getBookingOutstandingBalances('');
@@ -181,11 +181,41 @@ class OutstandingBalancesController extends Controller
             $data = $this->getRoomOutstandingBalances('');
         }
 
-        // Export logic would go here
-        // For now, return a simple response
-        return response()->json([
-            'message' => 'Export functionality pending',
-            'data' => $data,
+        $headers = $view === 'booking'
+            ? ['Booking Code', 'Guest', 'Email', 'Status', 'Outstanding', 'Rooms With Balance']
+            : ['Room Number', 'Room Name', 'Booking Code', 'Guest', 'Email', 'Outstanding', 'Room Status'];
+
+        return response()->streamDownload(function () use ($data, $view, $headers) {
+            $handle = fopen('php://output', 'w');
+            fputcsv($handle, $headers);
+
+            foreach ($data['balances'] as $item) {
+                if ($view === 'booking') {
+                    fputcsv($handle, [
+                        $item['booking_code'],
+                        $item['guest'],
+                        $item['email'],
+                        $item['status'],
+                        $item['outstanding'],
+                        $item['rooms_with_balance'],
+                    ]);
+                    continue;
+                }
+
+                fputcsv($handle, [
+                    $item['room_number'],
+                    $item['room_name'],
+                    $item['booking']['code'],
+                    $item['booking']['guest'],
+                    $item['booking']['email'],
+                    $item['outstanding'],
+                    $item['room_status'],
+                ]);
+            }
+
+            fclose($handle);
+        }, "outstanding-balances-{$view}.csv", [
+            'Content-Type' => 'text/csv',
         ]);
     }
 }

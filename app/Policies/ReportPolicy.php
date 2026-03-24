@@ -14,7 +14,7 @@ class ReportPolicy
      */
     public function before(User $user, $ability)
     {
-        if ($user->hasAnyRole(['md', 'manager'])) {
+        if ($user->hasAnyRole(['md', 'manager', 'accountant', 'Accountant'])) {
             return true;
         }
     }
@@ -37,7 +37,7 @@ class ReportPolicy
 
     public function update(User $user): bool
     {
-        return $user->hasAnyRole(['md', 'manager']);
+        return $user->hasAnyRole(['md', 'manager', 'accountant', 'Accountant']);
     }
 
     public function delete(User $user): bool
@@ -47,7 +47,7 @@ class ReportPolicy
 
     public function restore(User $user): bool
     {
-        return $user->hasAnyRole(['md','manager']);
+        return $user->hasAnyRole(['md', 'manager', 'accountant', 'Accountant']);
     }
 
     public function forceDelete(User $user): bool

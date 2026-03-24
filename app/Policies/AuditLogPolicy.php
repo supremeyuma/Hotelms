@@ -22,13 +22,12 @@ class AuditLogPolicy
 
     public function viewAny(User $user): bool
     {
-        // Only manager or MD can view any audit logs if before didn't return true
-        return $user->hasRole('manager');
+        return $user->hasAnyRole(['accountant', 'Accountant']);
     }
 
     public function view(User $user, $model = null): bool
     {
-        return $user->hasRole('manager');
+        return $user->hasAnyRole(['accountant', 'Accountant']);
     }
 
     public function create(User $user): bool

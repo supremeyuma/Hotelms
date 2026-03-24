@@ -14,7 +14,7 @@ class AuditLogController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth','role:manager|md']);
+        $this->middleware(['auth','role:accountant|md']);
     }
 
     /**
@@ -42,6 +42,9 @@ class AuditLogController extends Controller
 
         $logs = $query->latest()->paginate(50);
 
-        return Inertia::render('Admin/AuditLogs/Index', compact('logs'));
+        return Inertia::render('Admin/AuditLogs/Index', [
+            'logs' => $logs,
+            'filters' => $request->only(['user_id', 'model', 'date_from', 'date_to']),
+        ]);
     }
 }

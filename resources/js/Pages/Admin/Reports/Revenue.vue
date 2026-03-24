@@ -1,44 +1,42 @@
-<!-- resources/js/Pages/Admin/Reports/Revenue.vue -->
 <script setup>
 import ManagerLayout from '@/Layouts/Staff/ManagerLayout.vue'
 import TrendChart from '@/Components/TrendChart.vue'
-import { ref } from 'vue'
 
 const props = defineProps({
   rows: Object,
-  filters: Object, // Ensure filters is defined in props
+  filters: Object,
+  routePrefix: {
+    type: String,
+    default: 'admin',
+  },
 })
 
-const search = ref(props.filters?.search ?? '')
-
-// Helper to format date
 function formatDate(dateString) {
   const options = { year: 'numeric', month: 'short', day: 'numeric' }
   return new Date(dateString).toLocaleDateString(undefined, options)
 }
-
 </script>
 
 <template>
   <ManagerLayout>
     <div class="space-y-6">
-      <div class="flex justify-between items-center">
+      <div class="flex items-center justify-between">
         <h1 class="text-2xl font-semibold text-gray-800 dark:text-gray-100">
           Revenue Report
         </h1>
         <a
-          :href="`/admin/reports/revenue/export/xlsx`"
-          class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          :href="route(`${props.routePrefix}.reports.revenue.export`, 'xlsx')"
+          class="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
         >
           Export XLSX
         </a>
       </div>
 
-      <TrendChart title="Revenue Trend" endpoint="/admin/reports/charts/revenue" />
+      <TrendChart title="Revenue Trend" :endpoint="`/${props.routePrefix}/reports/charts/revenue`" />
 
-      <div class="overflow-x-auto bg-white dark:bg-gray-900 rounded-lg shadow-sm">
+      <div class="overflow-x-auto rounded-lg bg-white shadow-sm dark:bg-gray-900">
         <table class="w-full table-auto">
-          <thead class="bg-gray-100 dark:bg-gray-800 text-left">
+          <thead class="bg-gray-100 text-left dark:bg-gray-800">
             <tr>
               <th class="px-4 py-2 text-gray-700 dark:text-gray-200">ID</th>
               <th class="px-4 py-2 text-gray-700 dark:text-gray-200">Total Amount</th>
@@ -50,10 +48,10 @@ function formatDate(dateString) {
             <tr
               v-for="r in rows.data"
               :key="r.id"
-              class="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
+              class="border-b border-gray-200 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
             >
               <td class="px-4 py-2">{{ r.id }}</td>
-              <td class="px-4 py-2">₦{{ r.total_amount }}</td>
+              <td class="px-4 py-2">NGN {{ r.total_amount }}</td>
               <td class="px-4 py-2">{{ r.customer_name ?? '-' }}</td>
               <td class="px-4 py-2">{{ formatDate(r.created_at) }}</td>
             </tr>

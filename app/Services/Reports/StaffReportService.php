@@ -16,6 +16,7 @@ class StaffReportService
         'bar',
         'inventory',
         'accountant',
+        'Accountant',
         'manager',
         'hr',
     ];

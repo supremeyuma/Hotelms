@@ -36,6 +36,7 @@ Route::post('/payments/initialize-by-reference', [PaymentController::class, 'ini
 require __DIR__ . '/admin.php';
 require __DIR__ . '/auth.php';
 require __DIR__ . '/console.php';
+require __DIR__ . '/finance.php';
 require __DIR__ . '/hr.php';
 require __DIR__ . '/images.php';
 require __DIR__ . '/public.php';

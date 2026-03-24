@@ -7,29 +7,21 @@ use App\Http\Controllers\Admin\{
     RoomController,
     RoomTypeController,
     BookingAdminController,
-    OrderAdminController,
     InventoryController,
     MaintenanceAdminController,
-    ReportController,
-    AuditLogController,
     SettingController,
     InventoryLocationController,
     CleaningInventoryTemplateController,
     MenuInventoryRecipeController,
-    OutstandingBalancesController,
-    AccountingPeriodController,
     EventController,
 };
 use App\Http\Controllers\Admin\ReportDashboardController;
 use App\Http\Controllers\Admin\Reports\StaffReportController;
-use App\Http\Controllers\Admin\Reports\RevenueReportController;
-use App\Http\Controllers\Admin\Reports\MaintenanceReportController;
 use App\Http\Controllers\Admin\Reports\InventoryReportController;
 use App\Http\Controllers\Admin\Reports\OccupancyReportController;
 use App\Http\Controllers\Admin\Reports\ChartController;
 use App\Http\Controllers\Admin\ContentController;
 use App\Http\Controllers\Admin\GalleryController;
-use App\Http\Controllers\Reports\ProfitAndLossController;
 
 Route::middleware(['auth', 'role:manager|md'])->prefix('admin')->as('admin.')->group(function () {
 
@@ -73,13 +65,10 @@ Route::middleware(['auth', 'role:manager|md'])->prefix('admin')->as('admin.')->g
         Route::put('maintenance/{ticket}', [MaintenanceAdminController::class, 'update'])->name('maintenance.update');
 
         Route::prefix('reports')->name('reports.')->group(function () {
-            Route::get('/', [ReportDashboardController::class, 'index'])->name('dashboard');
+            Route::get('/', [ReportDashboardController::class, 'operations'])->name('dashboard');
 
             Route::get('/staff', [StaffReportController::class, 'index'])->name('staff');
             Route::get('/staff/export/{format}', [StaffReportController::class, 'export'])->name('staff.export');
-
-            Route::get('/revenue', [RevenueReportController::class, 'index'])->name('revenue');
-            Route::get('/revenue/export/{format}', [RevenueReportController::class, 'export'])->name('revenue.export');
 
             Route::get('/occupancy', [OccupancyReportController::class, 'index'])->name('occupancy');
             Route::get('/occupancy/export/{format}', [OccupancyReportController::class, 'export'])->name('occupancy.export');
@@ -87,12 +76,7 @@ Route::middleware(['auth', 'role:manager|md'])->prefix('admin')->as('admin.')->g
             Route::get('/inventory', [InventoryReportController::class, 'index'])->name('inventory');
             Route::get('/inventory/export/{format}', [InventoryReportController::class, 'export'])->name('inventory.export');
 
-            Route::get('profit-loss', [ProfitAndLossController::class, 'index'])->name('profit-loss');
-            Route::get('balance-sheet', [\App\Http\Controllers\Reports\BalanceSheetController::class, 'index'])->name('balance-sheet');
-            Route::get('daily-revenue', [\App\Http\Controllers\Reports\DailyRevenueController::class, 'index'])->name('daily-revenue');
-
                 Route::prefix('charts')->group(function () {
-                    Route::get('/revenue', [ChartController::class, 'revenue']);
                     Route::get('/occupancy', [ChartController::class, 'occupancy']);
                     Route::get('/inventory', [ChartController::class, 'inventory']);
                 });
@@ -101,24 +85,8 @@ Route::middleware(['auth', 'role:manager|md'])->prefix('admin')->as('admin.')->g
             //Route::get('/maintenance/export/{format}', [MaintenanceReportController::class, 'export'])->name('maintenance.export');
         });
 
-        Route::get('audit-logs', [AuditLogController::class, 'index'])->name('audit.index');
-
         Route::get('settings', [SettingController::class, 'index'])->name('settings.index');
         Route::put('settings', [SettingController::class, 'update'])->name('settings.update');
-
-        // Outstanding Balances
-        Route::get('outstanding-balances', [OutstandingBalancesController::class, 'index'])->name('outstanding-balances.index');
-        Route::get('outstanding-balances/export', [OutstandingBalancesController::class, 'export'])->name('outstanding-balances.export');
-
-        // Accounting Periods
-        Route::get('accounting-periods', [AccountingPeriodController::class, 'index'])->name('accounting-periods.index');
-        Route::post('accounting-periods', [AccountingPeriodController::class, 'store'])->name('accounting-periods.store');
-        Route::post('accounting-periods/{period}/close', [AccountingPeriodController::class, 'close'])->name('accounting-periods.close');
-        Route::post('accounting-periods/{period}/reopen', [AccountingPeriodController::class, 'reopen'])->name('accounting-periods.reopen');
-        Route::get('accounting-periods/{period}', [AccountingPeriodController::class, 'show'])->name('accounting-periods.show');
-        Route::post('accounting-periods/initialize-tax-accounts', [AccountingPeriodController::class, 'initializeTaxAccounts'])->name('accounting-periods.initialize-tax-accounts');
-        Route::get('accounting-periods/check-status', [AccountingPeriodController::class, 'checkPeriodStatus'])->name('accounting-periods.check-status');
-        Route::post('accounting-periods/auto-close-expired', [AccountingPeriodController::class, 'autoCloseExpired'])->name('accounting-periods.auto-close-expired');
     });
 
 

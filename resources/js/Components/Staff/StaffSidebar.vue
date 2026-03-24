@@ -115,16 +115,19 @@ const nav = computed(() => {
     switch (role.value) {
       case 'manager':
         return [
-          { label: 'Admin Dashboard', route: 'admin.dashboard', icon: 'home', activeRoute: 'admin.dashboard' },
+          { label: 'Operations Dashboard', route: 'admin.dashboard', icon: 'home', activeRoute: 'admin.dashboard' },
           { label: 'Bookings', route: 'admin.bookings.index', icon: 'calendar', activeRoute: 'admin.bookings.*' },
           { label: 'Rooms', route: 'admin.rooms.index', icon: 'bed', activeRoute: 'admin.rooms.*' },
           { label: 'Room Types', route: 'admin.room-types.index', icon: 'layers', activeRoute: 'admin.room-types.*' },
+          { label: 'Inventory', route: 'admin.inventory.index', icon: 'boxes', activeRoute: 'admin.inventory.*' },
+          { label: 'Inventory Locations', route: 'admin.inventory-locations.index', icon: 'map-pin', activeRoute: 'admin.inventory-locations.*' },
           { label: 'Cleaning Templates', route: 'admin.cleaning-templates.index', icon: 'brush-cleaning', activeRoute: 'admin.cleaning-templates.*' },
           { label: 'Menu Recipes', route: 'admin.menu-recipes.index', icon: 'utensils', activeRoute: 'admin.menu-recipes.*' },
           { label: 'Maintenance', route: 'admin.maintenance.index', icon: 'wrench', activeRoute: 'admin.maintenance.*' },
-          { label: 'Reports Dashboard', route: 'admin.reports.dashboard', icon: 'bar-chart', activeRoute: 'admin.reports.*' },
+          { label: 'Operations Reports', route: 'admin.reports.dashboard', icon: 'bar-chart', activeRoute: 'admin.reports.*' },
           { label: 'Staff Reports', route: 'admin.reports.staff', icon: 'user-check', activeRoute: 'admin.reports.staff*' },
           { label: 'Occupancy Reports', route: 'admin.reports.occupancy', icon: 'hotel', activeRoute: 'admin.reports.occupancy*' },
+          { label: 'Inventory Reports', route: 'admin.reports.inventory', icon: 'archive', activeRoute: 'admin.reports.inventory*' },
           { label: 'Website Content', route: 'admin.website.content', icon: 'edit', activeRoute: 'admin.website.*' },
           { label: 'Gallery', route: 'admin.website.gallery', icon: 'image', activeRoute: 'admin.website.gallery*' },
           { label: 'Events', route: 'admin.events.index', icon: 'calendar', activeRoute: 'admin.events.*' },
@@ -137,6 +140,8 @@ const nav = computed(() => {
           { label: 'Rooms', route: 'admin.rooms.index', icon: 'bed', activeRoute: 'admin.rooms.*' },
           { label: 'Room Types', route: 'admin.room-types.index', icon: 'layers', activeRoute: 'admin.room-types.*' },
           { label: 'HR Management', route: 'hr.staff.index', icon: 'users', activeRoute: 'hr.staff.*' },
+          { label: 'Finance Dashboard', route: 'finance.dashboard', icon: 'dollar-sign', activeRoute: 'finance.dashboard' },
+          { label: 'Revenue Reports', route: 'finance.reports.revenue', icon: 'trending-up', activeRoute: 'finance.reports.*' },
           { label: 'Cleaning Templates', route: 'admin.cleaning-templates.index', icon: 'brush-cleaning', activeRoute: 'admin.cleaning-templates.*' },
           { label: 'Menu Recipes', route: 'admin.menu-recipes.index', icon: 'utensils', activeRoute: 'admin.menu-recipes.*' },
           { label: 'Maintenance', route: 'admin.maintenance.index', icon: 'wrench', activeRoute: 'admin.maintenance.*' },
@@ -164,15 +169,14 @@ const nav = computed(() => {
         ]
       case 'accountant':
         return [
-          { label: 'Admin Dashboard', route: 'admin.dashboard', icon: 'home', activeRoute: 'admin.dashboard' },
-          { label: 'Reports Dashboard', route: 'admin.reports.dashboard', icon: 'bar-chart', activeRoute: 'admin.reports.*' },
-          { label: 'Profit & Loss', route: 'admin.reports.profit-loss', icon: 'trending-up', activeRoute: 'admin.reports.profit-loss*' },
-          { label: 'Balance Sheet', route: 'admin.reports.balance-sheet', icon: 'file-text', activeRoute: 'admin.reports.balance-sheet*' },
-          { label: 'Daily Revenue', route: 'admin.reports.daily-revenue', icon: 'dollar-sign', activeRoute: 'admin.reports.daily-revenue*' },
-          { label: 'Revenue Reports', route: 'admin.reports.revenue', icon: 'dollar-sign', activeRoute: 'admin.reports.revenue*' },
-          { label: 'Outstanding Balances', route: 'admin.outstanding-balances.index', icon: 'alert-triangle', activeRoute: 'admin.outstanding-balances*' },
-          { label: 'Accounting Periods', route: 'admin.accounting-periods.index', icon: 'lock', activeRoute: 'admin.accounting-periods.*' },
-          { label: 'Audit Logs', route: 'admin.audit.index', icon: 'shield', activeRoute: 'admin.audit.*' },
+          { label: 'Finance Dashboard', route: 'finance.dashboard', icon: 'home', activeRoute: 'finance.dashboard' },
+          { label: 'Revenue Reports', route: 'finance.reports.revenue', icon: 'dollar-sign', activeRoute: 'finance.reports.revenue*' },
+          { label: 'Profit & Loss', route: 'finance.reports.profit-loss', icon: 'trending-up', activeRoute: 'finance.reports.profit-loss*' },
+          { label: 'Balance Sheet', route: 'finance.reports.balance-sheet', icon: 'file-text', activeRoute: 'finance.reports.balance-sheet*' },
+          { label: 'Daily Revenue', route: 'finance.reports.daily-revenue', icon: 'bar-chart', activeRoute: 'finance.reports.daily-revenue*' },
+          { label: 'Outstanding Balances', route: 'finance.outstanding-balances.index', icon: 'alert-triangle', activeRoute: 'finance.outstanding-balances*' },
+          { label: 'Accounting Periods', route: 'finance.accounting-periods.index', icon: 'lock', activeRoute: 'finance.accounting-periods.*' },
+          { label: 'Audit Logs', route: 'finance.audit.index', icon: 'shield', activeRoute: 'finance.audit.*' },
         ]
       case 'frontdesk':
         return [

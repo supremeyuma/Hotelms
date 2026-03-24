@@ -23,6 +23,7 @@ class RevenueReportController extends Controller
         return Inertia::render('Admin/Reports/Revenue', [
             'rows' => $rows,
             'filters' => $request->all(),
+            'routePrefix' => str_starts_with($request->path(), 'finance/') ? 'finance' : 'admin',
         ]);
     }
 

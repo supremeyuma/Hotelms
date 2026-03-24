@@ -23,6 +23,7 @@ class AccountingPeriodController extends Controller
             'closedPeriods' => $this->periodService->getClosedPeriods(),
             'currentPeriod' => $this->periodService->getCurrentPeriod(),
             'nextPeriodDate' => $this->periodService->getNextPeriodDate()?->toDateString(),
+            'routePrefix' => 'finance',
         ]);
     }
 
@@ -59,8 +60,8 @@ class AccountingPeriodController extends Controller
 
     public function reopen(Request $request, int $periodId)
     {
-        if (!auth()->user()->hasRole('manager')) {
-            return back()->with('error', 'Only managers can reopen accounting periods.');
+        if (!auth()->user()->hasAnyRole(['accountant', 'Accountant', 'md'])) {
+            return back()->with('error', 'Only accountants or the managing director can reopen accounting periods.');
         }
 
         try {
@@ -73,14 +74,16 @@ class AccountingPeriodController extends Controller
 
     public function show(int $periodId)
     {
-        $period = \App\Models\AccountingPeriod::with('journalEntries')->findOrFail($periodId);
+        $period = \App\Models\AccountingPeriod::findOrFail($periodId);
+        $journalEntries = \App\Models\JournalEntry::with('lines.account')
+            ->whereBetween('entry_date', [$period->start_date, $period->end_date])
+            ->orderBy('entry_date', 'desc')
+            ->get();
         
         return Inertia::render('Admin/AccountingPeriodShow', [
             'period' => $period,
-            'journalEntries' => $period->journalEntries()
-                ->with('lines.account')
-                ->orderBy('entry_date', 'desc')
-                ->get(),
+            'journalEntries' => $journalEntries,
+            'routePrefix' => 'finance',
         ]);
     }
 

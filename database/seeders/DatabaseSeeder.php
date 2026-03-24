@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
             UsersSeeder::class,
             StaffProfilesSeeder::class,
             HrUserSeeder::class,
+            AccountantUserSeeder::class,
         ]);
 
         // Media and inventory

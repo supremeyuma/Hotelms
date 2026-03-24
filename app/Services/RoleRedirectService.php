@@ -20,6 +20,10 @@ class RoleRedirectService
             return route('hr.staff.index');
         }
 
+        if ($user->hasAnyRole(['accountant', 'Accountant'])) {
+            return route('finance.dashboard');
+        }
+
         if ($user->hasRole('frontdesk')) {
             return route('frontdesk.dashboard');
         }
