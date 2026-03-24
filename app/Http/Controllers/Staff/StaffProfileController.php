@@ -19,7 +19,7 @@ class StaffProfileController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth','role:staff|manager|md']);
+        $this->middleware(['auth','role:staff|manager|md|hr']);
     }
 
     /**
@@ -59,8 +59,7 @@ class StaffProfileController extends Controller
         $user = $request->user();
         $profile = $user->staffProfile ?? StaffProfile::create(['user_id'=>$user->id]);
 
-        // mutate in model to hash, but here we explicitly hash
-        $profile->action_code_hash = bcrypt($request->action_code);
+        $profile->storeActionCode($request->action_code);
         $profile->save();
 
         AuditLogger::log('staff_action_code_changed', 'StaffProfile', $profile->id, ['staff' => $user->id]);

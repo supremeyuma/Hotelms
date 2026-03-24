@@ -11,6 +11,11 @@ use Illuminate\Support\Facades\Storage;
 
 class StaffThreadController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware(['auth', 'role:hr|md']);
+    }
+
     /**
      * List all threads (queries & commendations)
      * Optionally, filter by staff_id if passed
@@ -26,6 +31,7 @@ class StaffThreadController extends Controller
             'threads' => $threads,
             'staff' => $staff,
             'staffId' => $staff->id,
+            'routePrefix' => $this->routePrefix(),
         ]);
     }
 
@@ -35,6 +41,7 @@ class StaffThreadController extends Controller
         return Inertia::render('Admin/Staff/Threads/Create', [
             'staff' => $staff,
             'staffId' => $staff->id,
+            'routePrefix' => $this->routePrefix(),
         ]);
     }
 
@@ -46,7 +53,10 @@ class StaffThreadController extends Controller
     public function show(StaffThread $thread)
     {
         $thread->load('messages.sender', 'staff');
-        return Inertia::render('Admin/Staff/Threads/Show', compact('thread'));
+        return Inertia::render('Admin/Staff/Threads/Show', [
+            'thread' => $thread,
+            'routePrefix' => $this->routePrefix(),
+        ]);
     }
 
     /**
@@ -83,7 +93,7 @@ class StaffThreadController extends Controller
             'attachments' => $paths,
         ]);
 
-        return redirect()->route('admin.staff.threads.show', $thread->id);
+        return redirect()->route($this->routePrefix() . '.threads.show', $thread->id);
     }
 
     /**
@@ -113,4 +123,8 @@ class StaffThreadController extends Controller
         return back()->with('success', 'Message sent');
     }
 
+    protected function routePrefix(): string
+    {
+        return request()->route()?->named('hr.*') ? 'hr.staff' : 'admin.staff';
+    }
 }

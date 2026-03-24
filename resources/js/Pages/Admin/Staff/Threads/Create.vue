@@ -60,7 +60,7 @@
         <!-- Actions -->
         <div class="flex justify-end space-x-3 pt-4">
           <Link
-            :href="`/admin/staff/${staffId}/threads`"
+            :href="route(`${routePrefix}.threads.index`, staffId)"
             class="px-4 py-2 border rounded"
           >
             Cancel
@@ -89,6 +89,7 @@ import {
 
 const props = usePage().props;
 const staffId = props.staffId;
+const routePrefix = props.routePrefix;
 
 const form = useForm({
   type: 'query',
@@ -107,7 +108,7 @@ function handleFiles(event) {
 }
 
 function submit() {
-  form.post(`/admin/staff/${staffId}/threads`, {
+  form.post(route(`${routePrefix}.threads.store`, staffId), {
     forceFormData: true
   });
 }

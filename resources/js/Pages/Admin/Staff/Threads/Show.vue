@@ -76,6 +76,7 @@ import ManagerLayout from '@/Layouts/Staff/ManagerLayout.vue'
 
 const props = defineProps({
   thread: Object,
+  routePrefix: String,
 })
 
 const form = useForm({
@@ -89,7 +90,7 @@ function handleFiles(e) {
 
 function sendMessage() {
   form.post(
-    route('admin.staff.threads.messages.store', props.thread.id),
+    route(`${props.routePrefix}.threads.messages.store`, props.thread.id),
     {
       forceFormData: true,
       preserveScroll: true,

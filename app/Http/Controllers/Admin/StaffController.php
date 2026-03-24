@@ -6,35 +6,85 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Department;
+use App\Models\Role;
+use App\Models\StaffNote;
 use App\Models\User;
 use App\Models\StaffProfile;
-use Spatie\Permission\Models\Role;
 use App\Services\AuditLoggerService as AuditLogger;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Illuminate\Support\Facades\Hash;
 use App\Services\ActionCodeService;
+use Illuminate\Support\Arr;
+use Illuminate\Validation\Rule;
 
 class StaffController extends Controller
 {
     protected AuditLogger $auditLogger;
+    protected array $manageableRoles = [
+        'staff',
+        'frontdesk',
+        'laundry',
+        'clean',
+        'kitchen',
+        'bar',
+        'inventory',
+        'accountant',
+        'manager',
+        'hr',
+    ];
 
     public function __construct(AuditLogger $auditLogger)
     {
-        $this->middleware(['auth','role:manager|md']);
+        $this->middleware(['auth','role:hr|md']);
         $this->auditLogger = $auditLogger;
     }
 
     public function index()
     {
-        $staff = User::with('roles','staffProfile', 'threads')->paginate(20);
-        return Inertia::render('Admin/Staff/Index', compact('staff'));
+        $filters = request()->only(['search', 'role', 'department', 'status']);
+
+        $staff = User::query()
+            ->with(['roles', 'staffProfile', 'department'])
+            ->whereHas('roles', fn ($query) => $query->whereIn('name', $this->manageableRoles))
+            ->when($filters['search'] ?? null, function ($query, $search) {
+                $query->where(function ($inner) use ($search) {
+                    $inner->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%");
+                });
+            })
+            ->when($filters['role'] ?? null, fn ($query, $role) =>
+                $query->whereHas('roles', fn ($roleQuery) => $roleQuery->where('name', $role))
+            )
+            ->when($filters['department'] ?? null, fn ($query, $departmentId) =>
+                $query->where('department_id', $departmentId)
+            )
+            ->when(($filters['status'] ?? null) === 'active', fn ($query) =>
+                $query->whereNull('suspended_at')
+            )
+            ->when(($filters['status'] ?? null) === 'suspended', fn ($query) =>
+                $query->whereNotNull('suspended_at')
+            )
+            ->orderBy('name')
+            ->paginate(20)
+            ->withQueryString();
+
+        return Inertia::render('Admin/Staff/Index', [
+            'staff' => $staff,
+            'roles' => $this->availableRoles(),
+            'departments' => Department::orderBy('name')->get(['id', 'name']),
+            'filters' => $filters,
+            'routePrefix' => $this->routePrefix(),
+        ]);
     }
 
     public function create()
     {
-        $roles = Role::all();
-        return Inertia::render('Admin/Staff/Create', compact('roles'));
+        return Inertia::render('Admin/Staff/Create', [
+            'roles' => $this->availableRoles(),
+            'departments' => Department::orderBy('name')->get(['id', 'name']),
+            'routePrefix' => $this->routePrefix(),
+        ]);
     }
 
     public function store(Request $request)
@@ -45,25 +95,32 @@ class StaffController extends Controller
             'password' => 'required|string|min:6',
             'role'     => 'required|string|exists:roles,name',
             'phone'    => 'nullable|string',
+            'position' => 'nullable|string|max:191',
+            'department_id' => ['nullable', 'exists:departments,id'],
         ]);
 
-        // Create user
         $user = User::create([
             'name'     => $data['name'],
             'email'    => $data['email'],
             'password' => $data['password'],
+            'department_id' => $data['department_id'] ?? null,
         ]);
 
         $user->assignRole($data['role']);
 
-        // Generate secure action code
         $actionCode = ActionCodeService::generate();
 
-        StaffProfile::create([
+        $profile = StaffProfile::create([
             'user_id'          => $user->id,
             'phone'            => $data['phone'] ?? null,
-            'action_code' => ActionCodeService::encrypt($actionCode),
+            'position'         => $data['position'] ?? null,
+            'meta'             => [
+                'employment_status' => 'active',
+                'created_by_hr_id' => auth()->id(),
+            ],
         ]);
+        $profile->storeActionCode($actionCode);
+        $profile->save();
 
         $this->auditLogger->log(
             'staff_created',
@@ -72,74 +129,91 @@ class StaffController extends Controller
             ['role' => $data['role']]
         );
 
-        // Flash plaintext code ONCE
         return redirect()
-            ->route('admin.staff.index')
+            ->route($this->indexRoute())
             ->with('success', 'Staff created successfully.')
             ->with('action_code', $actionCode);
     }
 
     public function edit(User $staff)
     {
-        $roles = Role::all();
-        $staff->load(['staffProfile','roles',
-            'notes' => function ($query) { $query->latest()->limit(1); },
+        abort_unless($this->isManageableStaff($staff), 404);
+
+        $staff->load(['staffProfile', 'roles', 'department',
+            'notes' => function ($query) { $query->latest(); },
             'notes.admin']);
 
 
-        return Inertia::render('Admin/Staff/Edit', compact('staff','roles'));
+        return Inertia::render('Admin/Staff/Edit', [
+            'staff' => $staff,
+            'roles' => $this->availableRoles(),
+            'departments' => Department::orderBy('name')->get(['id', 'name']),
+            'routePrefix' => $this->routePrefix(),
+        ]);
     }
 
     public function update(Request $request, User $staff)
     {
+        abort_unless($this->isManageableStaff($staff), 404);
+
         $data = $request->validate([
             'name'=>'required|string|max:191',
             'email'=>'required|email|unique:users,email,'.$staff->id,
             'password'=>'nullable|string|min:6',
-            'role'=>'nullable|string|exists:roles,name',
+            'role'=>['required', 'string', Rule::exists('roles', 'name')],
             'phone'=>'nullable|string',
+            'position'=>'nullable|string|max:191',
+            'department_id' => ['nullable', 'exists:departments,id'],
             'action_code'=>'nullable|string|min:4'
         ]);
 
         if (empty($data['password'])) {
-            $data['password'] = "11111111";//$data['password'];
-        } else {
             unset($data['password']);
         }
 
-        // Only update fillable user fields
         $staff->update([
             'name' => $data['name'],
             'email' => $data['email'],
-            // password included only if set above
+            'department_id' => $data['department_id'] ?? null,
         ] + (isset($data['password']) ? ['password' => $data['password']] : []));
 
-        if (!empty($data['role'])) {
-            $staff->syncRoles([$data['role']]);
+        $staff->syncRoles([$data['role']]);
+
+        $profile = $staff->staffProfile ?? new StaffProfile([
+            'user_id' => $staff->id,
+        ]);
+
+        $profile->fill([
+            'phone' => $data['phone'] ?? null,
+            'position' => $data['position'] ?? null,
+            'meta' => array_merge($profile->meta ?? [], [
+                'employment_status' => $staff->is_suspended ? 'suspended' : 'active',
+                'updated_by_hr_id' => auth()->id(),
+            ]),
+        ]);
+
+        if (! empty($data['action_code'])) {
+            $profile->storeActionCode($data['action_code']);
         }
 
-        if ($staff->staffProfile) {
-            if (!empty($data['action_code'])) {
-                $staff->staffProfile->update(['action_code_hash' => bcrypt($data['action_code'])]);
-            }
-            $staff->staffProfile->update(['phone' => $data['phone'] ?? $staff->staffProfile->phone]);
-        } else {
-            StaffProfile::create([
+        if (! $profile->exists) {
+            $profile->fill([
                 'user_id' => $staff->id,
-                'phone' => $data['phone'] ?? null,
-                'action_code_hash' => !empty($data['action_code']) ? bcrypt($data['action_code']) : null,
             ]);
         }
+        $profile->save();
 
         $this->auditLogger->log('staff_updated', 'User', $staff->id, ['data' => $data]);
 
-        return redirect()->route('admin.staff.index')->with('success','Staff updated');
+        return redirect()->route($this->indexRoute())->with('success','Staff updated');
     }
 
     public function addNote(Request $request, User $staff)
     {
+        abort_unless($this->isManageableStaff($staff), 404);
+
         $data = $request->validate([
-            'type' => 'required|in:query,commendation',
+            'type' => 'required|in:query,commendation,performance,disciplinary',
             'message' => 'required|string|max:1000',
         ]);
 
@@ -162,7 +236,16 @@ class StaffController extends Controller
 
     public function suspend(User $staff)
     {
+        abort_unless($this->isManageableStaff($staff), 404);
+
         $staff->suspend();
+
+        $staff->staffProfile?->update([
+            'meta' => array_merge($staff->staffProfile->meta ?? [], [
+                'employment_status' => 'suspended',
+                'updated_by_hr_id' => auth()->id(),
+            ]),
+        ]);
 
          $this->auditLogger->log('staff_suspended', 'User', $staff->id);
 
@@ -171,7 +254,16 @@ class StaffController extends Controller
 
     public function reinstate(User $staff)
     {
+        abort_unless($this->isManageableStaff($staff), 404);
+
         $staff->reinstate();
+
+        $staff->staffProfile?->update([
+            'meta' => array_merge($staff->staffProfile->meta ?? [], [
+                'employment_status' => 'active',
+                'updated_by_hr_id' => auth()->id(),
+            ]),
+        ]);
 
          $this->auditLogger->log('staff_reinstated', 'User', $staff->id);
 
@@ -181,11 +273,35 @@ class StaffController extends Controller
 
     public function destroy(User $staff)
     {
+        abort_unless($this->isManageableStaff($staff), 404);
+
         $this->auditLogger->log('staff_deleted', 'User', $staff->id);
 
-        // remove user record (soft delete if model uses SoftDeletes)
         $staff->delete();
 
-        return redirect()->route('admin.staff.index')->with('success','Staff removed.');
+        return redirect()->route($this->indexRoute())->with('success','Staff removed.');
+    }
+
+    protected function availableRoles()
+    {
+        return Role::query()
+            ->whereIn('name', $this->manageableRoles)
+            ->orderBy('name')
+            ->get(['id', 'name']);
+    }
+
+    protected function isManageableStaff(User $staff): bool
+    {
+        return $staff->roles()->whereIn('name', $this->manageableRoles)->exists();
+    }
+
+    protected function routePrefix(): string
+    {
+        return request()->route()?->named('hr.*') ? 'hr.staff' : 'admin.staff';
+    }
+
+    protected function indexRoute(): string
+    {
+        return $this->routePrefix() . '.index';
     }
 }

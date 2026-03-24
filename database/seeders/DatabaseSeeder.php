@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
         // Core foundational data
         $this->call([
             RolesSeeder::class,
+            DepartmentSeeder::class,
             PropertiesSeeder::class,
             RoomTypesSeeder::class,
             RoomsSeeder::class,
@@ -24,6 +25,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             UsersSeeder::class,
             StaffProfilesSeeder::class,
+            HrUserSeeder::class,
         ]);
 
         // Media and inventory

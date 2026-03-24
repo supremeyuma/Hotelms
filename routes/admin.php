@@ -8,14 +8,11 @@ use App\Http\Controllers\Admin\{
     RoomTypeController,
     BookingAdminController,
     OrderAdminController,
-    StaffController,
     InventoryController,
     MaintenanceAdminController,
     ReportController,
     AuditLogController,
     SettingController,
-    StaffThreadController,
-    StaffThreadMessagesController,
     InventoryLocationController,
     CleaningInventoryTemplateController,
     MenuInventoryRecipeController,
@@ -44,21 +41,6 @@ Route::middleware(['auth', 'role:manager|md'])->prefix('admin')->as('admin.')->g
         Route::get('bookings', [BookingAdminController::class, 'index'])->name('bookings.index');
         Route::get('bookings/{booking}/edit', [BookingAdminController::class, 'edit'])->name('bookings.edit');
         Route::put('bookings/{booking}', [BookingAdminController::class, 'update'])->name('bookings.update');
-
-        Route::prefix('staff')->name('staff.')->middleware(['auth','role:manager|md'])->group(function(){
-            Route::resource('', StaffController::class)->parameters([
-                '' => 'staff'
-            ]);
-            Route::get('{staff}/threads', [StaffThreadController::class,'index'])->name('threads.index');
-            Route::get('{staff}/threads/create', [StaffThreadController::class,'create'])->name('threads.create');
-            Route::get('threads/{thread}', [StaffThreadController::class,'show'])->name('threads.show');
-            Route::post('threads/{thread}/messages', [StaffThreadController::class,'storeMessage'])->name('threads.messages.store');
-            Route::post('{staff}/threads', [StaffThreadController::class,'createThread'])->name('threads.store');
-            Route::post('{staff}/suspend', [StaffController::class, 'suspend'])->name('staff.suspend');
-            Route::post('{staff}/reinstate', [StaffController::class, 'reinstate'])->name('staff.reinstate');
-            Route::post('{staff}/notes', [StaffController::class, 'addNote']);
-
-        });
 
         Route::get('inventory',[InventoryController::class, 'index'])->name('inventory.index');
         Route::get('inventory/create', [InventoryController::class, 'create'])->name('inventory.create');

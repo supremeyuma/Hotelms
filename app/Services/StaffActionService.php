@@ -59,7 +59,7 @@ class StaffActionService
             throw ValidationException::withMessages(['action_code' => 'Too many attempts. Try again later.']);
         }
 
-        $valid = Hash::check($actionCode, $profile->action_code_hash);
+        $valid = $profile->matchesActionCode($actionCode);
 
         // Record attempt
         AuditLog::create([
@@ -102,7 +102,7 @@ class StaffActionService
     {
         return DB::transaction(function () use ($staffId, $newCode) {
             $profile = StaffProfile::firstOrCreate(['user_id' => $staffId]);
-            $profile->action_code_hash = bcrypt($newCode);
+            $profile->storeActionCode($newCode);
             $profile->save();
 
             $this->audit->log('staff_action_rotated', 'StaffProfile', $profile->id, ['rotated_by' => Auth::id()]);

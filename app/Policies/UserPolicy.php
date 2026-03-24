@@ -22,7 +22,7 @@ class UserPolicy
     public function viewAny(User $user): bool
     {
         // Managers can view staff lists; normal staff cannot.
-        return $user->hasRole('manager');
+        return $user->hasAnyRole(['manager', 'hr']);
     }
 
     public function view(User $user, User $model): bool
@@ -31,7 +31,7 @@ class UserPolicy
         if ($user->id === $model->id) return true;
 
         // Managers can view staff
-        if ($user->hasRole('manager')) return true;
+        if ($user->hasAnyRole(['manager', 'hr'])) return true;
 
         return false;
     }
@@ -39,26 +39,26 @@ class UserPolicy
     public function create(User $user): bool
     {
         // Only managers/md can create new users
-        return $user->hasRole('manager');
+        return $user->hasAnyRole(['manager', 'hr']);
     }
 
     public function update(User $user, User $model): bool
     {
         // Users can update their own profile; managers can update any user
         if ($user->id === $model->id) return true;
-        return $user->hasRole('manager');
+        return $user->hasAnyRole(['manager', 'hr']);
     }
 
     public function delete(User $user, User $model): bool
     {
         // Managers cannot delete MD; only MD can permanently delete
         if ($model->hasRole('md')) return false;
-        return $user->hasRole('manager');
+        return $user->hasAnyRole(['manager', 'hr']);
     }
 
     public function restore(User $user, User $model): bool
     {
-        return $user->hasRole('md') || $user->hasRole('manager');
+        return $user->hasAnyRole(['md', 'manager', 'hr']);
     }
 
     public function forceDelete(User $user, User $model): bool

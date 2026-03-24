@@ -36,9 +36,9 @@ class CleaningDashboardController extends Controller
         ]);
 
         // 🔐 Verify staff via action code
-        $staffProfile = StaffProfile::whereNotNull('action_code')
+        $staffProfile = StaffProfile::query()
             ->get()
-            ->first(fn ($p) => password_verify($data['action_code'], $p->action_code));
+            ->first(fn ($profile) => $profile->matchesActionCode($data['action_code']));
 
         if (! $staffProfile) {
             throw ValidationException::withMessages([

@@ -16,6 +16,10 @@ class RoleRedirectService
             return route('admin.dashboard');
         }
 
+        if ($user->hasRole('hr')) {
+            return route('hr.staff.index');
+        }
+
         if ($user->hasRole('frontdesk')) {
             return route('frontdesk.dashboard');
         }

@@ -114,13 +114,11 @@ const nav = computed(() => {
   const items = (() => {
     switch (role.value) {
       case 'manager':
-      case 'md':
         return [
           { label: 'Admin Dashboard', route: 'admin.dashboard', icon: 'home', activeRoute: 'admin.dashboard' },
           { label: 'Bookings', route: 'admin.bookings.index', icon: 'calendar', activeRoute: 'admin.bookings.*' },
           { label: 'Rooms', route: 'admin.rooms.index', icon: 'bed', activeRoute: 'admin.rooms.*' },
           { label: 'Room Types', route: 'admin.room-types.index', icon: 'layers', activeRoute: 'admin.room-types.*' },
-          { label: 'Staff Management', route: 'admin.staff.index', icon: 'users', activeRoute: 'admin.staff.*' },
           { label: 'Cleaning Templates', route: 'admin.cleaning-templates.index', icon: 'brush-cleaning', activeRoute: 'admin.cleaning-templates.*' },
           { label: 'Menu Recipes', route: 'admin.menu-recipes.index', icon: 'utensils', activeRoute: 'admin.menu-recipes.*' },
           { label: 'Maintenance', route: 'admin.maintenance.index', icon: 'wrench', activeRoute: 'admin.maintenance.*' },
@@ -131,6 +129,31 @@ const nav = computed(() => {
           { label: 'Gallery', route: 'admin.website.gallery', icon: 'image', activeRoute: 'admin.website.gallery*' },
           { label: 'Events', route: 'admin.events.index', icon: 'calendar', activeRoute: 'admin.events.*' },
           { label: 'Settings', route: 'admin.settings.index', icon: 'settings', activeRoute: 'admin.settings.*' },
+        ]
+      case 'md':
+        return [
+          { label: 'Admin Dashboard', route: 'admin.dashboard', icon: 'home', activeRoute: 'admin.dashboard' },
+          { label: 'Bookings', route: 'admin.bookings.index', icon: 'calendar', activeRoute: 'admin.bookings.*' },
+          { label: 'Rooms', route: 'admin.rooms.index', icon: 'bed', activeRoute: 'admin.rooms.*' },
+          { label: 'Room Types', route: 'admin.room-types.index', icon: 'layers', activeRoute: 'admin.room-types.*' },
+          { label: 'HR Management', route: 'hr.staff.index', icon: 'users', activeRoute: 'hr.staff.*' },
+          { label: 'Cleaning Templates', route: 'admin.cleaning-templates.index', icon: 'brush-cleaning', activeRoute: 'admin.cleaning-templates.*' },
+          { label: 'Menu Recipes', route: 'admin.menu-recipes.index', icon: 'utensils', activeRoute: 'admin.menu-recipes.*' },
+          { label: 'Maintenance', route: 'admin.maintenance.index', icon: 'wrench', activeRoute: 'admin.maintenance.*' },
+          { label: 'Reports Dashboard', route: 'admin.reports.dashboard', icon: 'bar-chart', activeRoute: 'admin.reports.*' },
+          { label: 'Staff Reports', route: 'admin.reports.staff', icon: 'user-check', activeRoute: 'admin.reports.staff*' },
+          { label: 'Occupancy Reports', route: 'admin.reports.occupancy', icon: 'hotel', activeRoute: 'admin.reports.occupancy*' },
+          { label: 'Website Content', route: 'admin.website.content', icon: 'edit', activeRoute: 'admin.website.*' },
+          { label: 'Gallery', route: 'admin.website.gallery', icon: 'image', activeRoute: 'admin.website.gallery*' },
+          { label: 'Events', route: 'admin.events.index', icon: 'calendar', activeRoute: 'admin.events.*' },
+          { label: 'Settings', route: 'admin.settings.index', icon: 'settings', activeRoute: 'admin.settings.*' },
+        ]
+      case 'hr':
+        return [
+          { label: 'HR Dashboard', route: 'hr.staff.index', icon: 'home', activeRoute: 'hr.staff.*' },
+          { label: 'Staff Directory', route: 'hr.staff.index', icon: 'users', activeRoute: 'hr.staff.index' },
+          { label: 'Onboard Staff', route: 'hr.staff.create', icon: 'user-check', activeRoute: 'hr.staff.create' },
+          { label: 'Staff Reports', route: 'admin.reports.staff', icon: 'bar-chart', activeRoute: 'admin.reports.staff*' },
         ]
       case 'inventory':
         return [

@@ -14,7 +14,7 @@ class StaffPolicy
      */
     public function before(User $user, $ability)
     {
-        if ($user->hasAnyRole(['md', 'manager'])) {
+        if ($user->hasAnyRole(['md', 'manager', 'hr'])) {
             return true;
         }
     }
@@ -59,7 +59,7 @@ class StaffPolicy
 
     public function restore(User $user, User $staff): bool
     {
-        return $user->hasAnyRole(['md','manager']);
+        return $user->hasAnyRole(['md','manager', 'hr']);
     }
 
     public function forceDelete(User $user, User $staff): bool

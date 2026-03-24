@@ -44,7 +44,7 @@ use App\Http\Controllers\Staff\EventCheckInController;
 
 
 
-Route::middleware(['auth', 'role:staff|manager|md|laundry|frontdesk'])->prefix('staff')->name('staff.')->group(function () {
+Route::middleware(['auth', 'role:staff|manager|md|laundry|frontdesk|hr'])->prefix('staff')->name('staff.')->group(function () {
 
     // Dashboard
     Route::get('/dashboard', [StaffDashboardController::class, 'index'])->name('dashboard');

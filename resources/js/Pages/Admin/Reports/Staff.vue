@@ -32,6 +32,9 @@ const search = ref(props.filters?.search ?? '')
           <thead class="bg-gray-100 dark:bg-gray-800 text-left">
             <tr>
               <th class="px-4 py-2 text-gray-700 dark:text-gray-200">Name</th>
+              <th class="px-4 py-2 text-gray-700 dark:text-gray-200">Role</th>
+              <th class="px-4 py-2 text-gray-700 dark:text-gray-200">Department</th>
+              <th class="px-4 py-2 text-gray-700 dark:text-gray-200">Status</th>
               <th class="px-4 py-2 text-gray-700 dark:text-gray-200">Orders</th>
               <th class="px-4 py-2 text-gray-700 dark:text-gray-200">Bookings</th>
               <th class="px-4 py-2 text-gray-700 dark:text-gray-200">Maintenance Tasks</th>
@@ -44,6 +47,9 @@ const search = ref(props.filters?.search ?? '')
               class="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
             >
               <td class="px-4 py-2">{{ s.name }}</td>
+              <td class="px-4 py-2">{{ s.roles?.[0]?.name || 'Unassigned' }}</td>
+              <td class="px-4 py-2">{{ s.department?.name || 'Not set' }}</td>
+              <td class="px-4 py-2">{{ s.suspended_at ? 'Suspended' : 'Active' }}</td>
               <td class="px-4 py-2">{{ s.orders_count }}</td>
               <td class="px-4 py-2">{{ s.bookings_count }}</td>
               <td class="px-4 py-2">{{ s.maintenance_tasks_count }}</td>

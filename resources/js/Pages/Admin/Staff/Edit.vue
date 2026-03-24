@@ -1,7 +1,10 @@
 <template>
   <ManagerLayout>
-    <div>
-      <h2 class="text-2xl mb-4">Edit Staff {{ staff.name }}</h2>
+    <div class="space-y-6">
+      <div>
+        <h2 class="text-2xl font-semibold">Edit Staff {{ staff.name }}</h2>
+        <p class="text-sm text-slate-500">HR can update employment details, role assignment, and internal notes.</p>
+      </div>
 
       <form @submit.prevent="submit">
         <FormSection>
@@ -14,33 +17,47 @@
           <FormLabel for="phone">Phone</FormLabel>
           <TextInput v-model="form.phone" id="phone" />
 
+          <FormLabel for="position">Position</FormLabel>
+          <TextInput v-model="form.position" id="position" />
+
+          <FormLabel for="department">Department</FormLabel>
+          <SelectInput v-model="form.department_id" :options="departmentOptions" id="department" />
+
           <FormLabel for="role">Role</FormLabel>
           <SelectInput v-model="form.role" :options="roleOptions" id="role" />
 
-          <!--<FormLabel for="action_code">Action Code</FormLabel>
-          <TextInput v-model="form.action_code" id="action_code" />-->
+          <FormLabel for="password">Reset Password</FormLabel>
+          <TextInput v-model="form.password" id="password" type="password" placeholder="Leave blank to keep current password" />
+
+          <FormLabel for="action_code">Replace Action Code</FormLabel>
+          <TextInput v-model="form.action_code" id="action_code" placeholder="Optional" />
 
           <PrimaryButton :disabled="form.processing">Update Staff</PrimaryButton>
         </FormSection>
       </form>
 
-      <section class="mt-6">
-        <h3 class="text-xl mb-2">Staff Notes</h3>
+      <section class="space-y-4">
+        <h3 class="text-xl font-semibold">HR Notes</h3>
 
         <form @submit.prevent="submitNote">
           <FormSection>
             <FormLabel for="note_type">Type</FormLabel>
-            <SelectInput v-model="note.type" :options="noteTypeOptions" id="note_type" />
+            <SelectInput v-model="noteForm.type" :options="noteTypeOptions" id="note_type" />
             <FormLabel for="note_message">Message</FormLabel>
-            <Textarea v-model="note.message" id="note_message" />
-            <PrimaryButton :disabled="noteProcessing">Add Note</PrimaryButton>
+            <Textarea v-model="noteForm.message" id="note_message" />
+            <PrimaryButton :disabled="noteForm.processing">Add Note</PrimaryButton>
           </FormSection>
         </form>
 
-        <div class="mt-4">
-          <ul>
-            <li v-for="n in staff.notes" :key="n.id">
-              <strong>{{ n.type }}</strong> by {{ n.admin.name }}: {{ n.message }}
+        <div class="rounded-lg bg-white p-4 shadow">
+          <ul class="space-y-3">
+            <li v-for="note in staff.notes" :key="note.id" class="border-b pb-3 last:border-b-0">
+              <div class="flex items-center justify-between gap-4">
+                <strong class="uppercase text-slate-700">{{ note.type }}</strong>
+                <span class="text-xs text-slate-400">{{ new Date(note.created_at).toLocaleString() }}</span>
+              </div>
+              <p class="mt-1 text-sm text-slate-700">{{ note.message }}</p>
+              <p class="mt-1 text-xs text-slate-500">By {{ note.admin.name }}</p>
             </li>
           </ul>
         </div>
@@ -50,45 +67,50 @@
 </template>
 
 <script setup>
-    import ManagerLayout from '@/Layouts/Staff/ManagerLayout.vue';
-import { ref,computed } from 'vue';
-import { useForm } from '@inertiajs/vue3';
-import { FormSection, FormLabel, TextInput, Textarea, SelectInput, PrimaryButton } from '@/Components/';
-import { usePage } from '@inertiajs/vue3';
+import ManagerLayout from '@/Layouts/Staff/ManagerLayout.vue'
+import { useForm } from '@inertiajs/vue3'
+import { FormSection, FormLabel, TextInput, Textarea, SelectInput, PrimaryButton } from '@/Components/'
 
-const props = defineProps({ staff: Object, roles: Array });
-const latestNote = computed(() => props.staff.notes?.[0] || null);
-//console.log('Latest Note:', latestNote);
+const props = defineProps({
+  staff: Object,
+  roles: Array,
+  departments: Array,
+  routePrefix: String,
+})
 
 const form = useForm({
   name: props.staff.name,
   email: props.staff.email,
   phone: props.staff.staff_profile?.phone || '',
+  position: props.staff.staff_profile?.position || '',
+  department_id: props.staff.department_id || '',
   role: props.staff.roles[0]?.name || '',
-  action_code: ''
-});
+  password: '',
+  action_code: '',
+})
 
-const roleOptions = props.roles.map(r => ({ label: r.name, value: r.name }));
+const noteForm = useForm({
+  type: 'query',
+  message: '',
+})
 
-function submit() {
-  form.put(`/admin/staff/${props.staff.id}`);
-}
-
-// Staff notes
-const note = ref({ type: 'query', message: '' });
-const noteProcessing = ref(false);
+const roleOptions = props.roles.map(role => ({ label: role.name, value: role.name }))
+const departmentOptions = props.departments.map(department => ({ label: department.name, value: department.id }))
 const noteTypeOptions = [
   { label: 'Query', value: 'query' },
-  { label: 'Commendation', value: 'commendation' }
-];
+  { label: 'Commendation', value: 'commendation' },
+  { label: 'Performance', value: 'performance' },
+  { label: 'Disciplinary', value: 'disciplinary' },
+]
+
+function submit() {
+  form.put(route(`${props.routePrefix}.update`, props.staff.id))
+}
 
 function submitNote() {
-  noteProcessing.value = true;
-  axios.post(`/admin/staff/${props.staff.id}/notes`, note.value)
-    .then(() => {
-      note.value.message = '';
-      noteProcessing.value = false;
-      location.reload();
-    });
+  noteForm.post(route(`${props.routePrefix}.notes.store`, props.staff.id), {
+    preserveScroll: true,
+    onSuccess: () => noteForm.reset('message'),
+  })
 }
 </script>
