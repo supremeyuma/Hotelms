@@ -1,1 +1,0 @@
-import{B as t}from"./BaseStaffLayout-5NKnG6Wz.js";import{o as e,c as o,w as r,C as s}from"./app-CmNvvSnR.js";const u={__name:"ManagerLayout",setup(n){return(a,_)=>(e(),o(t,null,{default:r(()=>[s(a.$slots,"default")]),_:3}))}};export{u as _};

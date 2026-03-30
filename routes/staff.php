@@ -72,7 +72,7 @@ Route::middleware(['auth', 'role:staff|manager|md|laundry|frontdesk|hr'])->prefi
 });
 
 
-Route::prefix('frontdesk')->middleware(['auth', 'role:frontdesk'])->name('frontdesk.')->group(function () {
+Route::prefix('frontdesk')->middleware(['auth', 'role:frontdesk|md'])->name('frontdesk.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('/rooms/{room}/billing', [RoomBillingController::class, 'show']);
@@ -107,7 +107,7 @@ Route::prefix('frontdesk')->middleware(['auth', 'role:frontdesk'])->name('frontd
 
 
 // Laundry Staff
-Route::middleware(['auth', 'role:laundry|frontdesk'])->prefix('staff')->name('staff.')->group(function () {
+Route::middleware(['auth', 'role:laundry|frontdesk|md'])->prefix('staff')->name('staff.')->group(function () {
     Route::get('/laundry', [LaundryStaffController::class, 'index'])->name('laundry.dashboard');
     Route::post('/laundry/{order}/status', [LaundryStaffController::class, 'updateStatus'])->name('laundry.updateStatus');
     Route::get('/laundry/{order}', [LaundryStaffController::class, 'show'])->name('laundry.show');
@@ -121,7 +121,7 @@ Route::middleware(['auth', 'role:laundry|frontdesk'])->prefix('staff')->name('st
 });
 
 //Cleaning Routes
-Route::middleware(['auth', 'role:staff|clean'])->prefix('clean')->name('clean.')->group(function () {
+Route::middleware(['auth', 'role:staff|clean|md'])->prefix('clean')->name('clean.')->group(function () {
     Route::get('/', [CleaningDashboardController::class, 'index'])->name('dashboard');
     //Route::patch('/clean/{cleaning}', [CleaningDashboardController::class, 'update'])->name('update');
     Route::patch('/{cleaning}', [CleaningDashboardController::class, 'update'])->name('update');

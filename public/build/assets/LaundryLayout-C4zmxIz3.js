@@ -1,1 +1,0 @@
-import{B as t}from"./BaseStaffLayout-5NKnG6Wz.js";import{o,c as e,w as r,C as s}from"./app-CmNvvSnR.js";const l={__name:"LaundryLayout",setup(n){return(a,u)=>(o(),e(t,null,{default:r(()=>[s(a.$slots,"default")]),_:3}))}};export{l as _};
