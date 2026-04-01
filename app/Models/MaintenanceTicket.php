@@ -10,9 +10,35 @@ class MaintenanceTicket extends Model
     use HasFactory;
 
     protected $fillable = [
-        'booking_id', 'room_id', 'type', 'description', 'photo_path', 'status'
+        'room_id', 'staff_id', 'title', 'description', 'status', 'meta',
     ];
 
-    public function booking() { return $this->belongsTo(Booking::class); }
-    public function room() { return $this->belongsTo(Room::class); }
+    protected $casts = [
+        'meta' => 'array',
+    ];
+
+    public function room()
+    {
+        return $this->belongsTo(Room::class);
+    }
+
+    public function staff()
+    {
+        return $this->belongsTo(User::class, 'staff_id');
+    }
+
+    public function getGuestNameAttribute(): ?string
+    {
+        return $this->meta['guest_name'] ?? null;
+    }
+
+    public function getIssueTypeAttribute(): ?string
+    {
+        return $this->meta['issue_type'] ?? null;
+    }
+
+    public function getPhotoPathAttribute(): ?string
+    {
+        return $this->meta['photo_path'] ?? null;
+    }
 }

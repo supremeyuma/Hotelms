@@ -445,12 +445,14 @@ protected RoomServiceService $roomService;
         $request->validate([
             'type' => 'required|string|in:plumbing,electrical,furniture,other',
             'description' => 'required|string|max:1000',
+            'file' => 'nullable|image|max:5120',
         ]);
 
         $ticket = $this->maintenanceService->reportIssue(
             $request->booking,
             $request->type,
-            $request->description
+            $request->description,
+            $request->file('file')
         );
 
         event(new MaintenanceReported($ticket));

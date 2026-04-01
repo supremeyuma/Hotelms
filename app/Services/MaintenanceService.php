@@ -11,17 +11,23 @@ class MaintenanceService
 {
     public function reportIssue(Booking $booking, string $type, string $description, ?UploadedFile $file = null): MaintenanceTicket
     {
+        $room = $booking->room ?: $booking->rooms()->first();
+        $photoPath = $file ? $file->store('maintenance', 'public') : null;
+
         $ticketData = [
-            'booking_id' => $booking->id,
-            'room_id' => $booking->room_id,
-            'type' => $type,
+            'room_id' => $room?->id,
+            'title' => $this->makeTitle($type, $room?->name ?? $room?->room_number),
             'description' => $description,
             'status' => 'open',
+            'meta' => [
+                'booking_id' => $booking->id,
+                'issue_type' => $type,
+                'photo_path' => $photoPath,
+                'guest_name' => $booking->guest_name,
+                'guest_email' => $booking->guest_email,
+                'reported_at' => now()->toIso8601String(),
+            ],
         ];
-
-        if ($file) {
-            $ticketData['photo_path'] = $file->store('maintenance', 'public');
-        }
 
         return MaintenanceTicket::create($ticketData);
     }
@@ -29,5 +35,14 @@ class MaintenanceService
     public function closeTicket(MaintenanceTicket $ticket): void
     {
         $ticket->update(['status' => 'closed']);
+    }
+
+    protected function makeTitle(string $type, ?string $roomName = null): string
+    {
+        $label = str($type)->replace('_', ' ')->title()->toString();
+
+        return $roomName
+            ? "{$label} issue in {$roomName}"
+            : "{$label} issue reported";
     }
 }
