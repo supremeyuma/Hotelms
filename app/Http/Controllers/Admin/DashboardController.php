@@ -21,6 +21,25 @@ class DashboardController extends Controller
     {
         $user = $request->user();
         $today = Carbon::today();
+        $roomsCount = Room::count();
+        $occupiedRooms = Room::where('status', 'occupied')->count();
+        $availableRooms = Room::where('status', 'available')->count();
+        $arrivalsToday = Booking::whereDate('check_in', $today)
+            ->whereNotIn('status', ['cancelled'])
+            ->count();
+        $departuresToday = Booking::whereDate('check_out', $today)
+            ->whereIn('status', ['confirmed', 'active', 'checked_in'])
+            ->count();
+        $openGuestRequests = GuestRequest::whereIn('status', ['pending', 'requested', 'acknowledged'])->count();
+        $openMaintenance = MaintenanceTicket::whereNotIn('status', ['resolved', 'closed', 'completed'])->count();
+        $cleaningBacklog = RoomCleaning::whereIn('status', ['dirty', 'cleaning', 'cleaner_requested'])->count();
+        $pendingServiceOrders = Order::whereIn('status', ['pending', 'processing'])->count();
+        $unsettledBookings = Booking::whereIn('status', ['confirmed', 'active', 'checked_in'])
+            ->where('payment_status', '!=', 'paid')
+            ->count();
+        $occupancyRate = $roomsCount > 0
+            ? round(($occupiedRooms / $roomsCount) * 100)
+            : 0;
 
         $departmentSnapshots = null;
 
@@ -73,13 +92,87 @@ class DashboardController extends Controller
 
         return Inertia::render('Admin/Dashboard', [
             'stats' => [
-                'rooms' => Room::count(),
-                'occupied_rooms' => Room::where('status', 'occupied')->count(),
+                'rooms' => $roomsCount,
+                'occupied_rooms' => $occupiedRooms,
+                'available_rooms' => $availableRooms,
+                'occupancy_rate' => $occupancyRate,
                 'active_bookings' => Booking::whereDate('check_out', '>=', $today)->count(),
-                'open_guest_requests' => GuestRequest::whereIn('status', ['pending', 'requested', 'acknowledged'])->count(),
-                'open_maintenance' => MaintenanceTicket::whereNotIn('status', ['resolved', 'closed', 'completed'])->count(),
+                'arrivals_today' => $arrivalsToday,
+                'departures_today' => $departuresToday,
+                'open_guest_requests' => $openGuestRequests,
+                'open_maintenance' => $openMaintenance,
+                'cleaning_backlog' => $cleaningBacklog,
+                'pending_service_orders' => $pendingServiceOrders,
+                'unsettled_bookings' => $unsettledBookings,
             ],
-            'recentBookings' => Booking::latest()->limit(5)->get(),
+            'todayLabel' => $today->format('l, d M Y'),
+            'focusItems' => [
+                [
+                    'label' => 'Guest requests',
+                    'value' => $openGuestRequests,
+                    'helper' => 'Requests still waiting for action',
+                    'route' => route('frontdesk.dashboard'),
+                    'tone' => 'amber',
+                ],
+                [
+                    'label' => 'Maintenance tickets',
+                    'value' => $openMaintenance,
+                    'helper' => 'Issues not yet resolved',
+                    'route' => route('admin.maintenance.index'),
+                    'tone' => 'rose',
+                ],
+                [
+                    'label' => 'Cleaning backlog',
+                    'value' => $cleaningBacklog,
+                    'helper' => 'Dirty or in-progress rooms',
+                    'route' => route('clean.dashboard'),
+                    'tone' => 'sky',
+                ],
+                [
+                    'label' => 'Unsettled stays',
+                    'value' => $unsettledBookings,
+                    'helper' => 'Confirmed stays with payment still open',
+                    'route' => route('admin.bookings.index'),
+                    'tone' => 'violet',
+                ],
+            ],
+            'quickLinks' => [
+                [
+                    'label' => 'Bookings',
+                    'description' => 'Review arrivals, departures, and stay status.',
+                    'route' => route('admin.bookings.index'),
+                ],
+                [
+                    'label' => 'Rooms',
+                    'description' => 'Check room availability and inventory of spaces.',
+                    'route' => route('admin.rooms.index'),
+                ],
+                [
+                    'label' => 'Maintenance',
+                    'description' => 'Follow unresolved room or facility issues.',
+                    'route' => route('admin.maintenance.index'),
+                ],
+                [
+                    'label' => 'Reports',
+                    'description' => 'Open operational and performance reporting.',
+                    'route' => route('admin.reports.dashboard'),
+                ],
+            ],
+            'recentBookings' => Booking::with(['room:id,name', 'user:id,name'])
+                ->latest()
+                ->limit(6)
+                ->get()
+                ->map(fn (Booking $booking) => [
+                    'id' => $booking->id,
+                    'booking_code' => $booking->booking_code,
+                    'guest_name' => $booking->guest_name ?: optional($booking->user)->name ?: 'Walk-in guest',
+                    'room_name' => $booking->room?->name ?: 'Unassigned',
+                    'status' => $booking->status,
+                    'payment_status' => $booking->payment_status ?: 'unpaid',
+                    'total_amount' => (float) $booking->total_amount,
+                    'check_in' => optional($booking->check_in)->format('d M'),
+                    'check_out' => optional($booking->check_out)->format('d M'),
+                ]),
             'isExecutive' => (bool) ($user && $user->hasRole('md')),
             'departmentSnapshots' => $departmentSnapshots,
             'reportLinks' => [
