@@ -28,6 +28,7 @@ use App\Http\Controllers\Staff\CleaningDashboardController;
 use App\Http\Controllers\Staff\CleaningActionController;
 use App\Http\Controllers\Staff\StaffChargeController;
 use App\Http\Controllers\Staff\EventCheckInController;
+use App\Http\Controllers\Staff\MaintenanceDashboardController;
 
 
 
@@ -69,6 +70,11 @@ Route::middleware(['auth', 'role:staff|manager|md|laundry|frontdesk|hr'])->prefi
 
     Route::patch('/staff/frontdesk/checkout/{booking}', [FrontDeskController::class, 'checkout'])->name('staff.frontdesk.checkout');
 
+});
+
+Route::middleware(['auth'])->prefix('staff')->name('staff.')->group(function () {
+    Route::get('/maintenance', [MaintenanceDashboardController::class, 'index'])->name('maintenance.index');
+    Route::patch('/maintenance/{ticket}/status', [MaintenanceDashboardController::class, 'updateStatus'])->name('maintenance.updateStatus');
 });
 
 

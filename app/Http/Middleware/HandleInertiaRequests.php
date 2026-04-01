@@ -34,7 +34,7 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => $request->user(),
+                'user' => fn () => $request->user()?->loadMissing('roles', 'department'),
             ],
             'site_content' => function () {
                 return Content::all()->pluck('value', 'key');

@@ -93,6 +93,7 @@ function normalizeRole(value) {
     receptionist: 'frontdesk',
     frontdeskofficer: 'frontdesk',
     laundrystaff: 'laundry',
+    maintenancestaff: 'maintenance',
   }
 
   return roleAliases[normalized] ?? normalized
@@ -199,6 +200,10 @@ const nav = computed(() => {
         return [
           { label: 'Laundry Dashboard', route: 'staff.laundry.dashboard', icon: 'shirt', activeRoute: 'staff.laundry.*' },
           { label: 'Laundry Items', route: 'staff.laundry-items.index', icon: 'tag', activeRoute: 'staff.laundry-items.*' },
+        ]
+      case 'maintenance':
+        return [
+          { label: 'Maintenance Dashboard', route: 'staff.maintenance.index', icon: 'wrench', activeRoute: 'staff.maintenance.*' },
         ]
       case 'clean':
         return [
