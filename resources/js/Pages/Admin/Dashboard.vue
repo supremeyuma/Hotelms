@@ -33,24 +33,28 @@ const primaryMetrics = computed(() => [
     value: `${props.stats.occupancy_rate}%`,
     helper: `${props.stats.occupied_rooms} of ${props.stats.rooms} rooms occupied`,
     icon: Hotel,
+    route: route('admin.rooms.index'),
   },
   {
     label: 'Available rooms',
     value: props.stats.available_rooms,
     helper: 'Rooms ready for allocation',
     icon: DoorOpen,
+    route: route('admin.rooms.index'),
   },
   {
     label: 'Arrivals today',
     value: props.stats.arrivals_today,
     helper: "Expected check-ins on today's board",
     icon: CalendarDays,
+    route: route('admin.bookings.index'),
   },
   {
     label: 'Departures today',
     value: props.stats.departures_today,
     helper: 'Rooms turning over today',
     icon: BriefcaseBusiness,
+    route: route('admin.bookings.index'),
   },
 ])
 
@@ -159,10 +163,11 @@ function cardToneClasses(tone) {
       </section>
 
       <section class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
-        <article
+        <Link
           v-for="metric in primaryMetrics"
           :key="metric.label"
-          class="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm"
+          :href="metric.route"
+          class="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
         >
           <div class="flex items-start justify-between gap-4">
             <div>
@@ -179,8 +184,11 @@ function cardToneClasses(tone) {
               <component :is="metric.icon" class="h-5 w-5" />
             </div>
           </div>
-          <p class="mt-3 text-sm font-medium text-slate-500">{{ metric.helper }}</p>
-        </article>
+          <div class="mt-3 flex items-center justify-between gap-3">
+            <p class="text-sm font-medium text-slate-500">{{ metric.helper }}</p>
+            <ArrowUpRight class="h-4 w-4 text-slate-300" />
+          </div>
+        </Link>
       </section>
 
       <section class="grid grid-cols-1 gap-6 xl:grid-cols-[1.15fr_0.85fr]">
@@ -256,26 +264,26 @@ function cardToneClasses(tone) {
             </div>
 
             <div class="mt-5 grid grid-cols-2 gap-4">
-              <div class="rounded-[1.5rem] bg-slate-50 p-4">
+              <Link :href="route('clean.dashboard')" class="rounded-[1.5rem] bg-slate-50 p-4 transition hover:bg-slate-100">
                 <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Cleaning</p>
                 <p class="mt-2 text-3xl font-black text-slate-900">{{ stats.cleaning_backlog }}</p>
                 <p class="mt-1 text-sm text-slate-500">Rooms waiting for readiness</p>
-              </div>
-              <div class="rounded-[1.5rem] bg-slate-50 p-4">
+              </Link>
+              <Link :href="route('admin.bookings.index')" class="rounded-[1.5rem] bg-slate-50 p-4 transition hover:bg-slate-100">
                 <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Service orders</p>
                 <p class="mt-2 text-3xl font-black text-slate-900">{{ stats.pending_service_orders }}</p>
                 <p class="mt-1 text-sm text-slate-500">Kitchen and bar orders still active</p>
-              </div>
-              <div class="rounded-[1.5rem] bg-slate-50 p-4">
+              </Link>
+              <Link :href="route('frontdesk.dashboard')" class="rounded-[1.5rem] bg-slate-50 p-4 transition hover:bg-slate-100">
                 <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Guest requests</p>
                 <p class="mt-2 text-3xl font-black text-slate-900">{{ stats.open_guest_requests }}</p>
                 <p class="mt-1 text-sm text-slate-500">Front desk needs follow-up</p>
-              </div>
-              <div class="rounded-[1.5rem] bg-slate-50 p-4">
+              </Link>
+              <Link :href="route('admin.bookings.index')" class="rounded-[1.5rem] bg-slate-50 p-4 transition hover:bg-slate-100">
                 <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Unsettled stays</p>
                 <p class="mt-2 text-3xl font-black text-slate-900">{{ stats.unsettled_bookings }}</p>
                 <p class="mt-1 text-sm text-slate-500">Payment still incomplete</p>
-              </div>
+              </Link>
             </div>
           </div>
         </div>
