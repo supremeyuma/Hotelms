@@ -31,28 +31,24 @@ const primaryMetrics = computed(() => [
   {
     label: 'Occupancy',
     value: `${props.stats.occupancy_rate}%`,
-    helper: `${props.stats.occupied_rooms} of ${props.stats.rooms} rooms occupied`,
     icon: Hotel,
     route: route('admin.rooms.index'),
   },
   {
     label: 'Available rooms',
     value: props.stats.available_rooms,
-    helper: 'Rooms ready for allocation',
     icon: DoorOpen,
     route: route('admin.rooms.index'),
   },
   {
     label: 'Arrivals today',
     value: props.stats.arrivals_today,
-    helper: "Expected check-ins on today's board",
     icon: CalendarDays,
     route: route('admin.bookings.index'),
   },
   {
     label: 'Departures today',
     value: props.stats.departures_today,
-    helper: 'Rooms turning over today',
     icon: BriefcaseBusiness,
     route: route('admin.bookings.index'),
   },
@@ -107,9 +103,6 @@ function cardToneClasses(tone) {
               <h1 class="max-w-3xl text-3xl font-black tracking-tight sm:text-4xl">
                 Run the hotel from one screen, with the issues and flow that matter right now.
               </h1>
-              <p class="max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">
-                Monitor room flow, guest pressure points, maintenance exposure, and unresolved stays without jumping between sections.
-              </p>
             </div>
 
             <div class="flex flex-wrap gap-3">
@@ -137,9 +130,6 @@ function cardToneClasses(tone) {
                 Today
               </div>
               <p class="mt-3 text-2xl font-black">{{ todayLabel }}</p>
-              <p class="mt-2 text-sm text-slate-300">
-                {{ stats.active_bookings }} active bookings currently on the board.
-              </p>
             </div>
 
             <div class="rounded-[1.75rem] border border-white/10 bg-gradient-to-br from-amber-400/20 to-rose-400/10 p-5">
@@ -184,8 +174,7 @@ function cardToneClasses(tone) {
               <component :is="metric.icon" class="h-5 w-5" />
             </div>
           </div>
-          <div class="mt-3 flex items-center justify-between gap-3">
-            <p class="text-sm font-medium text-slate-500">{{ metric.helper }}</p>
+          <div class="mt-3 flex items-center justify-end">
             <ArrowUpRight class="h-4 w-4 text-slate-300" />
           </div>
         </Link>
@@ -219,7 +208,6 @@ function cardToneClasses(tone) {
                 <p class="text-4xl font-black tracking-tight text-slate-950">{{ item.value }}</p>
                 <ArrowUpRight class="h-5 w-5 text-slate-400" />
               </div>
-              <p class="mt-3 text-sm text-slate-500">{{ item.helper }}</p>
             </Link>
           </div>
         </div>
@@ -243,10 +231,7 @@ function cardToneClasses(tone) {
                 :href="link.route"
                 class="flex items-center justify-between rounded-[1.25rem] border border-slate-200 px-4 py-4 transition hover:border-slate-300 hover:bg-slate-50"
               >
-                <div>
-                  <p class="font-bold text-slate-900">{{ link.label }}</p>
-                  <p class="mt-1 text-sm text-slate-500">{{ link.description }}</p>
-                </div>
+                <p class="font-bold text-slate-900">{{ link.label }}</p>
                 <ArrowUpRight class="h-4 w-4 text-slate-400" />
               </Link>
             </div>
@@ -267,22 +252,18 @@ function cardToneClasses(tone) {
               <Link :href="route('clean.dashboard')" class="rounded-[1.5rem] bg-slate-50 p-4 transition hover:bg-slate-100">
                 <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Cleaning</p>
                 <p class="mt-2 text-3xl font-black text-slate-900">{{ stats.cleaning_backlog }}</p>
-                <p class="mt-1 text-sm text-slate-500">Rooms waiting for readiness</p>
               </Link>
               <Link :href="route('admin.bookings.index')" class="rounded-[1.5rem] bg-slate-50 p-4 transition hover:bg-slate-100">
                 <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Service orders</p>
                 <p class="mt-2 text-3xl font-black text-slate-900">{{ stats.pending_service_orders }}</p>
-                <p class="mt-1 text-sm text-slate-500">Kitchen and bar orders still active</p>
               </Link>
               <Link :href="route('frontdesk.dashboard')" class="rounded-[1.5rem] bg-slate-50 p-4 transition hover:bg-slate-100">
                 <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Guest requests</p>
                 <p class="mt-2 text-3xl font-black text-slate-900">{{ stats.open_guest_requests }}</p>
-                <p class="mt-1 text-sm text-slate-500">Front desk needs follow-up</p>
               </Link>
               <Link :href="route('admin.bookings.index')" class="rounded-[1.5rem] bg-slate-50 p-4 transition hover:bg-slate-100">
                 <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Unsettled stays</p>
                 <p class="mt-2 text-3xl font-black text-slate-900">{{ stats.unsettled_bookings }}</p>
-                <p class="mt-1 text-sm text-slate-500">Payment still incomplete</p>
               </Link>
             </div>
           </div>
