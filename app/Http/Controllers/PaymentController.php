@@ -48,7 +48,7 @@ class PaymentController extends Controller
     return $this->buildPaymentResponse(
         type: 'booking',
         amount: (float) $booking->total_amount,
-        reference: $booking->booking_code, // 👈 IMPORTANT
+        reference: $booking->booking_code, // IMPORTANT
         provider: $provider,
         customer: [
             'email' => $booking->guest_email,
@@ -246,6 +246,8 @@ class PaymentController extends Controller
                     'payment_status' => 'paid',
                     'payment_method' => $provider,
                     'paid_at' => now(),
+                    'status' => 'confirmed',
+                    'expires_at' => null,
                 ]);
 
                 // Record payment

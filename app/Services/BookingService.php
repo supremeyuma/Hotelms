@@ -50,43 +50,80 @@ class BookingService
     public function createBooking(array $data): Booking
     {
         return DB::transaction(function () use ($data) {
+            if (empty($data['selected_room_ids']) && ! empty($data['room_id'])) {
+                $selectedRoom = Room::findOrFail($data['room_id']);
+                $data['selected_room_ids'] = [$selectedRoom->id];
+                $data['room_type_id'] = $data['room_type_id'] ?? $selectedRoom->room_type_id;
+                $data['quantity'] = $data['quantity'] ?? 1;
+            }
+
+            $selectedRoomIds = array_values(array_unique(array_map('intval', $data['selected_room_ids'] ?? [])));
+            $quantity = $data['quantity'] ?? max(count($selectedRoomIds), 1);
 
             // Inventory-level availability check (NO rooms yet)
             $available = $this->availability->checkAvailability(
                 $data['room_type_id'],
                 $data['check_in'],
                 $data['check_out'],
-                $data['quantity']
+                $quantity
             );
 
             if (! $available) {
                 throw new \Exception('Not enough rooms available for the selected dates.');
             }
 
+            if (count($selectedRoomIds) !== $quantity) {
+                throw new \Exception('Please choose the exact room' . ($quantity > 1 ? 's' : '') . ' you would like to reserve.');
+            }
+
+            $selectedRooms = $this->availability->getAvailableRoomsByIds(
+                $selectedRoomIds,
+                $data['check_in'],
+                $data['check_out']
+            );
+
+            if ($selectedRooms->count() !== $quantity) {
+                throw new \Exception('One or more selected rooms are no longer available.');
+            }
+
+            if ($selectedRooms->pluck('room_type_id')->unique()->count() !== 1
+                || (int) $selectedRooms->first()->room_type_id !== (int) $data['room_type_id']) {
+                throw new \Exception('Selected rooms must belong to the chosen room type.');
+            }
+
             $booking = Booking::create([
                 'property_id'  => $data['property_id'] ?? 1,
+                'room_id'      => $selectedRooms->first()->id,
                 'user_id'      => $data['user_id'] ?? null,
                 'booking_code' => strtoupper('BKG-' . uniqid()),
                 'check_in'     => $data['check_in'],
                 'check_out'    => $data['check_out'],
                 'room_type_id' => $data['room_type_id'],
-                'quantity'     => $data['quantity'],
-                'adults'       => $data['adults'],
-                'children'     => $data['children'],
-                'nightly_rate' => $data['nightly_rate'],
-                'total_amount' => $data['total_amount'],
+                'quantity'     => $quantity,
+                'adults'       => $data['adults'] ?? 1,
+                'children'     => $data['children'] ?? 0,
+                'nightly_rate' => $data['nightly_rate'] ?? ($selectedRooms->first()->roomType->base_price ?? 0),
+                'total_amount' => $data['total_amount'] ?? (($selectedRooms->first()->roomType->base_price ?? 0) * $quantity),
                 'status'       => 'pending_payment',
                 'expires_at'   => now()->addMinutes(45),
                 'guest_name'   => $data['guest_name'],
                 'guest_email'  => $data['guest_email'],
                 'guest_phone'  => $data['guest_phone'],
+                'payment_status' => $data['payment_status'] ?? 'pending',
+                'special_requests' => $data['special_requests'] ?? null,
             ]);
+
+            $booking->rooms()->attach(
+                $selectedRooms->pluck('id')->mapWithKeys(fn ($roomId) => [
+                    $roomId => ['status' => 'reserved'],
+                ])->all()
+            );
 
             $this->audit->log(
                 'booking_created',
                 $booking,
                 $booking->id,
-                ['quantity' => $booking->quantity]
+                ['quantity' => $booking->quantity, 'rooms' => $selectedRooms->pluck('name')->all()]
             );
 
             return $booking;
@@ -137,19 +174,26 @@ class BookingService
         }*/
 
         return DB::transaction(function () use ($booking, $data) {
+            if (empty($data['selected_room_ids']) && ! empty($data['room_id'])) {
+                $selectedRoom = Room::findOrFail($data['room_id']);
+                $data['selected_room_ids'] = [$selectedRoom->id];
+                $data['room_type_id'] = $data['room_type_id'] ?? $selectedRoom->room_type_id;
+                $data['quantity'] = $data['quantity'] ?? 1;
+            }
 
             $before = $booking->load('rooms')->toArray();
 
             $checkIn  = $data['check_in']  ?? $booking->check_in;
             $checkOut = $data['check_out'] ?? $booking->check_out;
 
-            // If dates change → verify current rooms
+            // If dates change, verify current rooms.
             if (isset($data['check_in']) || isset($data['check_out'])) {
                 foreach ($booking->rooms as $room) {
                     if (! $this->availability->isRoomAvailable(
                         $room->id,
                         $checkIn,
-                        $checkOut
+                        $checkOut,
+                        $booking->id
                     )) {
                         throw new \Exception(
                             "Room {$room->name} is not available for the new dates."
@@ -158,28 +202,52 @@ class BookingService
                 }
             }
 
-            // If quantity or room type changes → reallocate rooms
+            // If quantity or room type changes, reallocate rooms.
             if (
                 isset($data['quantity']) ||
-                isset($data['room_type_id'])
+                isset($data['room_type_id']) ||
+                isset($data['selected_room_ids'])
             ) {
                 $quantity   = $data['quantity'] ?? $booking->quantity;
                 $roomTypeId = $data['room_type_id'] ?? $booking->room_type_id;
+                $selectedRoomIds = array_values(array_unique(array_map('intval', $data['selected_room_ids'] ?? $booking->rooms->pluck('id')->all())));
 
-                $booking->rooms()->detach();
+                if (count($selectedRoomIds) !== (int) $quantity) {
+                    throw new \Exception('Select the exact number of rooms for this booking.');
+                }
 
-                $rooms = $this->availability->getAvailableRoomsForType(
-                    $roomTypeId,
+                $rooms = $this->availability->getAvailableRoomsByIds(
+                    $selectedRoomIds,
                     $checkIn,
                     $checkOut,
-                    $quantity
+                    $booking->id
                 );
 
                 if ($rooms->count() < $quantity) {
-                    throw new \Exception('Not enough rooms available for this update.');
+                    throw new \Exception('One or more selected rooms are no longer available.');
                 }
 
-                $booking->rooms()->attach($rooms->pluck('id'));
+                if ($rooms->pluck('room_type_id')->unique()->count() !== 1
+                    || (int) $rooms->first()->room_type_id !== (int) $roomTypeId) {
+                    throw new \Exception('Selected rooms must match the booking room type.');
+                }
+
+                $booking->rooms()->sync(
+                    $rooms->pluck('id')->mapWithKeys(function ($roomId) use ($booking) {
+                        $existing = $booking->rooms->firstWhere('id', $roomId);
+
+                        return [
+                            $roomId => [
+                                'status' => $existing?->pivot?->status ?? 'reserved',
+                                'checked_in_at' => $existing?->pivot?->checked_in_at,
+                                'checked_out_at' => $existing?->pivot?->checked_out_at,
+                                'rate_override' => $existing?->pivot?->rate_override,
+                            ],
+                        ];
+                    })->all()
+                );
+
+                $data['room_id'] = $rooms->first()->id;
             }
 
             $booking->update($data);
@@ -232,7 +300,8 @@ class BookingService
                 throw new \Exception('Booking not eligible for check-in.');
             }
 
-            $alreadyCheckedIn = $booking->rooms()->count();
+            $reservedRooms = $booking->rooms()->get();
+            $alreadyCheckedIn = $reservedRooms->filter(fn ($room) => ! is_null($room->pivot->checked_in_at))->count();
             $remaining = $booking->quantity - $alreadyCheckedIn;
 
             $roomsToCheckIn ??= $remaining;
@@ -241,21 +310,35 @@ class BookingService
                 throw new \Exception('Exceeds remaining rooms.');
             }
 
-            $rooms = $this->availability->lockRoomsForCheckIn(
-                $booking->room_type_id,
-                $booking->check_in,
-                $booking->check_out,
-                $roomsToCheckIn
-            );
+            $rooms = $reservedRooms
+                ->filter(fn ($room) => is_null($room->pivot->checked_in_at))
+                ->take($roomsToCheckIn)
+                ->values();
+
+            if ($rooms->count() < $roomsToCheckIn) {
+                $rooms = $this->availability->lockRoomsForCheckIn(
+                    $booking->room_type_id,
+                    $booking->check_in,
+                    $booking->check_out,
+                    $roomsToCheckIn
+                );
+            }
 
             foreach ($rooms as $room) {
-                // Attach room to booking
-                $booking->rooms()->attach($room->id, [
-                    'status'        => 'active',
-                    'checked_in_at' => now(),
-                ]);
+                if ($booking->rooms()->where('rooms.id', $room->id)->exists()) {
+                    $booking->rooms()->updateExistingPivot($room->id, [
+                        'status'        => 'active',
+                        'checked_in_at' => now(),
+                        'checked_out_at' => null,
+                    ]);
+                } else {
+                    $booking->rooms()->attach($room->id, [
+                        'status'        => 'active',
+                        'checked_in_at' => now(),
+                    ]);
+                }
 
-                // 🔒 Mark room as occupied
+                // Mark room as occupied.
                 $room->update(['status' => 'occupied']);
             }
 

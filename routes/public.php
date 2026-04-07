@@ -57,6 +57,8 @@ Route::prefix('booking')->name('booking.')->group(function () {
     Route::post('/payment/{booking}/confirm', [BookingController::class, 'confirmPayment'])->name('payment.confirm');
     Route::get('/payment/{booking}/callback', [BookingController::class, 'paymentCallback'])->name('payment.callback');
     Route::get('/confirmation/{booking}', [BookingController::class, 'confirmation'])->name('confirmation');
+    Route::get('/pre-check-in/{booking}', [BookingController::class, 'preCheckIn'])->middleware('signed')->name('precheck.show');
+    Route::post('/pre-check-in/{booking}', [BookingController::class, 'submitPreCheckIn'])->middleware('signed')->name('precheck.submit');
 });
 
 // Public menu routes - Online ordering (prepaid)

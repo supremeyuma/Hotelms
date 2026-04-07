@@ -1,16 +1,17 @@
 <script setup>
-import { router, useForm } from '@inertiajs/vue3';
-import { defineProps, reactive } from 'vue';
+import { computed, reactive, ref } from 'vue';
+import { router } from '@inertiajs/vue3';
 import PublicLayout from '@/Layouts/PublicLayout.vue';
-import { 
-  BedDouble, 
-  Users, 
-  CheckCircle2, 
-  Info, 
-  ChevronRight, 
-  Trash2,
-  ArrowRight,
-  TrendingUp
+import {
+  BedDouble,
+  Users,
+  Baby,
+  ChevronRight,
+  Info,
+  Calendar,
+  Image as ImageIcon,
+  CheckCircle2,
+  Layers3,
 } from 'lucide-vue-next';
 
 const props = defineProps({
@@ -21,136 +22,266 @@ const props = defineProps({
   children: Number,
 });
 
-// Using reactive for quantities to keep it lightweight, or useForm if you need validation
-const quantities = reactive({});
-props.roomTypes.forEach(r => quantities[r.id] = 1);
+const expandedRoomTypeId = ref(props.roomTypes?.[0]?.id ?? null);
+const selectedRoomIdsByType = reactive({});
 
-function selectRoom(roomId) {
+props.roomTypes.forEach((roomType) => {
+  selectedRoomIdsByType[roomType.id] = [];
+});
+
+const formatDate = (dateStr) =>
+  new Date(dateStr).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+
+const formatCurrency = (amount) => new Intl.NumberFormat('en-NG').format(amount || 0);
+
+const roomLimitText = (roomType) => {
+  if (roomType.available_quantity === 0) return 'Sold out';
+  if (roomType.available_quantity === 1) return '1 room available';
+  return `${roomType.available_quantity} rooms available`;
+};
+
+const selectedCount = (roomTypeId) => selectedRoomIdsByType[roomTypeId]?.length ?? 0;
+
+const isSelected = (roomTypeId, roomId) => selectedRoomIdsByType[roomTypeId]?.includes(roomId);
+
+function toggleRoom(roomTypeId, roomId) {
+  const selected = selectedRoomIdsByType[roomTypeId] ?? [];
+
+  if (selected.includes(roomId)) {
+    selectedRoomIdsByType[roomTypeId] = selected.filter((id) => id !== roomId);
+    return;
+  }
+
+  selectedRoomIdsByType[roomTypeId] = [...selected, roomId];
+}
+
+function submitSelection(roomType) {
   router.post('/booking/select-room', {
-    room_type_id: roomId,
-    quantity: quantities[roomId],
+    room_type_id: roomType.id,
+    selected_room_ids: selectedRoomIdsByType[roomType.id] ?? [],
     check_in: props.check_in,
     check_out: props.check_out,
     adults: props.adults,
     children: props.children,
   }, {
-    preserveScroll: true
+    preserveScroll: true,
   });
 }
 
-const getAmenityLabel = (name) => {
-  // Simple logic to add "Luxury" feel to badges
-  if (name.toLowerCase().includes('suite')) return 'Premium Suite';
-  return 'Standard';
+function primaryImage(item) {
+  return item.primary_image_url || item.images?.[0]?.url || null;
 }
+
+function roomSubtitle(room) {
+  const bits = [];
+
+  if (room.floor) bits.push(`Floor ${room.floor}`);
+  if (room.code) bits.push(room.code);
+  if (room.meta?.view) bits.push(room.meta.view);
+
+  return bits.join(' - ');
+}
+
+const occupancyText = computed(() => {
+  const bits = [`${props.adults} adult${props.adults > 1 ? 's' : ''}`];
+  if (props.children > 0) bits.push(`${props.children} child${props.children > 1 ? 'ren' : ''}`);
+  return bits.join(', ');
+});
 </script>
 
 <template>
   <PublicLayout>
-  <div class="max-w-5xl mx-auto px-4 py-12 md:py-20">
-    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
-      <div>
-        <div class="flex items-center gap-2 text-indigo-600 font-black text-xs uppercase tracking-[0.3em] mb-3">
-          <BedDouble class="w-4 h-4" /> Step 2: Choose Accommodation
-        </div>
-        <h1 class="text-4xl font-black text-slate-900 tracking-tight">Available Rooms</h1>
-      </div>
-      
-      <div class="bg-white px-6 py-4 rounded-3xl border border-slate-200 shadow-sm flex items-center gap-6">
-        <div class="text-center">
-          <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Arrival</p>
-          <p class="font-bold text-slate-700">{{ check_in }}</p>
-        </div>
-        <div class="h-8 w-px bg-slate-100"></div>
-        <div class="text-center">
-          <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Departure</p>
-          <p class="font-bold text-slate-700">{{ check_out }}</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="grid grid-cols-1 gap-8">
-      <div 
-        v-for="room in roomTypes" 
-        :key="room.id" 
-        class="group bg-white rounded-[3rem] border border-slate-200 overflow-hidden hover:shadow-2xl hover:border-indigo-100 transition-all duration-500 flex flex-col md:flex-row"
-      >
-        <div class="md:w-1/3 bg-slate-100 relative overflow-hidden h-64 md:h-auto">
-          <div class="absolute inset-0 flex items-center justify-center text-slate-300">
-            <BedDouble class="w-20 h-20 opacity-20 group-hover:scale-110 transition-transform duration-700" />
-          </div>
-          <div 
-            class="absolute top-6 left-6 px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-sm"
-            :class="room.available_quantity > 0 ? 'bg-white text-emerald-600' : 'bg-rose-50 text-rose-600'"
-          >
-            {{ room.available_quantity }} Rooms Left
-          </div>
-        </div>
-
-        <div class="flex-1 p-8 md:p-12">
-          <div class="flex justify-between items-start mb-4">
-            <div>
-              <span class="text-indigo-600 text-[10px] font-black uppercase tracking-widest mb-1 block">
-                {{ getAmenityLabel(room.name) }}
-              </span>
-              <h2 class="text-3xl font-black text-slate-900 tracking-tight">{{ room.name }}</h2>
+    <div class="min-h-screen bg-slate-50/50 pb-20">
+      <div class="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-4">
+          <div class="flex items-center gap-6">
+            <div class="hidden md:flex items-center gap-2 text-slate-400">
+              <Calendar class="w-5 h-5" />
+              <span class="text-sm font-bold uppercase tracking-wider">Your Stay</span>
             </div>
-            <div class="text-right">
-              <p class="text-sm text-slate-400 font-bold uppercase tracking-tighter">Per Night</p>
-              <p class="text-2xl font-black text-slate-900">₦{{ room.price_per_night }}</p>
+            <div class="flex items-center gap-3">
+              <div class="text-sm">
+                <p class="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Check-in</p>
+                <p class="font-bold text-slate-900">{{ formatDate(check_in) }}</p>
+              </div>
+              <ChevronRight class="w-4 h-4 text-slate-300" />
+              <div class="text-sm">
+                <p class="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Check-out</p>
+                <p class="font-bold text-slate-900">{{ formatDate(check_out) }}</p>
+              </div>
             </div>
           </div>
+          <div class="flex items-center gap-4 text-sm font-bold text-slate-600 bg-slate-100 px-4 py-2 rounded-2xl">
+            <span class="flex items-center gap-1.5"><Users class="w-4 h-4" /> {{ occupancyText }}</span>
+          </div>
+        </div>
+      </div>
 
-          <p class="text-slate-500 font-medium leading-relaxed mb-8 max-w-xl">
-            {{ room.description }}
+      <div class="max-w-6xl mx-auto px-4 pt-12">
+        <div class="mb-10">
+          <h1 class="text-4xl font-black text-slate-900 tracking-tight mb-2">Choose Your Room</h1>
+          <p class="text-slate-500 font-medium">
+            Pick the room you want in one step. Your selection will be reserved for this booking while payment is pending.
           </p>
+        </div>
 
-          <div class="flex flex-col sm:flex-row items-center justify-between gap-6 pt-8 border-t border-slate-50">
-            <form @submit.prevent="selectRoom(room.id)" class="w-full flex flex-col sm:flex-row items-center gap-4">
-              <div class="flex items-center gap-3 bg-slate-50 p-2 rounded-2xl border border-slate-100 w-full sm:w-auto">
-                <label class="pl-4 text-xs font-black text-slate-400 uppercase tracking-widest">Quantity</label>
-                <input 
-                  type="number" 
-                  v-model.number="quantities[room.id]" 
-                  :max="room.available_quantity" 
-                  min="1" 
-                  required 
-                  class="w-20 bg-white border-none focus:ring-2 focus:ring-indigo-500 rounded-xl font-bold text-center py-2"
+        <div class="space-y-8">
+          <div
+            v-for="roomType in roomTypes"
+            :key="roomType.id"
+            class="bg-white rounded-[2.5rem] border border-slate-200 overflow-hidden shadow-sm"
+          >
+            <div class="grid lg:grid-cols-[1.1fr,1fr] gap-0">
+              <div class="relative bg-slate-100 min-h-[280px]">
+                <img
+                  v-if="primaryImage(roomType)"
+                  :src="primaryImage(roomType)"
+                  :alt="roomType.name"
+                  class="absolute inset-0 h-full w-full object-cover"
                 />
+                <div v-else class="absolute inset-0 flex items-center justify-center text-slate-300">
+                  <ImageIcon class="w-16 h-16" />
+                </div>
+                <div class="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-slate-950/10 to-transparent"></div>
+                <div class="absolute left-6 right-6 bottom-6 flex items-end justify-between gap-4">
+                  <div>
+                    <p class="text-[10px] font-black text-white/70 uppercase tracking-[0.3em] mb-2">Room Type</p>
+                    <h2 class="text-3xl font-black text-white tracking-tight">{{ roomType.name }}</h2>
+                    <p class="text-sm text-white/75 font-semibold mt-1">{{ roomLimitText(roomType) }}</p>
+                  </div>
+                  <div class="rounded-2xl bg-white/90 backdrop-blur px-4 py-3 text-right">
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">From</p>
+                    <p class="text-2xl font-black text-slate-900">₦{{ formatCurrency(roomType.price_per_night) }}</p>
+                  </div>
+                </div>
               </div>
 
-              <button 
-                type="submit" 
-                class="w-full sm:w-auto flex-1 group inline-flex items-center justify-center gap-3 px-8 py-4 bg-slate-900 text-white rounded-2xl font-black hover:bg-indigo-600 transition-all shadow-xl shadow-slate-200 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed" 
-                :disabled="room.available_quantity === 0"
-              >
-                {{ room.available_quantity === 0 ? 'Sold Out' : 'Reserve Room' }}
-                <ArrowRight class="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </button>
-            </form>
+              <div class="p-8 lg:p-10">
+                <div class="flex flex-wrap gap-3 text-xs font-bold text-slate-500 mb-5">
+                  <span class="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5">
+                    <Users class="w-4 h-4 text-indigo-500" /> Max {{ roomType.max_adults }} Guests
+                  </span>
+                  <span class="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5">
+                    <Layers3 class="w-4 h-4 text-indigo-500" /> {{ roomType.available_rooms?.length || 0 }} rooms shown
+                  </span>
+                  <span v-if="children > 0" class="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5">
+                    <Baby class="w-4 h-4 text-indigo-500" /> Family stay
+                  </span>
+                </div>
+
+                <p class="text-slate-500 font-medium leading-relaxed mb-8">
+                  {{ roomType.description || 'Comfortable accommodation prepared for your selected dates.' }}
+                </p>
+
+                <button
+                  type="button"
+                  @click="expandedRoomTypeId = expandedRoomTypeId === roomType.id ? null : roomType.id"
+                  class="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-black uppercase tracking-widest text-white transition hover:bg-indigo-600"
+                >
+                  {{ expandedRoomTypeId === roomType.id ? 'Hide rooms' : 'Choose a room' }}
+                  <ChevronRight class="w-4 h-4 transition-transform" :class="expandedRoomTypeId === roomType.id ? 'rotate-90' : ''" />
+                </button>
+              </div>
+            </div>
+
+            <div v-if="expandedRoomTypeId === roomType.id" class="border-t border-slate-200 bg-slate-50/70 p-6 md:p-8">
+              <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
+                <div>
+                  <h3 class="text-xl font-black text-slate-900 tracking-tight">Available Rooms</h3>
+                  <p class="text-sm text-slate-500 font-medium">
+                    Select the exact room you would like us to hold for this reservation.
+                  </p>
+                </div>
+                <div class="rounded-2xl bg-white px-4 py-3 border border-slate-200">
+                  <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Selected</p>
+                  <p class="text-lg font-black text-slate-900">{{ selectedCount(roomType.id) }} room<span v-if="selectedCount(roomType.id) !== 1">s</span></p>
+                </div>
+              </div>
+
+              <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+                <button
+                  v-for="room in roomType.available_rooms"
+                  :key="room.id"
+                  type="button"
+                  @click="toggleRoom(roomType.id, room.id)"
+                  class="group overflow-hidden rounded-[2rem] border text-left transition-all"
+                  :class="isSelected(roomType.id, room.id)
+                    ? 'border-indigo-500 bg-white shadow-xl shadow-indigo-100'
+                    : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-lg'"
+                >
+                  <div class="relative h-48 bg-slate-100">
+                    <img
+                      v-if="primaryImage(room)"
+                      :src="primaryImage(room)"
+                      :alt="room.name"
+                      class="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                    />
+                    <div v-else class="absolute inset-0 flex items-center justify-center text-slate-300">
+                      <BedDouble class="w-14 h-14" />
+                    </div>
+                    <div class="absolute right-4 top-4">
+                      <div
+                        class="flex h-10 w-10 items-center justify-center rounded-2xl border backdrop-blur"
+                        :class="isSelected(roomType.id, room.id)
+                          ? 'border-indigo-500 bg-indigo-600 text-white'
+                          : 'border-white/60 bg-white/90 text-slate-500'"
+                      >
+                        <CheckCircle2 class="w-5 h-5" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="p-5">
+                    <div class="flex items-start justify-between gap-3">
+                      <div>
+                        <h4 class="text-lg font-black text-slate-900">{{ room.name }}</h4>
+                        <p v-if="roomSubtitle(room)" class="mt-1 text-xs font-bold uppercase tracking-widest text-slate-400">
+                          {{ roomSubtitle(room) }}
+                        </p>
+                      </div>
+                    </div>
+
+                    <p class="mt-4 text-sm text-slate-500 font-medium min-h-[40px]">
+                      {{ room.meta?.description || roomType.description || 'Room details available for your selected stay.' }}
+                    </p>
+                  </div>
+                </button>
+              </div>
+
+              <div class="mt-8 flex flex-col gap-4 border-t border-slate-200 pt-6 md:flex-row md:items-center md:justify-between">
+                <p class="text-sm font-medium text-slate-500">
+                  Your selected room<span v-if="selectedCount(roomType.id) !== 1">s</span> will appear in the review step before payment.
+                </p>
+
+                <button
+                  type="button"
+                  :disabled="selectedCount(roomType.id) === 0"
+                  @click="submitSelection(roomType)"
+                  class="inline-flex items-center justify-center gap-3 rounded-[1.5rem] bg-slate-900 px-8 py-4 text-sm font-black uppercase tracking-widest text-white transition hover:bg-indigo-600 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Continue with Selected Room
+                  <ChevronRight class="w-4 h-4" />
+                </button>
+              </div>
+            </div>
           </div>
+        </div>
+
+        <div v-if="roomTypes.length === 0" class="mt-12 text-center py-20 bg-white rounded-[3rem] border border-slate-200">
+          <div class="p-6 bg-slate-50 rounded-full inline-flex mb-6 text-slate-300">
+            <Info class="w-12 h-12" />
+          </div>
+          <h2 class="text-2xl font-black text-slate-900 mb-2">No availability for these dates</h2>
+          <p class="text-slate-500 font-medium mb-8">Try adjusting your check-in dates or guest count.</p>
+          <button @click="router.visit('/booking')" class="text-indigo-600 font-black flex items-center gap-2 mx-auto hover:gap-4 transition-all">
+            Modify Search <ChevronRight class="w-4 h-4" />
+          </button>
         </div>
       </div>
     </div>
-
-    <div v-if="roomTypes.length === 0" class="text-center py-24 bg-white rounded-[3rem] border border-slate-200 shadow-sm">
-      <div class="inline-flex p-6 bg-rose-50 text-rose-500 rounded-full mb-6">
-        <Info class="w-12 h-12" />
-      </div>
-      <h2 class="text-2xl font-black text-slate-900 mb-2">No Rooms Available</h2>
-      <p class="text-slate-500 font-medium mb-8">Try adjusting your dates or guest count.</p>
-      <button @click="router.visit('/booking')" class="text-indigo-600 font-black flex items-center gap-2 mx-auto hover:gap-4 transition-all">
-        Modify Search <ArrowRight class="w-5 h-5" />
-      </button>
-    </div>
-  </div>
   </PublicLayout>
 </template>
-
-<style scoped>
-/* Scoped polish for form controls */
-input[type=number]::-webkit-inner-spin-button, 
-input[type=number]::-webkit-outer-spin-button { 
-  opacity: 1;
-}
-</style>

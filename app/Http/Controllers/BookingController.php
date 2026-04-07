@@ -18,6 +18,7 @@ use App\Services\RoomAvailabilityService;
 use App\Models\RoomType;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\URL;
 use Carbon\Carbon;
 
 class BookingController extends Controller
@@ -62,22 +63,34 @@ class BookingController extends Controller
         $adults = $request->input('adults');
         $children = $request->input('children', 0);
 
-        $roomTypes = RoomType::all()->map(function ($roomType) use ($checkIn, $checkOut, $adults, $children) {
+        $roomTypes = RoomType::with('images')->get()->map(function ($roomType) use ($checkIn, $checkOut, $adults, $children) {
             // Skip room types that cannot accommodate requested guests
             if ($adults + $children > $roomType->max_occupancy) {
             // || $children > $roomType->max_children) {
                 return null;
             }
 
+            $availableRooms = $this->availability
+                ->getAvailableRoomsForType($roomType->id, $checkIn, $checkOut)
+                ->loadMissing('images')
+                ->map(fn ($room) => $this->transformRoomForSelection($room, $roomType));
+
             return [
                 'id' => $roomType->id,
                 'name' => $roomType->title,
                 'description' => $roomType->description,
                 'price_per_night' => $roomType->base_price,
-                'available_quantity' => $this->availability->availableRooms($roomType->id, $checkIn, $checkOut),
+                'available_quantity' => $availableRooms->count(),
                 'max_adults' => $roomType->max_occupancy,
                 //'max_children' => $roomType->max_children,
                 'amenities' => $roomType->features ?? [],
+                'images' => $roomType->images->map(fn ($image) => [
+                    'id' => $image->id,
+                    'url' => $image->url,
+                    'thumb_url' => $image->thumb_url,
+                    'caption' => $image->caption,
+                ])->values(),
+                'available_rooms' => $availableRooms->values(),
             ];
         })->filter()->values(); // remove nulls
 
@@ -103,28 +116,40 @@ class BookingController extends Controller
     {
         $request->validate([
             'room_type_id' => 'required|exists:room_types,id',
-            'quantity' => 'required|integer|min:1',
+            'selected_room_ids' => 'required|array|min:1',
+            'selected_room_ids.*' => 'integer|exists:rooms,id',
             'check_in' => 'required|date|after_or_equal:today',
             'check_out' => 'required|date|after:check_in',
             'adults' => 'required|integer|min:1',
             'children' => 'nullable|integer|min:0',
         ]);
 
-        $available = $this->availability->checkAvailability(
-            $request->room_type_id,
+        $selectedRoomIds = array_values(array_unique(array_map('intval', $request->input('selected_room_ids', []))));
+        $quantity = count($selectedRoomIds);
+
+        $available = $this->availability->areRoomsAvailable(
+            $selectedRoomIds,
             $request->check_in,
-            $request->check_out,
-            $request->quantity
+            $request->check_out
         );
 
         if (!$available) {
-            return back()->withErrors(['availability' => 'Selected room is no longer available']);
+            return back()->withErrors(['availability' => 'One or more selected rooms are no longer available.']);
+        }
+
+        $rooms = Room::with('roomType', 'images')
+            ->whereIn('id', $selectedRoomIds)
+            ->get();
+
+        if ($rooms->count() !== $quantity || $rooms->pluck('room_type_id')->unique()->count() !== 1 || (int) $rooms->first()->room_type_id !== (int) $request->room_type_id) {
+            return back()->withErrors(['availability' => 'Selected rooms do not match the room type you chose.']);
         }
 
         // Store selection in session
         Session::put('booking', [
             'room_type_id' => $request->room_type_id,
-            'quantity' => $request->quantity,
+            'quantity' => $quantity,
+            'selected_room_ids' => $selectedRoomIds,
             'check_in' => $request->check_in,
             'check_out' => $request->check_out,
             'adults' => $request->adults,
@@ -170,7 +195,10 @@ class BookingController extends Controller
         $booking = Session::get('booking');
         if (!$booking) return redirect()->route('booking.search');
 
-        $roomType = RoomType::findOrFail($booking['room_type_id']);
+        $roomType = RoomType::with('images')->findOrFail($booking['room_type_id']);
+        $selectedRooms = Room::with('roomType', 'images')
+            ->whereIn('id', $booking['selected_room_ids'] ?? [])
+            ->get();
         
         $checkIn = Carbon::parse($booking['check_in'])->startOfDay();
         $checkOut = Carbon::parse($booking['check_out'])->startOfDay();
@@ -186,6 +214,7 @@ class BookingController extends Controller
         return Inertia::render('Booking/Review', [
             'booking' => $booking,
             'room_type' => $roomType,
+            'selected_rooms' => $selectedRooms->map(fn ($room) => $this->transformRoomForSelection($room, $roomType))->values(),
             'nights' => $nights,
             'total_price' => $totalPrice,
             
@@ -224,6 +253,7 @@ class BookingController extends Controller
                 'guest_phone' => $bookingData['guest_phone'],
                 'special_requests' => $bookingData['special_requests'] ?? null,
                 'quantity' => $bookingData['quantity'],
+                'selected_room_ids' => $bookingData['selected_room_ids'] ?? [],
                 'total_amount' => $totalPrice,
                 'guest_name' => $bookingData['guest_name'],
                 'nightly_rate' => $roomType->base_price,
@@ -259,6 +289,11 @@ class BookingController extends Controller
     {
         abort_if($booking->status !== 'pending_payment', 404);
 
+        $booking->update([
+            'payment_status' => 'pending',
+            'payment_method' => 'offline',
+        ]);
+
         $this->bookingService->confirmBooking($booking);
 
         return redirect()->route('booking.confirmation', $booking);
@@ -285,6 +320,11 @@ class BookingController extends Controller
                     resolve(PaymentAccountingService::class)->handleSuccessful($payment);
                 }
 
+                $booking->update([
+                    'payment_status' => 'paid',
+                    'payment_method' => $request->input('provider', 'online'),
+                ]);
+
                 // Confirm booking
                 $this->bookingService->confirmBooking($booking);
             } catch (\Exception $e) {
@@ -303,10 +343,104 @@ class BookingController extends Controller
     // Step 6: Confirmation page
     public function confirmation(Booking $booking)
     {
-         $booking->load('roomType', 'rooms');
+         $booking->load(['roomType.images', 'rooms.images', 'payments']);
         return Inertia::render('Booking/Confirmation', [
             'booking' => $booking,
+            'pre_check_in_url' => $booking->payment_status === 'paid'
+                ? URL::temporarySignedRoute(
+                    'booking.precheck.show',
+                    Carbon::parse($booking->check_out)->endOfDay(),
+                    ['booking' => $booking->id]
+                )
+                : null,
         ]);
+    }
+
+    public function preCheckIn(Request $request, Booking $booking)
+    {
+        abort_unless($booking->payment_status === 'paid', 403, 'Pre-check-in is only available for online paid bookings.');
+        abort_if(in_array($booking->status, ['checked_out', 'cancelled'], true), 404);
+
+        $details = $booking->details ?? [];
+        $preCheckIn = $details['pre_check_in'] ?? [];
+
+        return Inertia::render('Booking/PreCheckIn', [
+            'booking' => $booking->load(['roomType', 'rooms.images']),
+            'pre_check_in' => $preCheckIn,
+            'can_submit' => ! in_array($booking->status, ['active', 'checked_in'], true),
+            'signed_action' => URL::temporarySignedRoute(
+                'booking.precheck.submit',
+                Carbon::parse($booking->check_out)->endOfDay(),
+                ['booking' => $booking->id]
+            ),
+        ]);
+    }
+
+    public function submitPreCheckIn(Request $request, Booking $booking)
+    {
+        abort_unless($booking->payment_status === 'paid', 403, 'Pre-check-in is only available for online paid bookings.');
+        abort_if(in_array($booking->status, ['active', 'checked_in', 'checked_out', 'cancelled'], true), 403, 'This booking is no longer eligible for pre-check-in.');
+
+        $data = $request->validate([
+            'guest_name' => 'required|string|max:255',
+            'guest_email' => 'required|email|max:255',
+            'guest_phone' => 'required|string|max:20',
+            'estimated_arrival_time' => 'required|date_format:H:i',
+            'arrival_notes' => 'nullable|string|max:500',
+        ]);
+
+        if (strcasecmp($booking->guest_email, $data['guest_email']) !== 0) {
+            throw ValidationException::withMessages([
+                'guest_email' => 'Use the same email address that was used for this booking.',
+            ]);
+        }
+
+        $details = $booking->details ?? [];
+        $details['pre_check_in'] = [
+            'completed_at' => now()->toIso8601String(),
+            'estimated_arrival_time' => $data['estimated_arrival_time'],
+            'arrival_notes' => $data['arrival_notes'] ?? null,
+            'source' => 'online_paid_booking',
+        ];
+
+        $booking->update([
+            'guest_name' => $data['guest_name'],
+            'guest_phone' => $data['guest_phone'],
+            'details' => $details,
+        ]);
+
+        return redirect()->route('booking.precheck.show', ['booking' => $booking->id] + $request->query())
+            ->with('success', 'Pre-check-in completed. Room access will still be issued by the front desk on arrival.');
+    }
+
+    protected function transformRoomForSelection(Room $room, ?RoomType $roomType = null): array
+    {
+        $roomType ??= $room->roomType;
+        $roomImages = $room->images->map(fn ($image) => [
+            'id' => $image->id,
+            'url' => $image->url,
+            'thumb_url' => $image->thumb_url,
+            'caption' => $image->caption,
+        ])->values();
+
+        $fallbackImages = $roomType?->images?->map(fn ($image) => [
+            'id' => $image->id,
+            'url' => $image->url,
+            'thumb_url' => $image->thumb_url,
+            'caption' => $image->caption,
+        ])->values() ?? collect();
+
+        return [
+            'id' => $room->id,
+            'name' => $room->display_name ?? $room->name ?? ('Room ' . $room->id),
+            'code' => $room->code,
+            'floor' => $room->floor,
+            'status' => $room->status,
+            'meta' => $room->meta ?? [],
+            'room_type_id' => $room->room_type_id,
+            'images' => ($roomImages->isNotEmpty() ? $roomImages : $fallbackImages)->values(),
+            'primary_image_url' => $roomImages->first()['url'] ?? $fallbackImages->first()['url'] ?? null,
+        ];
     }
 
 
