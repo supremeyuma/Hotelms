@@ -83,7 +83,7 @@ class EventTicketPaymentTest extends TestCase
             'flutterwave_tx_id' => 'tx-123456'
         ]);
 
-        $response = $this->postJson('/webhooks/flutterwave', [
+        $response = $this->postJson('/api/webhooks/flutterwave', [
             'event' => 'charge.completed',
             'data' => [
                 'id' => 'tx-123456',
@@ -102,7 +102,7 @@ class EventTicketPaymentTest extends TestCase
                     'amount' => 5000,
                     'currency' => 'NGN'
                 ]
-            ]), config('services.flutterwave.secret_hash'))
+            ]), config('payment.flutterwave.secret_hash'))
         ]);
 
         // Verify payment was updated
@@ -183,7 +183,7 @@ class EventTicketPaymentTest extends TestCase
             'flutterwave_tx_id' => 'tx-failed-123'
         ]);
 
-        $response = $this->postJson('/webhooks/flutterwave', [
+        $response = $this->postJson('/api/webhooks/flutterwave', [
             'event' => 'charge.failed',
             'data' => [
                 'id' => 'tx-failed-123',
@@ -202,7 +202,7 @@ class EventTicketPaymentTest extends TestCase
                     'amount' => 5000,
                     'currency' => 'NGN'
                 ]
-            ]), config('services.flutterwave.secret_hash'))
+            ]), config('payment.flutterwave.secret_hash'))
         ]);
 
         // Verify payment was marked as failed

@@ -34,6 +34,11 @@ class WebhookController extends Controller
             $signature = $request->header('verif-hash');
             $payload = $request->getContent();
 
+            if (!is_string($signature) || $signature === '') {
+                Log::warning('Missing Flutterwave webhook signature');
+                return response()->json(['error' => 'Invalid signature'], 401);
+            }
+
             if (!$this->validateFlutterwaveSignature($signature, $payload)) {
                 Log::warning('Invalid Flutterwave webhook signature');
                 return response()->json(['error' => 'Invalid signature'], 401);
@@ -482,9 +487,13 @@ class WebhookController extends Controller
     /**
      * Validate Flutterwave webhook signature
      */
-    private function validateFlutterwaveSignature(string $signature, string $payload): bool
+    private function validateFlutterwaveSignature(?string $signature, string $payload): bool
     {
         try {
+            if (!is_string($signature) || $signature === '') {
+                return false;
+            }
+
             $secretHash = config('payment.flutterwave.secret_hash');
             if (!$secretHash) {
                 Log::warning('Flutterwave secret hash not configured');
@@ -501,9 +510,13 @@ class WebhookController extends Controller
     /**
      * Validate Paystack webhook signature
      */
-    private function validatePaystackSignature(string $signature, string $payload): bool
+    private function validatePaystackSignature(?string $signature, string $payload): bool
     {
         try {
+            if (!is_string($signature) || $signature === '') {
+                return false;
+            }
+
             $secret = config('payment.paystack.webhook_secret') ?: config('payment.paystack.secret_key');
             if (!$secret) {
                 Log::warning('Paystack secret key not configured');

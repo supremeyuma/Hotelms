@@ -12,6 +12,7 @@ use App\Services\BookingService;
 use App\Services\PricingService;
 use App\Services\AuditLogger;
 use App\Services\PaymentAccountingService;
+use App\Services\PaymentProviderManager;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Services\RoomAvailabilityService;
@@ -26,6 +27,7 @@ class BookingController extends Controller
     protected BookingService $service;
     protected RoomAvailabilityService $availability;
     protected PricingService $pricingService;
+    protected PaymentProviderManager $paymentManager;
     
 
     /*public function __construct(BookingService $service)
@@ -34,11 +36,17 @@ class BookingController extends Controller
         $this->middleware('auth')->only(['createBooking','confirmBooking','viewBooking','cancelBooking']);
     }*/
 
-     public function __construct(RoomAvailabilityService $availability, BookingService $bookingService, PricingService $pricingService)
+     public function __construct(
+        RoomAvailabilityService $availability,
+        BookingService $bookingService,
+        PricingService $pricingService,
+        PaymentProviderManager $paymentManager
+    )
     {
         $this->availability = $availability;
         $this->bookingService = $bookingService;
         $this->pricingService = $pricingService;
+        $this->paymentManager = $paymentManager;
     }
 
 
@@ -301,42 +309,90 @@ class BookingController extends Controller
 
     public function paymentCallback(Request $request, Booking $booking)
     {
+        if ($booking->payment_status === 'paid') {
+            return redirect()->route('booking.confirmation', $booking)
+                ->with('success', 'Payment already confirmed.');
+        }
+
         abort_if($booking->status !== 'pending_payment', 404);
 
-        $reference = $request->input('tx_ref');
-        $status = $request->input('status');
+        $reference = $request->input('tx_ref')
+            ?? $request->input('reference')
+            ?? $booking->booking_code;
+        $provider = strtolower((string) (
+            $request->input('provider')
+            ?? $booking->payments()->latest('id')->value('provider')
+            ?? config('payment.default', 'flutterwave')
+        ));
 
-        if ($status === 'successful' || $status === 'completed') {
-            // Verify payment via Flutterwave
-            try {
-                $payment = $booking->payments()->where('reference', $reference)->first();
-                if ($payment) {
-                    $payment->update([
-                        'status' => 'successful',
-                        'paid_at' => now(),
-                    ]);
+        try {
+            $verification = $this->paymentManager->verifyPayment($reference, $provider);
 
-                    // Wire to accounting
-                    resolve(PaymentAccountingService::class)->handleSuccessful($payment);
-                }
-
-                $booking->update([
-                    'payment_status' => 'paid',
-                    'payment_method' => $request->input('provider', 'online'),
+            if (!($verification['success'] ?? false) || !($verification['verified'] ?? false)) {
+                \Log::warning('Booking payment callback verification failed', [
+                    'booking_id' => $booking->id,
+                    'reference' => $reference,
+                    'provider' => $provider,
+                    'gateway_status' => $verification['status'] ?? null,
                 ]);
 
-                // Confirm booking
-                $this->bookingService->confirmBooking($booking);
-            } catch (\Exception $e) {
-                \Log::error('Booking payment callback failed', ['error' => $e->getMessage()]);
+                return redirect()->route('booking.payment', $booking)
+                    ->with('error', 'We could not confirm your payment yet. If you were charged, please wait a moment and try again.');
             }
+
+            $verifiedProvider = $verification['provider'] ?? $provider;
+            $payment = $booking->payments()->updateOrCreate(
+                ['reference' => $booking->booking_code],
+                [
+                    'provider' => $verifiedProvider,
+                    'amount' => $booking->total_amount,
+                    'amount_paid' => $this->normalizeVerifiedAmount($verification['amount'] ?? $booking->total_amount, $verifiedProvider),
+                    'currency' => $verification['currency'] ?? 'NGN',
+                    'status' => 'completed',
+                    'payment_type' => 'booking',
+                    'verified_at' => now(),
+                    'external_reference' => $verification['data']['id'] ?? null,
+                    'flutterwave_tx_ref' => $verifiedProvider === 'flutterwave' ? ($verification['reference'] ?? $reference) : null,
+                    'flutterwave_tx_id' => $verifiedProvider === 'flutterwave' ? ($verification['data']['id'] ?? null) : null,
+                    'flutterwave_tx_status' => $verifiedProvider === 'flutterwave' ? ($verification['status'] ?? ($verification['data']['status'] ?? null)) : null,
+                    'raw_response' => $verification['data'] ?? $verification,
+                    'paid_at' => now(),
+                ]
+            );
+
+            resolve(PaymentAccountingService::class)->handleSuccessful($payment);
+
+            $booking->update([
+                'payment_status' => 'paid',
+                'payment_method' => $verifiedProvider,
+            ]);
+
+            $this->bookingService->confirmBooking($booking);
 
             return redirect()->route('booking.confirmation', $booking)
                 ->with('success', 'Payment confirmed');
+        } catch (\Exception $e) {
+            \Log::error('Booking payment callback failed', [
+                'booking_id' => $booking->id,
+                'reference' => $reference,
+                'provider' => $provider,
+                'error' => $e->getMessage(),
+            ]);
+
+            return redirect()->route('booking.payment', $booking)
+                ->with('error', 'We could not confirm your payment right now. Please contact support if the issue continues.');
+        }
+    }
+
+    protected function normalizeVerifiedAmount(mixed $amount, string $provider): float
+    {
+        $numericAmount = (float) $amount;
+
+        if ($provider === 'paystack') {
+            return $numericAmount / 100;
         }
 
-        return redirect()->route('booking.payment', $booking)
-            ->with('error', 'Payment failed or was cancelled');
+        return $numericAmount;
     }
 
 

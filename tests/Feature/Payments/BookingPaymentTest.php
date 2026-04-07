@@ -130,7 +130,7 @@ class BookingPaymentTest extends TestCase
         ]);
 
         // Simulate webhook processing
-        $this->postJson('/webhooks/flutterwave', [
+        $this->postJson('/api/webhooks/flutterwave', [
             'event' => 'charge.completed',
             'data' => [
                 'id' => 'tx-bkg-123',
@@ -149,7 +149,7 @@ class BookingPaymentTest extends TestCase
                     'amount' => 150000,
                     'currency' => 'NGN'
                 ]
-            ]), config('services.flutterwave.secret_hash'))
+            ]), config('payment.flutterwave.secret_hash'))
         ]);
 
         // Verify payment was marked as successful

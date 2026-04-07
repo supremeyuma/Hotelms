@@ -182,7 +182,7 @@ class RoomServiceOrderPaymentTest extends TestCase
         ]);
 
         // Simulate successful payment
-        $this->postJson('/webhooks/flutterwave', [
+        $this->postJson('/api/webhooks/flutterwave', [
             'event' => 'charge.completed',
             'data' => [
                 'id' => 'tx-ord-123',
@@ -201,7 +201,7 @@ class RoomServiceOrderPaymentTest extends TestCase
                     'amount' => 7000,
                     'currency' => 'NGN'
                 ]
-            ]), config('services.flutterwave.secret_hash'))
+            ]), config('payment.flutterwave.secret_hash'))
         ]);
 
         // Verify payment was marked successful

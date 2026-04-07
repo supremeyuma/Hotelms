@@ -14,12 +14,14 @@ class FlutterwaveService
     protected string $secretKey;
     protected string $publicKey;
     protected string $baseUrl;
+    protected int $timeout;
 
     public function __construct()
     {
-        $this->secretKey = config('flutterwave.secret_key', '');
-        $this->publicKey = config('flutterwave.public_key', '');
-        $this->baseUrl = 'https://api.flutterwave.com/v3';
+        $this->secretKey = (string) config('payment.flutterwave.secret_key', '');
+        $this->publicKey = (string) config('payment.flutterwave.public_key', '');
+        $this->baseUrl = (string) config('payment.flutterwave.base_url', 'https://api.flutterwave.com/v3');
+        $this->timeout = (int) config('payment.flutterwave.timeout', 30);
     }
 
     /**
@@ -40,6 +42,7 @@ class FlutterwaveService
     {
         try {
             $response = Http::withToken($this->secretKey)
+                ->timeout($this->timeout)
                 ->post("{$this->baseUrl}/charges", $paymentData);
 
             if ($response->successful()) {
@@ -81,6 +84,7 @@ class FlutterwaveService
     {
         try {
             $response = Http::withToken($this->secretKey)
+                ->timeout($this->timeout)
                 ->get("{$this->baseUrl}/transactions/verify_by_reference/" . urlencode($reference));
 
             if ($response->successful()) {
@@ -240,6 +244,7 @@ class FlutterwaveService
     {
         try {
             $response = Http::withToken($this->secretKey)
+                ->timeout($this->timeout)
                 ->get("{$this->baseUrl}/transactions/" . urlencode($reference));
 
             if ($response->successful()) {
@@ -282,6 +287,7 @@ class FlutterwaveService
     {
         try {
             $response = Http::withToken($this->secretKey)
+                ->timeout($this->timeout)
                 ->post("{$this->baseUrl}/refunds", [
                     'transaction_id' => $payment->flutterwave_tx_id,
                     'reason' => $reason,
@@ -597,4 +603,3 @@ class FlutterwaveService
         Log::error('Refund failed', ['data' => $data]);
         return ['success' => true, 'message' => 'Refund failure processed'];
     }}
-
