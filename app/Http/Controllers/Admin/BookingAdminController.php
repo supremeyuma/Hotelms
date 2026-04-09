@@ -8,8 +8,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\Room;
-use App\Services\BookingService;
 use App\Services\AuditLogger;
+use App\Services\BookingService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -20,17 +20,37 @@ class BookingAdminController extends Controller
 
     public function __construct(BookingService $service)
     {
-        $this->middleware(['auth','role:manager|md']);
+        $this->middleware(['auth', 'role:manager|md']);
         $this->service = $service;
     }
 
     public function index(Request $request)
     {
         $today = Carbon::today();
+        $filter = $request->string('filter')->toString();
+        $allowedFilters = ['arrivals_today', 'in_house', 'unsettled'];
+
+        if (! in_array($filter, $allowedFilters, true)) {
+            $filter = 'all';
+        }
 
         $bookings = Booking::with(['room.roomType', 'roomType', 'rooms.roomType', 'user'])
+            ->when($filter === 'arrivals_today', function ($query) use ($today) {
+                $query->whereDate('check_in', $today)
+                    ->whereNotIn('status', ['cancelled']);
+            })
+            ->when($filter === 'in_house', function ($query) use ($today) {
+                $query->whereDate('check_in', '<=', $today)
+                    ->whereDate('check_out', '>=', $today)
+                    ->whereIn('status', ['confirmed', 'active', 'checked_in']);
+            })
+            ->when($filter === 'unsettled', function ($query) {
+                $query->whereIn('status', ['confirmed', 'active', 'checked_in'])
+                    ->where('payment_status', '!=', 'paid');
+            })
             ->latest()
             ->paginate(25)
+            ->withQueryString()
             ->through(function (Booking $booking) use ($today) {
                 $assignedRooms = $booking->rooms
                     ->map(function ($room) {
@@ -39,7 +59,7 @@ class BookingAdminController extends Controller
                         return trim(collect([
                             $roomTypeTitle,
                             $room->name ?: $room->room_number,
-                        ])->filter()->implode(' · '));
+                        ])->filter()->implode(' - '));
                     })
                     ->filter()
                     ->values();
@@ -48,7 +68,7 @@ class BookingAdminController extends Controller
                     ?: trim(collect([
                         $booking->roomType?->title ?: $booking->room?->roomType?->title,
                         $booking->room?->name ?: $booking->room?->room_number,
-                    ])->filter()->implode(' · '))
+                    ])->filter()->implode(' - '))
                     ?: 'Unassigned';
 
                 $guestCount = (int) ($booking->guests ?: (($booking->adults ?? 0) + ($booking->children ?? 0)));
@@ -93,7 +113,6 @@ class BookingAdminController extends Controller
         return Inertia::render('Admin/Bookings/Index', [
             'bookings' => $bookings,
             'summary' => [
-                'total' => Booking::count(),
                 'arrivals_today' => Booking::whereDate('check_in', $today)
                     ->whereNotIn('status', ['cancelled'])
                     ->count(),
@@ -105,15 +124,19 @@ class BookingAdminController extends Controller
                     ->where('payment_status', '!=', 'paid')
                     ->count(),
             ],
+            'filters' => [
+                'active' => $filter,
+            ],
             'todayLabel' => $today->format('l, d M Y'),
         ]);
     }
 
     public function edit(Booking $booking)
     {
-        $booking->load(['room','user']);
+        $booking->load(['room', 'user']);
         $rooms = Room::with('roomType')->get();
-        return Inertia::render('Admin/Bookings/Edit', compact('booking','rooms'));
+
+        return Inertia::render('Admin/Bookings/Edit', compact('booking', 'rooms'));
     }
 
     public function update(Request $request, Booking $booking)
@@ -123,15 +146,15 @@ class BookingAdminController extends Controller
             'check_in' => 'required|date',
             'check_out' => 'required|date|after:check_in',
             'status' => 'required|string',
-            'guests' => 'nullable|integer|min:1'
+            'guests' => 'nullable|integer|min:1',
         ]);
 
         // Use service to safely reassign/modify booking
         $this->service->updateBooking($booking, $data);
 
-        AuditLogger::log('booking_admin_updated', 'Booking', $booking->id, ['data'=>$data]);
+        AuditLogger::log('booking_admin_updated', 'Booking', $booking->id, ['data' => $data]);
 
-        return redirect()->route('admin.bookings.index')->with('success','Booking updated.');
+        return redirect()->route('admin.bookings.index')->with('success', 'Booking updated.');
     }
 
     public function destroy(Booking $booking)
@@ -140,7 +163,7 @@ class BookingAdminController extends Controller
 
         AuditLogger::log('booking_admin_deleted', 'Booking', $booking->id);
 
-        return back()->with('success','Booking removed.');
+        return back()->with('success', 'Booking removed.');
     }
 
     /**
@@ -154,8 +177,8 @@ class BookingAdminController extends Controller
 
         $booking->update(['room_id' => $data['room_id']]);
 
-        AuditLogger::log('booking_reassigned', 'Booking', $booking->id, ['to_room'=>$data['room_id']]);
+        AuditLogger::log('booking_reassigned', 'Booking', $booking->id, ['to_room' => $data['room_id']]);
 
-        return back()->with('success','Room reassigned.');
+        return back()->with('success', 'Room reassigned.');
     }
 }

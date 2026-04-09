@@ -10,7 +10,6 @@ import {
   CircleDollarSign,
   Clock3,
   CreditCard,
-  Hotel,
   Mail,
   Phone,
   UserRound,
@@ -19,18 +18,13 @@ import {
 const props = defineProps({
   bookings: { type: Object, required: true },
   summary: { type: Object, required: true },
+  filters: { type: Object, required: true },
   todayLabel: { type: String, default: '' },
 })
 
 const summaryCards = [
   {
-    label: 'Total bookings',
-    value: props.summary.total,
-    helper: 'All reservations on record',
-    icon: Hotel,
-    tone: 'slate',
-  },
-  {
+    key: 'arrivals_today',
     label: 'Arrivals today',
     value: props.summary.arrivals_today,
     helper: props.todayLabel,
@@ -38,16 +32,18 @@ const summaryCards = [
     tone: 'indigo',
   },
   {
+    key: 'in_house',
     label: 'In house',
     value: props.summary.in_house,
-    helper: 'Active stays right now',
+    helper: 'Guests currently staying',
     icon: BedDouble,
     tone: 'emerald',
   },
   {
+    key: 'unsettled',
     label: 'Unsettled stays',
     value: props.summary.unsettled,
-    helper: 'Confirmed stays awaiting payment',
+    helper: 'Payment still open',
     icon: CircleDollarSign,
     tone: 'amber',
   },
@@ -71,15 +67,37 @@ function badgeClasses(status) {
   return 'bg-slate-100 text-slate-700'
 }
 
-function cardToneClasses(tone) {
+function cardToneClasses(tone, active) {
   const tones = {
-    slate: 'bg-white text-slate-700',
-    indigo: 'bg-gradient-to-br from-indigo-500/15 via-indigo-500/5 to-white text-indigo-600',
-    emerald: 'bg-gradient-to-br from-emerald-500/15 via-emerald-500/5 to-white text-emerald-600',
-    amber: 'bg-gradient-to-br from-amber-500/15 via-amber-500/5 to-white text-amber-600',
+    indigo: active
+      ? 'border-indigo-300 bg-gradient-to-br from-indigo-100 via-white to-indigo-50 text-indigo-700 shadow-md'
+      : 'border-slate-200 bg-gradient-to-br from-indigo-500/15 via-indigo-500/5 to-white text-indigo-600',
+    emerald: active
+      ? 'border-emerald-300 bg-gradient-to-br from-emerald-100 via-white to-emerald-50 text-emerald-700 shadow-md'
+      : 'border-slate-200 bg-gradient-to-br from-emerald-500/15 via-emerald-500/5 to-white text-emerald-600',
+    amber: active
+      ? 'border-amber-300 bg-gradient-to-br from-amber-100 via-white to-amber-50 text-amber-700 shadow-md'
+      : 'border-slate-200 bg-gradient-to-br from-amber-500/15 via-amber-500/5 to-white text-amber-600',
   }
 
-  return tones[tone] ?? tones.slate
+  return tones[tone]
+}
+
+function filterHref(key) {
+  return props.filters.active === key
+    ? route('admin.bookings.index')
+    : route('admin.bookings.index', { filter: key })
+}
+
+function filterLabel() {
+  const labels = {
+    all: 'All bookings',
+    arrivals_today: 'Arrivals today',
+    in_house: 'In house',
+    unsettled: 'Unsettled stays',
+  }
+
+  return labels[props.filters.active] ?? labels.all
 }
 
 function formatCurrency(amount) {
@@ -111,21 +129,16 @@ function guestBreakdown(booking) {
 
     <div class="space-y-8">
       <section class="overflow-hidden rounded-[2rem] bg-slate-900 text-white shadow-2xl shadow-slate-200">
-        <div class="grid gap-8 px-6 py-8 sm:px-8 xl:grid-cols-[1.3fr_0.7fr]">
-          <div class="space-y-5">
+        <div class="grid gap-6 px-6 py-8 sm:px-8 xl:grid-cols-[1.25fr_0.75fr]">
+          <div class="space-y-4">
             <div class="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-[11px] font-black uppercase tracking-[0.22em] text-slate-200">
               <BriefcaseBusiness class="h-3.5 w-3.5" />
               Manager Booking Board
             </div>
 
-            <div class="space-y-3">
-              <h1 class="max-w-3xl text-3xl font-black tracking-tight sm:text-4xl">
-                Review arrivals, in-house guests, payment exposure, and reservation details from one place.
-              </h1>
-              <p class="max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">
-                The booking board now surfaces the guest, stay, payment, and room context managers usually need before opening a reservation.
-              </p>
-            </div>
+            <h1 class="max-w-3xl text-3xl font-black tracking-tight sm:text-4xl">
+              Booking oversight at a glance.
+            </h1>
           </div>
 
           <div class="grid gap-4">
@@ -138,22 +151,23 @@ function guestBreakdown(booking) {
             </div>
 
             <div class="rounded-[1.75rem] border border-white/10 bg-gradient-to-br from-white/10 to-white/5 p-5">
-              <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-300">Bookings on this page</p>
-              <p class="mt-3 text-4xl font-black">{{ bookings.data.length }}</p>
+              <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-300">Active view</p>
+              <p class="mt-3 text-2xl font-black">{{ filterLabel() }}</p>
               <p class="mt-2 text-sm text-slate-300">
-                {{ bookings.total }} total reservation<span v-if="bookings.total !== 1">s</span> in the system.
+                {{ bookings.total }} booking<span v-if="bookings.total !== 1">s</span> in this result.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      <section class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
-        <div
+      <section class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+        <Link
           v-for="card in summaryCards"
-          :key="card.label"
-          class="rounded-[1.75rem] border border-slate-200 p-5 shadow-sm"
-          :class="cardToneClasses(card.tone)"
+          :key="card.key"
+          :href="filterHref(card.key)"
+          class="rounded-[1.75rem] border p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+          :class="cardToneClasses(card.tone, filters.active === card.key)"
         >
           <div class="flex items-start justify-between gap-4">
             <div>
@@ -168,8 +182,13 @@ function guestBreakdown(booking) {
               <component :is="card.icon" class="h-5 w-5" />
             </div>
           </div>
-          <p class="mt-3 text-sm text-slate-500">{{ card.helper }}</p>
-        </div>
+          <div class="mt-3 flex items-center justify-between gap-3">
+            <p class="text-sm text-slate-500">{{ card.helper }}</p>
+            <span class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">
+              {{ filters.active === card.key ? 'Showing' : 'Filter' }}
+            </span>
+          </div>
+        </Link>
       </section>
 
       <section class="rounded-[2rem] border border-slate-200 bg-white shadow-sm">
@@ -178,8 +197,17 @@ function guestBreakdown(booking) {
             <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Reservations</p>
             <h2 class="mt-2 text-2xl font-black tracking-tight text-slate-900">Manager booking board</h2>
           </div>
-          <div class="rounded-full bg-slate-100 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-slate-500">
-            Page {{ bookings.current_page }} of {{ bookings.last_page }}
+          <div class="flex items-center gap-3">
+            <Link
+              v-if="filters.active !== 'all'"
+              :href="route('admin.bookings.index')"
+              class="rounded-full bg-slate-100 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-slate-600 transition hover:bg-slate-200"
+            >
+              Clear filter
+            </Link>
+            <div class="rounded-full bg-slate-100 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-slate-500">
+              {{ filterLabel() }} · Page {{ bookings.current_page }} of {{ bookings.last_page }}
+            </div>
           </div>
         </div>
 
@@ -243,7 +271,7 @@ function guestBreakdown(booking) {
                     </div>
                     <p class="mt-3 text-base font-black text-slate-900">{{ booking.check_in }}</p>
                     <p class="mt-1 text-sm text-slate-500">
-                      to {{ booking.check_out }} · {{ booking.nights }} night<span v-if="booking.nights !== 1">s</span>
+                      to {{ booking.check_out }} - {{ booking.nights }} night<span v-if="booking.nights !== 1">s</span>
                     </p>
                   </div>
 
@@ -255,7 +283,7 @@ function guestBreakdown(booking) {
                     <p class="mt-3 text-base font-black text-slate-900">{{ booking.room_label }}</p>
                     <p class="mt-1 text-sm text-slate-500">
                       {{ booking.room_count }} room<span v-if="booking.room_count !== 1">s</span>
-                      <span v-if="booking.checked_in_rooms"> · {{ booking.checked_in_rooms }} checked in</span>
+                      <span v-if="booking.checked_in_rooms"> - {{ booking.checked_in_rooms }} checked in</span>
                     </p>
                   </div>
 
@@ -321,7 +349,7 @@ function guestBreakdown(booking) {
           </div>
           <h3 class="mt-6 text-2xl font-black tracking-tight text-slate-900">No bookings available</h3>
           <p class="mx-auto mt-3 max-w-md text-sm leading-6 text-slate-500">
-            Reservations will appear here once the hotel starts receiving bookings.
+            No bookings match the current filter.
           </p>
         </div>
       </section>
