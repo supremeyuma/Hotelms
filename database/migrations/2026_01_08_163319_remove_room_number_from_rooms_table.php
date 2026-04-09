@@ -2,12 +2,21 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('rooms', 'room_number')) {
+            try {
+                DB::statement('DROP INDEX IF EXISTS rooms_room_number_index');
+            } catch (\Throwable $e) {
+                // Best effort for sqlite and environments where the index may already be absent.
+            }
+        }
+
         Schema::table('rooms', function (Blueprint $table) {
             if (Schema::hasColumn('rooms', 'room_number')) {
                 $table->dropColumn('room_number');

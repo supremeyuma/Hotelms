@@ -8,7 +8,13 @@ use Illuminate\Support\Facades\DB;
 return new class extends Migration {
     public function up(): void
     {
-        // MySQL requires raw SQL to modify ENUM safely
+        $driver = DB::getDriverName();
+
+        if ($driver !== 'mysql') {
+            return;
+        }
+
+        // MySQL requires raw SQL to modify ENUM safely.
         DB::statement("
             ALTER TABLE orders
             MODIFY status VARCHAR(30) NOT NULL DEFAULT 'pending'
@@ -17,6 +23,12 @@ return new class extends Migration {
 
     public function down(): void
     {
+        $driver = DB::getDriverName();
+
+        if ($driver !== 'mysql') {
+            return;
+        }
+
         DB::statement("
             ALTER TABLE orders
             MODIFY status ENUM(

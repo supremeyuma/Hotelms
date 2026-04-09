@@ -38,7 +38,6 @@ return new class extends Migration
             
             $table->index(['event_id', 'status']);
             $table->index(['payment_status']);
-            $table->unique(['qr_code']);
         });
     }
 
