@@ -15,6 +15,11 @@ use Illuminate\Support\Collection;
  */
 class RoomAvailabilityService
 {
+    protected function bookableStatuses(): array
+    {
+        return ['available', 'dirty'];
+    }
+
     protected function reservingStatuses(): array
     {
         return ['pending_payment', 'confirmed', 'active', 'checked_in'];
@@ -50,7 +55,9 @@ class RoomAvailabilityService
         string $checkOut,
         int $quantity
     ): bool {
-        $totalRooms = Room::where('room_type_id', $roomTypeId)->count();
+        $totalRooms = Room::where('room_type_id', $roomTypeId)
+            ->whereIn('status', $this->bookableStatuses())
+            ->count();
 
         $reservedRooms = $this->activeReservationQuery($checkIn, $checkOut)
             ->where('room_type_id', $roomTypeId)
@@ -70,6 +77,7 @@ class RoomAvailabilityService
         int $limit
     ): Collection {
         return Room::where('room_type_id', $roomTypeId)
+            ->where('status', 'available')
             ->whereDoesntHave('bookings', function ($q) use ($checkIn, $checkOut) {
                 $q->whereIn('bookings.status', ['active', 'checked_in', 'confirmed'])
                   ->where(fn ($q) =>
@@ -96,6 +104,7 @@ class RoomAvailabilityService
     public function getAvailableRoomsForType(int $roomTypeId, string $checkIn, string $checkOut, ?int $limit = null): Collection
     {
         $query = Room::where('room_type_id', $roomTypeId)
+            ->whereIn('status', $this->bookableStatuses())
             ->whereDoesntHave('bookings', function ($q) use ($checkIn, $checkOut) {
                 $q->whereIn('bookings.status', $this->reservingStatuses())
                     ->where(function ($query) {
@@ -146,6 +155,7 @@ class RoomAvailabilityService
         }
 
         return Room::whereIn('id', $roomIds)
+            ->whereIn('status', $this->bookableStatuses())
             ->whereDoesntHave('bookings', function ($query) use ($checkIn, $checkOut, $excludeBookingId) {
                 $query->when($excludeBookingId, fn ($q) => $q->where('bookings.id', '!=', $excludeBookingId))
                     ->whereIn('bookings.status', $this->reservingStatuses())
@@ -173,7 +183,9 @@ class RoomAvailabilityService
      */
     public function bulkAvailability(string $from, string $to, ?int $roomTypeId = null): array
     {
-        $rooms = Room::when($roomTypeId, fn($q) => $q->where('room_type_id', $roomTypeId))->get();
+        $rooms = Room::when($roomTypeId, fn($q) => $q->where('room_type_id', $roomTypeId))
+            ->whereIn('status', $this->bookableStatuses())
+            ->get();
         $res = [];
 
         foreach ($rooms as $room) {
@@ -192,6 +204,12 @@ class RoomAvailabilityService
         string $to,
         ?int $excludeBookingId = null
     ): bool {
+        $room = Room::find($roomId);
+
+        if (! $room || ! in_array($room->status, $this->bookableStatuses(), true)) {
+            return false;
+        }
+
         return ! $this->activeReservationQuery($from, $to, $excludeBookingId)
             ->whereHas('rooms', fn ($q) => $q->where('rooms.id', $roomId))
             ->exists();

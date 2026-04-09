@@ -28,6 +28,7 @@ Route::middleware(['auth', 'role:manager|md'])->prefix('admin')->as('admin.')->g
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
         Route::resource('rooms', RoomController::class);
+        Route::patch('rooms/{room}/status', [RoomController::class, 'updateStatus'])->name('rooms.update-status');
         Route::resource('room-types', RoomTypeController::class);
 
         Route::get('bookings', [BookingAdminController::class, 'index'])->name('bookings.index');

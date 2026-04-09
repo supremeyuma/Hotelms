@@ -16,7 +16,7 @@ class RoomController extends Controller
         
         $statusMap = [
             'occupied'   => ['occupied'],
-            'unoccupied' => ['available', 'dirty', 'maintenance']
+            'unoccupied' => ['available', 'dirty', 'maintenance', 'reserved', 'unavailable']
         ];
 
         // Fallback to occupied if view is invalid
@@ -52,7 +52,7 @@ class RoomController extends Controller
     public function updateStatus(Request $request, Room $room)
     {
         $request->validate([
-            'status' => 'required|in:available,dirty,maintenance,occupied'
+            'status' => 'required|in:available,dirty,maintenance,occupied,reserved,unavailable'
         ]);
 
         $room->update(['status' => $request->status]);

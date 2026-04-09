@@ -60,6 +60,18 @@ const getStatusConfig = (status) => {
         dot: 'bg-rose-500', 
         label: 'O.O.O' 
     },
+    reserved: {
+        bg: 'bg-amber-50 border-amber-100',
+        text: 'text-amber-700',
+        dot: 'bg-amber-500',
+        label: 'Reserved'
+    },
+    unavailable: {
+        bg: 'bg-slate-100 border-slate-200',
+        text: 'text-slate-700',
+        dot: 'bg-slate-500',
+        label: 'Blocked'
+    },
     occupied: { 
         bg: 'bg-indigo-50 border-indigo-100', 
         text: 'text-indigo-700', 

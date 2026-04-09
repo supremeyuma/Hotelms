@@ -18,8 +18,10 @@ class Room extends Model
         'status',
         'meta',
         'name',
+        'code',
+        'display_name',
         'slug',
-        'floor'
+        'floor',
     ];
 
     protected $casts = [
