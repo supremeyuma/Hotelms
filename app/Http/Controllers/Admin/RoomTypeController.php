@@ -21,7 +21,11 @@ class RoomTypeController extends Controller
 
     public function index()
     {
-        $types = RoomType::with('property')->paginate(20);
+        $types = RoomType::with('property')
+            ->withCount('rooms')
+            ->latest()
+            ->paginate(20);
+
         return Inertia::render('Admin/RoomTypes/Index', compact('types'));
     }
 
@@ -45,7 +49,7 @@ class RoomTypeController extends Controller
 
         AuditLogger::log('roomtype_created', 'RoomType', $type->id, ['data' => $data]);
 
-        return redirect()->route('room-types.index')->with('success','Room type created.');
+        return redirect()->route('admin.room-types.index')->with('success','Room type created.');
     }
 
     public function edit(RoomType $room_type)
@@ -68,7 +72,7 @@ class RoomTypeController extends Controller
 
         AuditLogger::log('roomtype_updated', 'RoomType', $room_type->id, ['data' => $data]);
 
-        return redirect()->route('room-types.index')->with('success','Room type updated.');
+        return redirect()->route('admin.room-types.index')->with('success','Room type updated.');
     }
 
     public function destroy(RoomType $room_type)
