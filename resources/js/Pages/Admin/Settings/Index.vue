@@ -81,7 +81,7 @@ const parsedRoomServiceMenu = computed(() => {
     roomServiceParseError.value = ''
     return parsed
   } catch (error) {
-    roomServiceParseError.value = 'Room service menu JSON is invalid. Fix it before saving.'
+    roomServiceParseError.value = 'Invalid room service JSON.'
     return null
   }
 })
@@ -260,12 +260,8 @@ onBeforeUnmount(() => {
             </div>
             <div class="space-y-3">
               <h1 class="max-w-3xl text-3xl font-black tracking-tight md:text-4xl">
-                Control how the property looks, how guests reach you, and how room service is configured.
+                Manage hotel settings.
               </h1>
-              <p class="max-w-2xl text-sm leading-6 text-slate-300 md:text-base">
-                This page now combines brand identity, operational contact details, guest-facing links, and room
-                service menu management in one place.
-              </p>
             </div>
 
             <div class="grid gap-4 md:grid-cols-3">
@@ -298,7 +294,7 @@ onBeforeUnmount(() => {
                   <img :src="bannerPreview" alt="Banner preview" class="h-full w-full object-cover" />
                 </div>
                 <div v-else class="flex h-40 items-center justify-center bg-white/5 text-sm text-slate-300">
-                  Upload a banner to preview the guest-facing header image.
+                  No banner
                 </div>
               </div>
 
@@ -324,9 +320,9 @@ onBeforeUnmount(() => {
       >
         <CheckCircle2 class="mt-0.5 h-5 w-5 flex-none" />
         <div>
-          <p class="font-semibold">Settings saved successfully.</p>
+          <p class="font-semibold">Settings saved.</p>
           <p class="text-sm text-emerald-700">
-            {{ page.props.flash?.success || 'Your latest changes are now available to the application.' }}
+            {{ page.props.flash?.success || 'Changes applied.' }}
           </p>
         </div>
       </div>
@@ -337,7 +333,7 @@ onBeforeUnmount(() => {
       >
         <AlertCircle class="mt-0.5 h-5 w-5 flex-none" />
         <div>
-          <p class="font-semibold">Room service JSON needs attention.</p>
+          <p class="font-semibold">Room service JSON error.</p>
           <p class="text-sm text-amber-800">{{ roomServiceParseError }}</p>
         </div>
       </div>
@@ -351,9 +347,6 @@ onBeforeUnmount(() => {
               </div>
               <div>
                 <h2 class="text-xl font-black text-slate-900">Brand Identity</h2>
-                <p class="mt-1 text-sm text-slate-500">
-                  Keep the property name and brand assets consistent across the admin and guest experience.
-                </p>
               </div>
             </div>
 
@@ -367,7 +360,6 @@ onBeforeUnmount(() => {
                   class="field-input"
                   placeholder="Moore Life Beach Resort"
                 />
-                <p class="field-help">Used as the primary identity for managers, staff, and public visitors.</p>
                 <p v-if="form.errors.site_name" class="field-error">{{ form.errors.site_name }}</p>
               </div>
 
@@ -376,7 +368,6 @@ onBeforeUnmount(() => {
                 <label class="upload-card">
                   <div>
                     <p class="font-semibold text-slate-800">Upload logo</p>
-                    <p class="mt-1 text-sm text-slate-500">PNG or JPG up to 2 MB.</p>
                   </div>
                   <ImageUp class="h-5 w-5 text-slate-400" />
                   <input type="file" accept="image/*" class="hidden" @change="updateFile('logo', $event)" />
@@ -389,7 +380,6 @@ onBeforeUnmount(() => {
                 <label class="upload-card">
                   <div>
                     <p class="font-semibold text-slate-800">Upload banner</p>
-                    <p class="mt-1 text-sm text-slate-500">Hero-style cover image up to 4 MB.</p>
                   </div>
                   <ImageUp class="h-5 w-5 text-slate-400" />
                   <input type="file" accept="image/*" class="hidden" @change="updateFile('banner', $event)" />
@@ -406,9 +396,6 @@ onBeforeUnmount(() => {
               </div>
               <div>
                 <h2 class="text-xl font-black text-slate-900">Guest Contact And Location</h2>
-                <p class="mt-1 text-sm text-slate-500">
-                  Manage the channels guests use for calls, email, WhatsApp, and map access.
-                </p>
               </div>
             </div>
 
@@ -452,7 +439,6 @@ onBeforeUnmount(() => {
                   class="field-input"
                   placeholder="Optional fallback phone"
                 />
-                <p class="field-help">Saved alongside the primary phone for older views that still reference it.</p>
                 <p v-if="form.errors.contact_phone" class="field-error">{{ form.errors.contact_phone }}</p>
               </div>
 
@@ -468,7 +454,6 @@ onBeforeUnmount(() => {
                   class="field-input"
                   placeholder="+234 800 000 0000"
                 />
-                <p class="field-help">Used by the floating WhatsApp quick-contact button.</p>
                 <p v-if="form.errors.site_whatsapp" class="field-error">{{ form.errors.site_whatsapp }}</p>
               </div>
 
@@ -499,7 +484,6 @@ onBeforeUnmount(() => {
                   class="field-input"
                   placeholder="https://www.google.com/maps/embed?pb=..."
                 />
-                <p class="field-help">Paste the full embed URL to power map cards and public contact pages.</p>
                 <p v-if="form.errors.map_embed_url" class="field-error">{{ form.errors.map_embed_url }}</p>
               </div>
             </div>
@@ -513,9 +497,6 @@ onBeforeUnmount(() => {
                 </div>
                 <div>
                   <h2 class="text-xl font-black text-slate-900">Room Service Configuration</h2>
-                  <p class="mt-1 text-sm text-slate-500">
-                    Edit the stored menu structure with safer presets, formatting, and a quick health summary.
-                  </p>
                 </div>
               </div>
 
@@ -538,7 +519,7 @@ onBeforeUnmount(() => {
                   placeholder='[{"name":"Club Sandwich","price":8500}]'
                 />
                 <p class="field-help">
-                  Supports either a flat array of items or an object keyed by category name.
+                  Array or object.
                 </p>
                 <p v-if="form.errors.room_service_menu" class="field-error">{{ form.errors.room_service_menu }}</p>
               </div>
@@ -571,15 +552,15 @@ onBeforeUnmount(() => {
                     </div>
                   </div>
                   <p v-else class="mt-3 text-sm leading-6 text-slate-500">
-                    Add menu items or categories and this panel will summarize what guests can order.
+                    No preview
                   </p>
                 </div>
 
                 <div class="rounded-2xl border border-dashed border-slate-300 bg-white p-4">
-                  <p class="text-sm font-bold text-slate-900">Recommended fields per item</p>
+                  <p class="text-sm font-bold text-slate-900">Suggested fields</p>
                   <p class="mt-2 text-sm leading-6 text-slate-500">
-                    Keep each item predictable with fields like <code>name</code>, <code>price</code>,
-                    <code>description</code>, <code>category</code>, <code>id</code>, and <code>available</code>.
+                    <code>name</code>, <code>price</code>, <code>description</code>, <code>category</code>,
+                    <code>id</code>, <code>available</code>
                   </p>
                 </div>
               </div>
@@ -590,7 +571,7 @@ onBeforeUnmount(() => {
         <aside class="space-y-8">
           <section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
             <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">Readiness</p>
-            <h2 class="mt-2 text-xl font-black text-slate-900">What guests can reach right now</h2>
+            <h2 class="mt-2 text-xl font-black text-slate-900">Guest-facing details</h2>
 
             <div class="mt-6 space-y-3">
               <div class="readiness-item">
@@ -637,13 +618,13 @@ onBeforeUnmount(() => {
               <div class="rounded-2xl bg-slate-50 p-4">
                 <p class="font-semibold text-slate-900">Maps link</p>
                 <p class="mt-1 text-sm text-slate-500">
-                  {{ form.map_embed_url ? 'Embed URL saved for guest-facing maps.' : 'Add an embed URL for location pages.' }}
+                  {{ form.map_embed_url ? 'Saved' : 'Missing' }}
                 </p>
               </div>
               <div class="rounded-2xl bg-slate-50 p-4">
-                <p class="font-semibold text-slate-900">Save protection</p>
+                <p class="font-semibold text-slate-900">Submit state</p>
                 <p class="mt-1 text-sm text-slate-500">
-                  Submit is locked while a request is processing to prevent duplicate updates.
+                  Locked while saving.
                 </p>
               </div>
             </div>
@@ -652,9 +633,6 @@ onBeforeUnmount(() => {
           <section class="rounded-[2rem] border border-slate-200 bg-slate-950 p-6 text-white shadow-sm">
             <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-emerald-300">Publish</p>
             <h2 class="mt-2 text-xl font-black">Save manager settings</h2>
-            <p class="mt-2 text-sm leading-6 text-slate-300">
-              Review the previews, then publish these settings across staff and guest-facing experiences.
-            </p>
 
             <button
               type="submit"
@@ -665,10 +643,6 @@ onBeforeUnmount(() => {
               <Save v-else class="h-5 w-5" />
               {{ form.processing ? 'Saving settings...' : 'Save settings' }}
             </button>
-
-            <p class="mt-3 text-xs text-slate-400">
-              The button stays disabled until the current save completes.
-            </p>
           </section>
         </aside>
       </form>
