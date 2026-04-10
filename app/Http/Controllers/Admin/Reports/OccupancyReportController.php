@@ -13,18 +13,20 @@ class OccupancyReportController extends Controller
 {
     public function index(Request $request, OccupancyReportService $service)
     {
-        $rows = $service->query($request->all());
+        $filters = $service->filters($request->all());
+        $rows = $service->query($filters);
         $summary = $service->summary();
 
         return Inertia::render('Admin/Reports/Occupancy', [
             'rows' => $rows,
             'summary' => $summary,
+            'filters' => $filters,
         ]);
     }
 
     public function export(string $format, Request $request, OccupancyReportService $service)
     {
-        $data = $service->query($request->all());
+        $data = $service->query($service->filters($request->all()));
         return Excel::download(new GenericExport($data), "occupancy.$format");
     }
 }

@@ -28,7 +28,7 @@ class BookingAdminController extends Controller
     {
         $today = Carbon::today();
         $filter = $request->string('filter')->toString();
-        $allowedFilters = ['arrivals_today', 'in_house', 'unsettled'];
+        $allowedFilters = ['arrivals_today', 'departures_today', 'in_house', 'unsettled'];
 
         if (! in_array($filter, $allowedFilters, true)) {
             $filter = 'all';
@@ -43,6 +43,10 @@ class BookingAdminController extends Controller
                 $query->whereDate('check_in', '<=', $today)
                     ->whereDate('check_out', '>=', $today)
                     ->whereIn('status', ['confirmed', 'active', 'checked_in']);
+            })
+            ->when($filter === 'departures_today', function ($query) use ($today) {
+                $query->whereDate('check_out', $today)
+                    ->whereNotIn('status', ['cancelled']);
             })
             ->when($filter === 'unsettled', function ($query) {
                 $query->whereIn('status', ['confirmed', 'active', 'checked_in'])
