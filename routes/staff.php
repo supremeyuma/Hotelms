@@ -30,6 +30,7 @@ use App\Http\Controllers\Staff\StaffChargeController;
 use App\Http\Controllers\Staff\EventCheckInController;
 use App\Http\Controllers\Staff\MaintenanceDashboardController;
 use App\Http\Controllers\Staff\StaffThreadController;
+use App\Http\Controllers\FeedbackController;
 
 
 
@@ -79,6 +80,8 @@ Route::middleware(['auth', 'role:staff|manager|md|frontdesk|laundry|hr|clean|kit
     Route::post('/threads', [StaffThreadController::class, 'store'])->name('threads.store');
     Route::get('/threads/{thread}', [StaffThreadController::class, 'show'])->name('threads.show');
     Route::post('/threads/{thread}/messages', [StaffThreadController::class, 'storeMessage'])->name('threads.messages.store');
+    Route::get('/feedback', [FeedbackController::class, 'createStaff'])->name('feedback.create');
+    Route::post('/feedback', [FeedbackController::class, 'storeStaff'])->name('feedback.store');
 });
 
 Route::middleware(['auth'])->prefix('staff')->name('staff.')->group(function () {

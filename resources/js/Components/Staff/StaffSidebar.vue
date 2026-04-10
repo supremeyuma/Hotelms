@@ -117,6 +117,8 @@ const nav = computed(() => {
       case 'manager':
         return [
           { label: 'Operations Dashboard', route: 'admin.dashboard', icon: 'home', activeRoute: 'admin.dashboard' },
+          { label: 'Feedback Queue', route: 'admin.feedback.index', icon: 'bell', activeRoute: 'admin.feedback.*' },
+          { label: 'Submit Feedback', route: 'staff.feedback.create', icon: 'edit', activeRoute: 'staff.feedback.*' },
           { label: 'Staff Management', route: 'admin.staff.index', icon: 'users', activeRoute: 'admin.staff.*' },
           { label: 'My Threads', route: 'staff.threads.index', icon: 'clipboard', activeRoute: 'staff.threads.*' },
           { label: 'Bookings', route: 'admin.bookings.index', icon: 'calendar', activeRoute: 'admin.bookings.*' },
@@ -139,6 +141,8 @@ const nav = computed(() => {
       case 'md':
         return [
           { label: 'Executive Dashboard', route: 'admin.dashboard', icon: 'home', activeRoute: 'admin.dashboard' },
+          { label: 'Feedback Queue', route: 'admin.feedback.index', icon: 'bell', activeRoute: 'admin.feedback.*' },
+          { label: 'Submit Feedback', route: 'staff.feedback.create', icon: 'edit', activeRoute: 'staff.feedback.*' },
           { label: 'My Threads', route: 'staff.threads.index', icon: 'clipboard', activeRoute: 'staff.threads.*' },
           { label: 'Front Desk', route: 'frontdesk.dashboard', icon: 'bell', activeRoute: 'frontdesk.*' },
           { label: 'Housekeeping', route: 'clean.dashboard', icon: 'brush-cleaning', activeRoute: 'clean.*' },
@@ -169,6 +173,7 @@ const nav = computed(() => {
       case 'hr':
         return [
           { label: 'HR Dashboard', route: 'hr.staff.index', icon: 'home', activeRoute: 'hr.staff.*' },
+          { label: 'Submit Feedback', route: 'staff.feedback.create', icon: 'edit', activeRoute: 'staff.feedback.*' },
           { label: 'Staff Directory', route: 'hr.staff.index', icon: 'users', activeRoute: 'hr.staff.index' },
           { label: 'My Threads', route: 'staff.threads.index', icon: 'clipboard', activeRoute: 'staff.threads.*' },
           { label: 'Onboard Staff', route: 'hr.staff.create', icon: 'user-check', activeRoute: 'hr.staff.create' },
@@ -177,6 +182,7 @@ const nav = computed(() => {
       case 'inventory':
         return [
           { label: 'Admin Dashboard', route: 'admin.dashboard', icon: 'home', activeRoute: 'admin.dashboard' },
+          { label: 'Submit Feedback', route: 'staff.feedback.create', icon: 'edit', activeRoute: 'staff.feedback.*' },
           { label: 'My Threads', route: 'staff.threads.index', icon: 'clipboard', activeRoute: 'staff.threads.*' },
           { label: 'Inventory', route: 'admin.inventory.index', icon: 'boxes', activeRoute: 'admin.inventory.*' },
           { label: 'Inventory Locations', route: 'admin.inventory-locations.index', icon: 'map-pin', activeRoute: 'admin.inventory-locations.*' },
@@ -185,6 +191,7 @@ const nav = computed(() => {
       case 'accountant':
         return [
           { label: 'Finance Dashboard', route: 'finance.dashboard', icon: 'home', activeRoute: 'finance.dashboard' },
+          { label: 'Submit Feedback', route: 'staff.feedback.create', icon: 'edit', activeRoute: 'staff.feedback.*' },
           { label: 'My Threads', route: 'staff.threads.index', icon: 'clipboard', activeRoute: 'staff.threads.*' },
           { label: 'Revenue Reports', route: 'finance.reports.revenue', icon: 'dollar-sign', activeRoute: 'finance.reports.revenue*' },
           { label: 'Profit & Loss', route: 'finance.reports.profit-loss', icon: 'trending-up', activeRoute: 'finance.reports.profit-loss*' },
@@ -197,6 +204,7 @@ const nav = computed(() => {
       case 'frontdesk':
         return [
           { label: 'Front Desk Dashboard', route: 'frontdesk.dashboard', icon: 'home', activeRoute: 'frontdesk.dashboard' },
+          { label: 'Submit Feedback', route: 'staff.feedback.create', icon: 'edit', activeRoute: 'staff.feedback.*' },
           { label: 'My Threads', route: 'staff.threads.index', icon: 'clipboard', activeRoute: 'staff.threads.*' },
           { label: 'Bookings', route: 'frontdesk.bookings.index', icon: 'calendar', activeRoute: 'frontdesk.bookings.*' },
           { label: 'Rooms', route: 'frontdesk.rooms.index', icon: 'bed', activeRoute: 'frontdesk.rooms.*' },
@@ -207,22 +215,26 @@ const nav = computed(() => {
       case 'laundry':
         return [
           { label: 'Laundry Dashboard', route: 'staff.laundry.dashboard', icon: 'shirt', activeRoute: 'staff.laundry.*' },
+          { label: 'Submit Feedback', route: 'staff.feedback.create', icon: 'edit', activeRoute: 'staff.feedback.*' },
           { label: 'My Threads', route: 'staff.threads.index', icon: 'clipboard', activeRoute: 'staff.threads.*' },
           { label: 'Laundry Items', route: 'staff.laundry-items.index', icon: 'tag', activeRoute: 'staff.laundry-items.*' },
         ]
       case 'maintenance':
         return [
           { label: 'Maintenance Dashboard', route: 'staff.maintenance.index', icon: 'wrench', activeRoute: 'staff.maintenance.*' },
+          { label: 'Submit Feedback', route: 'staff.feedback.create', icon: 'edit', activeRoute: 'staff.feedback.*' },
           { label: 'My Threads', route: 'staff.threads.index', icon: 'clipboard', activeRoute: 'staff.threads.*' },
         ]
       case 'clean':
         return [
           { label: 'Cleaning Dashboard', route: 'clean.dashboard', icon: 'brush-cleaning', activeRoute: 'clean.*' },
+          { label: 'Submit Feedback', route: 'staff.feedback.create', icon: 'edit', activeRoute: 'staff.feedback.*' },
           { label: 'My Threads', route: 'staff.threads.index', icon: 'clipboard', activeRoute: 'staff.threads.*' },
         ]
       case 'kitchen':
         return [
           { label: 'Kitchen Dashboard', route: 'staff.kitchen.dashboard', icon: 'utensils', activeRoute: 'staff.kitchen.dashboard' },
+          { label: 'Submit Feedback', route: 'staff.feedback.create', icon: 'edit', activeRoute: 'staff.feedback.*' },
           { label: 'My Threads', route: 'staff.threads.index', icon: 'clipboard', activeRoute: 'staff.threads.*' },
           { label: 'Kitchen Orders', route: 'staff.kitchen.orders.index', icon: 'clipboard', activeRoute: 'staff.kitchen.orders.*' },
           { label: 'Order History', route: 'staff.kitchen.orders.history', icon: 'clock', activeRoute: 'staff.kitchen.orders.history' },
@@ -231,6 +243,7 @@ const nav = computed(() => {
       case 'bar':
         return [
           { label: 'Bar Dashboard', route: 'staff.bar.dashboard', icon: 'home', activeRoute: 'staff.bar.dashboard' },
+          { label: 'Submit Feedback', route: 'staff.feedback.create', icon: 'edit', activeRoute: 'staff.feedback.*' },
           { label: 'My Threads', route: 'staff.threads.index', icon: 'clipboard', activeRoute: 'staff.threads.*' },
           { label: 'Bar Orders', route: 'staff.bar.orders.index', icon: 'clipboard', activeRoute: 'staff.bar.orders.*' },
           { label: 'Order History', route: 'staff.bar.orders.history', icon: 'clock', activeRoute: 'staff.bar.orders.history' },
@@ -239,6 +252,7 @@ const nav = computed(() => {
       default:
         return [
           { label: 'Dashboard', route: 'staff.dashboard', icon: 'home', activeRoute: 'staff.dashboard' },
+          { label: 'Submit Feedback', route: 'staff.feedback.create', icon: 'edit', activeRoute: 'staff.feedback.*' },
           { label: 'My Threads', route: 'staff.threads.index', icon: 'clipboard', activeRoute: 'staff.threads.*' },
           { label: 'Orders Queue', route: 'staff.orders.queue', icon: 'clipboard', activeRoute: 'staff.orders.*' },
           { label: 'Quick Action', route: 'staff.quick-action.index', icon: 'clock', activeRoute: 'staff.quick-action.*' },

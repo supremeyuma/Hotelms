@@ -9,6 +9,7 @@ use App\Http\Controllers\Public\PublicOrderController;
 use App\Http\Controllers\RoomServiceController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\GuestLaundryController;
+use App\Http\Controllers\FeedbackController;
 
 /*
 |--------------------------------------------------------------------------
@@ -27,6 +28,8 @@ Route::get('/policies', [PublicController::class,'policies']);
 
 Route::get('/contact', [PublicController::class, 'staticPage'])->defaults('pageKey','contact')->name('public.contact');
 Route::post('/contact', [PublicController::class, 'submitContactForm'])->name('public.contact.submit');
+Route::get('/feedback', [FeedbackController::class, 'createPublic'])->name('feedback.create');
+Route::post('/feedback', [FeedbackController::class, 'storePublic'])->name('feedback.store');
 
 // Public booking endpoints
 //Route::post('/bookings/check-availability', [BookingController::class, 'checkAvailability'])->name('public.booking.check');

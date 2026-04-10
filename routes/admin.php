@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\{
     DashboardController,
     RoomController,
+    RoomQrController,
     RoomTypeController,
     BookingAdminController,
     StaffController,
@@ -16,6 +17,7 @@ use App\Http\Controllers\Admin\{
     CleaningInventoryTemplateController,
     MenuInventoryRecipeController,
     EventController,
+    FeedbackController,
 };
 use App\Http\Controllers\Admin\ReportDashboardController;
 use App\Http\Controllers\Admin\Reports\StaffReportController;
@@ -31,6 +33,11 @@ Route::middleware(['auth', 'role:manager|md'])->prefix('admin')->as('admin.')->g
 
         Route::resource('rooms', RoomController::class);
         Route::patch('rooms/{room}/status', [RoomController::class, 'updateStatus'])->name('rooms.update-status');
+        Route::post('rooms/{room}/qr', [RoomQrController::class, 'generate'])->name('rooms.qr.generate');
+        Route::post('rooms/{room}/qr/regenerate', [RoomQrController::class, 'generate'])->defaults('regenerate', true)->name('rooms.qr.regenerate');
+        Route::delete('rooms/{room}/qr', [RoomQrController::class, 'invalidate'])->name('rooms.qr.invalidate');
+        Route::get('rooms/{room}/qr', [RoomQrController::class, 'show'])->name('rooms.qr.show');
+        Route::get('rooms/{room}/qr/download', [RoomQrController::class, 'download'])->name('rooms.qr.download');
         Route::resource('room-types', RoomTypeController::class);
 
         Route::get('bookings', [BookingAdminController::class, 'index'])->name('bookings.index');
@@ -86,6 +93,8 @@ Route::middleware(['auth', 'role:manager|md'])->prefix('admin')->as('admin.')->g
         Route::get('maintenance', [MaintenanceAdminController::class, 'index'])->name('maintenance.index');
         Route::get('maintenance/{ticket}', [MaintenanceAdminController::class, 'show'])->name('maintenance.show');
         Route::put('maintenance/{ticket}', [MaintenanceAdminController::class, 'update'])->name('maintenance.update');
+        Route::get('feedback', [FeedbackController::class, 'index'])->name('feedback.index');
+        Route::patch('feedback/{feedback}', [FeedbackController::class, 'update'])->name('feedback.update');
 
         Route::prefix('reports')->name('reports.')->group(function () {
             Route::get('/', [ReportDashboardController::class, 'operations'])->name('dashboard');

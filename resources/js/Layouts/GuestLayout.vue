@@ -15,6 +15,7 @@ const siteName = page.props.settings?.site_name || 'HotelMS';
           <Link href="/" class="px-3">Home</Link>
           <Link href="/rooms" class="px-3">Rooms</Link>
           <Link href="/contact" class="px-3">Contact</Link>
+          <Link :href="route('feedback.create')" class="px-3">Feedback</Link>
         </nav>
       </div>
     </header>
@@ -26,5 +27,4 @@ const siteName = page.props.settings?.site_name || 'HotelMS';
     <footer class="text-center p-6 text-sm text-gray-500">© {{ new Date().getFullYear() }} {{ siteName }}</footer>
   </div>
 </template>
-
 
