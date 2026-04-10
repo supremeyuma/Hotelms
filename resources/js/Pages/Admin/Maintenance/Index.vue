@@ -6,6 +6,7 @@ const props = defineProps({
   tickets: Object,
   staffOptions: Array,
   stats: Object,
+  filters: Object,
 })
 
 const statusOptions = [
@@ -28,6 +29,19 @@ function updateTicket(ticket, payload) {
 function formatStatus(status) {
   return String(status ?? '').replace('_', ' ')
 }
+
+const cards = [
+  { key: 'open', label: 'Open', valueKey: 'open' },
+  { key: 'in_progress', label: 'In Progress', valueKey: 'in_progress' },
+  { key: 'resolved', label: 'Resolved', valueKey: 'resolved' },
+  { key: 'unassigned', label: 'Unassigned', valueKey: 'unassigned' },
+]
+
+function cardHref(key) {
+  return props.filters?.active === key
+    ? route('admin.maintenance.index')
+    : route('admin.maintenance.index', { filter: key })
+}
 </script>
 
 <template>
@@ -39,22 +53,19 @@ function formatStatus(status) {
       </div>
 
       <div class="grid gap-4 md:grid-cols-4">
-        <div class="rounded-2xl bg-white p-5 shadow-sm">
-          <div class="text-xs font-semibold uppercase tracking-wider text-slate-400">Open</div>
-          <div class="mt-2 text-3xl font-bold text-slate-900">{{ stats.open }}</div>
-        </div>
-        <div class="rounded-2xl bg-white p-5 shadow-sm">
-          <div class="text-xs font-semibold uppercase tracking-wider text-slate-400">In Progress</div>
-          <div class="mt-2 text-3xl font-bold text-slate-900">{{ stats.in_progress }}</div>
-        </div>
-        <div class="rounded-2xl bg-white p-5 shadow-sm">
-          <div class="text-xs font-semibold uppercase tracking-wider text-slate-400">Resolved</div>
-          <div class="mt-2 text-3xl font-bold text-slate-900">{{ stats.resolved }}</div>
-        </div>
-        <div class="rounded-2xl bg-white p-5 shadow-sm">
-          <div class="text-xs font-semibold uppercase tracking-wider text-slate-400">Unassigned</div>
-          <div class="mt-2 text-3xl font-bold text-slate-900">{{ stats.unassigned }}</div>
-        </div>
+        <Link
+          v-for="card in cards"
+          :key="card.key"
+          :href="cardHref(card.key)"
+          class="rounded-2xl bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+          :class="props.filters?.active === card.key ? 'ring-2 ring-slate-900/10 border border-slate-300' : 'border border-transparent'"
+        >
+          <div class="text-xs font-semibold uppercase tracking-wider text-slate-400">{{ card.label }}</div>
+          <div class="mt-2 text-3xl font-bold text-slate-900">{{ stats[card.valueKey] }}</div>
+          <div class="mt-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
+            {{ props.filters?.active === card.key ? 'Showing this queue' : 'Filter queue' }}
+          </div>
+        </Link>
       </div>
 
       <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">

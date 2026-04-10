@@ -38,6 +38,7 @@ const billHistory = ref([])
 
 const showOrdersHistory = ref(false)
 const currentCleaningStatus = ref(props.cleaningStatus)
+const isSubmittingMaintenance = ref(false)
 //const orders = ref([])
 
 //console.log(props.orders);
@@ -122,12 +123,23 @@ function closeMaintenanceModal() {
   maintenance.file = null
 }
 function submitMaintenance() {
+  if (isSubmittingMaintenance.value) {
+    return
+  }
+
   const formData = new FormData()
   formData.append('type', maintenance.type)
   formData.append('description', maintenance.description)
   if (maintenance.file) formData.append('file', maintenance.file)
-  router.post(`/guest/room/${props.accessToken}/maintenance`, formData, { 
-    onSuccess: closeMaintenanceModal 
+
+  isSubmittingMaintenance.value = true
+
+  router.post(`/guest/room/${props.accessToken}/maintenance`, formData, {
+    preserveScroll: true,
+    onSuccess: closeMaintenanceModal,
+    onFinish: () => {
+      isSubmittingMaintenance.value = false
+    },
   })
 }
 
@@ -430,8 +442,10 @@ function formatDate(date) {
               <input type="file" @change="handleFileUpload" class="text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-black file:bg-rose-50 file:text-rose-700 hover:file:bg-rose-100" />
             </div>
             <div class="flex gap-3">
-              <button type="button" @click="closeMaintenanceModal" class="flex-1 py-3 bg-slate-100 text-slate-500 rounded-xl font-black text-[10px] uppercase">Cancel</button>
-              <button type="submit" class="flex-1 py-3 bg-rose-600 text-white rounded-xl font-black text-[10px] uppercase">Submit Report</button>
+              <button type="button" @click="closeMaintenanceModal" :disabled="isSubmittingMaintenance" class="flex-1 py-3 bg-slate-100 text-slate-500 rounded-xl font-black text-[10px] uppercase disabled:opacity-60 disabled:cursor-not-allowed">Cancel</button>
+              <button type="submit" :disabled="isSubmittingMaintenance" class="flex-1 py-3 bg-rose-600 text-white rounded-xl font-black text-[10px] uppercase disabled:bg-rose-300 disabled:cursor-not-allowed">
+                {{ isSubmittingMaintenance ? 'Submitting...' : 'Submit Report' }}
+              </button>
             </div>
           </form>
         </template>

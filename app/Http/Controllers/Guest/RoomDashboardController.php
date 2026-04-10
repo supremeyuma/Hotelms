@@ -450,6 +450,7 @@ protected RoomServiceService $roomService;
 
         $ticket = $this->maintenanceService->reportIssue(
             $request->booking,
+            $request->room,
             $request->type,
             $request->description,
             $request->file('file')

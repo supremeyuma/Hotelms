@@ -39,7 +39,8 @@ class SendMaintenanceAlertJob implements ShouldQueue
         $ticket = MaintenanceTicket::with('room','staff')->find($this->ticket->id);
         if (! $ticket) return;
 
-        $title = "Maintenance Alert: #{$ticket->id} ({$ticket->priority})";
+        $priority = $ticket->meta['priority'] ?? 'normal';
+        $title = "Maintenance Alert: #{$ticket->id} ({$priority})";
         $payload = ['ticket_id' => $ticket->id, 'room_id' => $ticket->room_id];
 
         $notifier->notifyDepartment('maintenance', $title, $payload);

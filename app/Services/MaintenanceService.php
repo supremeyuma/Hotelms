@@ -4,23 +4,29 @@ namespace App\Services;
 
 use App\Models\Booking;
 use App\Models\MaintenanceTicket;
+use App\Models\Room;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 
 class MaintenanceService
 {
-    public function reportIssue(Booking $booking, string $type, string $description, ?UploadedFile $file = null): MaintenanceTicket
+    public function reportIssue(
+        Booking $booking,
+        Room $room,
+        string $type,
+        string $description,
+        ?UploadedFile $file = null
+    ): MaintenanceTicket
     {
-        $room = $booking->room ?: $booking->rooms()->first();
         $photoPath = $file ? $file->store('maintenance', 'public') : null;
 
         $ticketData = [
-            'room_id' => $room?->id,
-            'title' => $this->makeTitle($type, $room?->name ?? $room?->room_number),
+            'room_id' => $room->id,
+            'title' => $this->makeTitle($type, $room->name ?? $room->room_number),
             'description' => $description,
             'status' => 'open',
             'meta' => [
                 'booking_id' => $booking->id,
+                'room_id' => $room->id,
                 'issue_type' => $type,
                 'photo_path' => $photoPath,
                 'guest_name' => $booking->guest_name,

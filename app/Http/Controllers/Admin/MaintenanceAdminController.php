@@ -21,9 +21,21 @@ class MaintenanceAdminController extends Controller
 
     public function index()
     {
+        $filter = request()->string('filter')->toString();
+        $allowedFilters = ['open', 'in_progress', 'resolved', 'unassigned'];
+
+        if (! in_array($filter, $allowedFilters, true)) {
+            $filter = 'all';
+        }
+
         $tickets = MaintenanceTicket::with('room', 'staff')
+            ->when($filter === 'open', fn ($query) => $query->where('status', 'open'))
+            ->when($filter === 'in_progress', fn ($query) => $query->where('status', 'in_progress'))
+            ->when($filter === 'resolved', fn ($query) => $query->where('status', 'resolved'))
+            ->when($filter === 'unassigned', fn ($query) => $query->whereNull('staff_id'))
             ->latest()
             ->paginate(25)
+            ->withQueryString()
             ->through(fn (MaintenanceTicket $ticket) => $this->transformTicket($ticket));
 
         return Inertia::render('Admin/Maintenance/Index', [
@@ -34,6 +46,9 @@ class MaintenanceAdminController extends Controller
                 'in_progress' => MaintenanceTicket::where('status', 'in_progress')->count(),
                 'resolved' => MaintenanceTicket::where('status', 'resolved')->count(),
                 'unassigned' => MaintenanceTicket::whereNull('staff_id')->count(),
+            ],
+            'filters' => [
+                'active' => $filter,
             ],
         ]);
     }

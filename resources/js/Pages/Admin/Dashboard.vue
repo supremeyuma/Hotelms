@@ -149,10 +149,10 @@ function cardToneClasses(tone) {
                   <p class="text-2xl font-black">{{ stats.open_guest_requests }}</p>
                   <p class="text-xs text-slate-300">Open requests</p>
                 </div>
-                <div>
+                <Link :href="route('admin.maintenance.index', { filter: 'open' })" class="block rounded-xl px-2 py-1 transition hover:bg-white/10">
                   <p class="text-2xl font-black">{{ stats.open_maintenance }}</p>
                   <p class="text-xs text-slate-300">Maintenance issues</p>
-                </div>
+                </Link>
               </div>
             </div>
           </div>
@@ -270,6 +270,10 @@ function cardToneClasses(tone) {
               <Link :href="route('frontdesk.dashboard')" class="rounded-[1.5rem] bg-slate-50 p-4 transition hover:bg-slate-100">
                 <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Guest requests</p>
                 <p class="mt-2 text-3xl font-black text-slate-900">{{ stats.open_guest_requests }}</p>
+              </Link>
+              <Link :href="route('admin.maintenance.index', { filter: 'open' })" class="rounded-[1.5rem] bg-slate-50 p-4 transition hover:bg-slate-100">
+                <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Maintenance</p>
+                <p class="mt-2 text-3xl font-black text-slate-900">{{ stats.open_maintenance }}</p>
               </Link>
               <Link :href="route('admin.bookings.index')" class="rounded-[1.5rem] bg-slate-50 p-4 transition hover:bg-slate-100">
                 <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Unsettled stays</p>
