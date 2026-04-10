@@ -13,6 +13,8 @@ class StaffThreadMessage extends Model
 
     protected $casts = ['attachments' => 'array'];
 
+    protected $touches = ['thread'];
+
     public function thread()
     {
         return $this->belongsTo(StaffThread::class,'thread_id');

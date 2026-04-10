@@ -1,58 +1,158 @@
+<script setup>
+import { Head, Link, router } from '@inertiajs/vue3'
+import ManagerLayout from '@/Layouts/Staff/ManagerLayout.vue'
+import Pagination from '@/Components/Pagination.vue'
+
+const props = defineProps({
+  threads: { type: Object, required: true },
+  staff: { type: Object, required: true },
+  staffId: { type: Number, required: true },
+  summary: { type: Array, default: () => [] },
+  routePrefix: { type: String, required: true },
+})
+
+function badgeClass(type) {
+  return type === 'commendation'
+    ? 'bg-emerald-100 text-emerald-700 ring-emerald-200'
+    : 'bg-amber-100 text-amber-700 ring-amber-200'
+}
+
+function formatDate(value) {
+  if (!value) return 'No activity yet'
+
+  return new Date(value).toLocaleString([], {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+function preview(thread) {
+  return thread.latest_message?.message || 'Attachment only update'
+}
+
+function suspendStaff(id) {
+  if (!confirm('Suspend this staff member?')) return
+
+  router.post(route(`${props.routePrefix}.suspend`, id))
+}
+</script>
+
 <template>
   <ManagerLayout>
-    <div>
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-2xl">Staff Queries & Commendations</h2>
-        <Link 
-          :href="route(`${routePrefix}.threads.create`, staffId)" 
-          class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700"
+    <Head :title="`Threads - ${staff.name}`" />
+
+    <div class="space-y-8">
+      <section class="rounded-[2rem] bg-slate-900 px-6 py-7 text-white shadow-xl shadow-slate-200">
+        <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div class="max-w-3xl">
+            <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-300">Staff Communications</p>
+            <h1 class="mt-3 text-3xl font-black tracking-tight">{{ staff.name }}</h1>
+            <p class="mt-3 text-sm text-slate-300">
+              Review queries and commendations for this staff member, reply in context, or start a new conversation.
+            </p>
+          </div>
+
+          <div class="flex flex-wrap gap-3">
+            <Link
+              :href="route(`${routePrefix}.threads.create`, staffId)"
+              class="inline-flex items-center justify-center rounded-2xl bg-white px-5 py-3 text-sm font-bold text-slate-900 transition hover:bg-slate-100"
+            >
+              Start conversation
+            </Link>
+            <Link
+              :href="route(`${routePrefix}.edit`, staffId)"
+              class="inline-flex items-center justify-center rounded-2xl border border-white/15 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/10"
+            >
+              Open staff record
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section class="grid gap-4 md:grid-cols-3">
+        <div
+          v-for="item in summary"
+          :key="item.label"
+          class="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm"
         >
-          New Thread
-        </Link>
-      </div>
+          <p class="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">{{ item.label }}</p>
+          <p class="mt-4 text-3xl font-black text-slate-900">{{ item.value }}</p>
+          <p class="mt-2 text-sm text-slate-500">{{ item.helper }}</p>
+        </div>
+      </section>
 
-      <table class="table-auto w-full border">
-        <thead>
-          <tr>
-            <th>Staff</th>
-            <th>Type</th>
-            <th>Title</th>
-            <th>Created</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="thread in threads.data" :key="thread.id">
-            <td>{{ thread.staff.name }}</td>
-            <td>{{ thread.type }}</td>
-            <td>{{ thread.title || '-' }}</td>
-            <td>{{ new Date(thread.created_at).toLocaleString() }}</td>
-            <td>
-              <Link :href="route(`${routePrefix}.threads.show`, thread.id)" class="text-blue-600 mr-2">View</Link>
-              <Link :href="route(`${routePrefix}.edit`, thread.staff.id)" class="text-green-600 mr-2">Edit Staff</Link>
-              <button @click="suspendStaff(thread.staff.id)" class="text-red-600">Suspend</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <section class="rounded-[2rem] border border-slate-200 bg-white shadow-sm">
+        <div class="flex flex-col gap-3 border-b border-slate-100 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p class="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Conversation Log</p>
+            <h2 class="mt-2 text-2xl font-black tracking-tight text-slate-900">Queries and commendations</h2>
+          </div>
 
-      <pagination :links="threads.links" />
+          <button
+            type="button"
+            class="inline-flex items-center rounded-xl border border-rose-200 px-4 py-2 text-sm font-bold text-rose-600 transition hover:bg-rose-50"
+            @click="suspendStaff(staffId)"
+          >
+            Suspend staff
+          </button>
+        </div>
+
+        <div v-if="threads.data.length" class="divide-y divide-slate-100">
+          <div v-for="thread in threads.data" :key="thread.id" class="px-6 py-5">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div class="min-w-0 flex-1">
+                <div class="flex flex-wrap items-center gap-3">
+                  <span class="rounded-full px-3 py-1 text-xs font-bold ring-1" :class="badgeClass(thread.type)">
+                    {{ thread.type }}
+                  </span>
+                  <p class="font-bold text-slate-900">{{ thread.title || 'Untitled conversation' }}</p>
+                </div>
+
+                <p class="mt-3 line-clamp-2 max-w-3xl text-sm text-slate-600">{{ preview(thread) }}</p>
+
+                <div class="mt-3 flex flex-wrap gap-4 text-xs font-medium text-slate-400">
+                  <span>{{ thread.messages_count }} messages</span>
+                  <span>Updated {{ formatDate(thread.updated_at) }}</span>
+                  <span v-if="thread.latest_message?.sender">Last reply by {{ thread.latest_message.sender.name }}</span>
+                </div>
+              </div>
+
+              <div class="flex flex-wrap gap-3">
+                <Link
+                  :href="route(`${routePrefix}.threads.show`, thread.id)"
+                  class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white transition hover:bg-slate-800"
+                >
+                  View thread
+                </Link>
+                <Link
+                  :href="route(`${routePrefix}.edit`, thread.staff.id)"
+                  class="rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+                >
+                  Staff record
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div v-else class="px-6 py-16 text-center">
+          <h3 class="text-lg font-bold text-slate-900">No conversations recorded yet</h3>
+          <p class="mt-2 text-sm text-slate-500">Start a query or commendation to keep future follow-up in one place.</p>
+          <Link
+            :href="route(`${routePrefix}.threads.create`, staffId)"
+            class="mt-5 inline-flex items-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white transition hover:bg-slate-800"
+          >
+            Start first conversation
+          </Link>
+        </div>
+
+        <div v-if="threads.links?.length" class="px-6 pb-6">
+          <Pagination :links="threads.links" />
+        </div>
+      </section>
     </div>
   </ManagerLayout>
 </template>
-
-<script setup>
-import ManagerLayout from '@/Layouts/Staff/ManagerLayout.vue';
-import { Link, usePage, router } from '@inertiajs/vue3';
-import Pagination from '@/Components/Pagination.vue';
-
-const props = usePage().props;
-const threads = props.threads;
-const staffId = props.staffId; // pass this from controller when rendering
-const routePrefix = props.routePrefix;
-
-function suspendStaff(id) {
-  if (!confirm('Suspend this staff member?')) return;
-  router.post(route(`${routePrefix}.suspend`, id));
-}
-</script>

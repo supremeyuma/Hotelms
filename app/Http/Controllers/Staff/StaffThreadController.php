@@ -1,99 +1,72 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Staff;
 
 use App\Http\Controllers\Controller;
 use App\Models\StaffThread;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Illuminate\Support\Facades\Storage;
 
 class StaffThreadController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth', 'role:manager|hr|md']);
+        $this->middleware(['auth', 'role:staff|manager|md|frontdesk|laundry|hr|clean|kitchen|bar|inventory|accountant|Accountant|maintenance']);
     }
 
-    /**
-     * List all threads (queries & commendations)
-     * Optionally, filter by staff_id if passed
-     */
-    public function index(User $staff)
+    public function index(Request $request)
     {
+        $user = $request->user();
         $threadQuery = StaffThread::query()
-            ->where('staff_id', $staff->id);
+            ->where('staff_id', $user->id);
 
         $threads = (clone $threadQuery)
-            ->with(['staff:id,name', 'admin:id,name', 'latestMessage.sender:id,name'])
+            ->with(['latestMessage.sender:id,name'])
             ->withCount('messages')
-            ->where('staff_id', $staff->id)
             ->latest('updated_at')
-            ->paginate(20);
+            ->paginate(12)
+            ->withQueryString();
 
-        return Inertia::render('Admin/Staff/Threads/Index', [
+        return Inertia::render('Staff/Threads/Index', [
             'threads' => $threads,
-            'staff' => $staff,
-            'staffId' => $staff->id,
             'summary' => [
                 [
                     'label' => 'Total conversations',
                     'value' => (clone $threadQuery)->count(),
-                    'helper' => 'All recorded queries and commendations',
+                    'helper' => 'All your recorded conversations with leadership',
                 ],
                 [
                     'label' => 'Queries',
                     'value' => (clone $threadQuery)->where('type', 'query')->count(),
-                    'helper' => 'Open questions and issues raised',
+                    'helper' => 'Questions, requests, and issues raised',
                 ],
                 [
                     'label' => 'Commendations',
                     'value' => (clone $threadQuery)->where('type', 'commendation')->count(),
-                    'helper' => 'Recognition and positive feedback',
+                    'helper' => 'Recognition and positive follow-ups',
                 ],
             ],
-            'routePrefix' => $this->routePrefix(),
         ]);
     }
 
-
-    public function create(User $staff)
+    public function create(Request $request)
     {
-        return Inertia::render('Admin/Staff/Threads/Create', [
-            'staff' => $staff,
-            'staffId' => $staff->id,
-            'routePrefix' => $this->routePrefix(),
+        return Inertia::render('Staff/Threads/Create', [
+            'staff' => [
+                'id' => $request->user()->id,
+                'name' => $request->user()->name,
+            ],
         ]);
     }
 
-
-
-    /**
-     * Show a single thread with all messages
-     */
-    public function show(StaffThread $thread)
-    {
-        $thread->load(['messages.sender:id,name', 'staff:id,name,email', 'admin:id,name']);
-        $thread->loadCount('messages');
-
-        return Inertia::render('Admin/Staff/Threads/Show', [
-            'thread' => $thread,
-            'routePrefix' => $this->routePrefix(),
-        ]);
-    }
-
-    /**
-     * Create a new thread for a staff member
-     */
-    public function createThread(Request $request, $staffId)
+    public function store(Request $request)
     {
         $data = $request->validate([
             'type' => 'required|in:query,commendation',
             'title' => 'nullable|string|max:191',
             'message' => 'nullable|string|max:5000',
             'attachments' => 'nullable|array',
-            'attachments.*' => 'file|max:8192', // 8MB max
+            'attachments.*' => 'file|max:8192',
         ]);
 
         if (! $this->hasMessageBody($data['message'] ?? null) && ! $request->hasFile('attachments')) {
@@ -103,30 +76,43 @@ class StaffThreadController extends Controller
         }
 
         $thread = StaffThread::create([
-            'staff_id' => $staffId,
-            'admin_id' => auth()->id(),
+            'staff_id' => $request->user()->id,
+            'admin_id' => $request->user()->hasAnyRole(['manager', 'md', 'hr']) ? $request->user()->id : null,
             'type' => $data['type'],
             'title' => $data['title'] ?? null,
         ]);
 
         $thread->messages()->create([
-            'sender_id' => auth()->id(),
+            'sender_id' => $request->user()->id,
             'message' => $this->normalizeMessage($data['message'] ?? null),
             'attachments' => $this->storeAttachments($request),
         ]);
 
-        return redirect()->route($this->routePrefix() . '.threads.show', $thread->id);
+        return redirect()
+            ->route('staff.threads.show', $thread)
+            ->with('success', 'Conversation started.');
     }
 
-    /**
-     * Store a message reply in a thread
-     */
+    public function show(Request $request, StaffThread $thread)
+    {
+        $this->ensureOwnThread($request, $thread);
+
+        $thread->load(['staff:id,name', 'messages.sender:id,name']);
+        $thread->loadCount('messages');
+
+        return Inertia::render('Staff/Threads/Show', [
+            'thread' => $thread,
+        ]);
+    }
+
     public function storeMessage(Request $request, StaffThread $thread)
     {
+        $this->ensureOwnThread($request, $thread);
+
         $data = $request->validate([
             'message' => 'nullable|string|max:5000',
             'attachments' => 'nullable|array',
-            'attachments.*' => 'nullable|file|max:5120', // 5MB each
+            'attachments.*' => 'file|max:5120',
         ]);
 
         if (! $this->hasMessageBody($data['message'] ?? null) && ! $request->hasFile('attachments')) {
@@ -136,12 +122,17 @@ class StaffThreadController extends Controller
         }
 
         $thread->messages()->create([
-            'sender_id' => auth()->id(),
+            'sender_id' => $request->user()->id,
             'message' => $this->normalizeMessage($data['message'] ?? null),
             'attachments' => $this->storeAttachments($request),
         ]);
 
-        return back()->with('success', 'Message sent');
+        return back()->with('success', 'Reply sent.');
+    }
+
+    protected function ensureOwnThread(Request $request, StaffThread $thread): void
+    {
+        abort_unless($thread->staff_id === $request->user()->id, 403);
     }
 
     protected function storeAttachments(Request $request): array
@@ -167,10 +158,5 @@ class StaffThreadController extends Controller
         $message = trim((string) $message);
 
         return $message === '' ? null : $message;
-    }
-
-    protected function routePrefix(): string
-    {
-        return request()->route()?->named('hr.*') ? 'hr.staff' : 'admin.staff';
     }
 }

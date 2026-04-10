@@ -169,6 +169,38 @@ class StaffController extends Controller
             'staff' => $staff,
             'roles' => $this->availableRoles(),
             'departments' => Department::orderBy('name')->get(['id', 'name']),
+            'noteSummary' => [
+                [
+                    'label' => 'Queries',
+                    'value' => $staff->notes()->where('type', 'query')->count(),
+                ],
+                [
+                    'label' => 'Commendations',
+                    'value' => $staff->notes()->where('type', 'commendation')->count(),
+                ],
+                [
+                    'label' => 'Performance',
+                    'value' => $staff->notes()->where('type', 'performance')->count(),
+                ],
+                [
+                    'label' => 'Disciplinary',
+                    'value' => $staff->notes()->where('type', 'disciplinary')->count(),
+                ],
+            ],
+            'threadSummary' => [
+                [
+                    'label' => 'Conversations',
+                    'value' => $staff->threads()->count(),
+                ],
+                [
+                    'label' => 'Queries',
+                    'value' => $staff->threads()->where('type', 'query')->count(),
+                ],
+                [
+                    'label' => 'Commendations',
+                    'value' => $staff->threads()->where('type', 'commendation')->count(),
+                ],
+            ],
             'routePrefix' => $this->routePrefix(),
         ]);
     }

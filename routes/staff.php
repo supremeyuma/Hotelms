@@ -29,6 +29,7 @@ use App\Http\Controllers\Staff\CleaningActionController;
 use App\Http\Controllers\Staff\StaffChargeController;
 use App\Http\Controllers\Staff\EventCheckInController;
 use App\Http\Controllers\Staff\MaintenanceDashboardController;
+use App\Http\Controllers\Staff\StaffThreadController;
 
 
 
@@ -70,6 +71,14 @@ Route::middleware(['auth', 'role:staff|manager|md|laundry|frontdesk|hr'])->prefi
 
     Route::patch('/staff/frontdesk/checkout/{booking}', [FrontDeskController::class, 'checkout'])->name('staff.frontdesk.checkout');
 
+});
+
+Route::middleware(['auth', 'role:staff|manager|md|frontdesk|laundry|hr|clean|kitchen|bar|inventory|accountant|Accountant|maintenance'])->prefix('staff')->name('staff.')->group(function () {
+    Route::get('/threads', [StaffThreadController::class, 'index'])->name('threads.index');
+    Route::get('/threads/create', [StaffThreadController::class, 'create'])->name('threads.create');
+    Route::post('/threads', [StaffThreadController::class, 'store'])->name('threads.store');
+    Route::get('/threads/{thread}', [StaffThreadController::class, 'show'])->name('threads.show');
+    Route::post('/threads/{thread}/messages', [StaffThreadController::class, 'storeMessage'])->name('threads.messages.store');
 });
 
 Route::middleware(['auth'])->prefix('staff')->name('staff.')->group(function () {

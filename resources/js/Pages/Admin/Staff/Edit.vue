@@ -36,30 +36,90 @@
         </FormSection>
       </form>
 
-      <section class="space-y-4">
-        <h3 class="text-xl font-semibold">Staff Notes</h3>
+      <section class="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div class="flex items-center justify-between gap-4">
+            <div>
+              <h3 class="text-xl font-semibold text-slate-900">Staff Notes</h3>
+              <p class="mt-1 text-sm text-slate-500">Leadership-only notes for internal staff management.</p>
+            </div>
 
-        <form @submit.prevent="submitNote">
-          <FormSection>
-            <FormLabel for="note_type">Type</FormLabel>
-            <SelectInput v-model="noteForm.type" :options="noteTypeOptions" id="note_type" />
-            <FormLabel for="note_message">Message</FormLabel>
-            <Textarea v-model="noteForm.message" id="note_message" />
-            <PrimaryButton :disabled="noteForm.processing">Add Note</PrimaryButton>
-          </FormSection>
-        </form>
+            <Link
+              :href="route(`${routePrefix}.threads.index`, staff.id)"
+              class="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+            >
+              Open Threads
+            </Link>
+          </div>
 
-        <div class="rounded-lg bg-white p-4 shadow">
-          <ul class="space-y-3">
-            <li v-for="note in staff.notes" :key="note.id" class="border-b pb-3 last:border-b-0">
-              <div class="flex items-center justify-between gap-4">
-                <strong class="uppercase text-slate-700">{{ note.type }}</strong>
-                <span class="text-xs text-slate-400">{{ new Date(note.created_at).toLocaleString() }}</span>
-              </div>
-              <p class="mt-1 text-sm text-slate-700">{{ note.message }}</p>
-              <p class="mt-1 text-xs text-slate-500">By {{ note.admin.name }}</p>
-            </li>
-          </ul>
+          <div class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div
+              v-for="item in noteSummary"
+              :key="item.label"
+              class="rounded-xl bg-slate-50 p-4"
+            >
+              <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{{ item.label }}</p>
+              <p class="mt-2 text-2xl font-semibold text-slate-900">{{ item.value }}</p>
+            </div>
+          </div>
+
+          <form @submit.prevent="submitNote" class="mt-6">
+            <FormSection>
+              <FormLabel for="note_type">Type</FormLabel>
+              <SelectInput v-model="noteForm.type" :options="noteTypeOptions" id="note_type" />
+              <FormLabel for="note_message">Message</FormLabel>
+              <Textarea v-model="noteForm.message" id="note_message" />
+              <PrimaryButton :disabled="noteForm.processing">Add Note</PrimaryButton>
+            </FormSection>
+          </form>
+        </div>
+
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h3 class="text-xl font-semibold text-slate-900">Thread Snapshot</h3>
+          <p class="mt-1 text-sm text-slate-500">Shared conversations visible in the staff communication workspace.</p>
+
+          <div class="mt-5 grid gap-3 sm:grid-cols-3">
+            <div
+              v-for="item in threadSummary"
+              :key="item.label"
+              class="rounded-xl bg-slate-50 p-4"
+            >
+              <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{{ item.label }}</p>
+              <p class="mt-2 text-2xl font-semibold text-slate-900">{{ item.value }}</p>
+            </div>
+          </div>
+
+          <div class="mt-5 rounded-xl border border-dashed border-slate-200 p-4 text-sm text-slate-500">
+            Threads hold shared queries and commendations. Notes remain internal and are never shown to staff.
+          </div>
+        </div>
+      </section>
+
+      <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div class="flex items-center justify-between gap-4">
+          <h3 class="text-xl font-semibold text-slate-900">Recent Notes</h3>
+          <span class="text-sm text-slate-400">{{ staff.notes.length }} entries</span>
+        </div>
+
+        <div v-if="staff.notes.length" class="mt-5 space-y-3">
+          <article
+            v-for="note in staff.notes"
+            :key="note.id"
+            class="rounded-xl border border-slate-200 p-4"
+          >
+            <div class="flex flex-wrap items-center justify-between gap-4">
+              <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-700">
+                {{ note.type }}
+              </span>
+              <span class="text-xs text-slate-400">{{ new Date(note.created_at).toLocaleString() }}</span>
+            </div>
+            <p class="mt-3 whitespace-pre-line text-sm text-slate-700">{{ note.message }}</p>
+            <p class="mt-3 text-xs text-slate-500">By {{ note.admin.name }}</p>
+          </article>
+        </div>
+
+        <div v-else class="mt-5 rounded-xl border border-dashed border-slate-200 px-4 py-10 text-center text-sm text-slate-500">
+          No internal notes have been recorded for this staff member yet.
         </div>
       </section>
     </div>
@@ -68,13 +128,15 @@
 
 <script setup>
 import ManagerLayout from '@/Layouts/Staff/ManagerLayout.vue'
-import { useForm } from '@inertiajs/vue3'
+import { Link, useForm } from '@inertiajs/vue3'
 import { FormSection, FormLabel, TextInput, Textarea, SelectInput, PrimaryButton } from '@/Components/'
 
 const props = defineProps({
   staff: Object,
   roles: Array,
   departments: Array,
+  noteSummary: { type: Array, default: () => [] },
+  threadSummary: { type: Array, default: () => [] },
   routePrefix: String,
 })
 

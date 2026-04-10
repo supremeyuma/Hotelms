@@ -1,12 +1,11 @@
 <script setup>
 import { computed } from 'vue'
 import { Head, Link, useForm } from '@inertiajs/vue3'
-import ManagerLayout from '@/Layouts/Staff/ManagerLayout.vue'
+import BaseStaffLayout from '@/Layouts/Staff/BaseStaffLayout.vue'
 import InputError from '@/Components/InputError.vue'
 
 const props = defineProps({
   thread: { type: Object, required: true },
-  routePrefix: { type: String, required: true },
 })
 
 const form = useForm({
@@ -21,7 +20,7 @@ function handleFiles(event) {
 }
 
 function sendMessage() {
-  form.post(route(`${props.routePrefix}.threads.messages.store`, props.thread.id), {
+  form.post(route('staff.threads.messages.store', props.thread.id), {
     forceFormData: true,
     preserveScroll: true,
     onSuccess: () => form.reset('message', 'attachments'),
@@ -50,8 +49,8 @@ function formatDate(value) {
 </script>
 
 <template>
-  <ManagerLayout>
-    <Head :title="thread.title || 'Thread'" />
+  <BaseStaffLayout>
+    <Head :title="thread.title || 'Conversation'" />
 
     <div class="mx-auto max-w-5xl space-y-6">
       <section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
@@ -69,26 +68,21 @@ function formatDate(value) {
               </span>
             </div>
 
-            <h1 class="mt-3 text-3xl font-black tracking-tight text-slate-900">{{ thread.title || 'Untitled conversation' }}</h1>
+            <h1 class="mt-3 text-3xl font-black tracking-tight text-slate-900">
+              {{ thread.title || 'Untitled conversation' }}
+            </h1>
+
             <p class="mt-2 text-sm text-slate-500">
-              Staff member: {{ thread.staff?.name }}. Started {{ formatDate(thread.created_at) }}.
+              Started {{ formatDate(thread.created_at) }}. Keep follow-up in this thread so updates stay together.
             </p>
           </div>
 
-          <div class="flex flex-wrap gap-3">
-            <Link
-              :href="route(`${props.routePrefix}.threads.index`, thread.staff.id)"
-              class="rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
-            >
-              Back to threads
-            </Link>
-            <Link
-              :href="route(`${props.routePrefix}.edit`, thread.staff.id)"
-              class="rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white transition hover:bg-slate-800"
-            >
-              Open staff record
-            </Link>
-          </div>
+          <Link
+            :href="route('staff.threads.index')"
+            class="rounded-xl border border-slate-200 px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+          >
+            Back to inbox
+          </Link>
         </div>
       </section>
 
@@ -145,8 +139,8 @@ function formatDate(value) {
       </section>
 
       <section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 class="text-xl font-black tracking-tight text-slate-900">Reply in thread</h2>
-        <p class="mt-2 text-sm text-slate-500">Reply here to keep the full record for this staff member in one place.</p>
+        <h2 class="text-xl font-black tracking-tight text-slate-900">Reply in this thread</h2>
+        <p class="mt-2 text-sm text-slate-500">Keep the discussion in one place so leadership can follow the full context.</p>
 
         <form @submit.prevent="sendMessage" class="mt-5 space-y-4">
           <div>
@@ -182,5 +176,5 @@ function formatDate(value) {
         </form>
       </section>
     </div>
-  </ManagerLayout>
+  </BaseStaffLayout>
 </template>

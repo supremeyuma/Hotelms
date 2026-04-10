@@ -11,6 +11,11 @@ class StaffThread extends Model
 
     protected $fillable = ['staff_id','admin_id','type','title'];
 
+    protected $casts = [
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
+
     public function staff()
     {
         return $this->belongsTo(User::class,'staff_id');
@@ -24,5 +29,10 @@ class StaffThread extends Model
     public function messages()
     {
         return $this->hasMany(StaffThreadMessage::class,'thread_id')->orderBy('created_at','asc');
+    }
+
+    public function latestMessage()
+    {
+        return $this->hasOne(StaffThreadMessage::class, 'thread_id')->latestOfMany();
     }
 }
