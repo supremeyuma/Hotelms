@@ -71,9 +71,10 @@ class RoomController extends Controller
                         ->orWhereHas('roomType', fn ($roomTypeQuery) => $roomTypeQuery->where('title', 'like', "%{$search}%"));
                 });
             })
-            ->when(in_array($status, self::ROOM_STATUSES, true), fn ($query) => $query->where('rooms.status', $status))
             ->orderByRaw('COALESCE(rooms.floor, 0) asc')
             ->orderBy('rooms.name');
+
+        $this->applyStatusFilter($roomsQuery, $status);
 
         $rooms = $roomsQuery
             ->paginate(12)
@@ -155,6 +156,29 @@ class RoomController extends Controller
                 ->prepend(['label' => 'All statuses', 'value' => 'all'])
                 ->values(),
         ]);
+    }
+
+    protected function applyStatusFilter($query, string $status): void
+    {
+        if ($status === 'dirty') {
+            $query->where(function ($roomQuery) {
+                $roomQuery->where('rooms.status', 'dirty')
+                    ->orWhereHas('latestCleaning', fn ($cleaningQuery) => $cleaningQuery->where('room_cleanings.status', 'dirty'));
+            });
+
+            return;
+        }
+
+        if ($status === 'clean') {
+            $query->where('rooms.status', '!=', 'dirty')
+                ->whereHas('latestCleaning', fn ($cleaningQuery) => $cleaningQuery->where('room_cleanings.status', 'clean'));
+
+            return;
+        }
+
+        if (in_array($status, self::ROOM_STATUSES, true)) {
+            $query->where('rooms.status', $status);
+        }
     }
 
     /**

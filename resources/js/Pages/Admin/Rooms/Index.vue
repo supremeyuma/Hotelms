@@ -43,6 +43,7 @@ const metricCards = computed(() => [
   {
     key: 'occupied',
     label: 'Occupied',
+    filterValue: 'occupied',
     value: props.overview?.occupied ?? 0,
     helper: 'Currently in use',
     tone: 'indigo',
@@ -51,6 +52,7 @@ const metricCards = computed(() => [
   {
     key: 'available',
     label: 'Available',
+    filterValue: 'available',
     value: props.overview?.available ?? 0,
     helper: 'Ready to assign',
     tone: 'emerald',
@@ -59,6 +61,7 @@ const metricCards = computed(() => [
   {
     key: 'dirty',
     label: 'Dirty',
+    filterValue: 'dirty',
     value: props.overview?.dirty ?? 0,
     helper: 'Needs housekeeping',
     tone: 'amber',
@@ -67,6 +70,7 @@ const metricCards = computed(() => [
   {
     key: 'clean',
     label: 'Clean',
+    filterValue: 'clean',
     value: props.overview?.clean ?? 0,
     helper: 'Housekeeping cleared',
     tone: 'sky',
@@ -75,6 +79,7 @@ const metricCards = computed(() => [
   {
     key: 'maintenance',
     label: 'Maintenance',
+    filterValue: 'maintenance',
     value: props.overview?.maintenance ?? 0,
     helper: 'Out of order',
     tone: 'rose',
@@ -83,6 +88,7 @@ const metricCards = computed(() => [
   {
     key: 'unavailable',
     label: 'Unavailable',
+    filterValue: 'unavailable',
     value: props.overview?.unavailable ?? 0,
     helper: 'Manually blocked',
     tone: 'slate',
@@ -101,6 +107,14 @@ function palette(tone) {
   }
 
   return palettes[tone] ?? palettes.slate
+}
+
+function isMetricCardActive(card) {
+  return filters.status === card.filterValue
+}
+
+function selectMetricCard(card) {
+  filters.status = isMetricCardActive(card) ? 'all' : card.filterValue
 }
 
 function roomStatusConfig(status) {
@@ -195,22 +209,39 @@ function deleteRoom(room) {
       </section>
 
       <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <article
+        <button
           v-for="card in metricCards"
           :key="card.key"
-          :class="['rounded-[1.75rem] border bg-gradient-to-br p-5 shadow-sm', palette(card.tone)]"
+          type="button"
+          @click="selectMetricCard(card)"
+          :class="[
+            'rounded-[1.75rem] border bg-gradient-to-br p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2',
+            palette(card.tone),
+            isMetricCardActive(card) ? 'ring-2 ring-slate-900/15 border-slate-300' : '',
+          ]"
         >
           <div class="flex items-start justify-between">
             <div>
-              <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">{{ card.label }}</p>
+              <div class="flex items-center gap-2">
+                <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">{{ card.label }}</p>
+                <span
+                  v-if="isMetricCardActive(card)"
+                  class="rounded-full bg-slate-900 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.16em] text-white"
+                >
+                  Active
+                </span>
+              </div>
               <p class="mt-3 text-3xl font-black tracking-tight text-slate-900">{{ card.value }}</p>
               <p class="mt-1 text-sm text-slate-600">{{ card.helper }}</p>
+              <p class="mt-3 text-xs font-semibold text-slate-500">
+                {{ isMetricCardActive(card) ? 'Click to clear this filter' : 'Click to filter rooms' }}
+              </p>
             </div>
             <div class="rounded-2xl bg-white/80 p-3 shadow-sm">
               <component :is="card.icon" class="h-5 w-5" :class="card.tone === 'slate' ? 'text-slate-600' : ''" />
             </div>
           </div>
-        </article>
+        </button>
       </section>
 
       <section v-if="rooms.data.length" class="grid gap-6 xl:grid-cols-2">
