@@ -43,24 +43,36 @@ return new class extends Migration
         }
 
         // Add provider support to event_tickets
-        if (!Schema::hasColumn('event_tickets', 'payment_provider')) {
+        if (Schema::hasTable('event_tickets')) {
             Schema::table('event_tickets', function (Blueprint $table) {
-                $table->string('payment_provider')->nullable()->after('status');
-                $table->string('payment_reference')->nullable()->after('payment_provider');
-                $table->timestamp('payment_verified_at')->nullable()->after('payment_reference');
-                $table->index('payment_provider');
-                $table->index('payment_reference');
+                if (!Schema::hasColumn('event_tickets', 'payment_provider')) {
+                    $table->string('payment_provider')->nullable()->after('status');
+                }
+
+                if (!Schema::hasColumn('event_tickets', 'payment_reference')) {
+                    $table->string('payment_reference')->nullable()->after('payment_provider');
+                }
+
+                if (!Schema::hasColumn('event_tickets', 'payment_verified_at')) {
+                    $table->timestamp('payment_verified_at')->nullable()->after('payment_reference');
+                }
             });
         }
 
         // Add provider support to event_table_reservations
-        if (!Schema::hasColumn('event_table_reservations', 'payment_provider')) {
+        if (Schema::hasTable('event_table_reservations')) {
             Schema::table('event_table_reservations', function (Blueprint $table) {
-                $table->string('payment_provider')->nullable()->after('status');
-                $table->string('payment_reference')->nullable()->after('payment_provider');
-                $table->timestamp('payment_verified_at')->nullable()->after('payment_reference');
-                $table->index('payment_provider');
-                $table->index('payment_reference');
+                if (!Schema::hasColumn('event_table_reservations', 'payment_provider')) {
+                    $table->string('payment_provider')->nullable()->after('status');
+                }
+
+                if (!Schema::hasColumn('event_table_reservations', 'payment_reference')) {
+                    $table->string('payment_reference')->nullable()->after('payment_provider');
+                }
+
+                if (!Schema::hasColumn('event_table_reservations', 'payment_verified_at')) {
+                    $table->timestamp('payment_verified_at')->nullable()->after('payment_reference');
+                }
             });
         }
 
