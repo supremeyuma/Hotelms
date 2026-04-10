@@ -4,6 +4,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\{
     DashboardController,
+    DiscountCodeController,
     RoomController,
     RoomQrController,
     RoomTypeController,
@@ -43,6 +44,9 @@ Route::middleware(['auth', 'role:manager|md'])->prefix('admin')->as('admin.')->g
         Route::get('bookings', [BookingAdminController::class, 'index'])->name('bookings.index');
         Route::get('bookings/{booking}/edit', [BookingAdminController::class, 'edit'])->name('bookings.edit');
         Route::put('bookings/{booking}', [BookingAdminController::class, 'update'])->name('bookings.update');
+        Route::get('discount-codes', [DiscountCodeController::class, 'index'])->name('discount-codes.index');
+        Route::post('discount-codes', [DiscountCodeController::class, 'store'])->name('discount-codes.store');
+        Route::patch('discount-codes/{discountCode}/toggle', [DiscountCodeController::class, 'toggle'])->name('discount-codes.toggle');
 
         Route::prefix('staff')->name('staff.')->group(function () {
             Route::get('/', [StaffController::class, 'index'])->name('index');

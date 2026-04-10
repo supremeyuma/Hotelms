@@ -8,6 +8,7 @@ use App\Http\Controllers\Public\PublicMenuViewOnlyController;
 use App\Http\Controllers\Public\PublicOrderController;
 use App\Http\Controllers\RoomServiceController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\BookingDiscountController;
 use App\Http\Controllers\GuestLaundryController;
 use App\Http\Controllers\FeedbackController;
 
@@ -55,8 +56,12 @@ Route::prefix('booking')->name('booking.')->group(function () {
     Route::get('/guest', [BookingController::class, 'guestDetails'])->name('guest');
     Route::post('/guest', [BookingController::class, 'submitGuestDetails'])->name('submitGuest');
     Route::get('/review', [BookingController::class, 'reviewBooking'])->name('review');
+    Route::post('/discount-code', [BookingDiscountController::class, 'applyToSession'])->name('discount.apply');
+    Route::delete('/discount-code', [BookingDiscountController::class, 'removeFromSession'])->name('discount.remove');
     Route::post('/create', [BookingController::class, 'createBooking'])->name('create');
     Route::get('/payment/{booking}', [BookingController::class, 'payment'])->name('payment');
+    Route::post('/payment/{booking}/discount-code', [BookingDiscountController::class, 'applyToBooking'])->name('payment.discount.apply');
+    Route::delete('/payment/{booking}/discount-code', [BookingDiscountController::class, 'removeFromBooking'])->name('payment.discount.remove');
     Route::post('/payment/{booking}/confirm', [BookingController::class, 'confirmPayment'])->name('payment.confirm');
     Route::get('/payment/{booking}/callback', [BookingController::class, 'paymentCallback'])->name('payment.callback');
     Route::get('/confirmation/{booking}', [BookingController::class, 'confirmation'])->name('confirmation');

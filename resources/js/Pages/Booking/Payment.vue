@@ -15,11 +15,13 @@ import {
 const props = defineProps({
   booking: Object,
   expires_at: String,
+  discount: Object,
 })
 console.log(props.booking)
 
 const paymentMethod = ref('offline')
 const processing = ref(false)
+const discountCode = ref(props.discount?.code ?? '')
 
 const paymentData = ref(null)
 const selectedProvider = ref(null)
@@ -233,6 +235,20 @@ const handlePaystack = (data) => {
 const formatExpiry = (timeStr) => {
   return new Date(timeStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 };
+
+const applyDiscount = () => {
+  router.post(route('booking.payment.discount.apply', props.booking.id), {
+    discount_code: discountCode.value,
+  }, {
+    preserveScroll: true,
+  })
+}
+
+const removeDiscount = () => {
+  router.delete(route('booking.payment.discount.remove', props.booking.id), {
+    preserveScroll: true,
+  })
+}
 </script>
 
 <template>
@@ -272,6 +288,9 @@ const formatExpiry = (timeStr) => {
                 <div>
                   <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Amount Due</p>
                   <p class="text-3xl font-black text-slate-900">₦{{ booking.total_amount.toLocaleString() }}</p>
+                  <p v-if="discount" class="mt-2 text-sm font-semibold text-emerald-700">
+                    {{ discount.code }} saved ₦{{ Number(discount.discount_amount || 0).toLocaleString() }}
+                  </p>
                 </div>
                 <div class="text-right">
                    <div class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-xl text-[10px] font-black uppercase tracking-tighter border border-amber-100 animate-pulse">
@@ -282,6 +301,50 @@ const formatExpiry = (timeStr) => {
             </div>
 
             <div class="space-y-4">
+              <div class="rounded-3xl border border-slate-200 bg-slate-50 p-5">
+                <div class="flex items-start justify-between gap-3">
+                  <div>
+                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Discount code</p>
+                    <p class="mt-2 text-sm font-medium text-slate-500">Apply a room discount before you complete payment.</p>
+                  </div>
+                  <span
+                    v-if="discount"
+                    class="rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700"
+                  >
+                    Applied
+                  </span>
+                </div>
+
+                <div class="mt-4 flex flex-col gap-3 sm:flex-row">
+                  <input
+                    v-model="discountCode"
+                    type="text"
+                    class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm uppercase text-slate-700 outline-none transition focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100"
+                    placeholder="Enter code"
+                  />
+                  <button
+                    type="button"
+                    @click="applyDiscount"
+                    class="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-bold text-white transition hover:bg-slate-800"
+                  >
+                    Apply code
+                  </button>
+                  <button
+                    v-if="discount"
+                    type="button"
+                    @click="removeDiscount"
+                    class="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-white"
+                  >
+                    Remove
+                  </button>
+                </div>
+
+                <div v-if="discount" class="mt-4 rounded-2xl border border-emerald-100 bg-white p-4">
+                  <p class="text-sm font-black text-slate-900">{{ discount.name }} ({{ discount.code }})</p>
+                  <p class="mt-1 text-sm text-slate-500">{{ discount.scope_label }} discount applied before taxes and charges.</p>
+                </div>
+              </div>
+
               <div class="space-y-3">
                 <label class="block text-sm font-semibold text-slate-700 mb-3">Payment Method</label>
                 <div class="space-y-2">

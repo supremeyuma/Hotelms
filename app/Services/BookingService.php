@@ -111,6 +111,7 @@ class BookingService
                 'guest_phone'  => $data['guest_phone'],
                 'payment_status' => $data['payment_status'] ?? 'pending',
                 'special_requests' => $data['special_requests'] ?? null,
+                'details' => $data['details'] ?? null,
             ]);
 
             $booking->rooms()->attach(
@@ -141,6 +142,8 @@ class BookingService
             'expires_at' => null,
         ]);
 
+        app(DiscountCodeService::class)->markAppliedForBooking($booking);
+
         $this->audit->log('booking_confirmed', $booking, $booking->id);
 
         return $booking;
@@ -154,7 +157,11 @@ class BookingService
     {
         Booking::where('status', 'pending_payment')
             ->where('expires_at', '<', now())
-            ->update(['status' => 'cancelled']);
+            ->get()
+            ->each(function (Booking $booking) {
+                $booking->update(['status' => 'cancelled']);
+                app(DiscountCodeService::class)->releaseForBooking($booking);
+            });
     }
 
     /**
@@ -273,6 +280,7 @@ class BookingService
             $before = $booking->toArray();
 
             $booking->update(['status' => 'cancelled']);
+            app(DiscountCodeService::class)->releaseForBooking($booking);
             $booking->delete();
 
             $this->audit->log(

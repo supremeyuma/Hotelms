@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Carbon\Carbon;
 use App\Models\RoomAccessToken;
 
@@ -25,6 +26,7 @@ class Booking extends Model
         'payment_method',
         'payment_status',
         'details',
+        'nightly_rate',
         'room_type_id',
         'adults',
         'children',
@@ -40,6 +42,7 @@ class Booking extends Model
         'details' => 'array',
         'check_in' => 'date',
         'check_out' => 'date',
+        'nightly_rate' => 'decimal:2',
         'total_amount' => 'decimal:2',
     ];
 
@@ -139,6 +142,11 @@ class Booking extends Model
     public function charges()
     {
         return $this->hasMany(Charge::class);
+    }
+
+    public function discountRedemption(): MorphOne
+    {
+        return $this->morphOne(DiscountCodeRedemption::class, 'redeemable');
     }
 
     public function getCheckedInRoomsCountAttribute(): int

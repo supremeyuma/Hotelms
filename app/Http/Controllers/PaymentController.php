@@ -9,6 +9,7 @@ use App\Models\EventTicket;
 use App\Models\EventTableReservation;
 use App\Http\Requests\Payment\StorePaymentRequest;
 use App\Services\PaymentProviderManager;
+use App\Services\DiscountCodeService;
 use App\Services\AuditLogger;
 use App\Services\EventService;
 use Illuminate\Http\Request;
@@ -23,7 +24,8 @@ class PaymentController extends Controller
 {
     public function __construct(
         protected PaymentProviderManager $paymentManager,
-        protected EventService $eventService
+        protected EventService $eventService,
+        protected DiscountCodeService $discountCodeService
     ) {}
 
     /**
@@ -47,7 +49,7 @@ class PaymentController extends Controller
 
     return $this->buildPaymentResponse(
         type: 'booking',
-        amount: (float) $booking->total_amount,
+        amount: (float) $booking->fresh()->total_amount,
         reference: $booking->booking_code, // IMPORTANT
         provider: $provider,
         customer: [

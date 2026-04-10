@@ -20,7 +20,9 @@ use App\Models\RoomType;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use App\Services\DiscountCodeService;
 
 class BookingController extends Controller
 {
@@ -28,6 +30,7 @@ class BookingController extends Controller
     protected RoomAvailabilityService $availability;
     protected PricingService $pricingService;
     protected PaymentProviderManager $paymentManager;
+    protected DiscountCodeService $discountCodeService;
     
 
     /*public function __construct(BookingService $service)
@@ -40,13 +43,15 @@ class BookingController extends Controller
         RoomAvailabilityService $availability,
         BookingService $bookingService,
         PricingService $pricingService,
-        PaymentProviderManager $paymentManager
+        PaymentProviderManager $paymentManager,
+        DiscountCodeService $discountCodeService
     )
     {
         $this->availability = $availability;
         $this->bookingService = $bookingService;
         $this->pricingService = $pricingService;
         $this->paymentManager = $paymentManager;
+        $this->discountCodeService = $discountCodeService;
     }
 
 
@@ -225,7 +230,7 @@ class BookingController extends Controller
             'selected_rooms' => $selectedRooms->map(fn ($room) => $this->transformRoomForSelection($room, $roomType))->values(),
             'nights' => $nights,
             'total_price' => $totalPrice,
-            
+            'discount_preview' => $booking['discount_preview'] ?? null,
         ]);
     }
 
@@ -244,30 +249,53 @@ class BookingController extends Controller
             ->diffInDays(\Carbon\Carbon::parse($bookingData['check_out']));
 
         $basePrice = $roomType->base_price * $nights * $bookingData['quantity'];
-        
-        // Calculate pricing with 1.5% VAT and 1% service charge for room bookings
-        $pricing = $this->pricingService->calculatePricing($basePrice, 0.015, 0.01);
+        $discountPreview = null;
+
+        if (! empty($bookingData['discount_code'])) {
+            $discountPreview = $this->discountCodeService->previewForBookingSelection($bookingData, $bookingData['discount_code']);
+        }
+
+        $pricing = $discountPreview['pricing'] ?? $this->discountCodeService->buildPricing($basePrice);
         $totalPrice = $pricing['total'];
         
         //dd($bookingData, $totalPrice, $roomType, $nights);
         try {
-            $booking = $this->bookingService->createBooking([
-                'room_type_id' => $bookingData['room_type_id'],
-                'check_in' => $bookingData['check_in'],
-                'check_out' => $bookingData['check_out'],
-                'adults' => $bookingData['adults'],
-                'children' => $bookingData['children'] ?? 0,
-                'guest_email' => $bookingData['guest_email'],
-                'guest_phone' => $bookingData['guest_phone'],
-                'special_requests' => $bookingData['special_requests'] ?? null,
-                'quantity' => $bookingData['quantity'],
-                'selected_room_ids' => $bookingData['selected_room_ids'] ?? [],
-                'total_amount' => $totalPrice,
-                'guest_name' => $bookingData['guest_name'],
-                'nightly_rate' => $roomType->base_price,
-                'status' => 'pending_payment',
-                
-            ]);
+            $booking = DB::transaction(function () use ($bookingData, $roomType, $pricing, $totalPrice, $discountPreview) {
+                $booking = $this->bookingService->createBooking([
+                    'room_type_id' => $bookingData['room_type_id'],
+                    'check_in' => $bookingData['check_in'],
+                    'check_out' => $bookingData['check_out'],
+                    'adults' => $bookingData['adults'],
+                    'children' => $bookingData['children'] ?? 0,
+                    'guest_email' => $bookingData['guest_email'],
+                    'guest_phone' => $bookingData['guest_phone'],
+                    'special_requests' => $bookingData['special_requests'] ?? null,
+                    'quantity' => $bookingData['quantity'],
+                    'selected_room_ids' => $bookingData['selected_room_ids'] ?? [],
+                    'total_amount' => $totalPrice,
+                    'guest_name' => $bookingData['guest_name'],
+                    'nightly_rate' => $roomType->base_price,
+                    'status' => 'pending_payment',
+                    'details' => $discountPreview ? [
+                        'discount' => [
+                            'discount_code_id' => $discountPreview['discount_code_id'],
+                            'code' => $discountPreview['code'],
+                            'name' => $discountPreview['name'],
+                            'scope' => $discountPreview['scope'],
+                            'discount_type' => $discountPreview['discount_type'],
+                            'discount_value' => $discountPreview['discount_value'],
+                            'discount_amount' => $discountPreview['discount_amount'],
+                            'pricing' => $pricing,
+                        ],
+                    ] : null,
+                ]);
+
+                if ($discountPreview) {
+                    $this->discountCodeService->reserveForBooking($booking, $discountPreview);
+                }
+
+                return $booking;
+            });
         } catch (\Exception $e) {
             return redirect()->route('booking.search')->withErrors(['availability' => $e->getMessage()]);
         }
@@ -290,6 +318,7 @@ class BookingController extends Controller
     return Inertia::render('Booking/Payment', [
         'booking' => $booking,
         'expires_at' => $booking->expires_at,
+        'discount' => $this->discountCodeService->bookingDiscountSummary($booking),
     ]);
 }
 

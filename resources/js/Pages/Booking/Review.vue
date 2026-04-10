@@ -19,9 +19,13 @@ const props = defineProps({
   selected_rooms: Array,
   nights: Number,
   total_price: Number,
+  discount_preview: Object,
 });
 
 const form = useForm({});
+const discountForm = useForm({
+  discount_code: props.booking.discount_code ?? '',
+});
 
 const formatDate = (dateStr) =>
   new Date(dateStr).toLocaleDateString('en-US', {
@@ -35,6 +39,18 @@ const formatCurrency = (amount) => new Intl.NumberFormat('en-NG').format(amount 
 function proceed() {
   form.post(route('booking.create'), {
     preserveState: true,
+  });
+}
+
+function applyDiscount() {
+  discountForm.post(route('booking.discount.apply'), {
+    preserveScroll: true,
+  });
+}
+
+function removeDiscount() {
+  router.delete(route('booking.discount.remove'), {
+    preserveScroll: true,
   });
 }
 </script>
@@ -150,6 +166,56 @@ function proceed() {
                 </div>
                 <p class="text-sm text-slate-500 font-medium">{{ booking.guest_email }}</p>
               </div>
+
+              <div class="mt-8 rounded-3xl border border-slate-200 bg-slate-50 p-5">
+                <div class="flex items-center justify-between gap-3">
+                  <div>
+                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Discount code</p>
+                    <p class="mt-2 text-sm font-medium text-slate-500">Guests can apply a room discount before payment.</p>
+                  </div>
+                  <span
+                    v-if="discount_preview"
+                    class="rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700"
+                  >
+                    Applied
+                  </span>
+                </div>
+
+                <div class="mt-4 flex flex-col gap-3 sm:flex-row">
+                  <input
+                    v-model="discountForm.discount_code"
+                    type="text"
+                    class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm uppercase text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+                    placeholder="Enter code"
+                  />
+                  <button
+                    type="button"
+                    @click="applyDiscount"
+                    :disabled="discountForm.processing"
+                    class="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-bold text-white transition hover:bg-slate-800 disabled:opacity-50"
+                  >
+                    {{ discountForm.processing ? 'Applying...' : 'Apply code' }}
+                  </button>
+                  <button
+                    v-if="discount_preview"
+                    type="button"
+                    @click="removeDiscount"
+                    class="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-white"
+                  >
+                    Remove
+                  </button>
+                </div>
+                <p v-if="discountForm.errors.discount_code" class="mt-2 text-sm font-medium text-rose-600">
+                  {{ discountForm.errors.discount_code }}
+                </p>
+
+                <div v-if="discount_preview" class="mt-4 rounded-2xl bg-white p-4 border border-emerald-100">
+                  <p class="text-sm font-black text-slate-900">{{ discount_preview.name }} ({{ discount_preview.code }})</p>
+                  <p class="mt-1 text-sm text-slate-500">
+                    {{ discount_preview.scope_label }} discount saving NGN {{ formatCurrency(discount_preview.discount_amount) }}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -167,6 +233,10 @@ function proceed() {
                 <div class="flex justify-between text-sm">
                   <span class="opacity-60">Nights</span>
                   <span class="font-bold">{{ nights }}</span>
+                </div>
+                <div v-if="discount_preview" class="flex justify-between text-sm text-emerald-300">
+                  <span>{{ discount_preview.code }}</span>
+                  <span class="font-bold">-â‚¦{{ formatCurrency(discount_preview.discount_amount) }}</span>
                 </div>
                 <div class="w-full h-px bg-white/10 my-4"></div>
                 <div class="flex justify-between items-end">
