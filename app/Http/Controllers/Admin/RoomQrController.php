@@ -22,11 +22,11 @@ class RoomQrController extends Controller
     {
         abort_if(blank($room->qr_key), 404, 'QR code has not been generated for this room.');
 
-        $png = $this->roomGuestAccessService->generateQrPng($room);
-        $filename = $this->fileName($room) . '.png';
+        $svg = $this->roomGuestAccessService->generateQrSvg($room);
+        $filename = $this->fileName($room) . '.svg';
 
-        return response($png, 200, [
-            'Content-Type' => 'image/png',
+        return response($svg, 200, [
+            'Content-Type' => 'image/svg+xml',
             'Content-Disposition' => 'inline; filename="' . $filename . '"',
         ]);
     }
@@ -35,11 +35,11 @@ class RoomQrController extends Controller
     {
         abort_if(blank($room->qr_key), 404, 'QR code has not been generated for this room.');
 
-        $png = $this->roomGuestAccessService->generateQrPng($room);
-        $filename = $this->fileName($room) . '.png';
+        $svg = $this->roomGuestAccessService->generateQrSvg($room);
+        $filename = $this->fileName($room) . '.svg';
 
-        return response($png, 200, [
-            'Content-Type' => 'image/png',
+        return response($svg, 200, [
+            'Content-Type' => 'image/svg+xml',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ]);
     }

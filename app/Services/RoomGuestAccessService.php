@@ -46,13 +46,13 @@ class RoomGuestAccessService
         return route('guest.room.entry', ['room' => $room->qr_key]);
     }
 
-    public function generateQrPng(Room $room, int $size = 420): string
+    public function generateQrSvg(Room $room, int $size = 420): string
     {
         if (blank($room->qr_key)) {
             throw new \RuntimeException('Room QR code has not been generated.');
         }
 
-        return $this->qrCodeService->generatePng(
+        return $this->qrCodeService->generateSvg(
             $this->entryUrl($room),
             $size
         );
