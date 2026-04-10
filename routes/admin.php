@@ -61,6 +61,8 @@ Route::middleware(['auth', 'role:manager|md'])->prefix('admin')->as('admin.')->g
         Route::get('inventory/{inventory}/edit',[InventoryController::class, 'edit'])->name('inventory.edit');
         Route::put('inventory/{inventory}',[InventoryController::class, 'update'])->name('inventory.update');
         Route::post('inventory/{inventory}/use', [InventoryController::class,'useItem'])->name('inventory.useItem');
+        Route::post('inventory/{inventory}/transfer', [InventoryController::class,'transfer'])->name('inventory.transfer');
+        Route::post('inventory/{inventory}/reconcile', [InventoryController::class,'reconcile'])->name('inventory.reconcile');
         Route::get('inventory/{inventory}', [InventoryController::class, 'show'])->name('inventory.show');
         Route::post('inventory/{inventory}/add-stock',[InventoryController::class, 'addStock'])->name('inventory.addStock');
         Route::resource('inventory-locations',InventoryLocationController::class)->except(['show']);

@@ -18,7 +18,7 @@ class CleaningInventoryService
 
     public function consumeForRoom(Room $room, int $staffId): void
     {
-        $location = InventoryLocation::where('type', 'main_store')->firstOrFail();
+        $location = InventoryLocation::where('type', InventoryLocation::TYPE_MAIN_STORE)->firstOrFail();
 
         $templates = CleaningInventoryTemplate::where(
             'room_type_id',
@@ -32,7 +32,13 @@ class CleaningInventoryService
                     location: $location,
                     quantity: $template->quantity,
                     staffId: $staffId,
-                    reason: "Room cleaning (Room {$room->number})"
+                    reason: "Room cleaning (Room {$room->number})",
+                    referenceType: Room::class,
+                    referenceId: $room->id,
+                    meta: [
+                        'room_type_id' => $room->room_type_id,
+                        'cleaning_template_id' => $template->id,
+                    ]
                 );
             }
         });

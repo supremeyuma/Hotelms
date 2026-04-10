@@ -10,7 +10,12 @@ class InventoryStock extends Model
     protected $fillable = [
         'inventory_item_id',
         'inventory_location_id',
-        'quantity'
+        'quantity',
+        'type',
+    ];
+
+    protected $casts = [
+        'quantity' => 'decimal:2',
     ];
 
     public function item()

@@ -4,12 +4,13 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\InventoryLocation;
+use App\Services\InventoryService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class InventoryLocationController extends Controller
 {
-    public function __construct()
+    public function __construct(protected InventoryService $inventory)
     {
         $this->middleware(['auth', 'role:manager|md']);
     }
@@ -20,7 +21,14 @@ class InventoryLocationController extends Controller
     public function index()
     {
         return Inertia::render('Admin/InventoryLocations/Index', [
-            'locations' => InventoryLocation::latest()->paginate(20)
+            'locations' => InventoryLocation::query()
+                ->withCount([
+                    'stocks as stocked_items_count' => fn ($query) => $query->where('quantity', '>', 0),
+                    'movements',
+                ])
+                ->latest()
+                ->paginate(20),
+            'types' => InventoryLocation::options(),
         ]);
     }
 
@@ -29,17 +37,20 @@ class InventoryLocationController extends Controller
      * ================================ */
     public function create()
     {
-        return Inertia::render('Admin/InventoryLocations/Create');
+        return Inertia::render('Admin/InventoryLocations/Create', [
+            'types' => InventoryLocation::options(),
+        ]);
     }
 
     public function store(Request $request)
     {
         $data = $request->validate([
             'name' => 'required|string|max:191',
-            'type' => 'required|string|max:100',
+            'type' => 'required|string|in:' . implode(',', InventoryLocation::TYPES),
         ]);
 
-        InventoryLocation::create($data);
+        $location = InventoryLocation::create($data);
+        $this->inventory->createMissingStockRowsForLocation($location);
 
         return redirect()
             ->route('admin.inventory-locations.index')
@@ -52,7 +63,8 @@ class InventoryLocationController extends Controller
     public function edit(InventoryLocation $inventoryLocation)
     {
         return Inertia::render('Admin/InventoryLocations/Edit', [
-            'location' => $inventoryLocation
+            'location' => $inventoryLocation,
+            'types' => InventoryLocation::options(),
         ]);
     }
 
@@ -60,7 +72,7 @@ class InventoryLocationController extends Controller
     {
         $data = $request->validate([
             'name' => 'required|string|max:191',
-            'type' => 'required|string|max:100',
+            'type' => 'required|string|in:' . implode(',', InventoryLocation::TYPES),
         ]);
 
         $inventoryLocation->update($data);
@@ -75,7 +87,16 @@ class InventoryLocationController extends Controller
      * ================================ */
     public function destroy(InventoryLocation $inventoryLocation)
     {
-        abort_if($inventoryLocation->stocks()->exists(), 422, 'Location has stock.');
+        abort_if(
+            $inventoryLocation->stocks()->where('quantity', '>', 0)->exists(),
+            422,
+            'Location still has stock.'
+        );
+        abort_if(
+            $inventoryLocation->movements()->exists(),
+            422,
+            'Location already has stock history and cannot be deleted.'
+        );
 
         $inventoryLocation->delete();
 

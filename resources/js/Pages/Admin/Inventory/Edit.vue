@@ -1,9 +1,15 @@
 <template>
   <ManagerLayout>
-    <div class="max-w-xl space-y-6">
-      <h1 class="text-2xl font-semibold">Edit Inventory Item</h1>
+    <div class="max-w-2xl space-y-6">
+      <div class="space-y-2">
+        <p class="text-xs font-black uppercase tracking-[0.24em] text-slate-400">Inventory setup</p>
+        <h1 class="text-3xl font-semibold tracking-tight text-slate-900">Edit inventory item</h1>
+        <p class="text-sm text-slate-500">
+          Adjust core details without touching the ledger history. Stock counts should be changed through add, use, transfer, or reconcile actions.
+        </p>
+      </div>
 
-      <form @submit.prevent="submit" class="space-y-4">
+      <form @submit.prevent="submit" class="space-y-4 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
         <TextInput v-model="form.name" placeholder="Name" />
         <InputError :message="form.errors.name" />
 
@@ -15,14 +21,16 @@
         <TextInput
           type="number"
           min="0"
+          step="0.01"
           v-model="form.low_stock_threshold"
           placeholder="Low Stock Threshold"
         />
+        <InputError :message="form.errors.low_stock_threshold" />
 
         <Textarea v-model="metaString" placeholder="Meta (JSON)" />
 
         <PrimaryButton :disabled="form.processing">
-          Update Item
+          {{ form.processing ? 'Saving...' : 'Save changes' }}
         </PrimaryButton>
       </form>
     </div>

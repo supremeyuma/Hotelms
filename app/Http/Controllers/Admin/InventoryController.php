@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\InventoryItem;
 use App\Models\InventoryLocation;
-use App\Models\InventoryMovement;
 use App\Services\InventoryService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -28,22 +27,26 @@ class InventoryController extends Controller
     public function index()
     {
         $items = InventoryItem::with('stocks.location')
+            ->withSum('stocks as total_stock_sum', 'quantity')
             ->paginate(25)
             ->through(fn ($item) => [
                 'id' => $item->id,
                 'name' => $item->name,
                 'sku' => $item->sku,
                 'unit' => $item->unit,
+                'low_stock_threshold' => (float) $item->low_stock_threshold,
                 'total_stock' => $item->totalStock(),
                 'low_stock' => $item->isLowStock(),
                 'stocks' => $item->stocks->map(fn ($s) => [
                     'location_id' => $s->location->id,
                     'location' => $s->location->name,
-                    'quantity' => $s->quantity,
+                    'quantity' => (float) $s->quantity,
                 ])
             ]);
 
-        $locations = InventoryLocation::all(['id', 'name']);
+        $locations = InventoryLocation::query()
+            ->orderBy('name')
+            ->get(['id', 'name', 'type']);
 
         return Inertia::render('Admin/Inventory/Index', [
             'items' => $items,
@@ -66,7 +69,7 @@ class InventoryController extends Controller
             'name' => 'required|string|max:191',
             'sku' => 'required|string|unique:inventory_items,sku',
             'unit' => 'nullable|string|max:50',
-            'low_stock_threshold' => 'required|integer|min:0',
+            'low_stock_threshold' => 'required|numeric|min:0',
             'meta' => 'nullable|array',
         ]);
 
@@ -94,7 +97,7 @@ class InventoryController extends Controller
             'name' => 'required|string|max:191',
             'sku' => 'required|string|unique:inventory_items,sku,' . $inventory->id,
             'unit' => 'nullable|string|max:50',
-            'low_stock_threshold' => 'required|integer|min:0',
+            'low_stock_threshold' => 'required|numeric|min:0',
             'meta' => 'nullable|array',
         ]);
 
@@ -113,7 +116,8 @@ class InventoryController extends Controller
     {
         $inventory->load([
             'stocks.location',
-            'movements.staff'
+            'movements.staff',
+            'movements.location',
         ]);
 
         return Inertia::render('Admin/Inventory/Show', [
@@ -122,24 +126,26 @@ class InventoryController extends Controller
                 'name' => $inventory->name,
                 'sku' => $inventory->sku,
                 'unit' => $inventory->unit,
+                'low_stock_threshold' => (float) $inventory->low_stock_threshold,
                 'updated_at' => $inventory->updated_at,
                 'total_stock' => $inventory->totalStock(),
                 'low_stock' => $inventory->isLowStock(),
                 'stocks' => $inventory->stocks->map(fn ($s) => [
                     'location_id' => $s->location->id,
                     'location' => $s->location->name,
-                    'quantity' => $s->quantity,
+                    'quantity' => (float) $s->quantity,
                 ]),
                 'movements' => $inventory->movements
                     ->sortByDesc('created_at')
                     ->map(fn ($m) => [
                         'id' => $m->id,
                         'type' => $m->type,
-                        'quantity' => $m->quantity,
+                        'quantity' => (float) $m->quantity,
                         'reason' => $m->reason,
                         'location' => $m->location->name ?? null,
                         'staff' => $m->staff,
                         'created_at' => $m->created_at,
+                        'meta' => $m->meta,
                     ])
             ]
         ]);
@@ -155,7 +161,7 @@ class InventoryController extends Controller
         
         $data = $request->validate([
             'inventory_location_id' => 'required|exists:inventory_locations,id',
-            'quantity' => 'required|integer|min:1',
+            'quantity' => 'required|numeric|gt:0',
             'reason' => 'nullable|string',
         ]);
         
@@ -171,7 +177,7 @@ class InventoryController extends Controller
             location: $location,
             quantity: $data['quantity'],
             staffId: $request->user()->id,
-            reason: $data['reason']
+            reason: $data['reason'] ?: 'Manual stock addition'
         );
 
         return back()->with('success', 'Stock added.');
@@ -181,7 +187,7 @@ class InventoryController extends Controller
     {
         $data = $request->validate([
             'inventory_location_id' => 'required|exists:inventory_locations,id',
-            'quantity' => 'required|integer|min:1',
+            'quantity' => 'required|numeric|gt:0',
             'reason' => 'nullable|string',
         ]);
 
@@ -197,7 +203,7 @@ class InventoryController extends Controller
                 location: $location,
                 quantity: $data['quantity'],
                 staffId: $request->user()->id,
-                reason: $data['reason']
+                reason: $data['reason'] ?: 'Manual stock usage'
             );
 
             return back()->with('success', 'Inventory consumed.');
@@ -208,5 +214,51 @@ class InventoryController extends Controller
                 'quantity' => "Only {$e->available} item(s) available in this location."
             ])->withInput();
         }
+    }
+
+    public function transfer(Request $request, InventoryItem $inventory)
+    {
+        $data = $request->validate([
+            'from_inventory_location_id' => 'required|exists:inventory_locations,id',
+            'to_inventory_location_id' => 'required|exists:inventory_locations,id|different:from_inventory_location_id',
+            'quantity' => 'required|numeric|gt:0',
+            'reason' => 'required|string|max:255',
+        ]);
+
+        try {
+            $this->inventory->transferStock(
+                item: $inventory,
+                from: InventoryLocation::findOrFail($data['from_inventory_location_id']),
+                to: InventoryLocation::findOrFail($data['to_inventory_location_id']),
+                quantity: (float) $data['quantity'],
+                staffId: $request->user()->id,
+                reason: $data['reason']
+            );
+
+            return back()->with('success', 'Stock transferred.');
+        } catch (InsufficientInventoryException $e) {
+            return back()->withErrors([
+                'transfer_quantity' => "Only {$e->available} item(s) available in the source location."
+            ])->withInput();
+        }
+    }
+
+    public function reconcile(Request $request, InventoryItem $inventory)
+    {
+        $data = $request->validate([
+            'inventory_location_id' => 'required|exists:inventory_locations,id',
+            'actual_quantity' => 'required|numeric|min:0',
+            'reason' => 'required|string|max:255',
+        ]);
+
+        $this->inventory->reconcileStock(
+            item: $inventory,
+            location: InventoryLocation::findOrFail($data['inventory_location_id']),
+            actualQuantity: (float) $data['actual_quantity'],
+            staffId: $request->user()->id,
+            note: $data['reason']
+        );
+
+        return back()->with('success', 'Stock reconciled.');
     }
 }

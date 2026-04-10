@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\CleaningInventoryTemplate;
 use App\Models\RoomType;
 use App\Models\InventoryItem;
+use App\Models\InventoryLocation;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use DB;
@@ -29,10 +30,23 @@ class CleaningInventoryTemplateController extends Controller
                     'name' => $t->inventoryItem->name,
                     'unit' => $t->inventoryItem->unit,
                     'total_stock' => $t->inventoryItem->totalStock(),
+                    'low_stock' => $t->inventoryItem->isLowStock(),
                 ]
             ]),
             'roomTypes' => RoomType::all(['id', 'title']),
-            'inventoryItems' => InventoryItem::all(['id', 'name', 'unit']),
+            'inventoryItems' => InventoryItem::query()
+                ->orderBy('name')
+                ->get(['id', 'name', 'unit', 'low_stock_threshold'])
+                ->map(fn ($item) => [
+                    'id' => $item->id,
+                    'name' => $item->name,
+                    'unit' => $item->unit,
+                    'total_stock' => $item->totalStock(),
+                    'low_stock' => $item->isLowStock(),
+                ]),
+            'sourceLocation' => InventoryLocation::query()
+                ->where('type', InventoryLocation::TYPE_MAIN_STORE)
+                ->value('name') ?? 'Main Store',
         ]);
     }
 

@@ -7,6 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class InventoryMovement extends Model
 {
+    public const TYPE_IN = 'in';
+    public const TYPE_OUT = 'out';
+    public const TYPE_TRANSFER_IN = 'transfer_in';
+    public const TYPE_TRANSFER_OUT = 'transfer_out';
+    public const TYPE_ADJUSTMENT = 'adjustment';
+
     protected $fillable = [
         'inventory_item_id',
         'inventory_location_id',
@@ -20,6 +26,7 @@ class InventoryMovement extends Model
     ];
 
     protected $casts = [
+        'quantity' => 'decimal:2',
         'meta' => 'array'
     ];
 
@@ -39,6 +46,11 @@ class InventoryMovement extends Model
             InventoryLocation::class,
             'inventory_location_id'
         );
+    }
+
+    public function reference()
+    {
+        return $this->morphTo();
     }
 
 }

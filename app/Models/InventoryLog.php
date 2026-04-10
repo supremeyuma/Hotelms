@@ -14,7 +14,7 @@ class InventoryLog extends Model
         'staff_id',
         'change',
         'type',
-        'meta'  => 'array',
+        'meta',
     ];
 
     protected $casts = [

@@ -16,6 +16,8 @@ class InventoryItem extends Model
     ];
 
     protected $casts = [
+        'quantity' => 'decimal:2',
+        'low_stock_threshold' => 'decimal:2',
         'meta' => 'array'
     ];
 
@@ -29,13 +31,13 @@ class InventoryItem extends Model
         return $this->hasMany(InventoryMovement::class);
     }
 
-    public function totalStock(): int
+    public function totalStock(): float
     {
-        return (int) $this->stocks()->sum('quantity');
+        return (float) $this->stocks()->sum('quantity');
     }
 
     public function isLowStock(): bool
     {
-        return $this->totalStock() <= $this->low_stock_threshold;
+        return $this->totalStock() <= (float) $this->low_stock_threshold;
     }
 }

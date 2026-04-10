@@ -4,8 +4,8 @@
 namespace App\Services;
 
 use App\Models\Booking;
+use App\Models\InventoryMovement;
 use App\Models\Order;
-use App\Models\InventoryLog;
 use App\Models\MaintenanceTicket;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -92,8 +92,9 @@ class ReportService
      */
     public function inventoryUsage(string $from, string $to): array
     {
-        $usage = InventoryLog::selectRaw('inventory_item_id, SUM(ABS(change)) as used')
+        $usage = InventoryMovement::selectRaw('inventory_item_id, SUM(quantity) as used')
             ->whereBetween('created_at', [$from, $to])
+            ->whereIn('type', ['out', 'transfer_out', 'adjustment'])
             ->groupBy('inventory_item_id')
             ->get();
 

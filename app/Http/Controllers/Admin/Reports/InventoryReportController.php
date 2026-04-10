@@ -4,6 +4,8 @@
 namespace App\Http\Controllers\Admin\Reports;
 
 use App\Http\Controllers\Controller;
+use App\Models\InventoryItem;
+use App\Models\InventoryLocation;
 use App\Services\Reports\InventoryReportService;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
@@ -27,6 +29,9 @@ class InventoryReportController extends Controller
             'rows' => $rows,
             'chart' => $chartData,
             'filters' => $request->all(),
+            'items' => InventoryItem::query()->orderBy('name')->get(['id', 'name', 'sku']),
+            'locations' => InventoryLocation::query()->orderBy('name')->get(['id', 'name']),
+            'types' => ['in', 'out', 'transfer_in', 'transfer_out', 'adjustment'],
         ]);
     }
 

@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Staff;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Events\OrderStatusUpdated;
+use App\Exceptions\InsufficientInventoryException;
 use App\Services\OrderChargeService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Services\KitchenInventoryService;
+use Illuminate\Support\Facades\DB;
 
 class KitchenOrderController extends Controller
 {
@@ -38,15 +40,12 @@ class KitchenOrderController extends Controller
 
     public function updateStatus(Request $request, Order $order, KitchenInventoryService $inventory)
     {
-        $request->validate([
+        $data = $request->validate([
             'status' => 'required|in:preparing,ready,delivered'
         ]);
 
-        $order->update(['status' => $request->status]);
-
-        broadcast(new OrderStatusUpdated($order))->toOthers();
-
         if (
+            $data['status'] === 'preparing' &&
             $order->charge &&
             $order->charge->payment_mode === 'prepaid' &&
             $order->charge->status === 'unpaid'
@@ -54,11 +53,22 @@ class KitchenOrderController extends Controller
             return back()->with('error', 'Order cannot be prepared until payment is completed.');
         }
 
-        if ($request->status === 'preparing') {
-            app(OrderChargeService::class)->post($order);
+        try {
+            DB::transaction(function () use ($data, $order, $inventory) {
+                $previousStatus = $order->status;
 
-            $inventory->consumeForOrder($order);
+                if ($data['status'] === 'preparing' && $previousStatus !== 'preparing') {
+                    app(OrderChargeService::class)->post($order);
+                    $inventory->consumeForOrder($order->loadMissing('items.menuItem'));
+                }
+
+                $order->update(['status' => $data['status']]);
+            });
+        } catch (InsufficientInventoryException $e) {
+            return back()->with('error', "Kitchen stock is insufficient. Available quantity in source location: {$e->available}.");
         }
+
+        broadcast(new OrderStatusUpdated($order->fresh()))->toOthers();
 
         return back();
     }

@@ -8,7 +8,7 @@ use App\Models\OrderItem;
 use App\Models\Room;
 use App\Models\User;
 use App\Models\InventoryItem;
-use App\Models\InventoryLog;
+use App\Models\InventoryLocation;
 use App\Services\AuditLoggerService;
 use App\Services\NotificationService;
 use App\Services\PricingService;
@@ -174,21 +174,30 @@ class OrderService
     protected function deductInventory(string $sku, int $qty, ?int $staffId = null): void
     {
         $item = InventoryItem::where('sku', $sku)->first();
-        if (!$item) return;
+        if (! $item) {
+            return;
+        }
 
-        $before = $item->quantity;
-        $item->decrement('quantity', $qty);
-        InventoryLog::create([
-            'inventory_item_id' => $item->id,
-            'staff_id' => $staffId,
-            'change' => -abs($qty),
-            'meta' => ['before' => $before, 'after' => $item->quantity]
-        ]);
+        $location = InventoryLocation::where('type', InventoryLocation::TYPE_MAIN_STORE)->first();
 
-        // low-stock notification
-        if ($item->quantity <= ($item->threshold ?? 10)) {
-            $this->notifier->notifyManagers("Low stock: {$item->name}", ['sku' => $item->sku, 'qty' => $item->quantity]);
-            $this->audit->log('inventory_low_alert', $item, $item->id, ['qty' => $item->quantity]);
+        if (! $location) {
+            return;
+        }
+
+        app(InventoryService::class)->consumeStock(
+            item: $item,
+            location: $location,
+            quantity: $qty,
+            staffId: $staffId,
+            reason: 'Order inventory deduction',
+            meta: ['source' => self::class]
+        );
+
+        $remaining = $item->fresh()->totalStock();
+
+        if ($remaining <= ((float) $item->fresh()->low_stock_threshold)) {
+            $this->notifier->notifyManagers("Low stock: {$item->name}", ['sku' => $item->sku, 'qty' => $remaining]);
+            $this->audit->log('inventory_low_alert', $item, $item->id, ['qty' => $remaining]);
         }
     }
 

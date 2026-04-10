@@ -46,6 +46,7 @@ class MenuInventoryRecipeController extends Controller
                         'name' => $recipe->inventoryItem->name,
                         'sku' => $recipe->inventoryItem->sku,
                         'unit' => $recipe->inventoryItem->unit,
+                        'low_stock_threshold' => (float) ($recipe->inventoryItem->low_stock_threshold ?? 0),
                         'total_stock' => $totalStock,
                         'low_stock' => $totalStock <= (float) ($recipe->inventoryItem->low_stock_threshold ?? 0),
                     ],
@@ -85,6 +86,7 @@ class MenuInventoryRecipeController extends Controller
                         'name' => $item->name,
                         'sku' => $item->sku,
                         'unit' => $item->unit,
+                        'low_stock_threshold' => (float) ($item->low_stock_threshold ?? 0),
                         'total_stock' => $totalStock,
                         'low_stock' => $totalStock <= (float) ($item->low_stock_threshold ?? 0),
                     ];

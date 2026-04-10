@@ -18,7 +18,7 @@ class KitchenInventoryService
 
     public function consumeForOrder(Order $order): void
     {
-        $location = InventoryLocation::where('type', 'kitchen')->firstOrFail();
+        $location = InventoryLocation::where('type', InventoryLocation::TYPE_KITCHEN)->firstOrFail();
 
         DB::transaction(function () use ($order, $location) {
             foreach ($order->items as $item) {
@@ -33,7 +33,13 @@ class KitchenInventoryService
                         location: $location,
                         quantity: $recipe->quantity * $item->quantity,
                         staffId: $order->handled_by,
-                        reason: "Kitchen order #{$order->id}"
+                        reason: "Kitchen order #{$order->id}",
+                        referenceType: Order::class,
+                        referenceId: $order->id,
+                        meta: [
+                            'menu_item_id' => $item->menu_item_id,
+                            'order_item_id' => $item->id,
+                        ]
                     );
                 }
             }

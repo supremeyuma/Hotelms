@@ -16,8 +16,8 @@ class InventoryRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'sku' => ['required', 'string', 'unique:inventory_items,sku,' . $this->inventory_item?->id],
-            'quantity' => ['required', 'integer', 'min:0'],
             'unit' => ['nullable', 'string'],
+            'low_stock_threshold' => ['required', 'numeric', 'min:0'],
             'meta' => ['nullable', 'array'],
         ];
     }
@@ -25,7 +25,6 @@ class InventoryRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'quantity.min' => 'Quantity must be zero or greater.',
             'sku.unique' => 'SKU must be unique.',
         ];
     }
