@@ -6,9 +6,12 @@ import { computed, reactive, watch } from 'vue'
 import {
   BedDouble,
   CircleDot,
+  Download,
   DoorOpen,
   ImagePlus,
   PenSquare,
+  QrCode,
+  RefreshCw,
   Search,
   ShieldAlert,
   Sparkles,
@@ -154,6 +157,24 @@ function deleteRoom(room) {
   if (!window.confirm(`Delete ${room.name}?`)) return
 
   router.delete(route('admin.rooms.destroy', room.id), {
+    preserveScroll: true,
+  })
+}
+
+function generateQr(room, regenerate = false) {
+  router.post(
+    regenerate ? route('admin.rooms.qr.regenerate', room.id) : route('admin.rooms.qr.generate', room.id),
+    {},
+    { preserveScroll: true }
+  )
+}
+
+function invalidateQr(room) {
+  if (!window.confirm(`Invalidate the current QR code for ${room.name}? Guests using the old printed code will lose access until a new QR is generated.`)) {
+    return
+  }
+
+  router.delete(route('admin.rooms.qr.invalidate', room.id), {
     preserveScroll: true,
   })
 }
@@ -315,6 +336,66 @@ function deleteRoom(room) {
                     <span v-if="room.primary_image_url">Primary image is set and ready for booking flow display.</span>
                     <span v-else>Add a primary image so guests see a curated room photo during selection.</span>
                   </p>
+                </div>
+              </div>
+
+              <div class="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <p class="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Guest room QR</p>
+                    <p class="mt-2 text-sm text-slate-600">
+                      <span v-if="room.qr?.exists">This room has an active QR code. The printed QR stays stable until you regenerate or invalidate it.</span>
+                      <span v-else>No QR code is active for this room right now.</span>
+                    </p>
+                    <a
+                      v-if="room.qr?.entry_url"
+                      :href="room.qr.entry_url"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="mt-3 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-slate-500 transition hover:text-slate-700"
+                    >
+                      <QrCode class="h-3.5 w-3.5" />
+                      Open guest entry link
+                    </a>
+                  </div>
+
+                  <div class="flex flex-wrap gap-2">
+                    <a
+                      v-if="room.qr?.exists"
+                      :href="room.qr.view_url"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-100"
+                    >
+                      <QrCode class="h-4 w-4" />
+                      View QR
+                    </a>
+                    <a
+                      v-if="room.qr?.exists"
+                      :href="room.qr.download_url"
+                      class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-100"
+                    >
+                      <Download class="h-4 w-4" />
+                      Download
+                    </a>
+                    <button
+                      type="button"
+                      @click="generateQr(room, room.qr?.exists)"
+                      class="inline-flex items-center gap-2 rounded-xl border border-indigo-200 px-4 py-2 text-sm font-bold text-indigo-700 transition hover:bg-indigo-50"
+                    >
+                      <RefreshCw class="h-4 w-4" />
+                      {{ room.qr?.exists ? 'Regenerate' : 'Generate QR' }}
+                    </button>
+                    <button
+                      v-if="room.qr?.exists"
+                      type="button"
+                      @click="invalidateQr(room)"
+                      class="inline-flex items-center gap-2 rounded-xl border border-amber-200 px-4 py-2 text-sm font-bold text-amber-700 transition hover:bg-amber-50"
+                    >
+                      <ShieldAlert class="h-4 w-4" />
+                      Invalidate
+                    </button>
+                  </div>
                 </div>
               </div>
 

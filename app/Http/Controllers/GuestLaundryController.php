@@ -26,8 +26,8 @@ class GuestLaundryController extends Controller
      */
     public function show(Request $request)
     {
-        $room = $request->get('guestRoom');
-        $booking = $request->get('guestBooking');
+        $room = $request->attributes->get('room', $request->get('guestRoom'));
+        $booking = $request->attributes->get('booking', $request->get('guestBooking'));
         // Fetch all laundry items
         $items = LaundryItem::all(); // or filter by property if needed
 
@@ -43,14 +43,10 @@ class GuestLaundryController extends Controller
     /**
      * Submit laundry order
      */
-    public function store(Request $request, Room $room)
+    public function store(Request $request)
     {   
-        $room = $request->get('guestRoom');
-        $booking = $request->get('guestBooking');
-        //dd($room, $booking);
-        //$this->authorize('requestLaundry', $room);
-
-
+        $room = $request->attributes->get('room', $request->get('guestRoom'));
+        $booking = $request->attributes->get('booking', $request->get('guestBooking'));
 
         $data = $request->validate([
             'booking_id' => 'required|exists:bookings,id',
@@ -61,6 +57,15 @@ class GuestLaundryController extends Controller
             'payment_mode' => 'required|in:prepaid,postpaid',
 
         ]);
+
+        abort_unless((int) $booking->id === (int) $data['booking_id'], 403, 'Booking mismatch for room access.');
+
+        if ($data['payment_mode'] === 'prepaid') {
+            return back()->with(
+                'error',
+                'Online payment for laundry requests is not available yet. Please use pay on delivery.'
+            );
+        }
 
         // Handle image uploads
         $uploadedPaths = [];

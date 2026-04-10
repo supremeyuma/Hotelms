@@ -4,16 +4,14 @@ namespace App\Http\Controllers\Guest;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
-use App\Models\RoomAccessToken;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class OrderHistoryController extends Controller
 {
-    public function index(string $token)
+    public function index(Request $request)
     {
-        $access = RoomAccessToken::with('room')
-            ->where('token', $token)
-            ->firstOrFail();
+        $access = $request->attributes->get('roomAccessToken');
 
         $orders = Order::with('items')
             ->where('booking_id', $access->booking_id)

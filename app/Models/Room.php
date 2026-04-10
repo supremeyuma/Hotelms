@@ -22,10 +22,15 @@ class Room extends Model
         'display_name',
         'slug',
         'floor',
+        'qr_key',
+        'qr_generated_at',
+        'qr_invalidated_at',
     ];
 
     protected $casts = [
         'meta' => 'array',
+        'qr_generated_at' => 'datetime',
+        'qr_invalidated_at' => 'datetime',
     ];
 
     /* ---------------- Relationships ---------------- */
@@ -103,8 +108,12 @@ class Room extends Model
 
     public function roomAccessToken()
     {
-        return $this->hasOne(RoomAccessToken::class, 'room_id', 'id')
-                    ->where('booking_id', request()->booking->id);
+        return $this->hasOne(RoomAccessToken::class, 'room_id', 'id')->latestOfMany();
+    }
+
+    public function roomAccessTokens()
+    {
+        return $this->hasMany(RoomAccessToken::class, 'room_id', 'id');
     }
 
     public function charges()

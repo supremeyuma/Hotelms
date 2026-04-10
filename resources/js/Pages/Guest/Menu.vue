@@ -26,7 +26,7 @@ const cart = ref([])
 
 const showPreview = ref(false)
 const submitting = ref(false)
-const paymentMode = ref('prepaid') // prepaid | pay_on_delivery
+const paymentMode = ref('pay_on_delivery')
 
 /* ================= UI ================= */
 const toast = ref(null)
@@ -37,7 +37,7 @@ const showConfirm = ref(false)
 watch(
   () => page.props.flash,
   (flash) => {
-    if (flash?.success && paymentMode.value === 'pay_on_delivery') {
+    if (flash?.success) {
       toastType.value = 'success'
       toast.value = flash.success
       showConfirm.value = true
@@ -129,10 +129,8 @@ function confirmOrder() {
       onFinish: () => {
         submitting.value = false
         showPreview.value = false
-        if (paymentMode.value === 'pay_on_delivery') {
-          cart.value = []
-          sessionStorage.removeItem('guest-cart')
-        }
+        cart.value = []
+        sessionStorage.removeItem('guest-cart')
       },
       onError: () => {
         submitting.value = false
@@ -468,14 +466,6 @@ function openHistory() {
         <div class="space-y-3 border-t border-gray-200 pt-4">
           <p class="font-bold text-sm text-gray-900">Payment Method</p>
           <label class="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition"
-            :class="paymentMode === 'prepaid' ? 'border-black bg-black/5' : 'border-gray-200 hover:border-gray-300'">
-            <input type="radio" value="prepaid" v-model="paymentMode" class="w-4 h-4" />
-            <div>
-              <p class="font-semibold text-sm text-gray-900">Pay Now</p>
-              <p class="text-xs text-gray-500">Online payment</p>
-            </div>
-          </label>
-          <label class="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition"
             :class="paymentMode === 'pay_on_delivery' ? 'border-black bg-black/5' : 'border-gray-200 hover:border-gray-300'">
             <input type="radio" value="pay_on_delivery" v-model="paymentMode" class="w-4 h-4" />
             <div>
@@ -483,6 +473,9 @@ function openHistory() {
               <p class="text-xs text-gray-500">Added to your room bill</p>
             </div>
           </label>
+          <div class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-medium text-amber-800">
+            Online payment for in-room menu orders is being finalized. Orders currently go through your room bill.
+          </div>
         </div>
 
         <!-- ACTIONS -->

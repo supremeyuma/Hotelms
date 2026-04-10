@@ -13,7 +13,9 @@ class ValidateRoomToken
     {
         $token = $request->route('token');
 
-        $access = RoomAccessToken::where('token', $token)->first();
+        $access = RoomAccessToken::with(['room', 'booking'])
+            ->where('token', $token)
+            ->first();
 
         if (!$access) {
             abort(403, 'Invalid room access token.');
@@ -26,6 +28,12 @@ class ValidateRoomToken
         if (! in_array($access->booking->status, ['active', 'checked_in'], true)) {
             abort(403, 'Booking is not active.');
         }
+
+        $request->attributes->set('room', $access->room);
+        $request->attributes->set('booking', $access->booking);
+        $request->attributes->set('roomAccessToken', $access);
+        $request->attributes->set('guestRoom', $access->room);
+        $request->attributes->set('guestBooking', $access->booking);
 
         // Attach room & booking to request
         $request->merge([

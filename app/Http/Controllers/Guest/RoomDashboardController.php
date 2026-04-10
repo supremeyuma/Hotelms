@@ -12,6 +12,7 @@ use App\Services\BillingService;
 use App\Services\BookingExtensionService;
 use App\Services\CheckoutService;
 use App\Services\PaymentProviderManager;
+use App\Services\RoomGuestAccessService;
 use App\Events\ServiceRequested;
 use App\Events\MaintenanceReported;
 use App\Events\BillingUpdated;
@@ -30,6 +31,7 @@ protected RoomServiceService $roomService;
     protected BookingExtensionService $extensionService;
     protected CheckoutService $checkoutService;
     protected PaymentProviderManager $paymentManager;
+    protected RoomGuestAccessService $roomGuestAccessService;
 
     public function __construct(
         RoomServiceService $roomService,
@@ -37,7 +39,8 @@ protected RoomServiceService $roomService;
         BillingService $billingService,
         BookingExtensionService $extensionService,
         CheckoutService $checkoutService,
-        PaymentProviderManager $paymentManager
+        PaymentProviderManager $paymentManager,
+        RoomGuestAccessService $roomGuestAccessService
     ) {
         $this->roomService = $roomService;
         $this->maintenanceService = $maintenanceService;
@@ -45,6 +48,7 @@ protected RoomServiceService $roomService;
         $this->extensionService = $extensionService;
         $this->checkoutService = $checkoutService;
         $this->paymentManager = $paymentManager;
+        $this->roomGuestAccessService = $roomGuestAccessService;
     }
 
     /**
@@ -52,13 +56,14 @@ protected RoomServiceService $roomService;
      */
     public function index(Request $request)
     {
-        $room = $request->room;
-        $booking = $request->booking;
+        $room = $this->room($request);
+        $booking = $this->booking($request);
+        $accessToken = $this->accessToken($request);
 
         return Inertia::render('Guest/RoomDashboard', [
             'room' => $room,
             'booking' => $booking,
-            'accessToken' => $room->roomAccessToken?->token,
+            'accessToken' => $accessToken?->token,
             'outstandingBill' => $this->billingService
                 ->outstandingForRoom($booking, $room->id),
             'laundryItems' => LaundryItem::all(),
@@ -89,8 +94,8 @@ protected RoomServiceService $roomService;
      */
     public function billHistory(Request $request)
     {
-        $room = $request->room;
-        $booking = $request->booking;
+        $room = $this->room($request);
+        $booking = $this->booking($request);
 
         return response()->json([
             'history' => $room->charges()
@@ -131,8 +136,8 @@ protected RoomServiceService $roomService;
             'provider' => 'nullable|string|in:flutterwave,paystack',
         ]);
 
-        $room = $request->room;
-        $booking = $request->booking;
+        $room = $this->room($request);
+        $booking = $this->booking($request);
         $amount = $request->amount;
         $provider = $request->provider ?? $this->paymentManager->getDefaultProvider();
 
@@ -187,8 +192,8 @@ protected RoomServiceService $roomService;
             'provider' => 'nullable|string|in:flutterwave,paystack',
         ]);
 
-        $room = $request->room;
-        $booking = $request->booking;
+        $room = $this->room($request);
+        $booking = $this->booking($request);
         $amount = (float) $request->amount;
         $provider = $request->provider ?? $this->paymentManager->getDefaultProvider();
 
@@ -238,17 +243,18 @@ protected RoomServiceService $roomService;
 
             // Create payment record in database for tracking
             $payment = Payment::create([
-                'user_id' => $booking->user_id,
+                'booking_id' => $booking->id,
                 'reference' => $reference,
+                'payment_reference' => $reference,
                 'provider' => $provider,
                 'amount' => $amount,
                 'currency' => 'NGN',
                 'status' => 'pending',
                 'payment_type' => 'room_bill',
-                'metadata' => json_encode([
+                'raw_response' => [
                     'booking_id' => $booking->id,
                     'room_id' => $room->id,
-                ]),
+                ],
             ]);
 
             Log::info('Room bill payment initiated', [
@@ -308,18 +314,21 @@ protected RoomServiceService $roomService;
         try {
             $verification = $this->paymentManager->verifyPayment($reference);
 
+            $roomModel = \App\Models\Room::findOrFail($room);
+            $accessToken = $this->roomGuestAccessService->resolveCurrentAccessTokenForRoom($roomModel);
+
             if (!$verification['success']) {
                 Log::warning('Bill payment verification failed', [
                     'reference' => $reference,
                     'room_id' => $room,
                 ]);
 
-                return redirect()->route('guest.room.dashboard', ['token' => $request->room->roomAccessToken->token])
+                abort_unless($accessToken, 403, 'Guest access is not available for this room right now.');
+
+                return redirect()->route('guest.room.dashboard', ['token' => $accessToken->token])
                     ->with('error', 'Payment verification failed');
             }
 
-            // Find the room and booking
-            $roomModel = \App\Models\Room::findOrFail($room);
             $payment = Payment::where('reference', $reference)->first();
 
             if ($payment) {
@@ -346,7 +355,9 @@ protected RoomServiceService $roomService;
                 ]);
             }
 
-            return redirect()->route('guest.room.dashboard', ['token' => $request->room->roomAccessToken->token])
+            abort_unless($accessToken, 403, 'Guest access is not available for this room right now.');
+
+            return redirect()->route('guest.room.dashboard', ['token' => $accessToken->token])
                 ->with('success', 'Payment completed successfully');
 
         } catch (\Exception $e) {
@@ -356,7 +367,12 @@ protected RoomServiceService $roomService;
                 'room_id' => $room,
             ]);
 
-            return redirect()->route('guest.room.dashboard', ['token' => $request->room->roomAccessToken->token])
+            $roomModel = \App\Models\Room::find($room);
+            $accessToken = $roomModel ? $this->roomGuestAccessService->resolveCurrentAccessTokenForRoom($roomModel) : null;
+
+            abort_unless($accessToken, 403, 'Guest access is not available for this room right now.');
+
+            return redirect()->route('guest.room.dashboard', ['token' => $accessToken->token])
                 ->with('error', 'Payment processing failed');
         }
     }
@@ -430,9 +446,9 @@ protected RoomServiceService $roomService;
         ]);
 
         $serviceRequest = $this->roomService->createRequest(
-            $request->booking,
+            $this->booking($request),
             $request->type,
-            ['notes' => $request->notes, 'room_id' => $request->room->id],
+            ['notes' => $request->notes, 'room_id' => $this->room($request)->id],
         );
 
         event(new ServiceRequested($serviceRequest));
@@ -449,8 +465,8 @@ protected RoomServiceService $roomService;
         ]);
 
         $ticket = $this->maintenanceService->reportIssue(
-            $request->booking,
-            $request->room,
+            $this->booking($request),
+            $this->room($request),
             $request->type,
             $request->description,
             $request->file('file')
@@ -464,11 +480,11 @@ protected RoomServiceService $roomService;
     public function extendStay(Request $request)
     {
         $request->validate([
-            'new_checkout' => 'required|date|after:' . $request->booking->check_out,
+            'new_checkout' => 'required|date|after:' . $this->booking($request)->check_out,
         ]);
 
         $this->extensionService->extendStay(
-            $request->booking,
+            $this->booking($request),
             $request->new_checkout
         );
 
@@ -477,8 +493,23 @@ protected RoomServiceService $roomService;
 
     public function checkout(Request $request)
     {
-        $this->checkoutService->checkout($request->booking);
+        $this->checkoutService->checkout($this->booking($request));
 
         return back()->with('success', 'Checked out successfully.');
+    }
+
+    protected function room(Request $request)
+    {
+        return $request->attributes->get('room', $request->room);
+    }
+
+    protected function booking(Request $request)
+    {
+        return $request->attributes->get('booking', $request->booking);
+    }
+
+    protected function accessToken(Request $request)
+    {
+        return $request->attributes->get('roomAccessToken', $request->room_access_token);
     }
 }

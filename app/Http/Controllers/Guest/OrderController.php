@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Guest;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
-use App\Models\RoomAccessToken;
 use App\Models\Charge;
 use App\Enums\OrderStatus;
 use App\Events\OrderCreated;
@@ -28,12 +27,16 @@ class OrderController extends Controller
             'payment_mode'        => 'required|in:prepaid,pay_on_delivery',
         ]);
 
-        try {
-            $order = DB::transaction(function () use ($data, $token) {
+        if ($data['payment_mode'] === 'prepaid') {
+            return back()->with(
+                'error',
+                'Online payment for in-room menu orders is not available yet. Please use pay on delivery.'
+            );
+        }
 
-                $access = RoomAccessToken::with(['room', 'booking'])
-                    ->where('token', $token)
-                    ->firstOrFail();
+        try {
+            $order = DB::transaction(function () use ($data, $request) {
+                $access = $request->attributes->get('roomAccessToken');
 
                 $order = Order::create([
                     'booking_id' => $access->booking_id,
@@ -83,13 +86,6 @@ class OrderController extends Controller
 
             // ✅ NOW decide response (outside transaction)
 
-            if ($data['payment_mode'] === 'prepaid') {
-                return inertia()->location(
-                    route('guest.payment.start', ['order' => $order->id])
-                );
-            }
-
-
             return back()->with('success', 'Order confirmed. Pay on delivery.');
 
         } catch (\Throwable $e) {
@@ -105,6 +101,15 @@ class OrderController extends Controller
 
     public function cancel(string $token, Order $order)
     {
+        $access = request()->attributes->get('roomAccessToken');
+
+        abort_unless(
+            $access
+            && (int) $order->booking_id === (int) $access->booking_id
+            && (int) $order->room_id === (int) $access->room_id,
+            403,
+            'Order does not belong to this room access token.'
+        );
 
         if (! $order->can_be_cancelled) {
             return back()->with('error', 'This order can no longer be cancelled.');

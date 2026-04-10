@@ -10,6 +10,7 @@ use App\Models\Room;
 use App\Models\Property;
 use App\Models\RoomType;
 use App\Services\AuditLoggerService as AuditLogger;
+use App\Services\RoomGuestAccessService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -28,11 +29,13 @@ class RoomController extends Controller
     ];
 
     protected AuditLogger $auditLogger;
+    protected RoomGuestAccessService $roomGuestAccessService;
 
-    public function __construct(AuditLogger $auditLogger)
+    public function __construct(AuditLogger $auditLogger, RoomGuestAccessService $roomGuestAccessService)
     {
         $this->middleware(['auth','role:manager|md']);
         $this->auditLogger = $auditLogger;
+        $this->roomGuestAccessService = $roomGuestAccessService;
     }
 
     /**
@@ -102,6 +105,14 @@ class RoomController extends Controller
                         'url' => $image->url,
                         'is_primary' => (bool) $image->is_primary,
                     ])->values(),
+                    'qr' => [
+                        'exists' => filled($room->qr_key),
+                        'entry_url' => filled($room->qr_key) ? route('guest.room.entry', ['room' => $room->qr_key]) : null,
+                        'view_url' => route('admin.rooms.qr.show', $room->id),
+                        'download_url' => route('admin.rooms.qr.download', $room->id),
+                        'generated_at' => optional($room->qr_generated_at)->toIso8601String(),
+                        'invalidated_at' => optional($room->qr_invalidated_at)->toIso8601String(),
+                    ],
                     'housekeeping' => [
                         'status' => $housekeepingStatus,
                         'updated_at' => optional($room->latestCleaning?->updated_at)->toIso8601String(),
@@ -236,6 +247,7 @@ class RoomController extends Controller
         }
 
         $this->applyPrimaryImageSelection($room, null, $data['primary_upload_index'] ?? null, $uploadedIds);
+        $this->roomGuestAccessService->ensureRoomQr($room);
 
         $this->auditLogger->log('room_created', 'Room', $room->id, ['data' => $data]);
 
