@@ -16,10 +16,12 @@ class User extends Authenticatable
 
     protected $fillable = [
         'uuid',
+        'department_id',
         'role_id',
         'name',
         'email',
         'password',
+        'suspended_at',
     ];
 
     protected $hidden = [
@@ -29,6 +31,7 @@ class User extends Authenticatable
 
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'suspended_at' => 'datetime',
     ];
 
     /* ---------------- Relationships ---------------- */

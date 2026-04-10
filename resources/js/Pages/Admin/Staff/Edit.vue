@@ -3,7 +3,7 @@
     <div class="space-y-6">
       <div>
         <h2 class="text-2xl font-semibold">Edit Staff {{ staff.name }}</h2>
-        <p class="text-sm text-slate-500">HR can update employment details, role assignment, and internal notes.</p>
+        <p class="text-sm text-slate-500">Managers and HR can update employment details, role assignment, and internal notes.</p>
       </div>
 
       <form @submit.prevent="submit">
@@ -37,7 +37,7 @@
       </form>
 
       <section class="space-y-4">
-        <h3 class="text-xl font-semibold">HR Notes</h3>
+        <h3 class="text-xl font-semibold">Staff Notes</h3>
 
         <form @submit.prevent="submitNote">
           <FormSection>

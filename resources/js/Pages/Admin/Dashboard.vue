@@ -120,6 +120,13 @@ function cardToneClasses(tone) {
                 View reports
                 <Activity class="h-4 w-4" />
               </Link>
+              <Link
+                :href="route('admin.staff.index')"
+                class="inline-flex items-center gap-2 rounded-2xl border border-emerald-300/40 bg-emerald-400/15 px-5 py-3 text-sm font-bold text-emerald-50 transition hover:bg-emerald-400/25"
+              >
+                Manage staff
+                <ArrowUpRight class="h-4 w-4" />
+              </Link>
             </div>
           </div>
 
@@ -229,9 +236,12 @@ function cardToneClasses(tone) {
                 v-for="link in quickLinks"
                 :key="link.label"
                 :href="link.route"
-                class="flex items-center justify-between rounded-[1.25rem] border border-slate-200 px-4 py-4 transition hover:border-slate-300 hover:bg-slate-50"
+                class="flex items-start justify-between gap-4 rounded-[1.25rem] border border-slate-200 px-4 py-4 transition hover:border-slate-300 hover:bg-slate-50"
               >
-                <p class="font-bold text-slate-900">{{ link.label }}</p>
+                <div>
+                  <p class="font-bold text-slate-900">{{ link.label }}</p>
+                  <p class="mt-1 text-sm text-slate-500">{{ link.description }}</p>
+                </div>
                 <ArrowUpRight class="h-4 w-4 text-slate-400" />
               </Link>
             </div>

@@ -1,7 +1,7 @@
 <template>
   <ManagerLayout>
     <div class="p-6">
-      <h2 class="mb-4 text-2xl font-bold">HR Onboarding</h2>
+      <h2 class="mb-4 text-2xl font-bold">Staff Onboarding</h2>
 
       <form @submit.prevent="submit">
         <FormSection>

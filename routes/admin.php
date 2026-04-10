@@ -7,6 +7,8 @@ use App\Http\Controllers\Admin\{
     RoomController,
     RoomTypeController,
     BookingAdminController,
+    StaffController,
+    StaffThreadController,
     InventoryController,
     MaintenanceAdminController,
     SettingController,
@@ -34,6 +36,24 @@ Route::middleware(['auth', 'role:manager|md'])->prefix('admin')->as('admin.')->g
         Route::get('bookings', [BookingAdminController::class, 'index'])->name('bookings.index');
         Route::get('bookings/{booking}/edit', [BookingAdminController::class, 'edit'])->name('bookings.edit');
         Route::put('bookings/{booking}', [BookingAdminController::class, 'update'])->name('bookings.update');
+
+        Route::prefix('staff')->name('staff.')->group(function () {
+            Route::get('/', [StaffController::class, 'index'])->name('index');
+            Route::get('/create', [StaffController::class, 'create'])->name('create');
+            Route::post('/', [StaffController::class, 'store'])->name('store');
+            Route::get('/{staff}/edit', [StaffController::class, 'edit'])->name('edit');
+            Route::put('/{staff}', [StaffController::class, 'update'])->name('update');
+            Route::delete('/{staff}', [StaffController::class, 'destroy'])->name('destroy');
+            Route::post('/{staff}/suspend', [StaffController::class, 'suspend'])->name('suspend');
+            Route::post('/{staff}/reinstate', [StaffController::class, 'reinstate'])->name('reinstate');
+            Route::post('/{staff}/notes', [StaffController::class, 'addNote'])->name('notes.store');
+
+            Route::get('/{staff}/threads', [StaffThreadController::class, 'index'])->name('threads.index');
+            Route::get('/{staff}/threads/create', [StaffThreadController::class, 'create'])->name('threads.create');
+            Route::post('/{staff}/threads', [StaffThreadController::class, 'createThread'])->name('threads.store');
+            Route::get('/threads/{thread}', [StaffThreadController::class, 'show'])->name('threads.show');
+            Route::post('/threads/{thread}/messages', [StaffThreadController::class, 'storeMessage'])->name('threads.messages.store');
+        });
 
         Route::get('inventory',[InventoryController::class, 'index'])->name('inventory.index');
         Route::get('inventory/create', [InventoryController::class, 'create'])->name('inventory.create');

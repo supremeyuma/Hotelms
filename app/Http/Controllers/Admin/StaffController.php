@@ -36,17 +36,18 @@ class StaffController extends Controller
 
     public function __construct(AuditLogger $auditLogger)
     {
-        $this->middleware(['auth','role:hr|md']);
+        $this->middleware(['auth','role:manager|hr|md']);
         $this->auditLogger = $auditLogger;
     }
 
     public function index()
     {
         $filters = request()->only(['search', 'role', 'department', 'status']);
+        $staffQuery = User::query()
+            ->whereHas('roles', fn ($query) => $query->whereIn('name', $this->manageableRoles));
 
-        $staff = User::query()
+        $staff = (clone $staffQuery)
             ->with(['roles', 'staffProfile', 'department'])
-            ->whereHas('roles', fn ($query) => $query->whereIn('name', $this->manageableRoles))
             ->when($filters['search'] ?? null, function ($query, $search) {
                 $query->where(function ($inner) use ($search) {
                     $inner->where('name', 'like', "%{$search}%")
@@ -74,6 +75,26 @@ class StaffController extends Controller
             'roles' => $this->availableRoles(),
             'departments' => Department::orderBy('name')->get(['id', 'name']),
             'filters' => $filters,
+            'summary' => [
+                [
+                    'label' => 'Total staff',
+                    'value' => (clone $staffQuery)->count(),
+                    'helper' => 'All staff records under management',
+                    'route' => route($this->indexRoute()),
+                ],
+                [
+                    'label' => 'Active staff',
+                    'value' => (clone $staffQuery)->whereNull('suspended_at')->count(),
+                    'helper' => 'Currently active team members',
+                    'route' => route($this->indexRoute(), ['status' => 'active']),
+                ],
+                [
+                    'label' => 'Suspended staff',
+                    'value' => (clone $staffQuery)->whereNotNull('suspended_at')->count(),
+                    'helper' => 'Records currently suspended',
+                    'route' => route($this->indexRoute(), ['status' => 'suspended']),
+                ],
+            ],
             'routePrefix' => $this->routePrefix(),
         ]);
     }

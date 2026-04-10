@@ -37,6 +37,10 @@ class DashboardController extends Controller
         $unsettledBookings = Booking::whereIn('status', ['confirmed', 'active', 'checked_in'])
             ->where('payment_status', '!=', 'paid')
             ->count();
+        $activeStaffCount = User::whereHas('roles', fn ($query) => $query->whereIn('name', ['hr', 'manager', 'staff', 'frontdesk', 'laundry', 'clean', 'kitchen', 'bar', 'inventory', 'accountant', 'Accountant']))
+            ->whereNull('suspended_at')
+            ->count();
+        $suspendedStaffCount = User::whereNotNull('suspended_at')->count();
         $occupancyRate = $roomsCount > 0
             ? round(($occupiedRooms / $roomsCount) * 100)
             : 0;
@@ -77,9 +81,9 @@ class DashboardController extends Controller
                 ],
                 [
                     'name' => 'HR',
-                    'metric' => User::whereHas('roles', fn ($query) => $query->whereIn('name', ['hr', 'manager', 'staff', 'frontdesk', 'laundry', 'clean', 'kitchen', 'bar', 'inventory', 'accountant', 'Accountant']))->whereNull('suspended_at')->count(),
-                    'secondary' => User::whereNotNull('suspended_at')->count() . ' suspended staff',
-                    'route' => route('hr.staff.index'),
+                    'metric' => $activeStaffCount,
+                    'secondary' => $suspendedStaffCount . ' suspended staff',
+                    'route' => route('admin.staff.index'),
                 ],
                 [
                     'name' => 'Finance',
@@ -135,8 +139,20 @@ class DashboardController extends Controller
                     'route' => route('admin.bookings.index'),
                     'tone' => 'violet',
                 ],
+                [
+                    'label' => 'Suspended staff',
+                    'value' => $suspendedStaffCount,
+                    'helper' => 'Team members who currently need review',
+                    'route' => route('admin.staff.index', ['status' => 'suspended']),
+                    'tone' => 'indigo',
+                ],
             ],
             'quickLinks' => [
+                [
+                    'label' => 'Staff',
+                    'description' => 'Open the staff directory, role assignments, and notes.',
+                    'route' => route('admin.staff.index'),
+                ],
                 [
                     'label' => 'Bookings',
                     'description' => 'Review arrivals, departures, and stay status.',

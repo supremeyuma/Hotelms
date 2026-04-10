@@ -3,12 +3,25 @@
     <div class="space-y-6">
       <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h2 class="text-2xl font-semibold">HR Staff Directory</h2>
-          <p class="text-sm text-slate-500">Onboarding, role assignment, status changes, and staff records live here.</p>
+          <h2 class="text-2xl font-semibold">Staff Directory</h2>
+          <p class="text-sm text-slate-500">Managers and HR can onboard staff, assign roles, update records, and follow internal notes here.</p>
         </div>
 
         <Link :href="route(`${routePrefix}.create`)" class="inline-flex items-center rounded bg-indigo-600 px-4 py-2 text-white">
           New Staff
+        </Link>
+      </div>
+
+      <div class="grid gap-4 md:grid-cols-3">
+        <Link
+          v-for="item in summary"
+          :key="item.label"
+          :href="item.route"
+          class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+        >
+          <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{{ item.label }}</p>
+          <p class="mt-3 text-3xl font-semibold text-slate-900">{{ item.value }}</p>
+          <p class="mt-2 text-sm text-slate-500">{{ item.helper }}</p>
         </Link>
       </div>
 
@@ -94,6 +107,7 @@ const props = defineProps({
   roles: Array,
   departments: Array,
   filters: Object,
+  summary: { type: Array, default: () => [] },
   routePrefix: String,
 })
 

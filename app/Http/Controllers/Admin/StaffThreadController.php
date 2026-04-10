@@ -13,7 +13,7 @@ class StaffThreadController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth', 'role:hr|md']);
+        $this->middleware(['auth', 'role:manager|hr|md']);
     }
 
     /**

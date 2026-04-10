@@ -117,6 +117,7 @@ const nav = computed(() => {
       case 'manager':
         return [
           { label: 'Operations Dashboard', route: 'admin.dashboard', icon: 'home', activeRoute: 'admin.dashboard' },
+          { label: 'Staff Management', route: 'admin.staff.index', icon: 'users', activeRoute: 'admin.staff.*' },
           { label: 'Bookings', route: 'admin.bookings.index', icon: 'calendar', activeRoute: 'admin.bookings.*' },
           { label: 'Rooms', route: 'admin.rooms.index', icon: 'bed', activeRoute: 'admin.rooms.*' },
           { label: 'Room Types', route: 'admin.room-types.index', icon: 'layers', activeRoute: 'admin.room-types.*' },
@@ -145,7 +146,8 @@ const nav = computed(() => {
           { label: 'Bookings', route: 'admin.bookings.index', icon: 'calendar', activeRoute: 'admin.bookings.*' },
           { label: 'Rooms', route: 'admin.rooms.index', icon: 'bed', activeRoute: 'admin.rooms.*' },
           { label: 'Room Types', route: 'admin.room-types.index', icon: 'layers', activeRoute: 'admin.room-types.*' },
-          { label: 'HR Management', route: 'hr.staff.index', icon: 'users', activeRoute: 'hr.staff.*' },
+          { label: 'Staff Management', route: 'admin.staff.index', icon: 'users', activeRoute: 'admin.staff.*' },
+          { label: 'HR Management', route: 'hr.staff.index', icon: 'user-check', activeRoute: 'hr.staff.*' },
           { label: 'Finance Dashboard', route: 'finance.dashboard', icon: 'dollar-sign', activeRoute: 'finance.dashboard' },
           { label: 'Revenue Reports', route: 'finance.reports.revenue', icon: 'trending-up', activeRoute: 'finance.reports.*' },
           { label: 'Profit & Loss', route: 'finance.reports.profit-loss', icon: 'file-text', activeRoute: 'finance.reports.profit-loss*' },
