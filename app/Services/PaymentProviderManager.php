@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Setting;
 use Illuminate\Support\Facades\Log;
 use Exception;
 
@@ -16,8 +17,11 @@ use Exception;
  */
 class PaymentProviderManager
 {
+    protected const SUPPORTED_PROVIDERS = ['flutterwave', 'paystack'];
+
     protected FlutterwaveService $flutterwave;
     protected PaystackService $paystack;
+    protected ?array $providerSettings = null;
 
     public function __construct(
         FlutterwaveService $flutterwave,
@@ -35,7 +39,7 @@ class PaymentProviderManager
     public function getEnabledProviders(): array
     {
         $enabled = [];
-        $providers = config('payment.providers', []);
+        $providers = $this->getProviderSettings();
 
         foreach ($providers as $provider => $isEnabled) {
             if ($isEnabled) {
@@ -45,7 +49,7 @@ class PaymentProviderManager
 
         if (empty($enabled)) {
             Log::warning('No payment providers are enabled. Using default provider.');
-            return [$this->getDefaultProvider()];
+            return [$this->getConfiguredDefaultProvider()];
         }
 
         return $enabled;
@@ -59,7 +63,7 @@ class PaymentProviderManager
      */
     public function isProviderEnabled(string $provider): bool
     {
-        return config("payment.providers.{$provider}", false) === true;
+        return $this->getProviderSettings()[$provider] ?? false;
     }
 
     /**
@@ -114,7 +118,13 @@ class PaymentProviderManager
             return $enabled[0];
         }
 
-        return config('payment.default', 'flutterwave');
+        $configuredDefault = $this->getConfiguredDefaultProvider();
+
+        if (in_array($configuredDefault, $enabled, true)) {
+            return $configuredDefault;
+        }
+
+        return $enabled[0] ?? $configuredDefault;
     }
 
     /**
@@ -267,5 +277,48 @@ class PaymentProviderManager
             ]);
             return null;
         }
+    }
+
+    protected function getProviderSettings(): array
+    {
+        if ($this->providerSettings !== null) {
+            return $this->providerSettings;
+        }
+
+        $defaults = config('payment.providers', []);
+        $settingKeys = collect(self::SUPPORTED_PROVIDERS)
+            ->mapWithKeys(fn (string $provider) => [$provider => "payment_provider_{$provider}_enabled"]);
+
+        $databaseSettings = Setting::query()
+            ->whereIn('key', $settingKeys->values()->all())
+            ->pluck('value', 'key');
+
+        $resolved = [];
+
+        foreach (self::SUPPORTED_PROVIDERS as $provider) {
+            $settingKey = $settingKeys[$provider];
+            $resolved[$provider] = $databaseSettings->has($settingKey)
+                ? filter_var($databaseSettings[$settingKey], FILTER_VALIDATE_BOOLEAN)
+                : (bool) ($defaults[$provider] ?? false);
+        }
+
+        return $this->providerSettings = $resolved;
+    }
+
+    protected function getConfiguredDefaultProvider(): string
+    {
+        $storedDefault = Setting::query()
+            ->where('key', 'payment_default_provider')
+            ->value('value');
+
+        if (is_string($storedDefault) && in_array($storedDefault, self::SUPPORTED_PROVIDERS, true)) {
+            return $storedDefault;
+        }
+
+        $configuredDefault = config('payment.default', 'flutterwave');
+
+        return in_array($configuredDefault, self::SUPPORTED_PROVIDERS, true)
+            ? $configuredDefault
+            : 'flutterwave';
     }
 }

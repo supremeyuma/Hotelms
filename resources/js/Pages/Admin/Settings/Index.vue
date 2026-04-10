@@ -3,9 +3,9 @@ import { computed, onBeforeUnmount, ref } from 'vue'
 import { Head, useForm, usePage } from '@inertiajs/vue3'
 import ManagerLayout from '@/Layouts/Staff/ManagerLayout.vue'
 import {
-  AlertCircle,
   Building2,
   CheckCircle2,
+  CreditCard,
   ImageUp,
   Link2,
   Mail,
@@ -15,7 +15,6 @@ import {
   Save,
   Sparkles,
   Store,
-  UtensilsCrossed,
   MessageCircle,
 } from 'lucide-vue-next'
 
@@ -36,15 +35,13 @@ const form = useForm({
   hotel_address: props.settings.hotel_address || '',
   map_embed_url: props.settings.map_embed_url || '',
   site_whatsapp: props.settings.site_whatsapp || '',
+  payment_provider_flutterwave_enabled: Boolean(props.settings.payment_provider_flutterwave_enabled),
+  payment_provider_paystack_enabled: Boolean(props.settings.payment_provider_paystack_enabled),
+  payment_default_provider: props.settings.payment_default_provider || 'flutterwave',
   logo: null,
   banner: null,
-  room_service_menu: props.settings.room_service_menu || [],
 })
 
-const roomServiceString = ref(
-  JSON.stringify(props.settings.room_service_menu || [], null, 2)
-)
-const roomServiceParseError = ref('')
 const localLogoPreview = ref(null)
 const localBannerPreview = ref(null)
 
@@ -75,59 +72,6 @@ const completionStats = computed(() => {
   }
 })
 
-const parsedRoomServiceMenu = computed(() => {
-  try {
-    const parsed = JSON.parse(roomServiceString.value || '[]')
-    roomServiceParseError.value = ''
-    return parsed
-  } catch (error) {
-    roomServiceParseError.value = 'Invalid room service JSON.'
-    return null
-  }
-})
-
-const roomServiceInsights = computed(() => {
-  const menu = parsedRoomServiceMenu.value
-
-  if (Array.isArray(menu)) {
-    return {
-      mode: 'flat',
-      groups: 1,
-      items: menu.length,
-      preview: menu.slice(0, 4).map((item, index) => ({
-        id: index,
-        label: item?.name || `Item ${index + 1}`,
-        meta: item?.price ? `NGN ${item.price}` : 'No price set',
-      })),
-    }
-  }
-
-  if (menu && typeof menu === 'object') {
-    const entries = Object.entries(menu)
-    const itemCount = entries.reduce((total, [, items]) => {
-      return total + (Array.isArray(items) ? items.length : 0)
-    }, 0)
-
-    return {
-      mode: 'grouped',
-      groups: entries.length,
-      items: itemCount,
-      preview: entries.slice(0, 4).map(([category, items]) => ({
-        id: category,
-        label: category,
-        meta: `${Array.isArray(items) ? items.length : 0} items`,
-      })),
-    }
-  }
-
-  return {
-    mode: 'empty',
-    groups: 0,
-    items: 0,
-    preview: [],
-  }
-})
-
 const healthCards = computed(() => [
   {
     label: 'Profile completeness',
@@ -142,13 +86,13 @@ const healthCards = computed(() => [
     icon: MessageCircle,
   },
   {
-    label: 'Room service entries',
-    value: roomServiceInsights.value.items,
-    hint:
-      roomServiceInsights.value.mode === 'grouped'
-        ? `${roomServiceInsights.value.groups} menu groups`
-        : 'Flat menu structure',
-    icon: UtensilsCrossed,
+    label: 'Gateways enabled',
+    value: [
+      form.payment_provider_flutterwave_enabled,
+      form.payment_provider_paystack_enabled,
+    ].filter(Boolean).length,
+    hint: 'Available payment gateways',
+    icon: CreditCard,
   },
 ])
 
@@ -173,62 +117,7 @@ function updateFile(field, event) {
   }
 }
 
-function useFlatMenuPreset() {
-  roomServiceString.value = JSON.stringify(
-    [
-      { name: 'Club Sandwich', price: 8500, category: 'Meals', available: true },
-      { name: 'Fresh Juice', price: 3500, category: 'Beverages', available: true },
-    ],
-    null,
-    2
-  )
-}
-
-function useGroupedMenuPreset() {
-  roomServiceString.value = JSON.stringify(
-    {
-      Breakfast: [
-        { id: 'bf-1', name: 'English Breakfast', price: 12000, available: true },
-      ],
-      Drinks: [
-        { id: 'dr-1', name: 'Cappuccino', price: 4000, available: true },
-      ],
-    },
-    null,
-    2
-  )
-}
-
-function formatMenuJson() {
-  const parsed = parsedRoomServiceMenu.value
-
-  if (parsed === null) {
-    form.setError('room_service_menu', roomServiceParseError.value)
-    return
-  }
-
-  roomServiceString.value = JSON.stringify(parsed, null, 2)
-  form.clearErrors('room_service_menu')
-}
-
-function resetMenuToSaved() {
-  roomServiceString.value = JSON.stringify(props.settings.room_service_menu || [], null, 2)
-  form.room_service_menu = props.settings.room_service_menu || []
-  roomServiceParseError.value = ''
-  form.clearErrors('room_service_menu')
-}
-
 function submit() {
-  const parsed = parsedRoomServiceMenu.value
-
-  if (parsed === null || typeof parsed !== 'object') {
-    form.setError('room_service_menu', 'Room service menu must be a valid JSON array or object.')
-    return
-  }
-
-  form.clearErrors('room_service_menu')
-  form.room_service_menu = parsed
-
   form.put(route('admin.settings.update'), {
     forceFormData: true,
     preserveScroll: true,
@@ -324,17 +213,6 @@ onBeforeUnmount(() => {
           <p class="text-sm text-emerald-700">
             {{ page.props.flash?.success || 'Changes applied.' }}
           </p>
-        </div>
-      </div>
-
-      <div
-        v-if="roomServiceParseError"
-        class="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900"
-      >
-        <AlertCircle class="mt-0.5 h-5 w-5 flex-none" />
-        <div>
-          <p class="font-semibold">Room service JSON error.</p>
-          <p class="text-sm text-amber-800">{{ roomServiceParseError }}</p>
         </div>
       </div>
 
@@ -490,80 +368,48 @@ onBeforeUnmount(() => {
           </section>
 
           <section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
-            <div class="flex items-start justify-between gap-4">
-              <div class="flex items-start gap-4">
-                <div class="rounded-2xl bg-amber-50 p-3 text-amber-700">
-                  <UtensilsCrossed class="h-5 w-5" />
-                </div>
-                <div>
-                  <h2 class="text-xl font-black text-slate-900">Room Service Configuration</h2>
-                </div>
+            <div class="flex items-start gap-4">
+              <div class="rounded-2xl bg-indigo-50 p-3 text-indigo-700">
+                <CreditCard class="h-5 w-5" />
               </div>
-
-              <div class="flex flex-wrap gap-2">
-                <button type="button" class="utility-btn" @click="useFlatMenuPreset">Flat preset</button>
-                <button type="button" class="utility-btn" @click="useGroupedMenuPreset">Grouped preset</button>
-                <button type="button" class="utility-btn" @click="formatMenuJson">Format JSON</button>
-                <button type="button" class="utility-btn" @click="resetMenuToSaved">Reset</button>
+              <div>
+                <h2 class="text-xl font-black text-slate-900">Payment Gateways</h2>
               </div>
             </div>
 
-            <div class="mt-6 grid gap-6 lg:grid-cols-[1.25fr,0.75fr]">
-              <div class="space-y-2">
-                <label for="room_service_menu" class="text-sm font-bold text-slate-700">Menu JSON</label>
-                <textarea
-                  id="room_service_menu"
-                  v-model="roomServiceString"
-                  rows="18"
-                  class="field-input font-mono text-sm leading-6"
-                  placeholder='[{"name":"Club Sandwich","price":8500}]'
-                />
-                <p class="field-help">
-                  Array or object.
-                </p>
-                <p v-if="form.errors.room_service_menu" class="field-error">{{ form.errors.room_service_menu }}</p>
+            <div class="mt-6 space-y-5">
+              <div class="grid gap-4 md:grid-cols-2">
+                <label class="gateway-card">
+                  <div>
+                    <p class="text-sm font-bold text-slate-900">Flutterwave</p>
+                    <p class="text-sm text-slate-500">Enable Flutterwave checkout</p>
+                  </div>
+                  <input v-model="form.payment_provider_flutterwave_enabled" type="checkbox" class="h-5 w-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                </label>
+
+                <label class="gateway-card">
+                  <div>
+                    <p class="text-sm font-bold text-slate-900">Paystack</p>
+                    <p class="text-sm text-slate-500">Enable Paystack checkout</p>
+                  </div>
+                  <input v-model="form.payment_provider_paystack_enabled" type="checkbox" class="h-5 w-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                </label>
               </div>
 
-              <div class="space-y-4 rounded-[1.5rem] border border-slate-200 bg-slate-50 p-5">
-                <div class="rounded-2xl bg-white p-4 shadow-sm">
-                  <p class="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-400">Menu health</p>
-                  <div class="mt-4 grid grid-cols-2 gap-3">
-                    <div class="rounded-2xl bg-slate-950 p-4 text-white">
-                      <p class="text-[11px] uppercase tracking-[0.2em] text-slate-400">Entries</p>
-                      <p class="mt-2 text-2xl font-black">{{ roomServiceInsights.items }}</p>
-                    </div>
-                    <div class="rounded-2xl bg-emerald-600 p-4 text-white">
-                      <p class="text-[11px] uppercase tracking-[0.2em] text-emerald-100">Groups</p>
-                      <p class="mt-2 text-2xl font-black">{{ roomServiceInsights.groups }}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="rounded-2xl border border-slate-200 bg-white p-4">
-                  <p class="text-sm font-bold text-slate-900">Preview snapshot</p>
-                  <div v-if="roomServiceInsights.preview.length" class="mt-3 space-y-3">
-                    <div
-                      v-for="preview in roomServiceInsights.preview"
-                      :key="preview.id"
-                      class="rounded-2xl border border-slate-100 px-3 py-2"
-                    >
-                      <p class="font-semibold text-slate-800">{{ preview.label }}</p>
-                      <p class="text-xs text-slate-500">{{ preview.meta }}</p>
-                    </div>
-                  </div>
-                  <p v-else class="mt-3 text-sm leading-6 text-slate-500">
-                    No preview
-                  </p>
-                </div>
-
-                <div class="rounded-2xl border border-dashed border-slate-300 bg-white p-4">
-                  <p class="text-sm font-bold text-slate-900">Suggested fields</p>
-                  <p class="mt-2 text-sm leading-6 text-slate-500">
-                    <code>name</code>, <code>price</code>, <code>description</code>, <code>category</code>,
-                    <code>id</code>, <code>available</code>
-                  </p>
-                </div>
+              <div>
+                <label for="payment_default_provider" class="text-sm font-bold text-slate-700">Default gateway</label>
+                <select
+                  id="payment_default_provider"
+                  v-model="form.payment_default_provider"
+                  class="field-input mt-2"
+                >
+                  <option value="flutterwave">Flutterwave</option>
+                  <option value="paystack">Paystack</option>
+                </select>
               </div>
+
+              <p v-if="form.errors.payment_providers" class="field-error">{{ form.errors.payment_providers }}</p>
+              <p v-if="form.errors.payment_default_provider" class="field-error">{{ form.errors.payment_default_provider }}</p>
             </div>
           </section>
         </div>
@@ -627,6 +473,17 @@ onBeforeUnmount(() => {
                   Locked while saving.
                 </p>
               </div>
+              <div class="rounded-2xl bg-slate-50 p-4">
+                <p class="font-semibold text-slate-900">Payment gateways</p>
+                <p class="mt-1 text-sm text-slate-500">
+                  {{
+                    [
+                      form.payment_provider_flutterwave_enabled ? 'Flutterwave' : null,
+                      form.payment_provider_paystack_enabled ? 'Paystack' : null,
+                    ].filter(Boolean).join(', ') || 'None'
+                  }}
+                </p>
+              </div>
             </div>
           </section>
 
@@ -655,10 +512,6 @@ onBeforeUnmount(() => {
   @apply w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100;
 }
 
-.field-help {
-  @apply text-xs leading-5 text-slate-500;
-}
-
 .field-error {
   @apply text-sm font-medium text-rose-600;
 }
@@ -667,8 +520,8 @@ onBeforeUnmount(() => {
   @apply flex cursor-pointer items-center justify-between rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-4 transition hover:border-emerald-300 hover:bg-emerald-50;
 }
 
-.utility-btn {
-  @apply rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50;
+.gateway-card {
+  @apply flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4;
 }
 
 .readiness-item {

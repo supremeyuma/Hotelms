@@ -25,13 +25,6 @@ class SettingController extends Controller
     {
         $settings = Setting::all()->pluck('value', 'key')->toArray();
 
-        $roomServiceMenu = $settings['room_service_menu'] ?? null;
-
-        if (is_string($roomServiceMenu)) {
-            $decodedMenu = json_decode($roomServiceMenu, true);
-            $settings['room_service_menu'] = json_last_error() === JSON_ERROR_NONE ? $decodedMenu : null;
-        }
-
         $settings['site_name'] = $settings['site_name'] ?? $settings['hotel_name'] ?? '';
         $settings['contact_email'] = $settings['contact_email'] ?? $settings['hotel_email'] ?? '';
         $settings['hotel_phone'] = $settings['hotel_phone'] ?? $settings['contact_phone'] ?? '';
@@ -39,6 +32,15 @@ class SettingController extends Controller
         $settings['hotel_address'] = $settings['hotel_address'] ?? '';
         $settings['map_embed_url'] = $settings['map_embed_url'] ?? '';
         $settings['site_whatsapp'] = $settings['site_whatsapp'] ?? '';
+        $settings['payment_provider_flutterwave_enabled'] = filter_var(
+            $settings['payment_provider_flutterwave_enabled'] ?? config('payment.providers.flutterwave', true),
+            FILTER_VALIDATE_BOOLEAN
+        );
+        $settings['payment_provider_paystack_enabled'] = filter_var(
+            $settings['payment_provider_paystack_enabled'] ?? config('payment.providers.paystack', true),
+            FILTER_VALIDATE_BOOLEAN
+        );
+        $settings['payment_default_provider'] = $settings['payment_default_provider'] ?? config('payment.default', 'flutterwave');
 
         return Inertia::render('Admin/Settings/Index', ['settings' => $settings]);
     }
@@ -54,9 +56,27 @@ class SettingController extends Controller
             'map_embed_url' => 'nullable|url|max:2000',
             'logo' => 'nullable|file|image|max:2048',
             'banner' => 'nullable|file|image|max:4096',
-            'room_service_menu' => 'nullable|array',
             'site_whatsapp' => 'nullable|string',
+            'payment_provider_flutterwave_enabled' => 'required|boolean',
+            'payment_provider_paystack_enabled' => 'required|boolean',
+            'payment_default_provider' => 'required|string|in:flutterwave,paystack',
         ]);
+
+        if (!$data['payment_provider_flutterwave_enabled'] && !$data['payment_provider_paystack_enabled']) {
+            return back()
+                ->withErrors([
+                    'payment_providers' => 'At least one payment gateway must remain enabled.',
+                ])
+                ->withInput();
+        }
+
+        if (!$data['payment_provider_'.$data['payment_default_provider'].'_enabled']) {
+            return back()
+                ->withErrors([
+                    'payment_default_provider' => 'Default payment gateway must be enabled.',
+                ])
+                ->withInput();
+        }
 
         $phone = $data['hotel_phone'] ?? $data['contact_phone'] ?? null;
 
@@ -70,6 +90,9 @@ class SettingController extends Controller
             'hotel_address' => $data['hotel_address'] ?? null,
             'map_embed_url' => $data['map_embed_url'] ?? null,
             'site_whatsapp' => $data['site_whatsapp'] ?? null,
+            'payment_provider_flutterwave_enabled' => $data['payment_provider_flutterwave_enabled'],
+            'payment_provider_paystack_enabled' => $data['payment_provider_paystack_enabled'],
+            'payment_default_provider' => $data['payment_default_provider'],
         ];
 
         foreach ($simpleSettings as $key => $value) {
@@ -86,10 +109,6 @@ class SettingController extends Controller
         if ($request->hasFile('banner')) {
             $path = $request->file('banner')->store('settings', 'public');
             Setting::updateOrCreate(['key' => 'banner'], ['value' => $path]);
-        }
-
-        if (isset($data['room_service_menu'])) {
-            Setting::updateOrCreate(['key' => 'room_service_menu'], ['value' => json_encode($data['room_service_menu'])]);
         }
 
         $this->auditLogger->log('settings_updated', 'Setting', 0, ['data' => $data]);
