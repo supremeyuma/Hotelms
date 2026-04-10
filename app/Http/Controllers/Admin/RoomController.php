@@ -48,7 +48,15 @@ class RoomController extends Controller
                 'roomType:id,title',
                 'property:id,name',
                 'images:id,imageable_id,imageable_type,path,caption,is_primary,created_at',
-                'latestCleaning:id,room_id,status,cleaned_at,updated_at',
+                'latestCleaning' => function ($query) {
+                    $query->select([
+                        'room_cleanings.id',
+                        'room_cleanings.room_id',
+                        'room_cleanings.status',
+                        'room_cleanings.cleaned_at',
+                        'room_cleanings.updated_at',
+                    ]);
+                },
                 'bookings' => function ($query) {
                     $query->select('bookings.id', 'bookings.booking_code', 'bookings.guest_name', 'bookings.check_in', 'bookings.check_out', 'bookings.status')
                         ->whereIn('bookings.status', ['pending_payment', 'confirmed', 'active', 'checked_in'])
@@ -109,7 +117,16 @@ class RoomController extends Controller
                 ];
             });
 
-        $roomSnapshots = Room::with('latestCleaning:id,room_id,status,cleaned_at')
+        $roomSnapshots = Room::with([
+            'latestCleaning' => function ($query) {
+                $query->select([
+                    'room_cleanings.id',
+                    'room_cleanings.room_id',
+                    'room_cleanings.status',
+                    'room_cleanings.cleaned_at',
+                ]);
+            },
+        ])
             ->get(['id', 'status']);
 
         $overview = [
