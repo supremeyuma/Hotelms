@@ -14,12 +14,17 @@ class StaffReportController extends Controller
 {
     public function index(Request $request, StaffReportService $service)
     {
-        $query = $service->query($request->all());
+        $filters = $request->only(['search', 'role', 'department', 'status']);
+        $query = $service->query($filters);
         $rows = $query->paginate(25)->withQueryString();
 
         return Inertia::render('Admin/Reports/Staff', [
             'rows' => $rows,
-            'filters' => $request->all(),
+            'filters' => $filters,
+            'summary' => $service->summary(),
+            'roles' => $service->roles(),
+            'departments' => $service->departments(),
+            'routePrefix' => 'admin.staff',
         ]);
     }
 
