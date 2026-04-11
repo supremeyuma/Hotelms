@@ -281,13 +281,16 @@ function submit() {
                 </label>
 
                 <label class="space-y-2">
-                  <span class="text-sm font-bold text-slate-700">Override reason</span>
+                  <span class="text-sm font-bold text-slate-700">Override note</span>
                   <textarea
                     v-model="form.override_reason"
                     rows="4"
                     class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-rose-300 focus:ring-2 focus:ring-rose-100"
-                    placeholder="Why is this amount being overridden?"
+                    placeholder="Optional note for the manager or booking record"
                   />
+                  <p class="text-xs font-medium text-slate-500">
+                    Add context if needed. This note is optional.
+                  </p>
                   <InputError :message="form.errors.override_reason" />
                 </label>
               </div>

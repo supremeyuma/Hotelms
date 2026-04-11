@@ -501,19 +501,15 @@ class BookingsController extends Controller
             return null;
         }
 
-        if (! filled($reason)) {
-            throw ValidationException::withMessages([
-                'override_reason' => 'Enter a reason for the price override.',
-            ]);
-        }
-
         $user = auth()->user();
         $requiresApproval = (bool) ($settings['requires_approval'] ?? false);
+        $note = filled($reason) ? trim((string) $reason) : null;
 
         return [
             'original_amount' => $normalizedOriginal,
             'override_amount' => $normalizedOverride,
-            'reason' => trim((string) $reason),
+            'reason' => $note,
+            'note' => $note,
             'requested_at' => now()->toIso8601String(),
             'requested_by_user_id' => $user?->id,
             'requested_by_name' => $user?->name,

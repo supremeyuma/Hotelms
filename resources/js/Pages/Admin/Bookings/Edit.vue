@@ -229,7 +229,7 @@ function rejectPriceOverride() {
                   Override amount {{ formatCurrency(booking.price_override?.override_amount) }}.
                 </p>
                 <p class="mt-2 text-sm text-slate-600">
-                  Reason: {{ booking.price_override?.reason || 'No reason recorded' }}
+                  Note: {{ booking.price_override?.note || booking.price_override?.reason || 'No note recorded' }}
                 </p>
                 <p class="mt-2 text-sm text-slate-500">
                   Requested by {{ booking.price_override?.requested_by_name || 'Front desk' }} on {{ formatDate(booking.price_override?.requested_at) }}.

@@ -155,7 +155,7 @@ function roomLabel(roomId) {
                   Original amount: NGN {{ Number(booking.price_override?.original_amount || 0).toLocaleString() }}.
                   Override amount: NGN {{ Number(booking.price_override?.override_amount || 0).toLocaleString() }}.
                 </p>
-                <p class="mt-2 text-sm text-slate-700">Reason: {{ booking.price_override?.reason || 'No reason recorded' }}</p>
+                <p class="mt-2 text-sm text-slate-700">Note: {{ booking.price_override?.note || booking.price_override?.reason || 'No note recorded' }}</p>
                 <p v-if="booking.has_pending_price_override_approval" class="mt-2 text-sm font-bold text-rose-700">
                   Manager approval is still pending. Check-in is locked until the override is reviewed.
                 </p>
