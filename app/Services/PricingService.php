@@ -6,7 +6,7 @@ use App\Services\Accounting\TaxService;
 
 /**
  * PricingService: Reusable pricing helper for tax-aware calculations
- * 
+ *
  * Single source of truth for calculating base amount, VAT, service charge, and totals.
  * Used by EventService, BookingService, and payment processors.
  */
@@ -23,8 +23,8 @@ class PricingService
      * Calculate complete pricing breakdown for a given base amount
      *
      * @param float $baseAmount The amount before taxes
-     * @param float|null $vatRate Optional VAT rate (e.g., 0.075 for 7.5%), defaults to config
-     * @param float|null $serviceChargeRate Optional service charge rate (e.g., 0.10 for 10%), defaults to config
+     * @param float|null $vatRate Optional VAT rate, defaults to config
+     * @param float|null $serviceChargeRate Optional service charge rate, defaults to config
      * @return array {
      *     'base_amount' => float,
      *     'vat' => float,
@@ -44,8 +44,8 @@ class PricingService
         }
 
         // Use provided rates or fall back to config
-        $vatRate = $vatRate ?? config('tax.vat_rate', 0.075);
-        $serviceChargeRate = $serviceChargeRate ?? config('tax.service_charge_rate', 0.10);
+        $vatRate = $vatRate ?? config('tax.vat_rate', 0.0);
+        $serviceChargeRate = $serviceChargeRate ?? config('tax.service_charge_rate', 0.0);
 
         $vat = round($baseAmount * $vatRate, 2);
         $serviceCharge = round($baseAmount * $serviceChargeRate, 2);
@@ -77,8 +77,8 @@ class PricingService
             ];
         }
 
-        $vatRate = config('tax.vat_rate', 0.075);
-        $serviceChargeRate = config('tax.service_charge_rate', 0.10);
+        $vatRate = config('tax.vat_rate', 0.0);
+        $serviceChargeRate = config('tax.service_charge_rate', 0.0);
         $totalRate = 1 + $vatRate + $serviceChargeRate;
 
         $baseAmount = round($total / $totalRate, 2);
@@ -98,7 +98,7 @@ class PricingService
      */
     public function getVatRate(): float
     {
-        return config('tax.vat_rate', 0.075);
+        return config('tax.vat_rate', 0.0);
     }
 
     /**
@@ -106,7 +106,7 @@ class PricingService
      */
     public function getServiceChargeRate(): float
     {
-        return config('tax.service_charge_rate', 0.10);
+        return config('tax.service_charge_rate', 0.0);
     }
 
     /**

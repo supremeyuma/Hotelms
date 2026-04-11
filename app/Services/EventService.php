@@ -71,8 +71,8 @@ class EventService
             // Calculate base amount
             $baseAmount = $ticketType->price * $data['quantity'];
 
-            // Calculate pricing with tax breakdown (1.5% VAT, 1% service charge for tickets)
-            $pricing = $this->pricingService->calculatePricing($baseAmount, 0.015, 0.01);
+            // Customer payments should not include percentage add-ons.
+            $pricing = $this->pricingService->calculatePricing($baseAmount);
 
             // Create ticket
             $ticket = EventTicket::create([
@@ -124,8 +124,8 @@ class EventService
             $numberOfGuests = $data['number_of_guests'] ?? null;
             $baseAmount = $tableType->price;
 
-            // Calculate pricing with tax breakdown (1.5% VAT, 1% service charge for table reservations)
-            $pricing = $this->pricingService->calculatePricing($baseAmount, 0.015, 0.01);
+            // Customer payments should not include percentage add-ons.
+            $pricing = $this->pricingService->calculatePricing($baseAmount);
 
             // Create reservation
             $reservation = EventTableReservation::create([

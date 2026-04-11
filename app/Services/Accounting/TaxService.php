@@ -22,6 +22,10 @@ class TaxService
      */
     protected function getVatRate(): float
     {
+        if (! $this->isEnabled()) {
+            return 0.0;
+        }
+
         return config('tax.vat_rate', 0.075);
     }
 
@@ -30,7 +34,16 @@ class TaxService
      */
     protected function getServiceChargeRate(): float
     {
+        if (! $this->isEnabled()) {
+            return 0.0;
+        }
+
         return config('tax.service_charge_rate', 0.10);
+    }
+
+    protected function isEnabled(): bool
+    {
+        return (bool) config('tax.enabled', false);
     }
 
     public function calculateVAT(float $amount): float

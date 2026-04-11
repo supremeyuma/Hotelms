@@ -61,8 +61,8 @@ class LaundryOrderService
                 ];
             }
 
-            // Calculate final total with 7.5% VAT and 1% service charge for laundry
-            $pricing = $this->pricingService->calculatePricing($totalAmount, 0.075, 0.01);
+            // Customer payments should not include percentage add-ons.
+            $pricing = $this->pricingService->calculatePricing($totalAmount);
             $finalTotal = $pricing['total'];
 
             // 3️⃣ Create Laundry Order
