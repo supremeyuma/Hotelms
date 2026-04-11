@@ -137,10 +137,60 @@ class BookingAdminController extends Controller
 
     public function edit(Booking $booking)
     {
-        $booking->load(['room', 'user']);
+        $booking->load(['room.roomType', 'rooms.roomType', 'roomType', 'user']);
         $rooms = Room::with('roomType')->get();
 
-        return Inertia::render('Admin/Bookings/Edit', compact('booking', 'rooms'));
+        return Inertia::render('Admin/Bookings/Edit', [
+            'booking' => [
+                'id' => $booking->id,
+                'booking_code' => $booking->booking_code,
+                'room_id' => $booking->room_id,
+                'check_in' => optional($booking->check_in)->toDateString(),
+                'check_out' => optional($booking->check_out)->toDateString(),
+                'status' => $booking->status,
+                'guests' => (int) ($booking->guests ?: (($booking->adults ?? 0) + ($booking->children ?? 0)) ?: 1),
+                'guest_name' => $booking->guest_name ?: optional($booking->user)->name ?: 'Walk-in guest',
+                'guest_email' => $booking->guest_email,
+                'guest_phone' => $booking->guest_phone,
+                'payment_status' => $booking->payment_status ?: 'unpaid',
+                'payment_method' => $booking->payment_method ?: 'Not recorded',
+                'total_amount' => (float) ($booking->total_amount ?? 0),
+                'special_requests' => $booking->special_requests,
+                'room_label' => trim(collect([
+                    $booking->roomType?->title ?: $booking->room?->roomType?->title,
+                    $booking->room?->name ?: $booking->room?->room_number,
+                ])->filter()->implode(' - ')) ?: 'Unassigned',
+                'assigned_rooms' => $booking->rooms
+                    ->map(function (Room $room) {
+                        return trim(collect([
+                            $room->roomType?->title,
+                            $room->name ?: $room->room_number,
+                        ])->filter()->implode(' - '));
+                    })
+                    ->filter()
+                    ->values()
+                    ->all(),
+            ],
+            'rooms' => $rooms->map(function (Room $room) {
+                return [
+                    'id' => $room->id,
+                    'name' => $room->name,
+                    'room_number' => $room->room_number,
+                    'status' => $room->status,
+                    'room_type' => [
+                        'title' => $room->roomType?->title,
+                    ],
+                ];
+            })->values(),
+            'statusOptions' => [
+                ['label' => 'Pending payment', 'value' => 'pending_payment'],
+                ['label' => 'Confirmed', 'value' => 'confirmed'],
+                ['label' => 'Active', 'value' => 'active'],
+                ['label' => 'Checked in', 'value' => 'checked_in'],
+                ['label' => 'Checked out', 'value' => 'checked_out'],
+                ['label' => 'Cancelled', 'value' => 'cancelled'],
+            ],
+        ]);
     }
 
     public function update(Request $request, Booking $booking)
@@ -149,7 +199,7 @@ class BookingAdminController extends Controller
             'room_id' => 'required|exists:rooms,id',
             'check_in' => 'required|date',
             'check_out' => 'required|date|after:check_in',
-            'status' => 'required|string',
+            'status' => 'required|in:pending_payment,confirmed,active,checked_in,checked_out,cancelled',
             'guests' => 'nullable|integer|min:1',
         ]);
 
