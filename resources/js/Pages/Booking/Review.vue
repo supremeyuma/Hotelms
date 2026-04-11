@@ -19,6 +19,10 @@ const props = defineProps({
   selected_rooms: Array,
   nights: Number,
   total_price: Number,
+  payment_booking_id: {
+    type: Number,
+    default: null,
+  },
   discount_preview: Object,
   image_settings: {
     type: Object,
@@ -43,7 +47,14 @@ const formatDate = (dateStr) =>
 
 const formatCurrency = (amount) => new Intl.NumberFormat('en-NG').format(amount || 0);
 
+const isExistingPendingBooking = () => Boolean(props.payment_booking_id);
+
 function proceed() {
+  if (isExistingPendingBooking()) {
+    router.visit(route('booking.payment', props.payment_booking_id));
+    return;
+  }
+
   form.post(route('booking.create'), {
     preserveState: true,
   });
@@ -63,7 +74,7 @@ function removeDiscount() {
 </script>
 
 <template>
-  <PublicLayout>
+  <PublicLayout header-mode="static">
     <div class="min-h-screen bg-slate-50/50 py-12 px-4">
       <div class="max-w-4xl mx-auto">
         <div class="flex items-center justify-center gap-4 mb-10">
@@ -169,7 +180,19 @@ function removeDiscount() {
                 <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Guest Contact</p>
                 <div class="flex items-center justify-between">
                   <p class="font-black text-slate-900 text-lg">{{ booking.guest_name }}</p>
-                  <button @click="router.visit('/booking/guest')" class="text-xs font-bold text-indigo-600 hover:underline">Edit</button>
+                  <button
+                    v-if="!isExistingPendingBooking()"
+                    @click="router.visit('/booking/guest')"
+                    class="text-xs font-bold text-indigo-600 hover:underline"
+                  >
+                    Edit
+                  </button>
+                  <span
+                    v-else
+                    class="text-xs font-bold uppercase tracking-widest text-slate-400"
+                  >
+                    Locked for payment
+                  </span>
                 </div>
                 <p class="text-sm text-slate-500 font-medium">{{ booking.guest_email }}</p>
               </div>
@@ -259,7 +282,7 @@ function removeDiscount() {
               >
                 <CreditCard v-if="!form.processing" class="w-5 h-5" />
                 <RefreshCw v-else class="w-5 h-5 animate-spin" />
-                {{ form.processing ? 'Processing...' : 'Complete Booking' }}
+                {{ form.processing ? 'Processing...' : (isExistingPendingBooking() ? 'Return to Payment' : 'Complete Booking') }}
               </button>
 
               <div class="mt-6 flex items-center gap-2 justify-center text-[10px] font-black uppercase tracking-widest opacity-40">

@@ -1,10 +1,18 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { usePage, Head, Link } from '@inertiajs/vue3'
 import { MapPin, Phone, Mail, Instagram, Facebook, MessageCircle } from 'lucide-vue-next'
 
+const props = defineProps({
+  headerMode: {
+    type: String,
+    default: 'fixed',
+  },
+})
+
 const page = usePage()
 const isScrolled = ref(false)
+let handleScroll = null
 
 const logo = computed(() => {
   const path = page.props.settings?.logo
@@ -16,9 +24,18 @@ const email = computed(() => page.props.settings?.contact_email ?? null)
 const whatsapp = computed(() =>page.props.settings?.site_whatsapp ?? null)
 
 onMounted(() => {
-  window.addEventListener('scroll', () => {
+  handleScroll = () => {
     isScrolled.value = window.scrollY > 50
-  })
+  }
+
+  handleScroll()
+  window.addEventListener('scroll', handleScroll)
+})
+
+onBeforeUnmount(() => {
+  if (handleScroll) {
+    window.removeEventListener('scroll', handleScroll)
+  }
 })
 </script>
 
@@ -27,11 +44,12 @@ onMounted(() => {
     <Head />
 
     <header 
-      class="fixed top-0 w-full z-[60] transition-all duration-500"
+      class="w-full z-[60] transition-all duration-500"
       :class="[
-        isScrolled 
-          ? 'py-4 bg-white/80 backdrop-blur-lg border-b border-slate-100 shadow-sm' 
-          : 'py-8 bg-transparent'
+        props.headerMode === 'fixed' ? 'fixed top-0 left-0' : 'relative',
+        props.headerMode === 'fixed' && !isScrolled
+          ? 'py-8 bg-transparent'
+          : 'py-4 bg-white/95 backdrop-blur-lg border-b border-slate-100 shadow-sm'
       ]"
     >
       <div class="max-w-screen-2xl mx-auto px-6 md:px-12 flex items-center justify-between">

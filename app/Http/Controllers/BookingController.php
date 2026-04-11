@@ -210,28 +210,41 @@ class BookingController extends Controller
         $booking = Session::get('booking');
         if (!$booking) return redirect()->route('booking.search');
 
+        $paymentBookingId = null;
+
+        if (! empty($booking['pending_booking_id'])) {
+            $pendingBooking = Booking::with(['roomType.images', 'rooms.images'])
+                ->find($booking['pending_booking_id']);
+
+            if ($pendingBooking && $pendingBooking->status === 'pending_payment') {
+                $booking = $this->buildBookingSessionPayload($pendingBooking);
+                Session::put('booking', $booking);
+                $paymentBookingId = $pendingBooking->id;
+            } else {
+                unset($booking['pending_booking_id']);
+                Session::put('booking', $booking);
+            }
+        }
+
         $roomType = RoomType::with('images')->findOrFail($booking['room_type_id']);
         $selectedRooms = Room::with('roomType', 'images')
             ->whereIn('id', $booking['selected_room_ids'] ?? [])
             ->get();
-        
+
         $checkIn = Carbon::parse($booking['check_in'])->startOfDay();
         $checkOut = Carbon::parse($booking['check_out'])->startOfDay();
-
-        // Calculate nights between check-in and check-out
         $nights = $checkIn->diffInDays($checkOut);
-
-        // Fallback to 1 night if for some reason the dates are the same
         $nights = $nights > 0 ? (int)$nights : 1;
 
-        $totalPrice = $roomType->base_price * $nights * $booking['quantity'];
-        //dd($roomType);
+        $totalPrice = $booking['total_amount'] ?? ($roomType->base_price * $nights * $booking['quantity']);
+
         return Inertia::render('Booking/Review', [
             'booking' => $booking,
             'room_type' => $roomType,
             'selected_rooms' => $selectedRooms->map(fn ($room) => $this->transformRoomForSelection($room, $roomType))->values(),
             'nights' => $nights,
             'total_price' => $totalPrice,
+            'payment_booking_id' => $paymentBookingId,
             'discount_preview' => $booking['discount_preview'] ?? null,
             'image_settings' => $this->bookingImageSettings(),
         ]);
@@ -307,20 +320,28 @@ class BookingController extends Controller
         // For now, simulate successful payment
         //$this->bookingService->confirmBooking($booking);
 
-        // Clear session
-        Session::forget('booking');
+        Session::put('booking', array_merge(
+            $this->buildBookingSessionPayload($booking),
+            ['pending_booking_id' => $booking->id]
+        ));
 
         //return redirect()->route('booking.confirmation', $booking->id);
         return redirect()->route('booking.payment', $booking);
     }
 
-    public function payment(Booking $booking)
+public function payment(Booking $booking)
 {
     if ($booking->payment_status === 'paid' || $booking->status === 'confirmed') {
+        Session::forget('booking');
         return redirect()->route('booking.confirmation', $booking);
     }
 
     abort_if($booking->status !== 'pending_payment', 404);
+
+    Session::put('booking', array_merge(
+        $this->buildBookingSessionPayload($booking),
+        ['pending_booking_id' => $booking->id]
+    ));
 
     return Inertia::render('Booking/Payment', [
         'booking' => $booking,
@@ -339,6 +360,7 @@ class BookingController extends Controller
         ]);
 
         $this->bookingService->confirmBooking($booking);
+        Session::forget('booking');
 
         return redirect()->route('booking.confirmation', $booking);
     }
@@ -404,6 +426,7 @@ class BookingController extends Controller
             ]);
 
             $this->bookingService->confirmBooking($booking);
+            Session::forget('booking');
 
             return redirect()->route('booking.confirmation', $booking)
                 ->with('success', 'Payment confirmed');
@@ -549,6 +572,28 @@ class BookingController extends Controller
             'show_room_type_images' => $settings->has('booking_show_room_type_images')
                 ? filter_var($settings['booking_show_room_type_images'], FILTER_VALIDATE_BOOLEAN)
                 : true,
+        ];
+    }
+
+    protected function buildBookingSessionPayload(Booking $booking): array
+    {
+        $discountSummary = $this->discountCodeService->bookingDiscountSummary($booking);
+
+        return [
+            'room_type_id' => $booking->room_type_id,
+            'quantity' => (int) $booking->quantity,
+            'selected_room_ids' => $booking->rooms()->pluck('rooms.id')->all(),
+            'check_in' => optional($booking->check_in)->toDateString() ?? Carbon::parse($booking->check_in)->toDateString(),
+            'check_out' => optional($booking->check_out)->toDateString() ?? Carbon::parse($booking->check_out)->toDateString(),
+            'adults' => (int) $booking->adults,
+            'children' => (int) ($booking->children ?? 0),
+            'guest_name' => $booking->guest_name,
+            'guest_email' => $booking->guest_email,
+            'guest_phone' => $booking->guest_phone,
+            'special_requests' => $booking->special_requests,
+            'total_amount' => (float) $booking->total_amount,
+            'discount_code' => $discountSummary['code'] ?? null,
+            'discount_preview' => $discountSummary,
         ];
     }
 

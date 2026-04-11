@@ -300,12 +300,12 @@ const removeDiscount = () => {
 </script>
 
 <template>
-  <PublicLayout>
+  <PublicLayout header-mode="static">
     <div class="min-h-[85vh] bg-slate-50/50 flex items-center justify-center px-4 py-12">
       <div class="w-full max-w-md">
         
         <button 
-          @click="window.history.back()"
+          @click="router.visit(route('booking.review'))"
           class="flex items-center gap-2 text-slate-400 font-bold text-sm hover:text-indigo-600 transition-colors mb-8 group"
         >
           <ChevronLeft class="w-4 h-4 group-hover:-translate-x-1 transition-transform" />

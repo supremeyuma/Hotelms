@@ -137,7 +137,7 @@ const roomTypeImageVisibilityEnabled = computed(() => Boolean(props.imageSetting
 </script>
 
 <template>
-  <PublicLayout>
+  <PublicLayout header-mode="static">
     <div class="min-h-screen bg-slate-50/50 pb-20">
       <div class="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm">
         <div class="max-w-6xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-4">

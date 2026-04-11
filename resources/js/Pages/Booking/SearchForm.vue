@@ -1,4 +1,5 @@
 <script setup>
+import { computed, watch } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import GuestLayout from '@/Layouts/GuestLayout.vue';
 import PublicLayout from '@/Layouts/PublicLayout.vue';
@@ -19,6 +20,15 @@ const form = useForm({
   children: 0,
 });
 
+const today = computed(() => new Date().toISOString().split('T')[0]);
+const minCheckoutDate = computed(() => form.check_in || today.value);
+
+watch(() => form.check_in, (checkIn) => {
+  if (checkIn && form.check_out && form.check_out <= checkIn) {
+    form.check_out = '';
+  }
+});
+
 function submit() {
   form.get(route('booking.rooms'), {
     preserveState: true,
@@ -30,7 +40,7 @@ function submit() {
 </script>
 
 <template>
-  <PublicLayout>
+  <PublicLayout header-mode="static">
     <div class="min-h-[80vh] flex items-center justify-center px-4 py-12 bg-slate-50">
       <div class="w-full max-w-xl">
         <div class="text-center mb-10">
@@ -61,6 +71,7 @@ function submit() {
                   <input 
                     type="date" 
                     v-model="form.check_in" 
+                    :min="today"
                     required 
                     class="block w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-50 rounded-2xl focus:bg-white focus:border-indigo-600 focus:ring-0 transition-all font-bold text-slate-700"
                   />
@@ -76,6 +87,7 @@ function submit() {
                   <input 
                     type="date" 
                     v-model="form.check_out" 
+                    :min="minCheckoutDate"
                     required 
                     class="block w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-50 rounded-2xl focus:bg-white focus:border-indigo-600 focus:ring-0 transition-all font-bold text-slate-700"
                   />
