@@ -46,6 +46,8 @@ const form = useForm({
   payment_default_provider: props.settings.payment_default_provider || 'flutterwave',
   booking_show_room_images: Boolean(props.settings.booking_show_room_images ?? true),
   booking_show_room_type_images: Boolean(props.settings.booking_show_room_type_images ?? true),
+  frontdesk_price_override_enabled: Boolean(props.settings.frontdesk_price_override_enabled ?? false),
+  frontdesk_price_override_requires_approval: Boolean(props.settings.frontdesk_price_override_requires_approval ?? false),
   logo: null,
   banner: null,
 })
@@ -124,6 +126,14 @@ const healthCards = computed(() => [
     hint: 'Guest-visible image groups in booking',
     icon: form.booking_show_room_images || form.booking_show_room_type_images ? Eye : EyeOff,
   },
+  {
+    label: 'Front desk pricing',
+    value: form.frontdesk_price_override_enabled
+      ? (form.frontdesk_price_override_requires_approval ? 'Approval required' : 'Override enabled')
+      : 'Locked',
+    hint: 'Controls room amount override at the front desk',
+    icon: CreditCard,
+  },
 ])
 
 function updateFile(field, event) {
@@ -148,6 +158,10 @@ function updateFile(field, event) {
 }
 
 function submit() {
+  if (!form.frontdesk_price_override_enabled) {
+    form.frontdesk_price_override_requires_approval = false
+  }
+
   form.put(route('admin.settings.update'), {
     forceFormData: true,
     preserveScroll: true,
@@ -628,6 +642,63 @@ onBeforeUnmount(() => {
               </label>
             </div>
           </section>
+
+          <section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="flex items-start gap-4">
+              <div class="rounded-2xl bg-rose-50 p-3 text-rose-700">
+                <CreditCard class="h-5 w-5" />
+              </div>
+              <div>
+                <h2 class="text-xl font-black text-slate-900">Front Desk Price Override</h2>
+                <p class="mt-1 text-sm leading-6 text-slate-500">
+                  Control whether front desk staff can override booking amounts and whether those overrides must wait for manager review.
+                </p>
+              </div>
+            </div>
+
+            <div class="mt-6 grid gap-4">
+              <label class="gateway-card">
+                <div>
+                  <p class="text-sm font-bold text-slate-900">Allow front desk override</p>
+                  <p class="text-sm text-slate-500">Show an override amount field when creating front desk bookings.</p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  :aria-checked="form.frontdesk_price_override_enabled"
+                  @click="form.frontdesk_price_override_enabled = !form.frontdesk_price_override_enabled"
+                  class="toggle-switch"
+                  :class="form.frontdesk_price_override_enabled ? 'toggle-switch-on' : 'toggle-switch-off'"
+                >
+                  <span
+                    class="toggle-thumb"
+                    :class="form.frontdesk_price_override_enabled ? 'translate-x-5' : 'translate-x-0'"
+                  />
+                </button>
+              </label>
+
+              <label class="gateway-card">
+                <div>
+                  <p class="text-sm font-bold text-slate-900">Require manager approval</p>
+                  <p class="text-sm text-slate-500">Block check-in until a manager, MD, or superuser reviews the override.</p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  :aria-checked="form.frontdesk_price_override_requires_approval"
+                  @click="form.frontdesk_price_override_requires_approval = !form.frontdesk_price_override_requires_approval"
+                  class="toggle-switch"
+                  :class="form.frontdesk_price_override_requires_approval ? 'toggle-switch-on' : 'toggle-switch-off'"
+                  :disabled="!form.frontdesk_price_override_enabled"
+                >
+                  <span
+                    class="toggle-thumb"
+                    :class="form.frontdesk_price_override_requires_approval ? 'translate-x-5' : 'translate-x-0'"
+                  />
+                </button>
+              </label>
+            </div>
+          </section>
         </div>
 
         <aside class="space-y-8">
@@ -761,6 +832,16 @@ onBeforeUnmount(() => {
                       form.booking_show_room_images ? 'Room images' : null,
                       form.booking_show_room_type_images ? 'Room type images' : null,
                     ].filter(Boolean).join(', ') || 'All hidden'
+                  }}
+                </p>
+              </div>
+              <div class="rounded-2xl bg-slate-50 p-4">
+                <p class="font-semibold text-slate-900">Front desk override</p>
+                <p class="mt-1 text-sm text-slate-500">
+                  {{
+                    !form.frontdesk_price_override_enabled
+                      ? 'Disabled'
+                      : (form.frontdesk_price_override_requires_approval ? 'Enabled with manager approval' : 'Enabled without approval')
                   }}
                 </p>
               </div>

@@ -14,6 +14,10 @@ const props = defineProps({
     type: String,
     default: '',
   },
+  priceOverrideSettings: {
+    type: Object,
+    default: () => ({ enabled: false, requires_approval: false }),
+  },
 })
 
 const form = useForm({
@@ -30,6 +34,8 @@ const form = useForm({
   check_in: '',
   check_out: '',
   discount_code: '',
+  override_amount: '',
+  override_reason: '',
 })
 
 const selectedRooms = computed(() =>
@@ -54,6 +60,18 @@ const estimatedTotal = computed(() => {
     (total, room) => total + (Number(room.room_type?.base_price || 0) * nights.value),
     0
   )
+})
+
+const hasOverride = computed(() => {
+  if (!props.priceOverrideSettings?.enabled) return false
+
+  return form.override_amount !== '' && form.override_amount !== null
+})
+
+const overrideTotal = computed(() => {
+  if (!hasOverride.value) return estimatedTotal.value
+
+  return Number(form.override_amount || 0)
 })
 
 function isSelected(roomId) {
@@ -231,6 +249,49 @@ function submit() {
               </p>
               <InputError :message="form.errors.discount_code" />
             </label>
+
+            <div v-if="priceOverrideSettings.enabled" class="md:col-span-2 rounded-[1.5rem] border border-rose-200 bg-rose-50 p-5">
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <p class="text-sm font-bold text-slate-900">Price override</p>
+                  <p class="mt-1 text-xs font-medium text-slate-500">
+                    Replace the calculated booking amount with a manually approved front desk amount.
+                  </p>
+                </div>
+                <span class="rounded-full bg-white px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-rose-600">
+                  {{ priceOverrideSettings.requires_approval ? 'Manager approval required' : 'Can save immediately' }}
+                </span>
+              </div>
+
+              <div class="mt-5 grid gap-5 md:grid-cols-2">
+                <label class="space-y-2">
+                  <span class="text-sm font-bold text-slate-700">Override amount</span>
+                  <input
+                    v-model="form.override_amount"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-rose-300 focus:ring-2 focus:ring-rose-100"
+                    placeholder="Optional"
+                  />
+                  <p class="text-xs font-medium text-slate-500">
+                    Leave blank to keep the calculated amount of NGN {{ estimatedTotal.toLocaleString() }}.
+                  </p>
+                  <InputError :message="form.errors.override_amount" />
+                </label>
+
+                <label class="space-y-2">
+                  <span class="text-sm font-bold text-slate-700">Override reason</span>
+                  <textarea
+                    v-model="form.override_reason"
+                    rows="4"
+                    class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-rose-300 focus:ring-2 focus:ring-rose-100"
+                    placeholder="Why is this amount being overridden?"
+                  />
+                  <InputError :message="form.errors.override_reason" />
+                </label>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -265,6 +326,9 @@ function submit() {
                   <p class="mt-2 text-xs text-slate-300">
                     Estimated room value: NGN {{ estimatedTotal.toLocaleString() }}
                   </p>
+                  <p v-if="hasOverride" class="mt-2 text-xs font-bold text-rose-200">
+                    Override total: NGN {{ overrideTotal.toLocaleString() }}
+                  </p>
                 </div>
               </div>
 
@@ -282,10 +346,16 @@ function submit() {
               <div class="flex items-start gap-3 rounded-[1.5rem] bg-white/10 px-4 py-4">
                 <ShieldCheck class="mt-0.5 h-4 w-4 text-slate-200" />
                 <div>
-                  <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-300">Discount</p>
-                  <p class="mt-1 text-sm font-bold text-white">{{ form.discount_code || 'No code applied' }}</p>
+                  <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-300">Pricing</p>
+                  <p class="mt-1 text-sm font-bold text-white">
+                    {{ hasOverride ? `Override NGN ${overrideTotal.toLocaleString()}` : (form.discount_code || 'Standard rate') }}
+                  </p>
                   <p class="mt-1 text-xs text-slate-300">
-                    Room discounts are validated when the reservation is saved.
+                    {{
+                      hasOverride
+                        ? (priceOverrideSettings.requires_approval ? 'Manager approval will be required before check-in.' : 'The override amount will be saved immediately.')
+                        : 'Room discounts are validated when the reservation is saved.'
+                    }}
                   </p>
                 </div>
               </div>
@@ -298,6 +368,7 @@ function submit() {
               <div class="space-y-2 text-sm text-slate-600">
                 <p class="font-bold text-slate-900">Front desk workflow</p>
                 <p>This creates a confirmed booking with every selected room reserved under one booking code.</p>
+                <p v-if="priceOverrideSettings.enabled">Any override amount entered here replaces the calculated booking total.</p>
                 <p>Payments and extra charges can then be posted against the booking and the relevant room from the folio screen.</p>
               </div>
             </div>

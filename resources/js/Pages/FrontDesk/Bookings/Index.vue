@@ -118,7 +118,7 @@ watch(dateType, () => {
               :search="search"
               :filter="filter"
               :date="date"
-              :filters="['active', 'confirmed', 'past']"
+              :filters="['active', 'confirmed', 'pending_override', 'past']"
               @change="applyFilters"
             />
           </div>

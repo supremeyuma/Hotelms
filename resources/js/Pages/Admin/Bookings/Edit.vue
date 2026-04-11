@@ -52,6 +52,9 @@ const paymentForm = useForm({
   notes: '',
 })
 
+const approveOverrideForm = useForm({})
+const rejectOverrideForm = useForm({})
+
 const roomOptions = computed(() => {
   const current = (props.booking.assigned_room_options ?? []).map((room) => ({
     id: room.id,
@@ -135,6 +138,18 @@ function submitPayment() {
     },
   })
 }
+
+function approvePriceOverride() {
+  approveOverrideForm.post(route('admin.bookings.price-override.approve', props.booking.id), {
+    preserveScroll: true,
+  })
+}
+
+function rejectPriceOverride() {
+  rejectOverrideForm.post(route('admin.bookings.price-override.reject', props.booking.id), {
+    preserveScroll: true,
+  })
+}
 </script>
 
 <template>
@@ -185,6 +200,66 @@ function submitPayment() {
 
       <div class="grid gap-8 xl:grid-cols-[minmax(0,1fr)_380px]">
         <div class="space-y-8">
+          <section
+            v-if="booking.has_price_override"
+            class="rounded-[2rem] border p-6 shadow-sm"
+            :class="booking.has_pending_price_override_approval
+              ? 'border-rose-200 bg-rose-50'
+              : (booking.price_override?.approval_status === 'rejected' ? 'border-amber-200 bg-amber-50' : 'border-emerald-200 bg-emerald-50')"
+          >
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div>
+                <p
+                  class="text-[11px] font-black uppercase tracking-[0.18em]"
+                  :class="booking.has_pending_price_override_approval
+                    ? 'text-rose-700'
+                    : (booking.price_override?.approval_status === 'rejected' ? 'text-amber-700' : 'text-emerald-700')"
+                >
+                  Price override
+                </p>
+                <h2 class="mt-2 text-2xl font-black text-slate-900">
+                  {{
+                    booking.has_pending_price_override_approval
+                      ? 'Manager review required'
+                      : (booking.price_override?.approval_status === 'rejected' ? 'Override rejected' : 'Override recorded')
+                  }}
+                </h2>
+                <p class="mt-2 text-sm leading-6 text-slate-600">
+                  Original amount {{ formatCurrency(booking.price_override?.original_amount) }}.
+                  Override amount {{ formatCurrency(booking.price_override?.override_amount) }}.
+                </p>
+                <p class="mt-2 text-sm text-slate-600">
+                  Reason: {{ booking.price_override?.reason || 'No reason recorded' }}
+                </p>
+                <p class="mt-2 text-sm text-slate-500">
+                  Requested by {{ booking.price_override?.requested_by_name || 'Front desk' }} on {{ formatDate(booking.price_override?.requested_at) }}.
+                </p>
+                <p v-if="booking.price_override?.approval_status === 'rejected'" class="mt-2 text-sm font-bold text-amber-700">
+                  The booking total has been reset to the original calculated amount.
+                </p>
+              </div>
+
+              <div v-if="booking.has_pending_price_override_approval" class="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  @click="approvePriceOverride"
+                  :disabled="approveOverrideForm.processing || rejectOverrideForm.processing"
+                  class="inline-flex items-center justify-center rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {{ approveOverrideForm.processing ? 'Approving...' : 'Approve override' }}
+                </button>
+                <button
+                  type="button"
+                  @click="rejectPriceOverride"
+                  :disabled="approveOverrideForm.processing || rejectOverrideForm.processing"
+                  class="inline-flex items-center justify-center rounded-2xl border border-rose-300 px-5 py-3 text-sm font-bold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {{ rejectOverrideForm.processing ? 'Rejecting...' : 'Reject override' }}
+                </button>
+              </div>
+            </div>
+          </section>
+
           <section class="space-y-6 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
             <div class="grid gap-6 md:grid-cols-2">
               <label class="space-y-2">

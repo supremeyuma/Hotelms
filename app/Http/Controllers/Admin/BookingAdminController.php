@@ -22,7 +22,7 @@ class BookingAdminController extends Controller
 
     public function __construct(BookingService $service, BillingService $billingService)
     {
-        $this->middleware(['auth', 'role:manager|md']);
+        $this->middleware(['auth', 'role:manager|md|superuser']);
         $this->service = $service;
         $this->billingService = $billingService;
     }
@@ -33,7 +33,7 @@ class BookingAdminController extends Controller
 
         $today = Carbon::today();
         $filter = $request->string('filter')->toString();
-        $allowedFilters = ['arrivals_today', 'departures_today', 'in_house', 'unsettled'];
+        $allowedFilters = ['arrivals_today', 'departures_today', 'in_house', 'unsettled', 'pending_override'];
 
         if (! in_array($filter, $allowedFilters, true)) {
             $filter = 'all';
@@ -56,6 +56,9 @@ class BookingAdminController extends Controller
             ->when($filter === 'unsettled', function ($query) {
                 $query->whereIn('status', ['confirmed', 'active', 'checked_in'])
                     ->where('payment_status', '!=', 'paid');
+            })
+            ->when($filter === 'pending_override', function ($query) {
+                $query->where('details->price_override->approval_status', 'pending');
             })
             ->latest()
             ->paginate(25)
@@ -106,6 +109,9 @@ class BookingAdminController extends Controller
                     'payment_status' => $booking->payment_status ?: 'unpaid',
                     'payment_method' => $booking->payment_method ?: 'Not recorded',
                     'total_amount' => (float) $booking->total_amount,
+                    'price_override' => $booking->price_override,
+                    'has_price_override' => $booking->has_price_override,
+                    'has_pending_price_override_approval' => $booking->has_pending_price_override_approval,
                     'special_requests' => $booking->special_requests,
                     'created_at' => optional($booking->created_at)->format('d M Y, g:i A'),
                     'checked_in_rooms' => $booking->checked_in_rooms_count,
@@ -132,6 +138,7 @@ class BookingAdminController extends Controller
                 'unsettled' => Booking::whereIn('status', ['confirmed', 'active', 'checked_in'])
                     ->where('payment_status', '!=', 'paid')
                     ->count(),
+                'pending_override' => Booking::where('details->price_override->approval_status', 'pending')->count(),
             ],
             'filters' => [
                 'active' => $filter,
@@ -202,6 +209,59 @@ class BookingAdminController extends Controller
         AuditLogger::log('booking_admin_updated', 'Booking', $booking->id, ['data' => $data]);
 
         return redirect()->route('admin.bookings.index')->with('success', 'Booking updated.');
+    }
+
+    public function approvePriceOverride(Booking $booking)
+    {
+        $priceOverride = $booking->price_override;
+
+        abort_unless($booking->has_pending_price_override_approval && is_array($priceOverride), 404);
+
+        $details = $booking->details ?? [];
+        $details['price_override'] = array_merge($priceOverride, [
+            'approval_status' => 'approved',
+            'approved_at' => now()->toIso8601String(),
+            'approved_by_user_id' => auth()->id(),
+            'approved_by_name' => auth()->user()?->name,
+        ]);
+
+        $booking->update([
+            'total_amount' => (float) ($priceOverride['override_amount'] ?? $booking->total_amount),
+            'details' => $details,
+        ]);
+
+        AuditLogger::log('booking_price_override_approved', 'Booking', $booking->id, [
+            'override_amount' => $priceOverride['override_amount'] ?? null,
+        ]);
+
+        return back()->with('success', 'Price override approved.');
+    }
+
+    public function rejectPriceOverride(Booking $booking)
+    {
+        $priceOverride = $booking->price_override;
+
+        abort_unless($booking->has_pending_price_override_approval && is_array($priceOverride), 404);
+
+        $details = $booking->details ?? [];
+        $details['price_override'] = array_merge($priceOverride, [
+            'approval_status' => 'rejected',
+            'rejected_at' => now()->toIso8601String(),
+            'rejected_by_user_id' => auth()->id(),
+            'rejected_by_name' => auth()->user()?->name,
+        ]);
+
+        $booking->update([
+            'total_amount' => (float) ($priceOverride['original_amount'] ?? $booking->total_amount),
+            'details' => $details,
+        ]);
+
+        AuditLogger::log('booking_price_override_rejected', 'Booking', $booking->id, [
+            'override_amount' => $priceOverride['override_amount'] ?? null,
+            'original_amount' => $priceOverride['original_amount'] ?? null,
+        ]);
+
+        return back()->with('success', 'Price override rejected and booking amount reset.');
     }
 
     public function destroy(Booking $booking)
@@ -305,6 +365,9 @@ class BookingAdminController extends Controller
             'payment_status' => $booking->payment_status ?: 'unpaid',
             'payment_method' => $booking->payment_method ?: 'Not recorded',
             'total_amount' => (float) ($booking->total_amount ?? 0),
+            'price_override' => $booking->price_override,
+            'has_price_override' => $booking->has_price_override,
+            'has_pending_price_override_approval' => $booking->has_pending_price_override_approval,
             'special_requests' => $booking->special_requests,
             'room_label' => trim(collect([
                 $booking->roomType?->title ?: $booking->room?->roomType?->title,

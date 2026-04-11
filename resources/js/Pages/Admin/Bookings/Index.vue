@@ -47,6 +47,14 @@ const summaryCards = [
     icon: CircleDollarSign,
     tone: 'amber',
   },
+  {
+    key: 'pending_override',
+    label: 'Pending overrides',
+    value: props.summary.pending_override,
+    helper: 'Bookings waiting for price review',
+    icon: CreditCard,
+    tone: 'amber',
+  },
 ]
 
 function badgeClasses(status) {
@@ -95,6 +103,7 @@ function filterLabel() {
     arrivals_today: 'Arrivals today',
     in_house: 'In house',
     unsettled: 'Unsettled stays',
+    pending_override: 'Pending overrides',
   }
 
   return labels[props.filters.active] ?? labels.all
@@ -235,6 +244,12 @@ function guestBreakdown(booking) {
                         <span class="rounded-full px-3 py-1 text-xs font-bold" :class="badgeClasses(booking.payment_status)">
                           {{ booking.payment_status }}
                         </span>
+                        <span
+                          v-if="booking.has_pending_price_override_approval"
+                          class="rounded-full bg-rose-100 px-3 py-1 text-xs font-bold text-rose-700"
+                        >
+                          Price override pending
+                        </span>
                         <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
                           {{ booking.stay_phase }}
                         </span>
@@ -294,6 +309,10 @@ function guestBreakdown(booking) {
                     </div>
                     <p class="mt-3 text-base font-black text-slate-900">{{ formatCurrency(booking.total_amount) }}</p>
                     <p class="mt-1 text-sm text-slate-500">{{ booking.payment_method }}</p>
+                    <p v-if="booking.has_price_override" class="mt-1 text-xs font-bold text-rose-600">
+                      Base {{ formatCurrency(booking.price_override?.original_amount) }}
+                      <span v-if="booking.has_pending_price_override_approval"> awaiting approval</span>
+                    </p>
                   </div>
                 </div>
 

@@ -102,7 +102,7 @@ function roomLabel(roomId) {
 
         <div class="flex flex-wrap gap-3">
           <button
-            v-if="booking.status === 'confirmed'"
+            v-if="booking.status === 'confirmed' && !booking.has_pending_price_override_approval"
             type="button"
             @click="checkIn"
             class="inline-flex items-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-emerald-700"
@@ -135,6 +135,37 @@ function roomLabel(roomId) {
 
       <div class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div class="space-y-8">
+          <section
+            v-if="booking.has_price_override"
+            class="rounded-[2rem] border p-6 shadow-sm"
+            :class="booking.has_pending_price_override_approval
+              ? 'border-rose-200 bg-rose-50'
+              : (booking.price_override?.approval_status === 'rejected' ? 'border-amber-200 bg-amber-50' : 'border-emerald-200 bg-emerald-50')"
+          >
+            <div class="flex items-start gap-3">
+              <AlertCircle
+                class="mt-0.5 h-5 w-5"
+                :class="booking.has_pending_price_override_approval
+                  ? 'text-rose-600'
+                  : (booking.price_override?.approval_status === 'rejected' ? 'text-amber-600' : 'text-emerald-600')"
+              />
+              <div>
+                <h2 class="text-xl font-black text-slate-900">Price override</h2>
+                <p class="mt-2 text-sm text-slate-700">
+                  Original amount: NGN {{ Number(booking.price_override?.original_amount || 0).toLocaleString() }}.
+                  Override amount: NGN {{ Number(booking.price_override?.override_amount || 0).toLocaleString() }}.
+                </p>
+                <p class="mt-2 text-sm text-slate-700">Reason: {{ booking.price_override?.reason || 'No reason recorded' }}</p>
+                <p v-if="booking.has_pending_price_override_approval" class="mt-2 text-sm font-bold text-rose-700">
+                  Manager approval is still pending. Check-in is locked until the override is reviewed.
+                </p>
+                <p v-else-if="booking.price_override?.approval_status === 'rejected'" class="mt-2 text-sm font-bold text-amber-700">
+                  The override was rejected and the booking has been reset to the original calculated amount.
+                </p>
+              </div>
+            </div>
+          </section>
+
           <section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
             <div class="flex items-center gap-3">
               <div class="rounded-2xl bg-indigo-50 p-2 text-indigo-600"><User class="h-5 w-5" /></div>

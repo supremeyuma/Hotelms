@@ -52,6 +52,14 @@ class SettingController extends Controller
             $settings['booking_show_room_type_images'] ?? true,
             FILTER_VALIDATE_BOOLEAN
         );
+        $settings['frontdesk_price_override_enabled'] = filter_var(
+            $settings['frontdesk_price_override_enabled'] ?? false,
+            FILTER_VALIDATE_BOOLEAN
+        );
+        $settings['frontdesk_price_override_requires_approval'] = filter_var(
+            $settings['frontdesk_price_override_requires_approval'] ?? false,
+            FILTER_VALIDATE_BOOLEAN
+        );
         $settings['tax_enabled'] = filter_var(
             $settings['tax_enabled'] ?? config('tax.enabled', false),
             FILTER_VALIDATE_BOOLEAN
@@ -86,6 +94,8 @@ class SettingController extends Controller
             'payment_default_provider' => 'required|string|in:flutterwave,paystack',
             'booking_show_room_images' => 'required|boolean',
             'booking_show_room_type_images' => 'required|boolean',
+            'frontdesk_price_override_enabled' => 'required|boolean',
+            'frontdesk_price_override_requires_approval' => 'required|boolean',
             'tax_enabled' => 'required|boolean',
             'tax_rate' => 'required|numeric|min:0|max:100',
             'service_charge_enabled' => 'required|boolean',
@@ -125,6 +135,8 @@ class SettingController extends Controller
             'payment_default_provider' => $data['payment_default_provider'],
             'booking_show_room_images' => $data['booking_show_room_images'],
             'booking_show_room_type_images' => $data['booking_show_room_type_images'],
+            'frontdesk_price_override_enabled' => $data['frontdesk_price_override_enabled'],
+            'frontdesk_price_override_requires_approval' => $data['frontdesk_price_override_requires_approval'],
             'tax_enabled' => $data['tax_enabled'],
             'tax_rate' => round(((float) $data['tax_rate']) / 100, 4),
             'service_charge_enabled' => $data['service_charge_enabled'],

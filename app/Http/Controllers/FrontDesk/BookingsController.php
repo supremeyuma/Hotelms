@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\DiscountCode;
 use App\Models\Room;
+use App\Models\Setting;
 use App\Services\BillingService;
 use App\Services\BookingService;
 use App\Services\DiscountCodeService;
@@ -55,6 +56,10 @@ class BookingsController extends Controller
             $query->whereIn('status', ['checked_out', 'cancelled']);
         }
 
+        if ($filter === 'pending_override') {
+            $query->where('details->price_override->approval_status', 'pending');
+        }
+
         if ($request->filled('check_in_date')) {
             $query->whereDate('check_in', $request->check_in_date);
         }
@@ -92,6 +97,7 @@ class BookingsController extends Controller
                 ];
             })->values(),
             'roomDiscountCodeHint' => DiscountCode::scopeOptions()[DiscountCode::APPLIES_TO_ROOM_RATE],
+            'priceOverrideSettings' => $this->priceOverrideSettings(),
         ]);
     }
 
@@ -112,12 +118,15 @@ class BookingsController extends Controller
             'purpose_of_stay' => 'nullable|string|max:255',
             'special_requests' => 'nullable|string|max:1000',
             'discount_code' => 'nullable|string|max:50',
+            'override_amount' => 'nullable|numeric|min:0',
+            'override_reason' => 'nullable|string|max:500',
         ]);
 
         $selectedRooms = $this->resolveSelectedRooms($data['selected_room_ids']);
         $roomType = $selectedRooms->first()->roomType;
         $quantity = $selectedRooms->count();
         $discountPreview = null;
+        $priceOverrideSettings = $this->priceOverrideSettings();
 
         if (! empty($data['discount_code'])) {
             $discountPreview = $this->discountCodeService->previewForBookingSelection([
@@ -129,13 +138,35 @@ class BookingsController extends Controller
             ], $data['discount_code']);
         }
 
-        $booking = DB::transaction(function () use ($data, $roomType, $selectedRooms, $discountPreview, $quantity) {
+        $booking = DB::transaction(function () use ($data, $roomType, $selectedRooms, $discountPreview, $quantity, $priceOverrideSettings) {
             $nights = max(
                 now()->parse($data['check_in'])->startOfDay()->diffInDays(now()->parse($data['check_out'])->startOfDay()),
                 1
             );
             $baseAmount = (float) $roomType->base_price * $nights * $quantity;
             $pricing = $discountPreview['pricing'] ?? $this->discountCodeService->buildPricing($baseAmount);
+            $priceOverride = $this->buildPriceOverrideData(
+                overrideAmount: $data['override_amount'] ?? null,
+                originalAmount: (float) $pricing['total'],
+                reason: $data['override_reason'] ?? null,
+                settings: $priceOverrideSettings,
+            );
+            $details = $discountPreview ? [
+                'discount' => [
+                    'discount_code_id' => $discountPreview['discount_code_id'],
+                    'code' => $discountPreview['code'],
+                    'name' => $discountPreview['name'],
+                    'scope' => $discountPreview['scope'],
+                    'discount_type' => $discountPreview['discount_type'],
+                    'discount_value' => $discountPreview['discount_value'],
+                    'discount_amount' => $discountPreview['discount_amount'],
+                    'pricing' => $pricing,
+                ],
+            ] : [];
+
+            if ($priceOverride) {
+                $details['price_override'] = $priceOverride;
+            }
 
             $booking = $this->bookingService->createBooking([
                 ...$data,
@@ -144,21 +175,10 @@ class BookingsController extends Controller
                 'selected_room_ids' => $selectedRooms->pluck('id')->all(),
                 'quantity' => $quantity,
                 'nightly_rate' => $roomType->base_price,
-                'total_amount' => $pricing['total'],
+                'total_amount' => $priceOverride['override_amount'] ?? $pricing['total'],
                 'status' => 'confirmed',
                 'payment_status' => 'pending',
-                'details' => $discountPreview ? [
-                    'discount' => [
-                        'discount_code_id' => $discountPreview['discount_code_id'],
-                        'code' => $discountPreview['code'],
-                        'name' => $discountPreview['name'],
-                        'scope' => $discountPreview['scope'],
-                        'discount_type' => $discountPreview['discount_type'],
-                        'discount_value' => $discountPreview['discount_value'],
-                        'discount_amount' => $discountPreview['discount_amount'],
-                        'pricing' => $pricing,
-                    ],
-                ] : null,
+                'details' => $details !== [] ? $details : null,
             ]);
 
             if ($discountPreview) {
@@ -294,6 +314,9 @@ class BookingsController extends Controller
                 'total_amount' => (float) ($booking->total_amount ?? 0),
                 'created_at' => optional($booking->created_at)?->toIso8601String(),
                 'checked_in_rooms_count' => $booking->checked_in_rooms_count,
+                'price_override' => $booking->price_override,
+                'has_price_override' => $booking->has_price_override,
+                'has_pending_price_override_approval' => $booking->has_pending_price_override_approval,
                 'rooms' => $booking->rooms->map(function (Room $room) {
                     return [
                         'id' => $room->id,
@@ -347,6 +370,12 @@ class BookingsController extends Controller
             'rooms' => 'nullable|integer|min:1',
         ]);
 
+        if ($booking->has_pending_price_override_approval) {
+            return back()->withErrors([
+                'booking' => 'This booking has a pending price override and must be approved by a manager before check-in.',
+            ]);
+        }
+
         $this->bookingService->checkIn(
             $booking,
             $request->rooms,
@@ -395,6 +424,9 @@ class BookingsController extends Controller
             'emergency_contact_phone' => $booking->emergency_contact_phone,
             'purpose_of_stay' => $booking->purpose_of_stay,
             'special_requests' => $booking->special_requests,
+            'price_override' => $booking->price_override,
+            'has_price_override' => $booking->has_price_override,
+            'has_pending_price_override_approval' => $booking->has_pending_price_override_approval,
             'assigned_room_options' => $booking->rooms->map(function (Room $room) {
                 return [
                     'id' => $room->id,
@@ -436,5 +468,60 @@ class BookingsController extends Controller
         }
 
         return $rooms;
+    }
+
+    protected function priceOverrideSettings(): array
+    {
+        return [
+            'enabled' => filter_var(Setting::get('frontdesk_price_override_enabled', false), FILTER_VALIDATE_BOOLEAN),
+            'requires_approval' => filter_var(Setting::get('frontdesk_price_override_requires_approval', false), FILTER_VALIDATE_BOOLEAN),
+        ];
+    }
+
+    protected function buildPriceOverrideData(
+        mixed $overrideAmount,
+        float $originalAmount,
+        ?string $reason,
+        array $settings,
+    ): ?array {
+        if ($overrideAmount === null || $overrideAmount === '') {
+            return null;
+        }
+
+        if (! ($settings['enabled'] ?? false)) {
+            throw ValidationException::withMessages([
+                'override_amount' => 'Front desk price override is currently disabled.',
+            ]);
+        }
+
+        $normalizedOverride = round((float) $overrideAmount, 2);
+        $normalizedOriginal = round($originalAmount, 2);
+
+        if ($normalizedOverride === $normalizedOriginal) {
+            return null;
+        }
+
+        if (! filled($reason)) {
+            throw ValidationException::withMessages([
+                'override_reason' => 'Enter a reason for the price override.',
+            ]);
+        }
+
+        $user = auth()->user();
+        $requiresApproval = (bool) ($settings['requires_approval'] ?? false);
+
+        return [
+            'original_amount' => $normalizedOriginal,
+            'override_amount' => $normalizedOverride,
+            'reason' => trim((string) $reason),
+            'requested_at' => now()->toIso8601String(),
+            'requested_by_user_id' => $user?->id,
+            'requested_by_name' => $user?->name,
+            'approval_required' => $requiresApproval,
+            'approval_status' => $requiresApproval ? 'pending' : 'approved',
+            'approved_at' => $requiresApproval ? null : now()->toIso8601String(),
+            'approved_by_user_id' => $requiresApproval ? null : $user?->id,
+            'approved_by_name' => $requiresApproval ? null : $user?->name,
+        ];
     }
 }

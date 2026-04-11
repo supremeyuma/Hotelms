@@ -24,7 +24,8 @@ function checkedInRoomsCount(booking) {
 }
 
 function canCheckIn(booking) {
-    return (booking.status === 'confirmed' || booking.status === 'checked_in' || booking.status === 'active') && 
+    return !booking.has_pending_price_override_approval &&
+           (booking.status === 'confirmed' || booking.status === 'checked_in' || booking.status === 'active') && 
            checkedInRoomsCount(booking) < booking.quantity;
 }
 
@@ -110,7 +111,15 @@ function formatDate(d) {
                     </td>
 
                     <td class="px-6 py-5 border-y border-slate-100">
-                        <StatusBadge :status="booking.status" />
+                        <div class="flex flex-col items-start gap-2">
+                            <StatusBadge :status="booking.status" />
+                            <span
+                                v-if="booking.has_pending_price_override_approval"
+                                class="inline-flex items-center rounded-full bg-rose-100 px-2.5 py-1 text-xs font-semibold text-rose-700"
+                            >
+                                Override pending
+                            </span>
+                        </div>
                     </td>
 
                     <td class="px-6 py-5 rounded-r-[1.5rem] border-y border-r border-slate-100 text-right">

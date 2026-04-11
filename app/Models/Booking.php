@@ -49,7 +49,12 @@ class Booking extends Model
         'total_amount' => 'decimal:2',
     ];
 
-    protected $appends = ['checked_in_rooms_count'];
+    protected $appends = [
+        'checked_in_rooms_count',
+        'price_override',
+        'has_price_override',
+        'has_pending_price_override_approval',
+    ];
 
     /* ---------------- Relationships ---------------- */
 
@@ -155,6 +160,29 @@ class Booking extends Model
     public function getCheckedInRoomsCountAttribute(): int
     {
         return $this->rooms()->wherePivotNotNull('checked_in_at')->count();
+    }
+
+    public function getPriceOverrideAttribute(): ?array
+    {
+        $details = $this->details ?? [];
+        $override = $details['price_override'] ?? null;
+
+        return is_array($override) ? $override : null;
+    }
+
+    public function getHasPriceOverrideAttribute(): bool
+    {
+        return is_array($this->price_override);
+    }
+
+    public function getHasPendingPriceOverrideApprovalAttribute(): bool
+    {
+        if (! $this->has_price_override) {
+            return false;
+        }
+
+        return (bool) ($this->price_override['approval_required'] ?? false)
+            && ($this->price_override['approval_status'] ?? null) === 'pending';
     }
 
 
