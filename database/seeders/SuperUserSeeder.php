@@ -26,12 +26,12 @@ class SuperUserSeeder extends Seeder
         }
 
         $user = User::withTrashed()->firstOrNew([
-            'email' => 'superuser@hotelms.local',
+            'email' => 'superuser@hotelms.com',
         ]);
 
         $user->uuid = $user->uuid ?: (string) Str::uuid();
         $user->name = 'HotelMS Superuser';
-        $user->password = 'SuperUser123!';
+        $user->password = 'superuser@!234';
         $user->email_verified_at = now();
         $user->role_id = $mdRole->id;
         $user->suspended_at = null;
