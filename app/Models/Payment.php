@@ -15,13 +15,16 @@ class Payment extends Model
         'amount',
         'amount_paid',
         'currency',
+        'method',
         'reference',
+        'transaction_ref',
         'status',
         'provider',
         'external_reference',
         'verified_at',
         'payment_type',
         'payment_reference',
+        'meta',
         'flutterwave_tx_ref',
         'flutterwave_tx_id',
         'flutterwave_tx_status',
@@ -33,6 +36,7 @@ class Payment extends Model
     ];
 
     protected $casts = [
+        'meta' => 'array',
         'raw_response' => 'array',
         'paid_at' => 'datetime',
         'verified_at' => 'datetime',

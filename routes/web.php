@@ -23,6 +23,7 @@ use App\Http\Controllers\PaymentController;
 Route::post('/order', [OrderController::class, 'store'])->name('order.store');
 
 // Payment initialization and verification (multi-provider)
+Route::post('/payments/initialize', [PaymentController::class, 'initialize'])->name('payments.initialize');
 Route::post('/payments/initialize-booking', [PaymentController::class, 'initializeBooking']);
 Route::post('/payments/initialize-public-order', [PaymentController::class, 'initializePublicOrder'])
     ->name('payments.initialize.public.order');

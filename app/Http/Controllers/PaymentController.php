@@ -3,122 +3,130 @@
 namespace App\Http\Controllers;
 
 use App\Models\Booking;
+use App\Models\EventTableReservation;
+use App\Models\EventTicket;
 use App\Models\Order;
 use App\Models\Payment;
-use App\Models\EventTicket;
-use App\Models\EventTableReservation;
-use App\Http\Requests\Payment\StorePaymentRequest;
-use App\Services\PaymentProviderManager;
 use App\Services\DiscountCodeService;
-use App\Services\AuditLogger;
 use App\Services\EventService;
+use App\Services\PaymentAccountingService;
+use App\Services\PaymentProviderManager;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 
-/**
- * PaymentController: Production-ready multi-provider payment handling
- * Supports Flutterwave, Paystack with intelligent provider selection
- */
 class PaymentController extends Controller
 {
     public function __construct(
         protected PaymentProviderManager $paymentManager,
         protected EventService $eventService,
-        protected DiscountCodeService $discountCodeService
+        protected DiscountCodeService $discountCodeService,
+        protected PaymentAccountingService $paymentAccountingService,
     ) {}
 
-    /**
-     * Initialize payment for standard bookings (rooms, invoices, etc.)
-     * Returns available payment methods and initialization data
-     */
-    
-    public function initializeBooking(Request $request)
-{
-    $data = $request->validate([
-        'booking_id' => 'required|exists:bookings,id',
-        'provider'   => 'nullable|string|in:flutterwave,paystack',
-    ]);
+    public function initialize(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'amount' => 'required|numeric|min:1',
+            'provider' => 'nullable|string|in:flutterwave,paystack',
+            'reference' => 'nullable|string',
+            'tx_ref' => 'nullable|string',
+            'description' => 'nullable|string',
+            'currency' => 'nullable|string|size:3',
+            'customer_email' => 'required|email',
+            'customer_name' => 'required|string|max:255',
+            'customer_phone' => 'nullable|string|max:30',
+            'callback_url' => 'nullable|url',
+            'meta' => 'nullable|array',
+        ]);
+
+        $reference = $data['reference'] ?? $data['tx_ref'] ?? ('PAY-' . strtoupper(bin2hex(random_bytes(6))));
+
+        return $this->buildPaymentResponse(
+            type: 'general',
+            amount: (float) $data['amount'],
+            reference: $reference,
+            provider: $data['provider'] ?? $this->paymentManager->getDefaultProvider(),
+            customer: [
+                'email' => $data['customer_email'],
+                'name' => $data['customer_name'],
+                'phone' => $data['customer_phone'] ?? null,
+            ],
+            meta: $data['meta'] ?? [],
+            description: $data['description'] ?? 'Payment',
+            callbackUrl: $data['callback_url'] ?? null,
+            currency: $data['currency'] ?? 'NGN',
+        );
+    }
+
+    public function initializeBooking(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'booking_id' => 'required|exists:bookings,id',
+            'provider' => 'nullable|string|in:flutterwave,paystack',
+        ]);
 
         $booking = Booking::findOrFail($data['booking_id']);
 
-    $provider = $data['provider']
-        ?? $this->paymentManager->getDefaultProvider();
+        return $this->buildPaymentResponse(
+            type: 'booking',
+            amount: (float) $booking->fresh()->total_amount,
+            reference: $booking->booking_code,
+            provider: $data['provider'] ?? $this->paymentManager->getDefaultProvider(),
+            customer: [
+                'email' => $booking->guest_email,
+                'name' => $booking->guest_name,
+            ],
+            meta: [
+                'booking_id' => $booking->id,
+            ],
+            description: 'Room Booking Payment',
+            callbackUrl: route('booking.payment.callback', $booking),
+        );
+    }
 
-    $callbackUrl = route('booking.payment.callback', $booking);
-
-    return $this->buildPaymentResponse(
-        type: 'booking',
-        amount: (float) $booking->fresh()->total_amount,
-        reference: $booking->booking_code, // IMPORTANT
-        provider: $provider,
-        customer: [
-            'email' => $booking->guest_email,
-            'name'  => $booking->guest_name,
-        ],
-        meta: [
-            'booking_id' => $booking->id,
-        ],
-        description: 'Room Booking Payment',
-        callbackUrl: $callbackUrl
-    );
-}
-
-
-    /**
-     * Initialize payment by reference (EVENTS, TABLES, BOOKINGS)
-     * Returns provider-specific initialization data
-     */
-    public function initializeByReference(Request $request)
+    public function initializeByReference(Request $request): JsonResponse
     {
         try {
             $request->validate([
                 'reference' => 'required|string',
-                'provider'  => 'nullable|string|in:flutterwave,paystack',
+                'provider' => 'nullable|string|in:flutterwave,paystack',
             ]);
 
-            $reference = $request->reference;
-            $provider = $request->provider ?? $this->paymentManager->getDefaultProvider();
+            $reference = $request->string('reference')->value();
+            $provider = $request->input('provider') ?? $this->paymentManager->getDefaultProvider();
             $eventCallbackUrl = route('events.payment.callback', ['reference' => $reference]);
 
-            // Try to find by event ticket
-            if ($ticket = EventTicket::with(['ticketType', 'event'])
-                ->where('qr_code', $reference)
-                ->first()) {
-
+            if ($ticket = EventTicket::with(['ticketType', 'event'])->where('qr_code', $reference)->first()) {
                 return $this->buildPaymentResponse(
                     'ticket',
-                    $ticket->amount,
+                    (float) $ticket->amount,
                     $reference,
                     $provider,
                     [
                         'email' => $ticket->guest_email,
-                        'name'  => $ticket->guest_name,
+                        'name' => $ticket->guest_name,
                         'phone' => $ticket->guest_phone,
                     ],
                     [
-                        'event'      => $ticket->event->title,
+                        'event' => $ticket->event->title,
                         'ticketType' => $ticket->ticketType->name,
-                        'quantity'   => $ticket->quantity,
+                        'quantity' => $ticket->quantity,
                     ],
                     "Event Ticket: {$ticket->event->title}",
                     $eventCallbackUrl
                 );
             }
 
-            // Try to find by table reservation
-            if ($reservation = EventTableReservation::with('event')
-                ->where('qr_code', $reference)
-                ->first()) {
-
+            if ($reservation = EventTableReservation::with('event')->where('qr_code', $reference)->first()) {
                 return $this->buildPaymentResponse(
                     'table',
-                    $reservation->amount,
+                    (float) $reservation->amount,
                     $reference,
                     $provider,
                     [
                         'email' => $reservation->guest_email,
-                        'name'  => $reservation->guest_name,
+                        'name' => $reservation->guest_name,
                         'phone' => $reservation->guest_phone,
                     ],
                     [
@@ -130,19 +138,21 @@ class PaymentController extends Controller
                 );
             }
 
-            // Try to find by room booking
             if ($booking = Booking::where('booking_code', $reference)->first()) {
                 return $this->buildPaymentResponse(
                     'booking',
-                    $booking->total_amount,
+                    (float) $booking->total_amount,
                     $reference,
                     $provider,
                     [
                         'email' => $booking->guest_email,
-                        'name'  => $booking->guest_name,
+                        'name' => $booking->guest_name,
                     ],
-                    [],
-                    'Room Booking Payment'
+                    [
+                        'booking_id' => $booking->id,
+                    ],
+                    'Room Booking Payment',
+                    route('booking.payment.callback', $booking)
                 );
             }
 
@@ -152,11 +162,10 @@ class PaymentController extends Controller
                 'success' => false,
                 'error' => 'Payment reference not found',
             ], 404);
-
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('Payment initialization by reference failed', [
                 'error' => $e->getMessage(),
-                'reference' => $request->reference ?? null,
+                'reference' => $request->input('reference'),
             ]);
 
             return response()->json([
@@ -166,27 +175,23 @@ class PaymentController extends Controller
         }
     }
 
-    /**
-     * Verify payment with multi-provider support
-     */
-    public function verify(Request $request)
+    public function verify(Request $request): JsonResponse
     {
         try {
             $request->validate([
                 'reference' => 'required|string',
-                'provider'  => 'nullable|string|in:flutterwave,paystack',
+                'provider' => 'nullable|string|in:flutterwave,paystack',
             ]);
 
-            $reference = $request->reference;
-            $provider = $request->provider;
-
-            // Verify with specific provider or try all enabled providers
+            $reference = $request->string('reference')->value();
+            $provider = $request->input('provider');
             $verification = $this->paymentManager->verifyPayment($reference, $provider);
 
-            if (!$verification['success']) {
+            if (! ($verification['success'] ?? false) || ! ($verification['verified'] ?? false)) {
                 Log::warning('Payment verification failed', [
                     'reference' => $reference,
                     'provider' => $provider,
+                    'verification' => $verification,
                 ]);
 
                 return response()->json([
@@ -195,13 +200,11 @@ class PaymentController extends Controller
                 ], 422);
             }
 
-            // Payment verified - delegate to confirmation handler
-            return $this->confirmPayment($reference, $verification['provider']);
-
-        } catch (\Exception $e) {
+            return $this->confirmPayment($reference, $verification['provider'] ?? ($provider ?? $this->paymentManager->getDefaultProvider()));
+        } catch (\Throwable $e) {
             Log::error('Payment verification error', [
                 'error' => $e->getMessage(),
-                'reference' => $request->reference ?? null,
+                'reference' => $request->input('reference'),
             ]);
 
             return response()->json([
@@ -211,58 +214,143 @@ class PaymentController extends Controller
         }
     }
 
-    /**
-     * Confirm payment after successful verification
-     */
-    private function confirmPayment(string $reference, string $provider)
+    public function initializePublicOrder(Request $request): JsonResponse
     {
         try {
-            // Event Ticket
-            if ($ticket = EventTicket::where('qr_code', $reference)->first()) {
-                $result = $this->eventService->confirmPayment('ticket', $ticket->id, $provider);
-                
+            $request->validate([
+                'order_id' => 'required|exists:orders,id',
+                'provider' => 'nullable|string|in:flutterwave,paystack',
+            ]);
+
+            $order = Order::findOrFail($request->input('order_id'));
+
+            if ($order->payment_method !== 'online' || $order->payment_status !== 'pending') {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Invalid order for payment',
+                ], 422);
+            }
+
+            return $this->buildPaymentResponse(
+                type: 'public_order',
+                amount: (float) $order->total,
+                reference: $order->order_code,
+                provider: $request->input('provider') ?? $this->paymentManager->getDefaultProvider(),
+                customer: [
+                    'email' => 'guest@hotel.com',
+                    'name' => 'Guest Customer',
+                ],
+                meta: [
+                    'order_id' => $order->id,
+                    'department' => $order->department,
+                ],
+                description: ucfirst($order->department) . ' Order - ' . $order->order_code,
+                callbackUrl: null,
+            );
+        } catch (\Throwable $e) {
+            Log::error('Public order payment initialization failed', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => 'Payment initialization failed',
+            ], 422);
+        }
+    }
+
+    public function store(Request $request, Booking $booking)
+    {
+        $this->authorize('create', Payment::class);
+
+        $data = $request->validate([
+            'amount' => ['required', 'numeric', 'min:0'],
+            'currency' => ['nullable', 'string', 'size:3'],
+            'reference' => ['nullable', 'string'],
+            'status' => ['nullable', 'string'],
+        ]);
+
+        $reference = $data['reference'] ?? ('MANUAL-' . $booking->id . '-' . time());
+
+        $payment = $booking->payments()->create([
+            'amount' => $data['amount'],
+            'amount_paid' => $data['amount'],
+            'currency' => $data['currency'] ?? 'NGN',
+            'method' => 'manual',
+            'reference' => $reference,
+            'payment_reference' => $reference,
+            'transaction_ref' => $reference,
+            'status' => $data['status'] ?? 'completed',
+            'provider' => 'manual',
+            'payment_type' => 'booking',
+            'meta' => ['provider' => 'manual', 'reference' => $reference],
+            'verified_at' => now(),
+            'paid_at' => now(),
+        ]);
+
+        Log::info('Manual payment recorded', [
+            'payment_id' => $payment->id,
+            'booking_id' => $booking->id,
+        ]);
+
+        return back()->with('success', 'Payment recorded successfully.');
+    }
+
+    private function confirmPayment(string $reference, string $provider): JsonResponse
+    {
+        try {
+            if (EventTicket::where('qr_code', $reference)->exists()) {
+                $this->eventService->confirmPayment($reference, $provider, 'paid');
+
                 return response()->json([
                     'success' => true,
                     'message' => 'Payment confirmed for event ticket',
                     'type' => 'ticket',
-                    'data' => $result,
+                    'reference' => $reference,
                 ]);
             }
 
-            // Table Reservation
-            if ($reservation = EventTableReservation::where('qr_code', $reference)->first()) {
-                $result = $this->eventService->confirmPayment('table', $reservation->id, $provider);
-                
+            if (EventTableReservation::where('qr_code', $reference)->exists()) {
+                $this->eventService->confirmPayment($reference, $provider, 'paid');
+
                 return response()->json([
                     'success' => true,
                     'message' => 'Payment confirmed for table reservation',
                     'type' => 'reservation',
-                    'data' => $result,
+                    'reference' => $reference,
                 ]);
             }
 
-            // Room Booking
             if ($booking = Booking::where('booking_code', $reference)->first()) {
-                // Update booking payment status
                 $booking->update([
                     'payment_status' => 'paid',
                     'payment_method' => $provider,
-                    'paid_at' => now(),
                     'status' => 'confirmed',
                     'expires_at' => null,
                 ]);
 
-                // Record payment
-                Payment::create([
-                    'user_id' => $booking->user_id,
-                    'reference' => $reference,
-                    'provider' => $provider,
-                    'amount' => $booking->total_amount,
-                    'currency' => 'NGN',
-                    'status' => 'completed',
-                    'payment_type' => 'booking',
-                    'verified_at' => now(),
-                ]);
+                $payment = Payment::updateOrCreate(
+                    [
+                        'booking_id' => $booking->id,
+                        'reference' => $reference,
+                    ],
+                    [
+                        'method' => $provider,
+                        'payment_reference' => $reference,
+                        'transaction_ref' => $reference,
+                        'provider' => $provider,
+                        'amount' => $booking->total_amount,
+                        'amount_paid' => $booking->total_amount,
+                        'currency' => 'NGN',
+                        'status' => 'completed',
+                        'payment_type' => 'booking',
+                        'meta' => ['provider' => $provider, 'reference' => $reference],
+                        'verified_at' => now(),
+                        'paid_at' => now(),
+                    ]
+                );
+
+                $this->paymentAccountingService->handleSuccessful($payment);
 
                 Log::info('Booking payment confirmed', [
                     'booking_id' => $booking->id,
@@ -278,16 +366,29 @@ class PaymentController extends Controller
                 ]);
             }
 
-            Log::warning('Payment reference not found during confirmation', [
-                'reference' => $reference,
-            ]);
+            if ($payment = $this->findPaymentByReference($reference)) {
+                $payment->update([
+                    'provider' => $provider,
+                    'status' => 'completed',
+                    'verified_at' => now(),
+                    'paid_at' => now(),
+                ]);
+
+                $this->paymentAccountingService->handleSuccessful($payment);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Payment confirmed',
+                    'type' => $payment->payment_type,
+                    'payment_id' => $payment->id,
+                ]);
+            }
 
             return response()->json([
                 'success' => false,
                 'error' => 'Payment record not found',
             ], 404);
-
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('Payment confirmation error', [
                 'error' => $e->getMessage(),
                 'reference' => $reference,
@@ -300,85 +401,6 @@ class PaymentController extends Controller
         }
     }
 
-    /**
-     * Initialize payment for public orders (online shop)
-     * Prepaid orders only
-     */
-    public function initializePublicOrder(Request $request)
-    {
-        try {
-            $request->validate([
-                'order_id' => 'required|exists:orders,id',
-                'provider' => 'nullable|string|in:flutterwave,paystack',
-            ]);
-
-            $order = Order::findOrFail($request->input('order_id'));
-
-            // Only allow public online orders (prepaid)
-            if ($order->payment_method !== 'online' || $order->payment_status !== 'pending') {
-                return response()->json([
-                    'success' => false,
-                    'error' => 'Invalid order for payment',
-                ], 422);
-            }
-
-            $provider = $request->input('provider')
-                ?? $this->paymentManager->getDefaultProvider();
-
-            $callbackUrl = route('public.payment.callback', ['order' => $order->id]);
-
-            return $this->buildPaymentResponse(
-                type: 'public_order',
-                amount: (float) $order->total,
-                reference: $order->order_code,
-                provider: $provider,
-                customer: [
-                    'email' => 'guest@hotel.com',
-                    'name' => 'Guest Customer',
-                ],
-                meta: [
-                    'order_id' => $order->id,
-                    'department' => $order->department,
-                ],
-                description: ucfirst($order->department) . ' Order - ' . $order->order_code,
-                callbackUrl: $callbackUrl
-            );
-
-        } catch (\Exception $e) {
-            Log::error('Public order payment initialization failed', [
-                'error' => $e->getMessage(),
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'error' => 'Payment initialization failed',
-            ], 422);
-        }
-    }
-
-    /**
-     * Manual / back-office payment storage
-     */
-    public function store(StorePaymentRequest $request, Booking $booking)
-    {
-        $this->authorize('create', Payment::class);
-
-        $data = $request->validated();
-        $data['provider'] = 'manual'; // Manual payments entered by staff
-        
-        $payment = $booking->payments()->create($data);
-
-        AuditLogger::log('payment_recorded', 'Payment', $payment->id, [
-            'booking_id' => $booking->id,
-            'provider' => 'manual',
-        ]);
-
-        return back()->with('success', 'Payment recorded successfully.');
-    }
-
-    /**
-     * Build standardized payment response for all transaction types
-     */
     private function buildPaymentResponse(
         string $type,
         float $amount,
@@ -387,23 +409,36 @@ class PaymentController extends Controller
         array $customer = [],
         array $meta = [],
         string $description = '',
-        ?string $callbackUrl = null
-    ): \Illuminate\Http\JsonResponse {
+        ?string $callbackUrl = null,
+        string $currency = 'NGN',
+    ): JsonResponse {
         try {
-            $showProviderOptions = $this->paymentManager->shouldShowProviderOptions();
-            $availableProviders = $this->paymentManager->getAvailablePaymentMethods();
-            
-            // Get provider-specific public key
-            $publicKey = $this->paymentManager->getPublicKey($provider);
+            $provider = $this->paymentManager->isProviderEnabled($provider)
+                ? $provider
+                : $this->paymentManager->getDefaultProvider();
+
+            $availableProviders = collect($this->paymentManager->getAvailablePaymentMethods())
+                ->unique('value')
+                ->values()
+                ->all();
+
+            $this->upsertPendingPaymentRecord(
+                type: $type,
+                reference: $reference,
+                provider: $provider,
+                amount: $amount,
+                currency: $currency,
+                meta: $meta,
+            );
 
             $response = [
                 'success' => true,
                 'type' => $type,
                 'reference' => $reference,
-                'tx_ref' => $reference, // Flutterwave requires tx_ref
+                'tx_ref' => $reference,
                 'provider' => $provider,
                 'amount' => $amount,
-                'currency' => 'NGN',
+                'currency' => $currency,
                 'description' => $description,
                 'callback_url' => $callbackUrl,
                 'customer' => $customer,
@@ -411,28 +446,25 @@ class PaymentController extends Controller
                     'type' => $type,
                     'reference' => $reference,
                 ]),
-                'show_provider_options' => $showProviderOptions,
+                'show_provider_options' => $this->paymentManager->shouldShowProviderOptions(),
                 'available_providers' => $availableProviders,
             ];
 
-            if ($publicKey) {
+            if ($publicKey = $this->paymentManager->getPublicKey($provider)) {
                 $response['public_key'] = $publicKey;
             }
 
-            // Add provider-specific initialization data
             if ($provider === 'flutterwave') {
-                // Flutterwave requires these specific fields
                 $response['payment_options'] = 'card,banktransfer,ussd';
-                $response['tx_ref'] = $reference;
-            } elseif ($provider === 'paystack') {
-                // Paystack-specific fields
-                $response['access_code'] = null; // Will be generated by PaystackService
-                $response['authorization_url'] = null; // Will be generated by PaystackService
+            }
+
+            if ($provider === 'paystack') {
+                $response['access_code'] = null;
+                $response['authorization_url'] = null;
             }
 
             return response()->json($response);
-
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('Payment response building failed', [
                 'error' => $e->getMessage(),
                 'type' => $type,
@@ -444,5 +476,46 @@ class PaymentController extends Controller
                 'error' => 'Payment initialization failed',
             ], 422);
         }
+    }
+
+    private function upsertPendingPaymentRecord(
+        string $type,
+        string $reference,
+        string $provider,
+        float $amount,
+        string $currency,
+        array $meta,
+    ): void {
+        $bookingId = $meta['booking_id'] ?? null;
+
+        Payment::updateOrCreate(
+            [
+                'reference' => $reference,
+            ],
+            [
+                'booking_id' => $bookingId,
+                'method' => $provider,
+                'payment_reference' => $reference,
+                'transaction_ref' => $reference,
+                'provider' => $provider,
+                'amount' => $amount,
+                'amount_paid' => $amount,
+                'currency' => $currency,
+                'status' => 'pending',
+                'payment_type' => $type,
+                'meta' => $meta,
+                'raw_response' => $meta,
+            ]
+        );
+    }
+
+    private function findPaymentByReference(string $reference): ?Payment
+    {
+        return Payment::query()
+            ->where('reference', $reference)
+            ->orWhere('payment_reference', $reference)
+            ->orWhere('flutterwave_tx_ref', $reference)
+            ->orWhere('external_reference', $reference)
+            ->first();
     }
 }

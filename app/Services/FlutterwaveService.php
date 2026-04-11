@@ -41,17 +41,44 @@ class FlutterwaveService
     public function initializePayment(array $paymentData): array
     {
         try {
+            if (empty($paymentData['email'])) {
+                throw new \InvalidArgumentException('Customer email is required');
+            }
+
+            if (empty($paymentData['amount']) || (float) $paymentData['amount'] <= 0) {
+                throw new \InvalidArgumentException('Valid payment amount is required');
+            }
+
+            $reference = $paymentData['reference'] ?? $paymentData['tx_ref'] ?? ('FLW-' . strtoupper(bin2hex(random_bytes(6))));
+            $customerName = $paymentData['name'] ?? trim(($paymentData['first_name'] ?? '') . ' ' . ($paymentData['last_name'] ?? ''));
+
             $response = Http::withToken($this->secretKey)
                 ->timeout($this->timeout)
-                ->post("{$this->baseUrl}/charges", $paymentData);
+                ->post("{$this->baseUrl}/payments", [
+                    'tx_ref' => $reference,
+                    'amount' => (float) $paymentData['amount'],
+                    'currency' => $paymentData['currency'] ?? 'NGN',
+                    'redirect_url' => $paymentData['callback_url'] ?? null,
+                    'customer' => [
+                        'email' => $paymentData['email'],
+                        'name' => $customerName ?: 'Guest Customer',
+                        'phonenumber' => $paymentData['phone_number'] ?? $paymentData['phone'] ?? null,
+                    ],
+                    'meta' => $paymentData['metadata'] ?? [],
+                    'customizations' => [
+                        'title' => 'Hotel Payment',
+                        'description' => $paymentData['description'] ?? 'Payment',
+                    ],
+                ]);
 
             if ($response->successful()) {
                 return [
                     'success' => true,
-                    'data' => $response->json(),
-                    'reference' => $response->json('data.id') ?? null,
-                    'amount' => $response->json('data.amount') ?? 0,
-                    'currency' => $response->json('data.currency') ?? 'NGN',
+                    'data' => $response->json('data') ?? [],
+                    'reference' => $reference,
+                    'payment_link' => $response->json('data.link'),
+                    'amount' => (float) ($paymentData['amount'] ?? 0),
+                    'currency' => $paymentData['currency'] ?? 'NGN',
                 ];
             }
 

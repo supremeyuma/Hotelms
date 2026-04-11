@@ -6,7 +6,6 @@ use App\Models\EventTicket;
 use App\Models\EventTableReservation;
 use App\Models\Booking;
 use App\Models\Payment;
-use App\Services\PaymentProviderManager;
 use App\Services\EventService;
 use App\Services\PaymentAccountingService;
 use Illuminate\Http\Request;
@@ -21,8 +20,8 @@ use Illuminate\Support\Facades\Log;
 class WebhookController extends Controller
 {
     public function __construct(
-        protected PaymentProviderManager $paymentManager,
-        protected EventService $eventService
+        protected EventService $eventService,
+        protected PaymentAccountingService $paymentAccountingService,
     ) {}
 
     /**
@@ -197,6 +196,10 @@ class WebhookController extends Controller
                 return $this->handleBookingPaymentSuccess($booking, 'flutterwave', $data);
             }
 
+            if ($payment = $this->findPaymentByReference($reference)) {
+                return $this->handleStandalonePaymentSuccess($payment, 'flutterwave', $data);
+            }
+
             return response()->json(['status' => 'no_matching_transaction']);
 
         } catch (\Exception $e) {
@@ -232,6 +235,10 @@ class WebhookController extends Controller
                     'payment_status' => 'failed',
                     'payment_method' => 'flutterwave',
                 ]);
+            }
+
+            if ($payment = $this->findPaymentByReference($reference)) {
+                $this->markPaymentFailed($payment, 'flutterwave', $data);
             }
 
             return response()->json(['status' => 'processed']);
@@ -316,6 +323,10 @@ class WebhookController extends Controller
                 return $this->handleBookingPaymentSuccess($booking, 'paystack', $data);
             }
 
+            if ($payment = $this->findPaymentByReference($reference)) {
+                return $this->handleStandalonePaymentSuccess($payment, 'paystack', $data);
+            }
+
             return response()->json(['status' => 'no_matching_transaction']);
 
         } catch (\Exception $e) {
@@ -351,6 +362,10 @@ class WebhookController extends Controller
                     'payment_status' => 'failed',
                     'payment_method' => 'paystack',
                 ]);
+            }
+
+            if ($payment = $this->findPaymentByReference($reference)) {
+                $this->markPaymentFailed($payment, 'paystack', $data);
             }
 
             return response()->json(['status' => 'processed']);
@@ -392,25 +407,28 @@ class WebhookController extends Controller
                 'reference' => $booking->booking_code,
             ],
             [
+                'method' => $provider,
                 'provider' => $provider,
                 'amount' => $booking->total_amount,
                 'amount_paid' => $amount,
                 'currency' => $currency,
                 'status' => 'completed',
                 'payment_type' => 'booking',
+                'transaction_ref' => $booking->booking_code,
                 'verified_at' => now(),
                 'external_reference' => $payloadData['id'] ?? null,
                 'flutterwave_tx_ref' => $provider === 'flutterwave' ? ($payloadData['tx_ref'] ?? $booking->booking_code) : null,
                 'flutterwave_tx_id' => $provider === 'flutterwave' ? ($payloadData['id'] ?? null) : null,
                 'flutterwave_tx_status' => $provider === 'flutterwave' ? ($payloadData['status'] ?? null) : null,
                 'idempotency_key' => $idempotencyKey,
+                'meta' => $payloadData ?: $data,
                 'raw_response' => $payloadData ?: $data,
                 'paid_at' => now(),
             ]
         );
 
         try {
-            resolve(PaymentAccountingService::class)->handleSuccessful($payment);
+            $this->paymentAccountingService->handleSuccessful($payment);
         } catch (\Exception $e) {
             Log::error('Payment accounting handler failed: ' . $e->getMessage(), [
                 'payment_id' => $payment->id,
@@ -441,11 +459,14 @@ class WebhookController extends Controller
 
         Payment::create([
             'booking_id' => $data['booking_id'] ?? null,
+            'method' => $data['provider'] ?? null,
             'reference' => $data['reference'] ?? null,
+            'transaction_ref' => $data['reference'] ?? null,
             'provider' => $data['provider'] ?? null,
             'status' => 'completed',
             'payment_type' => $data['payment_type'] ?? null,
             'idempotency_key' => $idempotencyKey,
+            'meta' => $data['raw_response'] ?? null,
             'raw_response' => $data['raw_response'] ?? null,
             'paid_at' => now(),
             'verified_at' => now(),
@@ -482,6 +503,67 @@ class WebhookController extends Controller
     private function isIdempotencyKeyProcessed(string $idempotencyKey): bool
     {
         return Payment::where('idempotency_key', $idempotencyKey)->exists();
+    }
+
+    private function handleStandalonePaymentSuccess(Payment $payment, string $provider, array $data): \Illuminate\Http\JsonResponse
+    {
+        $payloadData = $data['data'] ?? [];
+        $idempotencyKey = $this->buildIdempotencyKey($provider, $data);
+
+        if ($idempotencyKey && $this->isIdempotencyKeyProcessed($idempotencyKey) && $payment->status === 'completed') {
+            return response()->json(['status' => 'already_processed']);
+        }
+
+        $payment->update([
+            'method' => $provider,
+            'provider' => $provider,
+            'amount_paid' => $payloadData['amount'] ?? $payment->amount_paid ?? $payment->amount,
+            'currency' => $payloadData['currency'] ?? $payment->currency ?? 'NGN',
+            'status' => 'completed',
+            'transaction_ref' => $payloadData['tx_ref'] ?? $payloadData['reference'] ?? $payment->transaction_ref,
+            'verified_at' => now(),
+            'external_reference' => $payloadData['id'] ?? $payment->external_reference,
+            'flutterwave_tx_ref' => $provider === 'flutterwave' ? ($payloadData['tx_ref'] ?? $payment->flutterwave_tx_ref ?? $payment->reference) : $payment->flutterwave_tx_ref,
+            'flutterwave_tx_id' => $provider === 'flutterwave' ? ($payloadData['id'] ?? $payment->flutterwave_tx_id) : $payment->flutterwave_tx_id,
+            'flutterwave_tx_status' => $provider === 'flutterwave' ? ($payloadData['status'] ?? $payment->flutterwave_tx_status) : $payment->flutterwave_tx_status,
+            'idempotency_key' => $idempotencyKey ?? $payment->idempotency_key,
+            'meta' => $payloadData ?: $data,
+            'raw_response' => $payloadData ?: $data,
+            'paid_at' => now(),
+        ]);
+
+        $this->paymentAccountingService->handleSuccessful($payment);
+
+        return response()->json(['status' => 'processed']);
+    }
+
+    private function markPaymentFailed(Payment $payment, string $provider, array $data): void
+    {
+        $payloadData = $data['data'] ?? [];
+
+        $payment->update([
+            'method' => $provider,
+            'provider' => $provider,
+            'status' => 'failed',
+            'transaction_ref' => $payloadData['tx_ref'] ?? $payloadData['reference'] ?? $payment->transaction_ref,
+            'meta' => $payloadData ?: $data,
+            'flutterwave_tx_status' => $provider === 'flutterwave' ? ($payloadData['status'] ?? 'failed') : $payment->flutterwave_tx_status,
+            'raw_response' => $payloadData ?: $data,
+        ]);
+    }
+
+    private function findPaymentByReference(?string $reference): ?Payment
+    {
+        if (! $reference) {
+            return null;
+        }
+
+        return Payment::query()
+            ->where('reference', $reference)
+            ->orWhere('payment_reference', $reference)
+            ->orWhere('flutterwave_tx_ref', $reference)
+            ->orWhere('external_reference', $reference)
+            ->first();
     }
 
     /**

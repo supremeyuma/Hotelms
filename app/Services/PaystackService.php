@@ -68,7 +68,7 @@ class PaystackService
                 'email' => $paymentData['email'],
                 'amount' => $amountInKobo,
                 'currency' => $paymentData['currency'] ?? 'NGN',
-                'reference' => $paymentData['tx_ref'] ?? $this->generateReference(),
+                'reference' => $paymentData['reference'] ?? $paymentData['tx_ref'] ?? $this->generateReference(),
             ];
 
             // Add metadata if provided
