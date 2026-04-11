@@ -3,21 +3,15 @@
 namespace App\Services;
 
 use App\Models\Order;
-use App\Models\Charge;
 
 class OrderChargeService
 {
+    public function __construct(
+        protected StaffRoomOrderService $staffRoomOrderService,
+    ) {}
+
     public function post(Order $order): void
     {
-        /*if ($order->order_type !== 'room_service') {
-            return;
-        }*/
-
-        Charge::create([
-            'booking_id' => $order->booking_id,
-            'room_id' => $order->room_id,
-            'description' => 'Room Service Order #' . $order->id,
-            'amount' => $order->total,
-        ]);
+        $this->staffRoomOrderService->ensureCharge($order);
     }
 }

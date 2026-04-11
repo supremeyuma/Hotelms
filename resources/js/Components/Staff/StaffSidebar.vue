@@ -213,6 +213,8 @@ const nav = computed(() => {
           { label: 'Bookings', route: 'frontdesk.bookings.index', icon: 'calendar', activeRoute: 'frontdesk.bookings.*' },
           { label: 'Rooms', route: 'frontdesk.rooms.index', icon: 'bed', activeRoute: 'frontdesk.rooms.*' },
           { label: 'Guest Requests', route: 'frontdesk.guest-requests.index', icon: 'bell', activeRoute: 'frontdesk.guest-requests*' },
+          { label: 'Kitchen Orders', route: 'staff.kitchen.orders.index', icon: 'utensils', activeRoute: 'staff.kitchen.orders.*' },
+          { label: 'Bar Orders', route: 'staff.bar.orders.index', icon: 'clipboard', activeRoute: 'staff.bar.orders.*' },
           { label: 'Laundry Requests', route: 'frontdesk.laundry.index', icon: 'shirt', activeRoute: 'frontdesk.laundry*' },
           { label: 'Event Check-In', route: 'staff.events.check-in.index', icon: 'user-check', activeRoute: 'staff.events.check-in.*' },
         ]

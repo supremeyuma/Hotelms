@@ -1,178 +1,209 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { router } from '@inertiajs/vue3'
 import BarLayout from '@/Layouts/Staff/BarLayout.vue'
 import OrderDetailsModal from '@/Components/Orders/OrderDetailsModal.vue'
-import { 
-  Beer, 
-  Clock, 
-  CheckCircle2, 
-  Check, 
-  Hash, 
-  MessageSquare,
-  Wine
-} from 'lucide-vue-next'
+import CreateRoomOrderModal from '@/Components/Orders/CreateRoomOrderModal.vue'
+import { Beer, CheckCircle2, Clock, Hash, Plus, Wine } from 'lucide-vue-next'
 
-const props = defineProps({ orders: Array })
-const orders = ref(props.orders)
-
-const selectedOrder = ref(null)
-const showModal = ref(false)
-
-//console.log(orders);
-
-onMounted(() => {
-  if (window.Echo) {
-    window.Echo.channel('orders.bar')
-      .listen('.order.status.updated', e => {
-        const index = orders.value.findIndex(o => o.id === e.order.id)
-        if (index !== -1) orders.value[index] = e.order
-        else orders.value.unshift(e.order)
-      })
-  }
+const props = defineProps({
+  orders: Array,
+  rooms: Array,
+  menuItems: Array,
+  paymentOptions: Array,
+  paymentStatuses: Array,
 })
 
+const orders = ref(props.orders)
+const selectedOrder = ref(null)
+const showDetails = ref(false)
+const showCreateModal = ref(false)
+
+onMounted(() => {
+  if (!window.Echo) return
+
+  window.Echo.channel('orders.bar')
+    .listen('.order.status.updated', (event) => {
+      const index = orders.value.findIndex((order) => order.id === event.order.id)
+
+      if (index === -1) {
+        orders.value.unshift(event.order)
+        return
+      }
+
+      orders.value[index] = event.order
+    })
+})
+
+watch(
+  () => props.orders,
+  (value) => {
+    orders.value = value
+
+    if (selectedOrder.value) {
+      selectedOrder.value = value.find((order) => order.id === selectedOrder.value.id) || selectedOrder.value
+    }
+  }
+)
+
+const activeCount = computed(() => orders.value.length)
+
 function setStatus(order, status) {
-  router.patch(`/staff/bar/orders/${order.id}`, { status }, {
+  router.patch(route('staff.bar.orders.updateStatus', order.id), { status }, {
     preserveScroll: true,
-    only: ['orders']
   })
 }
 
-const getStatusStyles = (status) => {
+function openOrder(order) {
+  selectedOrder.value = order
+  showDetails.value = true
+}
+
+function paymentUpdateUrl(order) {
+  return route('staff.bar.orders.updatePayment', order.id)
+}
+
+function statusBadge(status) {
   const map = {
-    'pending': 'bg-amber-100 text-amber-700 ring-amber-600/20',
-    'preparing': 'bg-blue-100 text-blue-700 ring-blue-600/20',
-    'ready': 'bg-emerald-100 text-emerald-700 ring-emerald-600/20',
-    'delivered': 'bg-slate-100 text-slate-600 ring-slate-600/10'
+    pending: 'bg-amber-100 text-amber-700',
+    preparing: 'bg-blue-100 text-blue-700',
+    ready: 'bg-emerald-100 text-emerald-700',
+    delivered: 'bg-slate-100 text-slate-700',
   }
-  return map[status] || 'bg-gray-100 text-gray-600 ring-gray-600/10'
+
+  return `rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider ${map[status] || map.delivered}`
+}
+
+function paymentBadgeClass(order) {
+  if (order.payment_status === 'paid') return 'bg-emerald-100 text-emerald-700'
+  if (order.payment_status === 'failed') return 'bg-rose-100 text-rose-700'
+  return 'bg-slate-100 text-slate-700'
+}
+
+function paymentLabel(order) {
+  const method = String(order.payment_method || 'pending_selection').replace(/_/g, ' ')
+  return `${order.payment_status} · ${method}`
 }
 
 function canStartPreparing(order) {
   if (!order.charge) return true
 
-  if (
+  return !(
     order.charge.payment_mode === 'prepaid' &&
     order.charge.status === 'unpaid'
-  ) {
-    return false
-  }
-
-  return true
+  )
 }
-
-function openOrder(order) {
-  selectedOrder.value = order
-  showModal.value = true
-  //console.log(order)
-}
-
 </script>
 
 <template>
   <BarLayout>
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+    <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div class="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <div class="flex items-center gap-2 text-blue-600 font-bold text-sm uppercase tracking-widest mb-1">
-            <Wine class="w-4 h-4" /> Beverage Service
+          <div class="mb-1 flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-blue-600">
+            <Wine class="h-4 w-4" /> Beverage Service
           </div>
-          <h1 class="text-3xl font-black text-slate-900 tracking-tight">Active Drink Tickets</h1>
+          <h1 class="text-3xl font-black tracking-tight text-slate-900">Active Drink Tickets</h1>
+          <p class="mt-1 text-sm font-medium text-slate-500">Create bar orders for occupied rooms and keep service and payment updates live.</p>
         </div>
-        <div class="flex items-center gap-3 bg-white p-2 rounded-2xl border border-slate-200 shadow-sm">
-          <div class="px-4 py-1 bg-slate-100 rounded-lg text-sm font-bold text-slate-600">
-            Total: {{ orders.length }}
+
+        <div class="flex items-center gap-3">
+          <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-700">
+            Total: {{ activeCount }}
           </div>
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-black text-white shadow-xl shadow-slate-200 transition hover:bg-blue-600"
+            @click="showCreateModal = true"
+          >
+            <Plus class="h-4 w-4" />
+            New Room Order
+          </button>
         </div>
       </div>
 
-      <div v-if="orders.length === 0" class="flex flex-col items-center justify-center py-24 bg-white rounded-[2.5rem] border-2 border-dashed border-slate-200">
-        <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-          <Beer class="w-10 h-10 text-slate-300" />
+      <div v-if="!orders.length" class="flex flex-col items-center justify-center rounded-[2.5rem] border-2 border-dashed border-slate-200 bg-white py-24">
+        <div class="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-slate-50">
+          <Beer class="h-10 w-10 text-slate-300" />
         </div>
         <h2 class="text-xl font-bold text-slate-900">The bar is clear</h2>
-        <p class="text-slate-500">New drink orders will appear here in real-time.</p>
+        <p class="text-slate-500">New room drink orders will appear here in real-time.</p>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        <div 
+      <div v-else class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <div
           v-for="order in orders"
-          @click="openOrder(order)" 
-          :key="order.id" 
-          class="group bg-white rounded-[2rem] border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col"
+          :key="order.id"
+          class="group flex flex-col overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-xl"
+          @click="openOrder(order)"
         >
-          <div class="p-6 pb-4 flex justify-between items-start border-b border-slate-50">
+          <div class="flex items-start justify-between gap-4 border-b border-slate-50 p-6">
             <div class="flex items-center gap-3">
-              <div class="w-12 h-12 bg-slate-900 rounded-2xl flex flex-col items-center justify-center text-white">
-                <Hash class="w-3 h-3 opacity-50" />
+              <div class="flex h-12 w-12 flex-col items-center justify-center rounded-2xl bg-slate-900 text-white">
+                <Hash class="h-3 w-3 opacity-50" />
                 <span class="text-lg font-bold leading-none">{{ order.id }}</span>
               </div>
               <div>
-                <span :class="[getStatusStyles(order.status), 'inline-flex items-center rounded-md px-2 py-1 text-xs font-bold ring-1 ring-inset uppercase tracking-wider mb-1']">
+                <span :class="statusBadge(order.status)">
                   {{ order.status }}
                 </span>
-                
-                <p class="text-xs text-slate-400 font-medium">Updated at {{ order.updated_at }}</p>
+                <p class="mt-2 text-sm font-semibold text-slate-500">{{ order.room?.name || `Room ${order.room_id}` }}</p>
               </div>
             </div>
+
+            <span class="rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wide" :class="paymentBadgeClass(order)">
+              {{ paymentLabel(order) }}
+            </span>
           </div>
 
-          <div class="p-6 flex-1 bg-gradient-to-b from-white to-slate-50/30">
+          <div class="flex-1 bg-gradient-to-b from-white to-slate-50/30 p-6">
             <ul class="space-y-4">
-              <li v-for="item in order.items" :key="item.id" class="flex items-center justify-between">
-                <div class="flex flex-col">
-                  <span class="text-slate-900 font-bold text-lg leading-tight">{{ item.item_name }}</span>
-                  <span class="text-slate-900 font-bold text-lg leading-tight">ROOM {{ order.room_id }}</span>
-                  <div v-if="item.notes" class="flex items-center gap-1.5 mt-1 text-blue-600 bg-blue-50 w-fit px-2 py-0.5 rounded-md">
-                    <MessageSquare class="w-3 h-3" />
-                    <span class="text-xs font-bold">{{ order.room_id }}</span>
-                  </div>
+              <li v-for="item in order.items" :key="item.id" class="flex items-start justify-between gap-4">
+                <div>
+                  <p class="text-lg font-bold leading-tight text-slate-900">{{ item.item_name }}</p>
+                  <p v-if="item.note" class="mt-1 text-xs font-semibold text-blue-600">{{ item.note }}</p>
                 </div>
-                <div class="flex items-center justify-center w-10 h-10 bg-white border-2 border-slate-100 rounded-xl shadow-sm text-slate-900 font-black">
-                  {{ item.quantity }}
+                <div class="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-slate-100 bg-white font-black text-slate-900 shadow-sm">
+                  {{ item.qty }}
                 </div>
               </li>
             </ul>
           </div>
 
-          <div class="p-4 bg-white border-t border-slate-100 grid grid-cols-3 gap-3">
-            <button 
-              @click.stop="setStatus(order,'preparing')"
+          <div class="grid grid-cols-3 gap-3 border-t border-slate-100 bg-white p-4">
+            <button
+              type="button"
+              class="flex flex-col items-center justify-center gap-1 rounded-xl border p-2 transition-all"
+              :class="order.status === 'preparing'
+                ? 'border-indigo-600 bg-indigo-600 text-white'
+                : !canStartPreparing(order)
+                  ? 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400'
+                  : 'border-slate-200 bg-white text-slate-600 hover:border-indigo-400'"
               :disabled="order.status === 'preparing' || !canStartPreparing(order)"
-              class="flex flex-col items-center justify-center gap-1 p-2 rounded-xl border transition-all"
-              :class="
-                order.status === 'preparing'
-                  ? 'bg-indigo-600 text-white border-indigo-600'
-                  : !canStartPreparing(order)
-                    ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
-                    : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-400'
-              "
+              @click.stop="setStatus(order, 'preparing')"
             >
-              <Clock class="w-5 h-5" />
+              <Clock class="h-5 w-5" />
               <span class="text-[10px] font-bold uppercase">Prep</span>
             </button>
-            <div
-              v-if="!canStartPreparing(order)"
-              class="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition"
+
+            <button
+              type="button"
+              class="flex flex-col items-center gap-1.5 rounded-2xl border py-3 text-[10px] font-bold uppercase tracking-tight shadow-sm transition-all"
+              :class="order.status === 'ready'
+                ? 'border-emerald-600 bg-emerald-600 text-white'
+                : 'border-slate-100 bg-white text-slate-600 hover:bg-slate-50'"
+              @click.stop="setStatus(order, 'ready')"
             >
-              Awaiting payment
-            </div>
-            
-            <button 
-              @click="setStatus(order, 'ready')"
-              class="flex flex-col items-center gap-1.5 py-3 rounded-2xl transition-all font-bold text-[10px] uppercase tracking-tighter shadow-sm border"
-              :class="order.status === 'ready' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-slate-600 border-slate-100 hover:bg-slate-50'"
-            >
-              <CheckCircle2 class="w-5 h-5" />
+              <CheckCircle2 class="h-5 w-5" />
               Ready
             </button>
 
-            <button 
-              @click="setStatus(order, 'delivered')"
-              class="flex flex-col items-center gap-1.5 py-3 rounded-2xl transition-all font-bold text-[10px] uppercase tracking-tighter shadow-sm border bg-white text-slate-600 border-slate-100 hover:bg-slate-50"
+            <button
+              type="button"
+              class="flex flex-col items-center gap-1.5 rounded-2xl border border-slate-100 bg-white py-3 text-[10px] font-bold uppercase tracking-tight text-slate-600 shadow-sm transition-all hover:bg-slate-50"
+              @click.stop="setStatus(order, 'delivered')"
             >
-              <Check class="w-5 h-5" />
+              <CheckCircle2 class="h-5 w-5" />
               Done
             </button>
           </div>
@@ -181,17 +212,21 @@ function openOrder(order) {
     </div>
   </BarLayout>
 
-    <!-- ORDER DETAILS MODAL -->
-      <OrderDetailsModal
-        :show="showModal"
-        :order="selectedOrder"
-        @close="showModal = false"
-      />
-</template>
+  <OrderDetailsModal
+    :show="showDetails"
+    :order="selectedOrder"
+    :payment-options="paymentOptions"
+    :payment-statuses="paymentStatuses"
+    :payment-update-url="selectedOrder ? paymentUpdateUrl(selectedOrder) : ''"
+    @close="showDetails = false"
+  />
 
-<style scoped>
-/* Scoped layout polish */
-.grid {
-  display: grid;
-}
-</style>
+  <CreateRoomOrderModal
+    :show="showCreateModal"
+    area="bar"
+    :rooms="rooms"
+    :menu-items="menuItems"
+    :submit-url="route('staff.bar.orders.store')"
+    @close="showCreateModal = false"
+  />
+</template>

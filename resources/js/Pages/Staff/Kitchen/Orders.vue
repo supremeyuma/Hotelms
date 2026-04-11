@@ -1,209 +1,211 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { router } from '@inertiajs/vue3'
 import KitchenLayout from '@/Layouts/Staff/KitchenLayout.vue'
 import OrderDetailsModal from '@/Components/Orders/OrderDetailsModal.vue'
-import { 
-  Clock, 
-  CheckCircle2, 
-  ChefHat, 
-  Truck, 
-  Hash, 
-  AlertCircle 
-} from 'lucide-vue-next'
+import CreateRoomOrderModal from '@/Components/Orders/CreateRoomOrderModal.vue'
+import { CheckCircle2, ChefHat, Clock, Hash, Plus, Truck } from 'lucide-vue-next'
 
-const props = defineProps({ orders: Array })
-const orders = ref(props.orders)
-
-const selectedOrder = ref(null)
-const showModal = ref(false)
-
-console.log(props.orders)
-
-onMounted(() => {
-  if (window.Echo) {
-    window.Echo.channel('orders.kitchen')
-      .listen('.order.status.updated', e => {
-        const index = orders.value.findIndex(o => o.id === e.order.id)
-        if (index !== -1) orders.value[index] = e.order
-        else orders.value.unshift(e.order)
-      })
-  }
+const props = defineProps({
+  orders: Array,
+  rooms: Array,
+  menuItems: Array,
+  paymentOptions: Array,
+  paymentStatuses: Array,
 })
 
+const orders = ref(props.orders)
+const selectedOrder = ref(null)
+const showDetails = ref(false)
+const showCreateModal = ref(false)
+
+onMounted(() => {
+  if (!window.Echo) return
+
+  window.Echo.channel('orders.kitchen')
+    .listen('.order.status.updated', (event) => {
+      const index = orders.value.findIndex((order) => order.id === event.order.id)
+
+      if (index === -1) {
+        orders.value.unshift(event.order)
+        return
+      }
+
+      orders.value[index] = event.order
+    })
+})
+
+watch(
+  () => props.orders,
+  (value) => {
+    orders.value = value
+
+    if (selectedOrder.value) {
+      selectedOrder.value = value.find((order) => order.id === selectedOrder.value.id) || selectedOrder.value
+    }
+  }
+)
+
+const activeCount = computed(() => orders.value.length)
+
 function setStatus(order, status) {
-  router.patch(`/staff/kitchen/orders/${order.id}`, { status }, {
-    preserveScroll: true
+  router.patch(route('staff.kitchen.orders.updateStatus', order.id), { status }, {
+    preserveScroll: true,
   })
 }
 
 function openOrder(order) {
   selectedOrder.value = order
-  showModal.value = true
-  console.log(order)
+  showDetails.value = true
 }
 
-const getStatusClass = (status) => {
-  const base = "px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider "
+function paymentUpdateUrl(order) {
+  return route('staff.kitchen.orders.updatePayment', order.id)
+}
+
+function getStatusClass(status) {
+  const base = 'rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider '
+
   switch (status) {
-    case 'pending': return base + "bg-amber-100 text-amber-700 border border-amber-200"
-    case 'preparing': return base + "bg-indigo-100 text-indigo-700 border border-indigo-200"
-    case 'ready': return base + "bg-emerald-100 text-emerald-700 border border-emerald-200"
-    default: return base + "bg-slate-100 text-slate-700 border border-slate-200"
+    case 'pending':
+      return `${base}bg-amber-100 text-amber-700`
+    case 'preparing':
+      return `${base}bg-indigo-100 text-indigo-700`
+    case 'ready':
+      return `${base}bg-emerald-100 text-emerald-700`
+    default:
+      return `${base}bg-slate-100 text-slate-700`
   }
+}
+
+function paymentBadgeClass(order) {
+  if (order.payment_status === 'paid') return 'bg-emerald-100 text-emerald-700'
+  if (order.payment_status === 'failed') return 'bg-rose-100 text-rose-700'
+  return 'bg-slate-100 text-slate-700'
+}
+
+function paymentLabel(order) {
+  const method = String(order.payment_method || 'pending_selection').replace(/_/g, ' ')
+  return `${order.payment_status} · ${method}`
 }
 
 function canStartPreparing(order) {
-  // No charge → allow (safety fallback)
   if (!order.charge) return true
 
-  // Block prepaid orders until paid
-  if (
+  return !(
     order.charge.payment_mode === 'prepaid' &&
     order.charge.status === 'unpaid'
-  ) {
-    return false
-  }
-
-  return true
+  )
 }
-
 </script>
 
 <template>
   <KitchenLayout>
-    <div class="max-w-6xl mx-auto px-4 py-6">
-      <div class="flex items-center justify-between mb-8">
+    <div class="mx-auto max-w-7xl px-4 py-6">
+      <div class="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 class="text-2xl md:text-3xl font-black text-slate-900 flex items-center gap-3">
-            Active Tickets
-            <span class="bg-indigo-600 text-white text-sm py-1 px-3 rounded-full">{{ orders.length }}</span>
+          <h1 class="flex items-center gap-3 text-2xl font-black text-slate-900 md:text-3xl">
+            Active Kitchen Orders
+            <span class="rounded-full bg-indigo-600 px-3 py-1 text-sm text-white">{{ activeCount }}</span>
           </h1>
-          <p class="text-slate-500 font-medium text-sm mt-1">Manage live orders and preparation status</p>
+          <p class="mt-1 text-sm font-medium text-slate-500">Create room orders, track preparation, and keep payment records current.</p>
         </div>
+
+        <button
+          type="button"
+          class="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-black text-white shadow-xl shadow-slate-200 transition hover:bg-indigo-600"
+          @click="showCreateModal = true"
+        >
+          <Plus class="h-4 w-4" />
+          New Room Order
+        </button>
       </div>
 
-      <div v-if="orders.length === 0" class="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border-2 border-dashed border-slate-200">
-        <div class="p-4 bg-slate-50 rounded-full mb-4">
-          <ChefHat class="w-12 h-12 text-slate-300" />
+      <div v-if="!orders.length" class="flex flex-col items-center justify-center rounded-3xl border-2 border-dashed border-slate-200 bg-white py-20">
+        <div class="mb-4 rounded-full bg-slate-50 p-4">
+          <ChefHat class="h-12 w-12 text-slate-300" />
         </div>
         <h3 class="text-lg font-bold text-slate-900">No active orders</h3>
-        <p class="text-slate-500">New orders will appear here automatically.</p>
+        <p class="text-slate-500">New room orders will appear here automatically.</p>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div 
-          v-for="order in orders" 
+      <div v-else class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <div
+          v-for="order in orders"
+          :key="order.id"
+          class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition-all hover:shadow-md"
           @click="openOrder(order)"
-          :key="order.id" 
-          class="bg-white rounded-3xl border border-slate-200 shadow-sm flex flex-col overflow-hidden transition-all hover:shadow-md"
         >
-          <div class="p-5 border-b border-slate-100 flex justify-between items-start bg-slate-50/50">
+          <div class="flex items-start justify-between gap-4 border-b border-slate-100 bg-slate-50/60 p-5">
             <div>
-              <div class="flex items-center gap-1 text-slate-400 font-bold text-xs uppercase tracking-widest mb-1">
-                <Hash class="w-3 h-3" /> Order ID
+              <div class="mb-1 flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                <Hash class="h-3 w-3" /> Order
               </div>
               <div class="text-xl font-black text-slate-900">#{{ order.id }}</div>
+              <div class="mt-1 text-sm font-semibold text-slate-500">{{ order.room?.name || `Room ${order.room_id}` }}</div>
             </div>
-            <div>
-              <div class="flex items-center gap-1 text-slate-400 font-bold text-xs uppercase tracking-widest mb-1">
-                <Hash class="w-3 h-3" /> ROOM
+
+            <div class="flex flex-col items-end gap-2">
+              <span :class="getStatusClass(order.status)">
+                {{ order.status }}
+              </span>
+              <span class="rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wide" :class="paymentBadgeClass(order)">
+                {{ paymentLabel(order) }}
+              </span>
+            </div>
+          </div>
+
+          <div class="space-y-3 p-5">
+            <div
+              v-for="item in order.items"
+              :key="item.id"
+              class="flex items-start justify-between gap-4"
+            >
+              <div>
+                <p class="text-sm font-bold text-slate-900">{{ item.item_name }}</p>
+                <p v-if="item.note" class="mt-1 text-xs text-orange-600">{{ item.note }}</p>
               </div>
-              <div class="text-xl font-black text-slate-900">ROOM - {{ order.room_id }}</div>
+              <div class="rounded-lg bg-slate-100 px-2.5 py-1 text-sm font-black text-slate-900">
+                x{{ item.qty }}
+              </div>
             </div>
-            <span :class="getStatusClass(order.status)">
-              {{ order.status }}
-            </span>
-            <!-- PAYMENT BADGE -->
-            <span
-              v-if="order.charge"
-              class="px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-wide"
-              :class="
-                order.charge.status === 'paid'
-                  ? 'bg-emerald-100 text-emerald-700'
-                  : order.charge.payment_mode === 'pay_on_delivery'
-                    ? 'bg-amber-100 text-amber-700'
-                    : 'bg-rose-100 text-rose-700'
-              "
-            >
-              <template v-if="order.charge.status === 'paid'">
-                Paid
-              </template>
-
-              <template v-else-if="order.charge.payment_mode === 'pay_on_delivery'">
-                Pay on Delivery
-              </template>
-
-              <template v-else>
-                Awaiting Payment
-              </template>
-            </span>
-
           </div>
 
-          <div class="p-5 flex-1">
-            <ul class="space-y-4">
-              <li 
-                v-for="item in order.items" 
-                :key="item.id"
-                class="flex items-start justify-between gap-4"
-              >
-                <div class="flex flex-col">
-                  <span class="font-bold text-slate-800 text-sm md:text-base leading-tight">
-                    {{ item.item_name }}
-                  </span>
-                  <span v-if="item.notes" class="text-xs text-orange-600 font-medium mt-1 flex items-center gap-1">
-                    <AlertCircle class="w-3 h-3" /> {{ item.notes }}
-                  </span>
-                </div>
-                <div class="bg-slate-100 text-slate-900 font-black px-2.5 py-1 rounded-lg text-sm">
-                  ×{{ item.qty }}
-                </div>
-              </li>
-            </ul>
-          </div>
-
-          <div class="p-4 bg-slate-50/80 grid grid-cols-3 gap-2">
-            
-            <button 
-              @click.stop="setStatus(order,'preparing')"
+          <div class="grid grid-cols-3 gap-2 bg-slate-50/80 p-4">
+            <button
+              type="button"
+              class="flex flex-col items-center justify-center gap-1 rounded-xl border p-2 transition-all"
+              :class="order.status === 'preparing'
+                ? 'border-indigo-600 bg-indigo-600 text-white'
+                : !canStartPreparing(order)
+                  ? 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400'
+                  : 'border-slate-200 bg-white text-slate-600 hover:border-indigo-400'"
               :disabled="order.status === 'preparing' || !canStartPreparing(order)"
-              class="flex flex-col items-center justify-center gap-1 p-2 rounded-xl border transition-all"
-              :class="
-                order.status === 'preparing'
-                  ? 'bg-indigo-600 text-white border-indigo-600'
-                  : !canStartPreparing(order)
-                    ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
-                    : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-400'
-              "
+              @click.stop="setStatus(order, 'preparing')"
             >
-              <Clock class="w-5 h-5" />
+              <Clock class="h-5 w-5" />
               <span class="text-[10px] font-bold uppercase">Prep</span>
             </button>
-            <div
-              v-if="!canStartPreparing(order)"
-              class="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition"
-            >
-              Awaiting payment
-            </div>
-          
 
-
-            <button 
-              @click="setStatus(order,'ready')"
+            <button
+              type="button"
+              class="flex flex-col items-center justify-center gap-1 rounded-xl border p-2 transition-all"
+              :class="order.status === 'ready'
+                ? 'border-emerald-600 bg-emerald-600 text-white'
+                : 'border-slate-200 bg-white text-slate-600 hover:border-emerald-400'"
               :disabled="order.status === 'ready'"
-              class="flex flex-col items-center justify-center gap-1 p-2 rounded-xl border transition-all"
-              :class="order.status === 'ready' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-400'"
+              @click.stop="setStatus(order, 'ready')"
             >
-              <CheckCircle2 class="w-5 h-5" />
+              <CheckCircle2 class="h-5 w-5" />
               <span class="text-[10px] font-bold uppercase">Ready</span>
             </button>
 
-            <button 
-              @click="setStatus(order,'delivered')"
-              class="flex flex-col items-center justify-center gap-1 p-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:border-blue-400 transition-all"
+            <button
+              type="button"
+              class="flex flex-col items-center justify-center gap-1 rounded-xl border border-slate-200 bg-white p-2 text-slate-600 transition-all hover:border-blue-400"
+              @click.stop="setStatus(order, 'delivered')"
             >
-              <Truck class="w-5 h-5" />
+              <Truck class="h-5 w-5" />
               <span class="text-[10px] font-bold uppercase">Done</span>
             </button>
           </div>
@@ -212,20 +214,21 @@ function canStartPreparing(order) {
     </div>
   </KitchenLayout>
 
-  <!-- ORDER DETAILS MODAL -->
-      <OrderDetailsModal
-        :show="showModal"
-        :order="selectedOrder"
-        @close="showModal = false"
-      />
-</template>
+  <OrderDetailsModal
+    :show="showDetails"
+    :order="selectedOrder"
+    :payment-options="paymentOptions"
+    :payment-statuses="paymentStatuses"
+    :payment-update-url="selectedOrder ? paymentUpdateUrl(selectedOrder) : ''"
+    @close="showDetails = false"
+  />
 
-<style scoped>
-.grid {
-  display: grid;
-}
-/* Ensure smooth transitions for status changes */
-.bg-white {
-  transition: background-color 0.2s, border-color 0.2s;
-}
-</style>
+  <CreateRoomOrderModal
+    :show="showCreateModal"
+    area="kitchen"
+    :rooms="rooms"
+    :menu-items="menuItems"
+    :submit-url="route('staff.kitchen.orders.store')"
+    @close="showCreateModal = false"
+  />
+</template>

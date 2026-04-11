@@ -151,11 +151,15 @@ Route::middleware(['auth', 'role:staff|clean|md'])->prefix('clean')->name('clean
 Route::middleware(['auth', 'role:frontdesk|manager|md|kitchen|bar'])->prefix('staff')->name('staff.')->group(function () {
 
     Route::get('/kitchen/orders', [KitchenOrderController::class, 'index'])->name('kitchen.orders.index');
+    Route::post('/kitchen/orders', [KitchenOrderController::class, 'store'])->name('kitchen.orders.store');
     Route::patch('/kitchen/orders/{order}', [KitchenOrderController::class, 'updateStatus'])->name('kitchen.orders.updateStatus');
+    Route::patch('/kitchen/orders/{order}/payment', [KitchenOrderController::class, 'updatePayment'])->name('kitchen.orders.updatePayment');
     Route::get('/kitchen/orders/history', [KitchenOrderController::class, 'history'])->name('kitchen.orders.history');
 
     Route::get('/bar/orders', [BarOrderController::class, 'index'])->name('bar.orders.index');
+    Route::post('/bar/orders', [BarOrderController::class, 'store'])->name('bar.orders.store');
     Route::patch('/bar/orders/{order}', [BarOrderController::class, 'updateStatus'])->name('bar.orders.updateStatus');
+    Route::patch('/bar/orders/{order}/payment', [BarOrderController::class, 'updatePayment'])->name('bar.orders.updatePayment');
     Route::get('/bar/orders/history', [BarOrderController::class, 'history'])->name('bar.orders.history');
 
     /* ==============================
