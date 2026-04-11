@@ -206,7 +206,15 @@ class RoomAvailabilityService
     ): bool {
         $room = Room::find($roomId);
 
-        if (! $room || ! in_array($room->status, $this->bookableStatuses(), true)) {
+        if (! $room) {
+            return false;
+        }
+
+        $allowedStatuses = $excludeBookingId
+            ? array_unique([...$this->bookableStatuses(), 'reserved', 'occupied'])
+            : $this->bookableStatuses();
+
+        if (! in_array($room->status, $allowedStatuses, true)) {
             return false;
         }
 
