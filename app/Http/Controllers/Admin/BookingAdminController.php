@@ -13,6 +13,7 @@ use App\Services\BillingService;
 use App\Services\BookingService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Inertia\Inertia;
 
 class BookingAdminController extends Controller
@@ -346,6 +347,12 @@ class BookingAdminController extends Controller
 
     protected function editPayload(Booking $booking): array
     {
+        $paymentColumns = ['id', 'room_id', 'amount', 'amount_paid', 'method', 'created_at'];
+
+        if (Schema::hasColumn('payments', 'notes')) {
+            $paymentColumns[] = 'notes';
+        }
+
         return [
             'id' => $booking->id,
             'booking_code' => $booking->booking_code,
@@ -409,13 +416,13 @@ class BookingAdminController extends Controller
                 ->all(),
             'payments' => $booking->payments()
                 ->latest('id')
-                ->get(['id', 'room_id', 'amount', 'amount_paid', 'method', 'notes', 'created_at'])
+                ->get($paymentColumns)
                 ->map(fn ($payment) => [
                     'id' => $payment->id,
                     'room_id' => $payment->room_id,
                     'amount' => (float) ($payment->amount_paid ?? $payment->amount),
                     'method' => $payment->method,
-                    'notes' => $payment->notes,
+                    'notes' => $payment->notes ?? null,
                     'created_at' => optional($payment->created_at)?->toIso8601String(),
                 ])
                 ->all(),

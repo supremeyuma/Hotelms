@@ -5,6 +5,7 @@ namespace App\Services\Ledgers;
 use App\Models\Account;
 use App\Models\Payment;
 use App\Services\AccountingService;
+use RuntimeException;
 
 class PaymentLedger
 {
@@ -78,6 +79,12 @@ class PaymentLedger
 
     protected function account(string $name): int
     {
-        return Account::where('name', $name)->value('id');
+        $accountId = Account::where('name', $name)->value('id');
+
+        if ($accountId === null) {
+            throw new RuntimeException("Accounting account [{$name}] is not configured.");
+        }
+
+        return (int) $accountId;
     }
 }
