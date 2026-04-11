@@ -39,11 +39,11 @@ class OutstandingBalancesController extends Controller
     {
         $query = Room::with(['bookings' => function ($query) {
                 $query->with('user')
-                    ->whereNotIn('status', ['cancelled', 'completed'])
-                    ->latest('check_in');
+                    ->whereNotIn('bookings.status', ['cancelled', 'completed'])
+                    ->latest('bookings.check_in');
             }])
             ->whereHas('bookings', function ($q) {
-                $q->whereNotIn('status', ['cancelled', 'completed']);
+                $q->whereNotIn('bookings.status', ['cancelled', 'completed']);
             })
             ->where('status', '!=', 'available');
 

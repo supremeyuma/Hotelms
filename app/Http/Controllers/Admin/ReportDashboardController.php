@@ -53,10 +53,10 @@ class ReportDashboardController extends Controller
         RoomBillingService $billingService
     ) {
         $roomsWithBalances = Room::with(['bookings' => function ($query) {
-                $query->whereNotIn('status', ['cancelled', 'completed'])
-                    ->latest('check_in');
+                $query->whereNotIn('bookings.status', ['cancelled', 'completed'])
+                    ->latest('bookings.check_in');
             }])
-            ->whereHas('bookings', fn ($query) => $query->whereNotIn('status', ['cancelled', 'completed']))
+            ->whereHas('bookings', fn ($query) => $query->whereNotIn('bookings.status', ['cancelled', 'completed']))
             ->get()
             ->filter(fn ($room) => $room->bookings->first() && $billingService->outstanding($room) > 0);
 
