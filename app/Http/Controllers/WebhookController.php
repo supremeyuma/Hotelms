@@ -390,7 +390,10 @@ class WebhookController extends Controller
         }
 
         $payloadData = $data['data'] ?? [];
-        $amount = $payloadData['amount'] ?? $booking->total_amount;
+        $amount = $this->normalizePaidAmount(
+            $payloadData['amount'] ?? $booking->total_amount,
+            $provider
+        );
         $currency = $payloadData['currency'] ?? 'NGN';
         $idempotencyKey = $this->buildIdempotencyKey($provider, $data);
 
@@ -522,7 +525,10 @@ class WebhookController extends Controller
         $payment = $this->paymentRecords->update($payment, [
             'method' => $provider,
             'provider' => $provider,
-            'amount_paid' => $payloadData['amount'] ?? $payment->amount_paid ?? $payment->amount,
+            'amount_paid' => $this->normalizePaidAmount(
+                $payloadData['amount'] ?? $payment->amount_paid ?? $payment->amount,
+                $provider
+            ),
             'currency' => $payloadData['currency'] ?? $payment->currency ?? 'NGN',
             'status' => 'completed',
             'transaction_ref' => $payloadData['tx_ref'] ?? $payloadData['reference'] ?? $payment->transaction_ref,
@@ -555,6 +561,17 @@ class WebhookController extends Controller
             'flutterwave_tx_status' => $provider === 'flutterwave' ? ($payloadData['status'] ?? 'failed') : $payment->flutterwave_tx_status,
             'raw_response' => $payloadData ?: $data,
         ]);
+    }
+
+    private function normalizePaidAmount(mixed $amount, string $provider): float
+    {
+        $numericAmount = (float) $amount;
+
+        if ($provider === 'paystack') {
+            return $numericAmount / 100;
+        }
+
+        return $numericAmount;
     }
 
     private function findPaymentByReference(?string $reference): ?Payment
