@@ -1,7 +1,7 @@
 <script setup>
-import { onBeforeUnmount, ref } from 'vue';
+import { computed, onBeforeUnmount, ref } from 'vue';
 import PublicLayout from '@/Layouts/PublicLayout.vue';
-import { router } from '@inertiajs/vue3';
+import { router, usePage } from '@inertiajs/vue3';
 import {
   CheckCircle2,
   Calendar,
@@ -26,6 +26,9 @@ const props = defineProps({
     }),
   },
 });
+
+const page = usePage();
+const hotelAddress = computed(() => page.props.settings?.hotel_address ?? null);
 
 const formatCurrency = (value) => {
   const num = parseFloat(value);
@@ -214,9 +217,9 @@ onBeforeUnmount(() => {
           </button>
         </div>
 
-        <div class="mt-12 text-center text-slate-400">
+        <div v-if="hotelAddress" class="mt-12 text-center text-slate-400">
           <div class="flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest mb-2">
-            <MapPin class="w-4 h-4" /> Victoria Island, Lagos
+            <MapPin class="w-4 h-4" /> {{ hotelAddress }}
           </div>
         </div>
       </div>
