@@ -154,8 +154,12 @@ class RoomAvailabilityService
             return collect();
         }
 
+        $allowedStatuses = $excludeBookingId
+            ? array_unique([...$this->bookableStatuses(), 'reserved', 'occupied'])
+            : $this->bookableStatuses();
+
         return Room::whereIn('id', $roomIds)
-            ->whereIn('status', $this->bookableStatuses())
+            ->whereIn('status', $allowedStatuses)
             ->whereDoesntHave('bookings', function ($query) use ($checkIn, $checkOut, $excludeBookingId) {
                 $query->when($excludeBookingId, fn ($q) => $q->where('bookings.id', '!=', $excludeBookingId))
                     ->whereIn('bookings.status', $this->reservingStatuses())
