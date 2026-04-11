@@ -12,9 +12,6 @@ use Illuminate\Validation\ValidationException;
 
 class DiscountCodeService
 {
-    public const BOOKING_VAT_RATE = 0.015;
-    public const BOOKING_SERVICE_CHARGE_RATE = 0.01;
-
     public function __construct(
         protected PricingService $pricingService
     ) {
@@ -226,11 +223,7 @@ class DiscountCodeService
 
     public function buildPricing(float $baseAmount): array
     {
-        return $this->pricingService->calculatePricing(
-            $baseAmount,
-            self::BOOKING_VAT_RATE,
-            self::BOOKING_SERVICE_CHARGE_RATE
-        );
+        return $this->pricingService->calculatePricing($baseAmount);
     }
 
     protected function updateBookingTotals(Booking $booking, ?array $preview): void

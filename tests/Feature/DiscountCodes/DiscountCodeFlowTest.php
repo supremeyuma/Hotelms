@@ -242,6 +242,8 @@ class DiscountCodeFlowTest extends TestCase
         $this->assertSame('08099999999', $booking->emergency_contact_phone);
         $this->assertSame('Business', $booking->purpose_of_stay);
         $this->assertSame('ROOM10', data_get($booking->details, 'discount.code'));
+        $this->assertEquals(0.0, (float) data_get($booking->details, 'discount.pricing.vat', 0));
+        $this->assertEquals(0.0, (float) data_get($booking->details, 'discount.pricing.service_charge', 0));
         $this->assertDatabaseHas('discount_code_redemptions', [
             'discount_code_id' => DiscountCode::where('code', 'ROOM10')->value('id'),
             'redeemable_type' => $booking->getMorphClass(),

@@ -49,7 +49,7 @@ class FrontDeskDiscountCodeTest extends TestCase
 
         $response->assertRedirect(route('frontdesk.bookings.show', $booking));
         $this->assertSame('confirmed', $booking->status);
-        $this->assertEquals(147600.00, (float) $booking->total_amount);
+        $this->assertEquals(144000.00, (float) $booking->total_amount);
         $this->assertSame('DESK10', data_get($booking->details, 'discount.code'));
         $this->assertDatabaseHas('discount_code_redemptions', [
             'redeemable_type' => $booking->getMorphClass(),
