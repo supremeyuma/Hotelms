@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Mail\BookingConfirmationMail;
 use App\Models\Booking;
 use App\Models\User;
+use App\Services\Billing\NightlyRoomChargeService;
 use App\Services\RoomAvailabilityService;
 use App\Services\AuditLoggerService;
 use App\Services\RoomCheckoutService;

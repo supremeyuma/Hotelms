@@ -5,6 +5,9 @@ namespace App\Services;
 use App\Models\Booking;
 use App\Models\Room;
 use App\Models\User;
+use App\Services\Billing\NightlyRoomChargeService;
+use Exception;
+use Illuminate\Support\Facades\DB;
 
 class RoomCheckoutService
 {

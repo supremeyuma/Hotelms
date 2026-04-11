@@ -28,7 +28,7 @@ class ChargeOccupiedRooms extends Command
                 continue;
             }
 
-            $service->charge($room, $booking->id, $date);
+            $service->charge($room, $booking, $date);
         }
     }
 }
