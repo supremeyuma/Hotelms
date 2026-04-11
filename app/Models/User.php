@@ -17,7 +17,6 @@ class User extends Authenticatable
     protected $fillable = [
         'uuid',
         'department_id',
-        'role_id',
         'name',
         'email',
         'password',
@@ -44,12 +43,6 @@ class User extends Authenticatable
             }
         });
     }
-    // A user belongs to a role
-    public function role()
-    {
-        return $this->belongsTo(Role::class);
-    }
-
     // A user may have a staff profile
     public function staffProfile()
     {

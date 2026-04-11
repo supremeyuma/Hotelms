@@ -67,11 +67,14 @@ class AppServiceProvider extends ServiceProvider
         Inertia::share([
             'auth' => function () {
                 $user = Auth::user();
+
+                $primaryRole = $user?->loadMissing('roles')->roles->first()?->name;
+
                 return [
                     'user' => $user ? [
                         'id' => $user->id,
                         'name' => $user->name,
-                        'role' => $user->role?->name ?? null, // <-- fetch role name via relationship
+                        'role' => $primaryRole,
                     ] : null,
                 ];
             },

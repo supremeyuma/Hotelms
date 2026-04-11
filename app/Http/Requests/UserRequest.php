@@ -19,7 +19,7 @@ class UserRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'unique:users,email,' . $userId],
             'password' => $userId ? ['nullable', 'string', 'min:6'] : ['required', 'string', 'min:6'],
-            'role_id' => ['nullable', 'exists:roles,id'],
+            'role' => ['nullable', 'exists:roles,name'],
         ];
     }
 
