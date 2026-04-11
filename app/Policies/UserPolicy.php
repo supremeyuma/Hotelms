@@ -14,7 +14,7 @@ class UserPolicy
      */
     public function before(User $user, $ability)
     {
-        if ($user->hasRole('md')) {
+        if ($user->hasAnyRole(['md', 'superuser'])) {
             return true;
         }
     }

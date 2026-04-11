@@ -28,7 +28,7 @@ use App\Http\Controllers\Admin\Reports\ChartController;
 use App\Http\Controllers\Admin\ContentController;
 use App\Http\Controllers\Admin\GalleryController;
 
-Route::middleware(['auth', 'role:manager|md'])->prefix('admin')->as('admin.')->group(function () {
+Route::middleware(['auth', 'role:manager|md|superuser'])->prefix('admin')->as('admin.')->group(function () {
 
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
@@ -129,7 +129,7 @@ Route::middleware(['auth', 'role:manager|md'])->prefix('admin')->as('admin.')->g
 
     // TEXTS AND GALLERY LINKS
 
-Route::middleware(['auth','role:manager|md'])->prefix('admin/website')->group(function () {
+Route::middleware(['auth','role:manager|md|superuser'])->prefix('admin/website')->group(function () {
 
         Route::get('/content', [ContentController::class, 'index'])
             ->name('admin.website.content');
@@ -150,7 +150,7 @@ Route::middleware(['auth','role:manager|md'])->prefix('admin/website')->group(fu
     });
 
 
-    Route::middleware(['auth','role:manager|md'])->group(function () {
+    Route::middleware(['auth','role:manager|md|superuser'])->group(function () {
     Route::get('/admin/events', [EventController::class,'index'])->name('admin.events.index');
     Route::post('/admin/events', [EventController::class,'store']);
     Route::get('/admin/events/create', [EventController::class,'create'])->name('admin.events.create');
