@@ -52,10 +52,13 @@ class ReportDashboardController extends Controller
         RevenueReportService $revenue,
         RoomBillingService $billingService
     ) {
-        $roomsWithBalances = Room::with(['booking', 'booking.rooms'])
-            ->whereHas('booking', fn ($query) => $query->whereNotIn('status', ['cancelled', 'completed']))
+        $roomsWithBalances = Room::with(['bookings' => function ($query) {
+                $query->whereNotIn('status', ['cancelled', 'completed'])
+                    ->latest('check_in');
+            }])
+            ->whereHas('bookings', fn ($query) => $query->whereNotIn('status', ['cancelled', 'completed']))
             ->get()
-            ->filter(fn ($room) => $billingService->outstanding($room) > 0);
+            ->filter(fn ($room) => $room->bookings->first() && $billingService->outstanding($room) > 0);
 
         return Inertia::render('Admin/Reports/Dashboard', [
             'mode' => 'finance',
