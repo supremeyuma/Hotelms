@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\Room;
 use App\Services\AuditLogger;
+use App\Services\BillingService;
 use App\Services\BookingService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -17,11 +18,13 @@ use Inertia\Inertia;
 class BookingAdminController extends Controller
 {
     protected BookingService $service;
+    protected BillingService $billingService;
 
-    public function __construct(BookingService $service)
+    public function __construct(BookingService $service, BillingService $billingService)
     {
         $this->middleware(['auth', 'role:manager|md']);
         $this->service = $service;
+        $this->billingService = $billingService;
     }
 
     public function index(Request $request)
@@ -139,40 +142,13 @@ class BookingAdminController extends Controller
 
     public function edit(Booking $booking)
     {
-        $booking->load(['room.roomType', 'rooms.roomType', 'roomType', 'user']);
+        $booking->load(['room.roomType', 'rooms.roomType', 'roomType', 'user', 'charges', 'payments']);
         $rooms = Room::with('roomType')->get();
+        $details = $booking->details ?? [];
+        $preCheckIn = $details['pre_check_in'] ?? null;
 
         return Inertia::render('Admin/Bookings/Edit', [
-            'booking' => [
-                'id' => $booking->id,
-                'booking_code' => $booking->booking_code,
-                'room_id' => $booking->room_id,
-                'check_in' => optional($booking->check_in)->toDateString(),
-                'check_out' => optional($booking->check_out)->toDateString(),
-                'status' => $booking->status,
-                'guests' => (int) ($booking->guests ?: (($booking->adults ?? 0) + ($booking->children ?? 0)) ?: 1),
-                'guest_name' => $booking->guest_name ?: optional($booking->user)->name ?: 'Walk-in guest',
-                'guest_email' => $booking->guest_email,
-                'guest_phone' => $booking->guest_phone,
-                'payment_status' => $booking->payment_status ?: 'unpaid',
-                'payment_method' => $booking->payment_method ?: 'Not recorded',
-                'total_amount' => (float) ($booking->total_amount ?? 0),
-                'special_requests' => $booking->special_requests,
-                'room_label' => trim(collect([
-                    $booking->roomType?->title ?: $booking->room?->roomType?->title,
-                    $booking->room?->name ?: $booking->room?->room_number,
-                ])->filter()->implode(' - ')) ?: 'Unassigned',
-                'assigned_rooms' => $booking->rooms
-                    ->map(function (Room $room) {
-                        return trim(collect([
-                            $room->roomType?->title,
-                            $room->name ?: $room->room_number,
-                        ])->filter()->implode(' - '));
-                    })
-                    ->filter()
-                    ->values()
-                    ->all(),
-            ],
+            'booking' => $this->editPayload($booking),
             'rooms' => $rooms->map(function (Room $room) {
                 return [
                     'id' => $room->id,
@@ -184,6 +160,12 @@ class BookingAdminController extends Controller
                     ],
                 ];
             })->values(),
+            'preCheckIn' => $preCheckIn ? [
+                'completed_at' => $preCheckIn['completed_at'] ?? null,
+                'estimated_arrival_time' => $preCheckIn['estimated_arrival_time'] ?? null,
+                'arrival_notes' => $preCheckIn['arrival_notes'] ?? null,
+                'source' => $preCheckIn['source'] ?? null,
+            ] : null,
             'statusOptions' => [
                 ['label' => 'Pending payment', 'value' => 'pending_payment'],
                 ['label' => 'Confirmed', 'value' => 'confirmed'],
@@ -203,6 +185,15 @@ class BookingAdminController extends Controller
             'check_out' => 'required|date|after:check_in',
             'status' => 'required|in:pending_payment,confirmed,active,checked_in,checked_out,cancelled',
             'guests' => 'nullable|integer|min:1',
+            'adults' => 'required|integer|min:1',
+            'children' => 'nullable|integer|min:0',
+            'guest_name' => 'required|string|max:255',
+            'guest_email' => 'nullable|email|max:255',
+            'guest_phone' => 'nullable|string|max:20',
+            'emergency_contact_name' => 'nullable|string|max:255',
+            'emergency_contact_phone' => 'nullable|string|max:20',
+            'purpose_of_stay' => 'nullable|string|max:255',
+            'special_requests' => 'nullable|string|max:1000',
         ]);
 
         // Use service to safely reassign/modify booking
@@ -236,5 +227,154 @@ class BookingAdminController extends Controller
         AuditLogger::log('booking_reassigned', 'Booking', $booking->id, ['to_room' => $data['room_id']]);
 
         return back()->with('success', 'Room reassigned.');
+    }
+
+    public function addCharge(Request $request, Booking $booking)
+    {
+        $data = $request->validate([
+            'room_id' => 'nullable|integer',
+            'description' => 'required|string|max:255',
+            'amount' => 'required|numeric|min:0.01',
+        ]);
+
+        $roomId = $this->resolveRoomId($booking, $data['room_id'] ?? null);
+
+        if (! $roomId) {
+            return back()->withErrors([
+                'room_id' => $booking->rooms()->count() > 1
+                    ? 'Select the specific room for this charge.'
+                    : 'Assign a room to this booking before posting a charge.',
+            ]);
+        }
+
+        $this->billingService->addCharge($booking, $roomId, $data['description'], (float) $data['amount']);
+
+        return back()->with('success', 'Charge added successfully.');
+    }
+
+    public function addPayment(Request $request, Booking $booking)
+    {
+        $data = $request->validate([
+            'room_id' => 'nullable|integer',
+            'amount' => 'required|numeric|min:0.01',
+            'method' => 'required|string|max:50',
+            'reference' => 'nullable|string|max:100',
+            'notes' => 'nullable|string|max:255',
+        ]);
+
+        $roomId = $this->resolveRoomId($booking, $data['room_id'] ?? null);
+
+        if (! $roomId) {
+            return back()->withErrors([
+                'room_id' => $booking->rooms()->count() > 1
+                    ? 'Select the specific room for this payment.'
+                    : 'Assign a room to this booking before recording payment.',
+            ]);
+        }
+
+        $this->billingService->addPayment(
+            booking: $booking,
+            roomId: $roomId,
+            amount: (float) $data['amount'],
+            method: $data['method'],
+            reference: $data['reference'] ?? null,
+            notes: $data['notes'] ?? null,
+        );
+
+        return back()->with('success', 'Payment recorded successfully.');
+    }
+
+    protected function editPayload(Booking $booking): array
+    {
+        return [
+            'id' => $booking->id,
+            'booking_code' => $booking->booking_code,
+            'room_id' => $booking->room_id,
+            'check_in' => optional($booking->check_in)->toDateString(),
+            'check_out' => optional($booking->check_out)->toDateString(),
+            'status' => $booking->status,
+            'guests' => (int) ($booking->guests ?: (($booking->adults ?? 0) + ($booking->children ?? 0)) ?: 1),
+            'adults' => (int) ($booking->adults ?? 1),
+            'children' => (int) ($booking->children ?? 0),
+            'guest_name' => $booking->guest_name ?: optional($booking->user)->name ?: '',
+            'guest_email' => $booking->guest_email,
+            'guest_phone' => $booking->guest_phone,
+            'emergency_contact_name' => $booking->emergency_contact_name,
+            'emergency_contact_phone' => $booking->emergency_contact_phone,
+            'purpose_of_stay' => $booking->purpose_of_stay,
+            'payment_status' => $booking->payment_status ?: 'unpaid',
+            'payment_method' => $booking->payment_method ?: 'Not recorded',
+            'total_amount' => (float) ($booking->total_amount ?? 0),
+            'special_requests' => $booking->special_requests,
+            'room_label' => trim(collect([
+                $booking->roomType?->title ?: $booking->room?->roomType?->title,
+                $booking->room?->name ?: $booking->room?->room_number,
+            ])->filter()->implode(' - ')) ?: 'Unassigned',
+            'assigned_rooms' => $booking->rooms
+                ->map(function (Room $room) {
+                    return trim(collect([
+                        $room->roomType?->title,
+                        $room->name ?: $room->room_number,
+                    ])->filter()->implode(' - '));
+                })
+                ->filter()
+                ->values()
+                ->all(),
+            'assigned_room_options' => $booking->rooms
+                ->map(function (Room $room) {
+                    return [
+                        'id' => $room->id,
+                        'label' => trim(collect([
+                            $room->roomType?->title,
+                            $room->name ?: $room->room_number,
+                        ])->filter()->implode(' - ')),
+                    ];
+                })
+                ->values()
+                ->all(),
+            'has_multiple_rooms' => $booking->rooms->count() > 1,
+            'charges' => $booking->charges()
+                ->latest('id')
+                ->get(['id', 'room_id', 'description', 'amount', 'created_at'])
+                ->map(fn ($charge) => [
+                    'id' => $charge->id,
+                    'room_id' => $charge->room_id,
+                    'description' => $charge->description,
+                    'amount' => (float) $charge->amount,
+                    'created_at' => optional($charge->created_at)?->toIso8601String(),
+                ])
+                ->all(),
+            'payments' => $booking->payments()
+                ->latest('id')
+                ->get(['id', 'room_id', 'amount', 'amount_paid', 'method', 'notes', 'created_at'])
+                ->map(fn ($payment) => [
+                    'id' => $payment->id,
+                    'room_id' => $payment->room_id,
+                    'amount' => (float) ($payment->amount_paid ?? $payment->amount),
+                    'method' => $payment->method,
+                    'notes' => $payment->notes,
+                    'created_at' => optional($payment->created_at)?->toIso8601String(),
+                ])
+                ->all(),
+        ];
+    }
+
+    protected function resolveRoomId(Booking $booking, ?int $roomId): ?int
+    {
+        if ($roomId) {
+            return $roomId;
+        }
+
+        $assignedRoomIds = $booking->rooms()->pluck('rooms.id');
+
+        if ($assignedRoomIds->count() === 1) {
+            return (int) $assignedRoomIds->first();
+        }
+
+        if ($assignedRoomIds->count() > 1) {
+            return null;
+        }
+
+        return $booking->room_id ? (int) $booking->room_id : null;
     }
 }

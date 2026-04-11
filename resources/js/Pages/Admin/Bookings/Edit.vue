@@ -5,59 +5,83 @@ import { Head, Link, useForm } from '@inertiajs/vue3'
 import { computed } from 'vue'
 import {
   ArrowLeft,
-  BedDouble,
   CalendarDays,
   CreditCard,
   Mail,
   Phone,
   Save,
   ShieldCheck,
-  Users,
+  UserRound,
 } from 'lucide-vue-next'
 
 const props = defineProps({
   booking: { type: Object, required: true },
   rooms: { type: Array, required: true },
   statusOptions: { type: Array, default: () => [] },
+  preCheckIn: { type: Object, default: null },
 })
 
 const form = useForm({
-  room_id: props.booking.room_id,
+  room_id: props.booking.room_id ?? props.booking.assigned_room_options?.[0]?.id ?? '',
   check_in: props.booking.check_in ?? '',
   check_out: props.booking.check_out ?? '',
   status: props.booking.status,
   guests: String(props.booking.guests ?? 1),
+  adults: String(props.booking.adults ?? 1),
+  children: String(props.booking.children ?? 0),
+  guest_name: props.booking.guest_name ?? '',
+  guest_email: props.booking.guest_email ?? '',
+  guest_phone: props.booking.guest_phone ?? '',
+  emergency_contact_name: props.booking.emergency_contact_name ?? '',
+  emergency_contact_phone: props.booking.emergency_contact_phone ?? '',
+  purpose_of_stay: props.booking.purpose_of_stay ?? '',
+  special_requests: props.booking.special_requests ?? '',
 })
 
-const roomOptions = computed(() => props.rooms.map((room) => ({
-  label: [
-    room.room_type?.title,
-    room.name || room.room_number,
-    room.status ? `(${String(room.status).replaceAll('_', ' ')})` : null,
-  ].filter(Boolean).join(' - '),
-  value: room.id,
-})))
+const chargeForm = useForm({
+  room_id: props.booking.has_multiple_rooms ? '' : props.booking.assigned_room_options?.[0]?.id ?? props.booking.room_id ?? '',
+  description: '',
+  amount: '',
+})
 
-const selectedRoom = computed(() =>
-  props.rooms.find((room) => Number(room.id) === Number(form.room_id)) ?? null
-)
+const paymentForm = useForm({
+  room_id: props.booking.has_multiple_rooms ? '' : props.booking.assigned_room_options?.[0]?.id ?? props.booking.room_id ?? '',
+  amount: '',
+  method: 'Cash',
+  reference: '',
+  notes: '',
+})
+
+const roomOptions = computed(() => {
+  const current = (props.booking.assigned_room_options ?? []).map((room) => ({
+    id: room.id,
+    label: `${room.label} (currently assigned)`,
+  }))
+
+  const available = props.rooms.map((room) => ({
+    id: room.id,
+    label: [
+      room.room_type?.title,
+      room.name || room.room_number,
+      room.status ? `(${String(room.status).replaceAll('_', ' ')})` : null,
+    ].filter(Boolean).join(' - '),
+  }))
+
+  return [...current, ...available].filter(
+    (room, index, items) => items.findIndex((item) => Number(item.id) === Number(room.id)) === index
+  )
+})
 
 const nights = computed(() => {
-  if (!form.check_in || !form.check_out) {
-    return 0
-  }
+  if (!form.check_in || !form.check_out) return 0
 
-  const checkIn = new Date(form.check_in)
-  const checkOut = new Date(form.check_out)
-  const diff = Math.round((checkOut - checkIn) / 86400000)
+  const diff = Math.round((new Date(form.check_out) - new Date(form.check_in)) / 86400000)
 
   return Number.isFinite(diff) && diff > 0 ? diff : 0
 })
 
-const invalidStay = computed(() => !!form.check_in && !!form.check_out && nights.value === 0)
-const statusLabel = computed(() =>
-  props.statusOptions.find((option) => option.value === form.status)?.label ?? form.status
-)
+const invalidStay = computed(() => Boolean(form.check_in && form.check_out && !nights.value))
+const statusLabel = computed(() => props.statusOptions.find((option) => option.value === form.status)?.label ?? form.status)
 
 function formatCurrency(amount) {
   return new Intl.NumberFormat('en-NG', {
@@ -67,19 +91,48 @@ function formatCurrency(amount) {
   }).format(Number(amount || 0))
 }
 
-function formatStatus(value) {
-  return String(value || '')
-    .replaceAll('_', ' ')
-    .replace(/\b\w/g, (char) => char.toUpperCase())
+function formatDate(value) {
+  if (!value) return 'Not recorded'
+
+  return new Date(value).toLocaleString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+function roomLabel(roomId) {
+  return props.booking.assigned_room_options.find((room) => Number(room.id) === Number(roomId))?.label || 'Room not specified'
 }
 
 function submit() {
-  if (invalidStay.value || form.processing) {
-    return
-  }
+  if (form.processing || invalidStay.value) return
 
   form.put(route('admin.bookings.update', props.booking.id), {
     preserveScroll: true,
+  })
+}
+
+function submitCharge() {
+  chargeForm.post(route('admin.bookings.charges.store', props.booking.id), {
+    preserveScroll: true,
+    onSuccess: () => {
+      chargeForm.reset('description', 'amount')
+      chargeForm.room_id = props.booking.has_multiple_rooms ? '' : props.booking.assigned_room_options?.[0]?.id ?? props.booking.room_id ?? ''
+    },
+  })
+}
+
+function submitPayment() {
+  paymentForm.post(route('admin.bookings.payments.store', props.booking.id), {
+    preserveScroll: true,
+    onSuccess: () => {
+      paymentForm.reset('amount', 'reference', 'notes')
+      paymentForm.method = 'Cash'
+      paymentForm.room_id = props.booking.has_multiple_rooms ? '' : props.booking.assigned_room_options?.[0]?.id ?? props.booking.room_id ?? ''
+    },
   })
 }
 </script>
@@ -104,13 +157,13 @@ function submit() {
               {{ booking.booking_code || `Booking #${booking.id}` }}
             </span>
             <span class="rounded-full bg-slate-100 px-4 py-1.5 text-xs font-bold text-slate-600">
-              {{ formatStatus(booking.payment_status) }}
+              {{ booking.payment_status }}
             </span>
           </div>
 
           <h1 class="mt-4 text-3xl font-black tracking-tight text-slate-900">Edit booking</h1>
           <p class="mt-2 text-sm text-slate-600">
-            Update room assignment, stay dates, guest count, and reservation status.
+            Manage guest details, stay dates, room assignment, and room-specific billing from one screen.
           </p>
         </div>
 
@@ -130,96 +183,207 @@ function submit() {
         </div>
       </div>
 
-      <form @submit.prevent="submit" class="grid gap-8 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <section class="space-y-6 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
-          <div class="grid gap-6 md:grid-cols-2">
-            <label class="space-y-2 md:col-span-2">
-              <span class="text-sm font-bold text-slate-700">Assigned room</span>
-              <select
-                v-model="form.room_id"
-                class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
-                required
-              >
-                <option v-for="room in roomOptions" :key="room.value" :value="room.value">
-                  {{ room.label }}
-                </option>
-              </select>
-              <InputError :message="form.errors.room_id" />
-            </label>
+      <div class="grid gap-8 xl:grid-cols-[minmax(0,1fr)_380px]">
+        <div class="space-y-8">
+          <section class="space-y-6 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="grid gap-6 md:grid-cols-2">
+              <label class="space-y-2">
+                <span class="text-sm font-bold text-slate-700">Assigned room</span>
+                <select
+                  v-model="form.room_id"
+                  class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+                >
+                  <option v-for="room in roomOptions" :key="room.id" :value="room.id">
+                    {{ room.label }}
+                  </option>
+                </select>
+                <InputError :message="form.errors.room_id" />
+              </label>
 
-            <label class="space-y-2">
-              <span class="text-sm font-bold text-slate-700">Check-in date</span>
-              <input
-                v-model="form.check_in"
-                type="date"
-                class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
-                required
-              />
-              <InputError :message="form.errors.check_in" />
-            </label>
+              <label class="space-y-2">
+                <span class="text-sm font-bold text-slate-700">Booking status</span>
+                <select
+                  v-model="form.status"
+                  class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+                >
+                  <option v-for="option in statusOptions" :key="option.value" :value="option.value">
+                    {{ option.label }}
+                  </option>
+                </select>
+                <InputError :message="form.errors.status" />
+              </label>
 
-            <label class="space-y-2">
-              <span class="text-sm font-bold text-slate-700">Check-out date</span>
-              <input
-                v-model="form.check_out"
-                type="date"
-                :min="form.check_in || undefined"
-                class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
-                required
-              />
-              <InputError :message="form.errors.check_out" />
-            </label>
+              <label class="space-y-2 md:col-span-2">
+                <span class="text-sm font-bold text-slate-700">Guest full name</span>
+                <input v-model="form.guest_name" type="text" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100" />
+                <InputError :message="form.errors.guest_name" />
+              </label>
 
-            <label class="space-y-2">
-              <span class="text-sm font-bold text-slate-700">Guest count</span>
-              <input
-                v-model="form.guests"
-                type="number"
-                min="1"
-                inputmode="numeric"
-                class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
-              />
-              <InputError :message="form.errors.guests" />
-            </label>
+              <label class="space-y-2">
+                <span class="text-sm font-bold text-slate-700">Guest email</span>
+                <input v-model="form.guest_email" type="email" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100" />
+                <InputError :message="form.errors.guest_email" />
+              </label>
 
-            <label class="space-y-2">
-              <span class="text-sm font-bold text-slate-700">Booking status</span>
-              <select
-                v-model="form.status"
-                class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
-                required
-              >
-                <option v-for="option in statusOptions" :key="option.value" :value="option.value">
-                  {{ option.label }}
-                </option>
-              </select>
-              <InputError :message="form.errors.status" />
-            </label>
-          </div>
+              <label class="space-y-2">
+                <span class="text-sm font-bold text-slate-700">Guest phone</span>
+                <input v-model="form.guest_phone" type="text" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100" />
+                <InputError :message="form.errors.guest_phone" />
+              </label>
 
-          <div
-            v-if="invalidStay"
-            class="rounded-[1.5rem] border border-rose-200 bg-rose-50 px-4 py-4 text-sm font-medium text-rose-700"
-          >
-            Check-out must be after check-in.
-          </div>
+              <label class="space-y-2">
+                <span class="text-sm font-bold text-slate-700">Adults</span>
+                <input v-model="form.adults" type="number" min="1" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100" />
+                <InputError :message="form.errors.adults" />
+              </label>
 
-          <div class="rounded-[1.5rem] border border-slate-200 bg-slate-50 px-5 py-5">
-            <div class="flex items-start gap-3">
-              <ShieldCheck class="mt-0.5 h-5 w-5 text-slate-500" />
-              <div class="space-y-2 text-sm text-slate-600">
-                <p class="font-bold text-slate-900">Before saving</p>
-                <p>Room availability is checked again when dates or room assignment change.</p>
-                <p>The save button locks immediately to prevent double submission.</p>
-              </div>
+              <label class="space-y-2">
+                <span class="text-sm font-bold text-slate-700">Children</span>
+                <input v-model="form.children" type="number" min="0" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100" />
+                <InputError :message="form.errors.children" />
+              </label>
+
+              <label class="space-y-2">
+                <span class="text-sm font-bold text-slate-700">Emergency contact name</span>
+                <input v-model="form.emergency_contact_name" type="text" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100" />
+                <InputError :message="form.errors.emergency_contact_name" />
+              </label>
+
+              <label class="space-y-2">
+                <span class="text-sm font-bold text-slate-700">Emergency contact phone</span>
+                <input v-model="form.emergency_contact_phone" type="text" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100" />
+                <InputError :message="form.errors.emergency_contact_phone" />
+              </label>
+
+              <label class="space-y-2">
+                <span class="text-sm font-bold text-slate-700">Check-in date</span>
+                <input v-model="form.check_in" type="date" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100" />
+                <InputError :message="form.errors.check_in" />
+              </label>
+
+              <label class="space-y-2">
+                <span class="text-sm font-bold text-slate-700">Check-out date</span>
+                <input v-model="form.check_out" type="date" :min="form.check_in || undefined" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100" />
+                <InputError :message="form.errors.check_out" />
+              </label>
+
+              <label class="space-y-2 md:col-span-2">
+                <span class="text-sm font-bold text-slate-700">Purpose of stay</span>
+                <input v-model="form.purpose_of_stay" type="text" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100" />
+                <InputError :message="form.errors.purpose_of_stay" />
+              </label>
+
+              <label class="space-y-2 md:col-span-2">
+                <span class="text-sm font-bold text-slate-700">Special requests</span>
+                <textarea v-model="form.special_requests" rows="4" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100" />
+                <InputError :message="form.errors.special_requests" />
+              </label>
             </div>
-          </div>
-        </section>
+
+            <div
+              v-if="invalidStay"
+              class="rounded-[1.5rem] border border-rose-200 bg-rose-50 px-4 py-4 text-sm font-medium text-rose-700"
+            >
+              Check-out must be after check-in.
+            </div>
+          </section>
+
+          <section class="grid gap-6 xl:grid-cols-2">
+            <div class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+              <div class="flex items-center gap-3">
+                <div class="rounded-2xl bg-indigo-50 p-2 text-indigo-600"><CreditCard class="h-5 w-5" /></div>
+                <h2 class="text-xl font-black text-slate-900">Add charge</h2>
+              </div>
+
+              <form @submit.prevent="submitCharge" class="mt-6 space-y-4">
+                <label class="space-y-2">
+                  <span class="text-sm font-bold text-slate-700">Room</span>
+                  <select v-model="chargeForm.room_id" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100">
+                    <option value="" disabled>Select room</option>
+                    <option v-for="room in booking.assigned_room_options" :key="room.id" :value="room.id">
+                      {{ room.label }}
+                    </option>
+                  </select>
+                  <InputError :message="chargeForm.errors.room_id" />
+                </label>
+
+                <label class="space-y-2">
+                  <span class="text-sm font-bold text-slate-700">Description</span>
+                  <input v-model="chargeForm.description" type="text" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100" />
+                  <InputError :message="chargeForm.errors.description" />
+                </label>
+
+                <label class="space-y-2">
+                  <span class="text-sm font-bold text-slate-700">Amount</span>
+                  <input v-model="chargeForm.amount" type="number" min="0.01" step="0.01" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100" />
+                  <InputError :message="chargeForm.errors.amount" />
+                </label>
+
+                <button type="submit" :disabled="chargeForm.processing" class="inline-flex w-full items-center justify-center rounded-2xl bg-slate-900 px-5 py-3 text-sm font-bold text-white transition hover:bg-slate-800 disabled:opacity-60">
+                  {{ chargeForm.processing ? 'Posting charge...' : 'Post charge' }}
+                </button>
+              </form>
+            </div>
+
+            <div class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+              <div class="flex items-center gap-3">
+                <div class="rounded-2xl bg-emerald-50 p-2 text-emerald-600"><CreditCard class="h-5 w-5" /></div>
+                <h2 class="text-xl font-black text-slate-900">Record payment</h2>
+              </div>
+
+              <form @submit.prevent="submitPayment" class="mt-6 space-y-4">
+                <label class="space-y-2">
+                  <span class="text-sm font-bold text-slate-700">Room</span>
+                  <select v-model="paymentForm.room_id" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100">
+                    <option value="" disabled>Select room</option>
+                    <option v-for="room in booking.assigned_room_options" :key="room.id" :value="room.id">
+                      {{ room.label }}
+                    </option>
+                  </select>
+                  <InputError :message="paymentForm.errors.room_id" />
+                </label>
+
+                <label class="space-y-2">
+                  <span class="text-sm font-bold text-slate-700">Amount</span>
+                  <input v-model="paymentForm.amount" type="number" min="0.01" step="0.01" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100" />
+                  <InputError :message="paymentForm.errors.amount" />
+                </label>
+
+                <label class="space-y-2">
+                  <span class="text-sm font-bold text-slate-700">Method</span>
+                  <select v-model="paymentForm.method" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100">
+                    <option>Cash</option>
+                    <option>Card</option>
+                    <option>Online Transfer</option>
+                    <option>POS</option>
+                  </select>
+                  <InputError :message="paymentForm.errors.method" />
+                </label>
+
+                <label class="space-y-2">
+                  <span class="text-sm font-bold text-slate-700">Reference</span>
+                  <input v-model="paymentForm.reference" type="text" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100" />
+                  <InputError :message="paymentForm.errors.reference" />
+                </label>
+
+                <label class="space-y-2">
+                  <span class="text-sm font-bold text-slate-700">Notes</span>
+                  <input v-model="paymentForm.notes" type="text" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100" />
+                  <InputError :message="paymentForm.errors.notes" />
+                </label>
+
+                <button type="submit" :disabled="paymentForm.processing" class="inline-flex w-full items-center justify-center rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-emerald-500 disabled:opacity-60">
+                  {{ paymentForm.processing ? 'Recording payment...' : 'Record payment' }}
+                </button>
+              </form>
+            </div>
+          </section>
+        </div>
 
         <aside class="space-y-6">
           <section class="rounded-[2rem] bg-[linear-gradient(145deg,_#0f172a,_#1e293b)] p-6 text-white shadow-sm">
             <p class="text-[11px] font-black uppercase tracking-[0.24em] text-slate-300">Live summary</p>
-            <h2 class="mt-3 text-2xl font-black tracking-tight">{{ booking.guest_name }}</h2>
+            <h2 class="mt-3 text-2xl font-black tracking-tight">{{ form.guest_name }}</h2>
             <p class="mt-2 text-sm text-slate-300">{{ statusLabel }}</p>
 
             <div class="mt-6 space-y-4">
@@ -235,21 +399,11 @@ function submit() {
               </div>
 
               <div class="flex items-start gap-3 rounded-[1.5rem] bg-white/10 px-4 py-4">
-                <BedDouble class="mt-0.5 h-4 w-4 text-slate-200" />
+                <UserRound class="mt-0.5 h-4 w-4 text-slate-200" />
                 <div>
-                  <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-300">Room</p>
-                  <p class="mt-1 text-sm font-bold text-white">
-                    {{ selectedRoom?.room_type?.title || 'Room type' }} - {{ selectedRoom?.name || selectedRoom?.room_number || 'Select room' }}
-                  </p>
-                  <p class="mt-1 text-xs text-slate-300">{{ selectedRoom ? formatStatus(selectedRoom.status) : 'No room selected' }}</p>
-                </div>
-              </div>
-
-              <div class="flex items-start gap-3 rounded-[1.5rem] bg-white/10 px-4 py-4">
-                <Users class="mt-0.5 h-4 w-4 text-slate-200" />
-                <div>
-                  <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-300">Guest count</p>
-                  <p class="mt-1 text-sm font-bold text-white">{{ form.guests || '1' }} guest<span v-if="Number(form.guests || 1) !== 1">s</span></p>
+                  <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-300">Guest contact</p>
+                  <p class="mt-1 text-sm font-bold text-white">{{ form.guest_email || 'No email provided' }}</p>
+                  <p class="mt-1 text-xs text-slate-300">{{ form.guest_phone || 'No phone provided' }}</p>
                 </div>
               </div>
 
@@ -264,41 +418,58 @@ function submit() {
             </div>
           </section>
 
+          <section
+            v-if="preCheckIn"
+            class="rounded-[2rem] border border-emerald-200 bg-emerald-50 p-6 shadow-sm"
+          >
+            <p class="text-[11px] font-black uppercase tracking-[0.18em] text-emerald-700">Online pre-check-in</p>
+            <div class="mt-4 space-y-2 text-sm text-emerald-900">
+              <p><span class="font-bold">Completed:</span> {{ formatDate(preCheckIn.completed_at) }}</p>
+              <p><span class="font-bold">Estimated arrival:</span> {{ preCheckIn.estimated_arrival_time || 'Not provided' }}</p>
+              <p><span class="font-bold">Arrival notes:</span> {{ preCheckIn.arrival_notes || 'None' }}</p>
+            </div>
+          </section>
+
           <section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
-            <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Guest contact</p>
-            <div class="mt-4 space-y-3 text-sm text-slate-600">
-              <div class="flex items-center gap-3">
-                <Mail class="h-4 w-4 text-slate-400" />
-                <span>{{ booking.guest_email || 'No email provided' }}</span>
+            <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Recent charges</p>
+            <div class="mt-4 space-y-3">
+              <div v-for="charge in booking.charges" :key="charge.id" class="rounded-[1.25rem] border border-slate-100 px-4 py-3">
+                <p class="text-sm font-bold text-slate-900">{{ charge.description }}</p>
+                <p class="mt-1 text-xs uppercase tracking-[0.18em] text-slate-400">{{ roomLabel(charge.room_id) }}</p>
+                <p class="mt-2 text-sm font-black text-slate-900">{{ formatCurrency(charge.amount) }}</p>
               </div>
-              <div class="flex items-center gap-3">
-                <Phone class="h-4 w-4 text-slate-400" />
-                <span>{{ booking.guest_phone || 'No phone provided' }}</span>
-              </div>
+              <p v-if="booking.charges.length === 0" class="text-sm text-slate-500">No charges recorded yet.</p>
             </div>
+          </section>
 
-            <div v-if="booking.assigned_rooms?.length" class="mt-6">
-              <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">All assigned rooms</p>
-              <div class="mt-3 flex flex-wrap gap-2">
-                <span
-                  v-for="room in booking.assigned_rooms"
-                  :key="room"
-                  class="rounded-full bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700"
-                >
-                  {{ room }}
-                </span>
+          <section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+            <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Recent payments</p>
+            <div class="mt-4 space-y-3">
+              <div v-for="payment in booking.payments" :key="payment.id" class="rounded-[1.25rem] border border-slate-100 px-4 py-3">
+                <p class="text-sm font-bold text-slate-900">{{ payment.method }}</p>
+                <p class="mt-1 text-xs uppercase tracking-[0.18em] text-slate-400">{{ roomLabel(payment.room_id) }}</p>
+                <p class="mt-1 text-sm text-slate-500">{{ payment.notes || 'Payment recorded' }}</p>
+                <p class="mt-2 text-sm font-black text-emerald-600">{{ formatCurrency(payment.amount) }}</p>
               </div>
+              <p v-if="booking.payments.length === 0" class="text-sm text-slate-500">No payments recorded yet.</p>
             </div>
+          </section>
 
-            <div v-if="booking.special_requests" class="mt-6 rounded-[1.5rem] border border-amber-200 bg-amber-50 px-4 py-4">
-              <p class="text-[11px] font-black uppercase tracking-[0.18em] text-amber-700">Special requests</p>
-              <p class="mt-2 text-sm leading-6 text-amber-900">{{ booking.special_requests }}</p>
+          <section class="rounded-[1.5rem] border border-slate-200 bg-slate-50 px-5 py-5">
+            <div class="flex items-start gap-3">
+              <ShieldCheck class="mt-0.5 h-5 w-5 text-slate-500" />
+              <div class="space-y-2 text-sm text-slate-600">
+                <p class="font-bold text-slate-900">Before saving</p>
+                <p>Room availability is checked again when dates or room assignment change.</p>
+                <p>Charges and payments are tied to the selected room to keep shared bookings accurate.</p>
+              </div>
             </div>
           </section>
 
           <div class="flex flex-col gap-3">
             <button
-              type="submit"
+              type="button"
+              @click="submit"
               :disabled="form.processing || invalidStay"
               class="inline-flex w-full items-center justify-center gap-3 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-bold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
@@ -314,7 +485,7 @@ function submit() {
             </Link>
           </div>
         </aside>
-      </form>
+      </div>
     </div>
   </ManagerLayout>
 </template>

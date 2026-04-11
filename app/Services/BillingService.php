@@ -15,6 +15,62 @@ class BillingService
         protected PaymentAccountingService $paymentAccounting,
     ) {}
 
+    public function getBillingHistory(Booking $booking): array
+    {
+        $booking->loadMissing(['rooms.roomType', 'charges.room.roomType', 'payments.room.roomType']);
+
+        $charges = $booking->charges
+            ->sortByDesc('created_at')
+            ->values()
+            ->map(function (Charge $charge) {
+                return [
+                    'id' => $charge->id,
+                    'room_id' => $charge->room_id,
+                    'room_label' => $this->roomLabel($charge->room),
+                    'description' => $charge->description,
+                    'amount' => (float) $charge->amount,
+                    'created_at' => optional($charge->created_at)?->toIso8601String(),
+                ];
+            })
+            ->all();
+
+        $payments = $booking->payments
+            ->sortByDesc('created_at')
+            ->values()
+            ->map(function (Payment $payment) {
+                return [
+                    'id' => $payment->id,
+                    'room_id' => $payment->room_id,
+                    'room_label' => $this->roomLabel($payment->room),
+                    'method' => $payment->method,
+                    'notes' => $payment->notes,
+                    'reference' => $payment->reference,
+                    'amount' => (float) ($payment->amount_paid ?? $payment->amount),
+                    'created_at' => optional($payment->created_at)?->toIso8601String(),
+                ];
+            })
+            ->all();
+
+        $totalCharges = max(
+            collect($charges)->sum('amount'),
+            (float) ($booking->total_amount ?? 0)
+        );
+        $totalPayments = collect($payments)->sum('amount');
+
+        return [
+            'charges' => $charges,
+            'payments' => $payments,
+            'total_charges' => $totalCharges,
+            'total_payments' => $totalPayments,
+            'outstanding' => max($totalCharges - $totalPayments, 0),
+            'assigned_room_options' => $booking->rooms->map(fn ($room) => [
+                'id' => $room->id,
+                'label' => $this->roomLabel($room),
+            ])->values()->all(),
+            'has_multiple_rooms' => $booking->rooms->count() > 1,
+        ];
+    }
+
     /* ---------------------------------
        CHARGES (UI / OPERATIONAL ONLY)
     --------------------------------- */
@@ -104,5 +160,17 @@ class BillingService
                   ->orWhere('journal_entries.reference_type', 'like', '%room%');
             })
             ->sum("journal_lines.$column");
+    }
+
+    protected function roomLabel($room): string
+    {
+        if (! $room) {
+            return 'Unassigned room';
+        }
+
+        return trim(collect([
+            $room->roomType?->title,
+            $room->name ?: $room->room_number,
+        ])->filter()->implode(' - '));
     }
 }

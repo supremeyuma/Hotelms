@@ -270,7 +270,7 @@ class BookingService
                 $selectedRoom = Room::findOrFail($data['room_id']);
                 $data['selected_room_ids'] = [$selectedRoom->id];
                 $data['room_type_id'] = $data['room_type_id'] ?? $selectedRoom->room_type_id;
-                $data['quantity'] = $data['quantity'] ?? 1;
+                $data['quantity'] = $data['quantity'] ?? $booking->quantity ?? 1;
             }
 
             $before = $booking->load('rooms')->toArray();
@@ -393,7 +393,24 @@ class BookingService
                 throw new \Exception('Booking not eligible for check-in.');
             }
 
-            $reservedRooms = $booking->rooms()->get();
+            $booking->loadMissing(['rooms', 'room']);
+
+            $reservedRooms = $booking->rooms;
+
+            if ($reservedRooms->isEmpty() && $booking->room && (int) $booking->quantity === 1) {
+                $booking->rooms()->syncWithoutDetaching([
+                    $booking->room->id => [
+                        'status' => 'reserved',
+                        'checked_in_at' => null,
+                        'checked_out_at' => null,
+                        'rate_override' => null,
+                    ],
+                ]);
+
+                $booking->load('rooms');
+                $reservedRooms = $booking->rooms;
+            }
+
             $alreadyCheckedIn = $reservedRooms->filter(fn ($room) => ! is_null($room->pivot->checked_in_at))->count();
             $remaining = $booking->quantity - $alreadyCheckedIn;
 
@@ -409,12 +426,7 @@ class BookingService
                 ->values();
 
             if ($rooms->count() < $roomsToCheckIn) {
-                $rooms = $this->availability->lockRoomsForCheckIn(
-                    $booking->room_type_id,
-                    $booking->check_in,
-                    $booking->check_out,
-                    $roomsToCheckIn
-                );
+                throw new \Exception('This booking does not have enough reserved rooms assigned for check-in. Update the booking room allocation first.');
             }
 
             foreach ($rooms as $room) {

@@ -44,6 +44,8 @@ Route::middleware(['auth', 'role:manager|md|superuser'])->prefix('admin')->as('a
         Route::get('bookings', [BookingAdminController::class, 'index'])->name('bookings.index');
         Route::get('bookings/{booking}/edit', [BookingAdminController::class, 'edit'])->name('bookings.edit');
         Route::put('bookings/{booking}', [BookingAdminController::class, 'update'])->name('bookings.update');
+        Route::post('bookings/{booking}/charges', [BookingAdminController::class, 'addCharge'])->name('bookings.charges.store');
+        Route::post('bookings/{booking}/payments', [BookingAdminController::class, 'addPayment'])->name('bookings.payments.store');
         Route::get('discount-codes', [DiscountCodeController::class, 'index'])->name('discount-codes.index');
         Route::post('discount-codes', [DiscountCodeController::class, 'store'])->name('discount-codes.store');
         Route::patch('discount-codes/{discountCode}/toggle', [DiscountCodeController::class, 'toggle'])->name('discount-codes.toggle');

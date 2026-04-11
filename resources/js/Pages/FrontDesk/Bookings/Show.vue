@@ -1,47 +1,39 @@
 <script setup>
 import { computed } from 'vue'
-import { router, Head, Link } from '@inertiajs/vue3'
+import { Head, Link, router } from '@inertiajs/vue3'
 import FrontDeskLayout from '@/Layouts/Staff/FrontDeskLayout.vue'
 import StatusBadge from '@/Components/FrontDesk/StatusBadge.vue'
-import { 
-  User, 
-  Calendar, 
-  CreditCard, 
-  BedDouble, 
-  ChevronLeft, 
-  Clock, 
-  Plus, 
+import {
   AlertCircle,
-  Receipt,
-  LogOut,
+  BedDouble,
+  Calendar,
+  CalendarPlus,
   CheckCircle2,
-  CalendarPlus
+  ChevronLeft,
+  CreditCard,
+  LogOut,
+  Receipt,
+  User,
 } from 'lucide-vue-next'
 
 const props = defineProps({
-  booking: Object,
+  booking: { type: Object, required: true },
+  preCheckIn: { type: Object, default: null },
 })
-
-/* ---------------- Computed ---------------- */
 
 const totalCharges = computed(() =>
   Math.max(
-    props.booking.charges.reduce((sum, c) => sum + Number(c.amount), 0),
+    props.booking.charges.reduce((sum, charge) => sum + Number(charge.amount), 0),
     Number(props.booking.total_amount || 0)
   )
 )
 
 const totalPayments = computed(() =>
-  props.booking.payments.reduce((sum, p) => sum + Number(p.amount_paid ?? p.amount), 0)
+  props.booking.payments.reduce((sum, payment) => sum + Number(payment.amount), 0)
 )
 
 const balanceDue = computed(() => Math.max(totalCharges.value - totalPayments.value, 0))
-
-/* ---------------- Actions ---------------- */
-
-const isInHouse = computed(() =>
-  ['active', 'checked_in'].includes(props.booking.status)
-)
+const isInHouse = computed(() => ['active', 'checked_in'].includes(props.booking.status))
 
 function checkIn() {
   router.post(route('frontdesk.bookings.checkIn', props.booking.id))
@@ -52,11 +44,13 @@ function checkOut() {
     alert('Outstanding balance must be cleared before checkout.')
     return
   }
+
   router.post(route('frontdesk.bookings.checkOut', props.booking.id))
 }
 
 function extendStay() {
   const newDate = prompt('Enter new checkout date (YYYY-MM-DD)')
+
   if (!newDate) return
 
   router.post(route('frontdesk.bookings.extendStay', props.booking.id), {
@@ -65,10 +59,19 @@ function extendStay() {
 }
 
 function formatDate(dateString) {
-  if (!dateString) return '—'
-  return new Date(dateString).toLocaleDateString('en-GB', {
-    day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+  if (!dateString) return 'Not recorded'
+
+  return new Date(dateString).toLocaleString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   })
+}
+
+function roomLabel(roomId) {
+  return props.booking.assigned_room_options.find((room) => Number(room.id) === Number(roomId))?.label || 'Room not specified'
 }
 </script>
 
@@ -76,201 +79,259 @@ function formatDate(dateString) {
   <FrontDeskLayout>
     <Head :title="`Booking ${booking.booking_code}`" />
 
-    <div class="p-8 max-w-7xl mx-auto space-y-8">
-      
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+    <div class="mx-auto max-w-7xl space-y-8 px-4 py-8 sm:px-6 lg:px-8">
+      <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
         <div class="flex items-center gap-4">
-          <Link 
-            :href="route('frontdesk.bookings.index')" 
-            class="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-400 hover:text-slate-900"
+          <Link
+            :href="route('frontdesk.bookings.index')"
+            class="rounded-2xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-900"
           >
-            <ChevronLeft class="w-6 h-6" />
+            <ChevronLeft class="h-6 w-6" />
           </Link>
+
           <div>
-            <div class="flex items-center gap-3">
-              <h1 class="text-3xl font-black text-slate-900 tracking-tight">
-                Folio #{{ booking.booking_code }}
-              </h1>
+            <div class="flex flex-wrap items-center gap-3">
+              <h1 class="text-3xl font-black tracking-tight text-slate-900">{{ booking.booking_code }}</h1>
               <StatusBadge :status="booking.status" />
             </div>
-            <p class="text-slate-500 font-medium">Created on {{ formatDate(booking.created_at) }}</p>
+            <p class="mt-2 text-sm font-medium text-slate-500">
+              Created on {{ formatDate(booking.created_at) }}
+            </p>
           </div>
         </div>
 
         <div class="flex flex-wrap gap-3">
           <button
             v-if="booking.status === 'confirmed'"
+            type="button"
             @click="checkIn"
-            class="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-2xl font-black hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-100"
+            class="inline-flex items-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-emerald-700"
           >
-            <CheckCircle2 class="w-5 h-5" /> Check In Guest
+            <CheckCircle2 class="h-4 w-4" />
+            Check in guest
           </button>
 
           <button
             v-if="isInHouse"
+            type="button"
             @click="extendStay"
-            class="flex items-center gap-2 px-6 py-3 bg-amber-100 text-amber-700 rounded-2xl font-black hover:bg-amber-200 transition-all"
+            class="inline-flex items-center gap-2 rounded-2xl bg-amber-100 px-5 py-3 text-sm font-bold text-amber-700 transition hover:bg-amber-200"
           >
-            <CalendarPlus class="w-5 h-5" /> Extend Stay
+            <CalendarPlus class="h-4 w-4" />
+            Extend stay
           </button>
 
           <button
             v-if="isInHouse"
+            type="button"
             @click="checkOut"
-            class="flex items-center gap-2 px-6 py-3 bg-rose-600 text-white rounded-2xl font-black hover:bg-rose-700 transition-all shadow-lg shadow-rose-100"
+            class="inline-flex items-center gap-2 rounded-2xl bg-rose-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-rose-700"
           >
-            <LogOut class="w-5 h-5" /> Finalize Checkout
+            <LogOut class="h-4 w-4" />
+            Finalize checkout
           </button>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        <div class="lg:col-span-2 space-y-8">
-          
-          <div class="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-8">
-            <div class="flex items-center gap-3 mb-6">
-              <div class="p-2 bg-indigo-50 text-indigo-600 rounded-xl"><User class="w-5 h-5" /></div>
-              <h2 class="text-xl font-black text-slate-900">Guest Information</h2>
+      <div class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div class="space-y-8">
+          <section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="flex items-center gap-3">
+              <div class="rounded-2xl bg-indigo-50 p-2 text-indigo-600"><User class="h-5 w-5" /></div>
+              <h2 class="text-xl font-black text-slate-900">Guest details</h2>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div>
-                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Full Name</p>
-                <p class="text-lg font-bold text-slate-800">{{ booking.guest_name }}</p>
-              </div>
-              <div>
-                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Contact Details</p>
-                <p class="font-bold text-slate-800">{{ booking.guest_email ?? 'No email provided' }}</p>
-                <p class="text-slate-500 font-medium">{{ booking.guest_phone ?? 'No phone' }}</p>
-              </div>
-            </div>
-          </div>
 
-          <div class="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-8">
-             <div class="flex items-center gap-3 mb-6">
-              <div class="p-2 bg-amber-50 text-amber-600 rounded-xl"><Calendar class="w-5 h-5" /></div>
-              <h2 class="text-xl font-black text-slate-900">Stay Timeline</h2>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div class="p-5 bg-slate-50 rounded-3xl border border-slate-100">
-                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Check-In</p>
-                <p class="text-lg font-black text-slate-800">{{ booking.check_in }}</p>
+            <div class="mt-6 grid gap-6 md:grid-cols-2">
+              <div>
+                <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Guest</p>
+                <p class="mt-2 text-lg font-bold text-slate-900">{{ booking.guest_name || 'Guest name not provided' }}</p>
+                <p class="mt-1 text-sm text-slate-500">{{ booking.guest_email || 'No email provided' }}</p>
+                <p class="mt-1 text-sm text-slate-500">{{ booking.guest_phone || 'No phone provided' }}</p>
               </div>
-              <div class="p-5 bg-slate-50 rounded-3xl border border-slate-100">
-                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Check-Out</p>
-                <p class="text-lg font-black text-slate-800">{{ booking.check_out }}</p>
-              </div>
-              <div class="p-5 bg-indigo-900 text-white rounded-3xl shadow-xl shadow-indigo-100">
-                <p class="text-[10px] font-black text-indigo-300 uppercase tracking-widest mb-2">Inventory</p>
-                <p class="text-lg font-black">{{ booking.checked_in_rooms_count }} Rooms Occupied</p>
-              </div>
-            </div>
-          </div>
 
-          <div class="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
-            <div class="p-8 border-b border-slate-50 flex justify-between items-center">
+              <div>
+                <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Emergency contact</p>
+                <p class="mt-2 text-sm font-bold text-slate-900">{{ booking.emergency_contact_name || 'Not provided' }}</p>
+                <p class="mt-1 text-sm text-slate-500">{{ booking.emergency_contact_phone || 'No emergency phone' }}</p>
+              </div>
+
+              <div>
+                <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Purpose of stay</p>
+                <p class="mt-2 text-sm text-slate-700">{{ booking.purpose_of_stay || 'Not provided' }}</p>
+              </div>
+
+              <div>
+                <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Special requests</p>
+                <p class="mt-2 text-sm text-slate-700">{{ booking.special_requests || 'None recorded' }}</p>
+              </div>
+            </div>
+          </section>
+
+          <section
+            v-if="preCheckIn"
+            class="rounded-[2rem] border border-emerald-200 bg-emerald-50 p-6 shadow-sm"
+          >
+            <h2 class="text-xl font-black text-emerald-900">Online pre-check-in</h2>
+            <div class="mt-4 grid gap-4 md:grid-cols-3">
+              <div>
+                <p class="text-[11px] font-black uppercase tracking-[0.18em] text-emerald-700">Completed</p>
+                <p class="mt-2 text-sm text-emerald-900">{{ formatDate(preCheckIn.completed_at) }}</p>
+              </div>
+              <div>
+                <p class="text-[11px] font-black uppercase tracking-[0.18em] text-emerald-700">Estimated arrival</p>
+                <p class="mt-2 text-sm text-emerald-900">{{ preCheckIn.estimated_arrival_time || 'Not provided' }}</p>
+              </div>
+              <div>
+                <p class="text-[11px] font-black uppercase tracking-[0.18em] text-emerald-700">Arrival notes</p>
+                <p class="mt-2 text-sm text-emerald-900">{{ preCheckIn.arrival_notes || 'None' }}</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="flex items-center gap-3">
+              <div class="rounded-2xl bg-amber-50 p-2 text-amber-600"><Calendar class="h-5 w-5" /></div>
+              <h2 class="text-xl font-black text-slate-900">Stay timeline</h2>
+            </div>
+
+            <div class="mt-6 grid gap-4 md:grid-cols-3">
+              <div class="rounded-[1.5rem] bg-slate-50 p-4">
+                <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Check-in</p>
+                <p class="mt-2 text-lg font-black text-slate-900">{{ booking.check_in }}</p>
+              </div>
+              <div class="rounded-[1.5rem] bg-slate-50 p-4">
+                <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Check-out</p>
+                <p class="mt-2 text-lg font-black text-slate-900">{{ booking.check_out }}</p>
+              </div>
+              <div class="rounded-[1.5rem] bg-slate-900 p-4 text-white">
+                <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-300">Occupancy</p>
+                <p class="mt-2 text-lg font-black">{{ booking.checked_in_rooms_count }} room<span v-if="booking.checked_in_rooms_count !== 1">s</span> checked in</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
+            <div class="border-b border-slate-100 px-6 py-5">
               <div class="flex items-center gap-3">
-                <div class="p-2 bg-emerald-50 text-emerald-600 rounded-xl"><BedDouble class="w-5 h-5" /></div>
-                <h2 class="text-xl font-black text-slate-900">Room Allocation</h2>
+                <div class="rounded-2xl bg-emerald-50 p-2 text-emerald-600"><BedDouble class="h-5 w-5" /></div>
+                <h2 class="text-xl font-black text-slate-900">Room allocation</h2>
               </div>
             </div>
-            <table class="w-full text-left">
-              <thead class="bg-slate-50/50">
-                <tr>
-                  <th class="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Room Number</th>
-                  <th class="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">In</th>
-                  <th class="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Out</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-slate-50">
-                <tr v-for="room in booking.rooms" :key="room.id" class="hover:bg-slate-50/50 transition-colors">
-                  <td class="px-8 py-5">
-                    <div class="flex items-center gap-3">
-                      <span class="w-10 h-10 bg-slate-100 flex items-center justify-center rounded-xl font-black text-slate-700">
-                        {{ room.number }}
-                      </span>
-                      <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">{{ room.type?.name }}</span>
-                    </div>
-                  </td>
-                  <td class="px-8 py-5 text-center text-sm font-bold text-slate-600">
-                    {{ room.pivot.checked_in_at ? formatDate(room.pivot.checked_in_at) : '—' }}
-                  </td>
-                  <td class="px-8 py-5 text-center text-sm font-bold text-slate-600">
-                    {{ room.pivot.checked_out_at ? formatDate(room.pivot.checked_out_at) : '—' }}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+
+            <div class="divide-y divide-slate-100">
+              <div
+                v-for="room in booking.rooms"
+                :key="room.id"
+                class="grid gap-4 px-6 py-5 md:grid-cols-[1fr_auto_auto]"
+              >
+                <div>
+                  <p class="text-sm font-black text-slate-900">{{ room.room_label }}</p>
+                  <p class="mt-1 text-xs uppercase tracking-[0.18em] text-slate-400">Room reference #{{ room.room_number || room.id }}</p>
+                </div>
+                <div class="text-sm text-slate-600">
+                  <p class="font-bold text-slate-900">Checked in</p>
+                  <p>{{ formatDate(room.pivot.checked_in_at) }}</p>
+                </div>
+                <div class="text-sm text-slate-600">
+                  <p class="font-bold text-slate-900">Checked out</p>
+                  <p>{{ formatDate(room.pivot.checked_out_at) }}</p>
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
 
         <div class="space-y-8">
-          
-          <div class="bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-2xl shadow-slate-200">
-            <div class="flex items-center gap-3 mb-8">
-              <Receipt class="w-6 h-6 text-indigo-400" />
-              <h2 class="text-xl font-black tracking-tight">Financial Folio</h2>
+          <section class="rounded-[2rem] bg-[linear-gradient(145deg,_#0f172a,_#1e293b)] p-6 text-white shadow-sm">
+            <div class="flex items-center gap-3">
+              <Receipt class="h-5 w-5 text-indigo-300" />
+              <h2 class="text-xl font-black">Financial folio</h2>
             </div>
-            
-            <div class="space-y-4 mb-8">
-              <div class="flex justify-between text-slate-400 text-sm font-medium">
-                <span>Total Charges</span>
-                <span class="text-white">₦{{ totalCharges.toLocaleString() }}</span>
+
+            <div class="mt-6 space-y-4">
+              <div class="flex items-center justify-between text-sm text-slate-300">
+                <span>Total charges</span>
+                <span class="font-bold text-white">₦{{ totalCharges.toLocaleString() }}</span>
               </div>
-              <div class="flex justify-between text-slate-400 text-sm font-medium">
-                <span>Total Payments</span>
-                <span class="text-emerald-400">₦{{ totalPayments.toLocaleString() }}</span>
+              <div class="flex items-center justify-between text-sm text-slate-300">
+                <span>Total payments</span>
+                <span class="font-bold text-emerald-300">₦{{ totalPayments.toLocaleString() }}</span>
               </div>
-              <div class="h-px bg-white/10 my-4"></div>
-              <div class="flex justify-between items-end">
-                <span class="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Balance Due</span>
-                <span class="text-3xl font-black" :class="balanceDue > 0 ? 'text-rose-400' : 'text-emerald-400'">
+              <div class="h-px bg-white/10" />
+              <div class="flex items-end justify-between">
+                <span class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Balance due</span>
+                <span class="text-3xl font-black" :class="balanceDue > 0 ? 'text-rose-300' : 'text-emerald-300'">
                   ₦{{ balanceDue.toLocaleString() }}
                 </span>
               </div>
             </div>
 
-            <div v-if="balanceDue > 0" class="flex items-start gap-3 p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl">
-              <AlertCircle class="w-5 h-5 text-rose-400 shrink-0" />
-              <p class="text-xs font-bold text-rose-200">Payment must be settled before the guest can be checked out.</p>
+            <div
+              v-if="balanceDue > 0"
+              class="mt-6 flex items-start gap-3 rounded-[1.5rem] border border-rose-400/20 bg-rose-500/10 px-4 py-4 text-sm text-rose-100"
+            >
+              <AlertCircle class="mt-0.5 h-4 w-4 shrink-0" />
+              <p>Outstanding balance must be settled before checkout is finalized.</p>
             </div>
-          </div>
+          </section>
 
-          <div class="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-8 space-y-8">
-            <div>
-              <div class="flex items-center justify-between mb-4">
-                <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                  <Plus class="w-3 h-3" /> Recent Charges
-                </h3>
-                <button class="text-xs font-black text-indigo-600 hover:underline">Add Charge</button>
-              </div>
-              <div class="space-y-3">
-                <div v-for="charge in booking.charges" :key="charge.id" class="flex justify-between items-center text-sm">
-                  <span class="font-bold text-slate-700">{{ charge.description }}</span>
-                  <span class="font-black text-slate-900">₦{{ Number(charge.amount).toLocaleString() }}</span>
-                </div>
-              </div>
+          <section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="flex items-center justify-between">
+              <h3 class="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Charges</h3>
+              <Link
+                :href="route('frontdesk.billing.show', booking.id) + '#charge-form'"
+                class="text-sm font-bold text-indigo-600 transition hover:text-indigo-700"
+              >
+                Add charge
+              </Link>
             </div>
 
-            <div>
-              <div class="flex items-center justify-between mb-4">
-                <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                  <CreditCard class="w-3 h-3" /> Payment History
-                </h3>
-                <button class="text-xs font-black text-indigo-600 hover:underline">New Payment</button>
-              </div>
-              <div class="space-y-3">
-                <div v-for="payment in booking.payments" :key="payment.id" class="flex justify-between items-center text-sm">
-                  <div class="flex flex-col">
-                    <span class="font-bold text-slate-700">{{ payment.method }}</span>
-                    <span class="text-[10px] text-slate-400 uppercase font-black tracking-tighter">Verified</span>
+            <div class="mt-4 space-y-3">
+              <div
+                v-for="charge in booking.charges"
+                :key="charge.id"
+                class="rounded-[1.25rem] border border-slate-100 px-4 py-3"
+              >
+                <div class="flex items-center justify-between gap-4">
+                  <div>
+                    <p class="text-sm font-bold text-slate-900">{{ charge.description }}</p>
+                    <p class="mt-1 text-xs uppercase tracking-[0.18em] text-slate-400">{{ roomLabel(charge.room_id) }}</p>
                   </div>
-                  <span class="font-black text-emerald-600">₦{{ Number(payment.amount).toLocaleString() }}</span>
+                  <span class="text-sm font-black text-slate-900">₦{{ Number(charge.amount).toLocaleString() }}</span>
                 </div>
               </div>
+              <p v-if="booking.charges.length === 0" class="text-sm text-slate-500">No charges recorded yet.</p>
             </div>
-          </div>
+          </section>
 
+          <section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="flex items-center justify-between">
+              <h3 class="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Payments</h3>
+              <Link
+                :href="route('frontdesk.billing.show', booking.id) + '#payment-form'"
+                class="text-sm font-bold text-indigo-600 transition hover:text-indigo-700"
+              >
+                New payment
+              </Link>
+            </div>
+
+            <div class="mt-4 space-y-3">
+              <div
+                v-for="payment in booking.payments"
+                :key="payment.id"
+                class="rounded-[1.25rem] border border-slate-100 px-4 py-3"
+              >
+                <div class="flex items-center justify-between gap-4">
+                  <div>
+                    <p class="text-sm font-bold text-slate-900">{{ payment.method }}</p>
+                    <p class="mt-1 text-xs uppercase tracking-[0.18em] text-slate-400">{{ roomLabel(payment.room_id) }}</p>
+                  </div>
+                  <span class="text-sm font-black text-emerald-600">₦{{ Number(payment.amount).toLocaleString() }}</span>
+                </div>
+              </div>
+              <p v-if="booking.payments.length === 0" class="text-sm text-slate-500">No payments recorded yet.</p>
+            </div>
+          </section>
         </div>
       </div>
     </div>

@@ -97,9 +97,9 @@ Route::prefix('frontdesk')->middleware(['auth', 'role:frontdesk|md'])->name('fro
     Route::post('/rooms/{room}/billing/pay', [RoomBillingController::class, 'pay']);
 
     Route::resource('bookings', BookingsController::class);
-    Route::post('bookings/{booking}/checkin', [BookingsController::class, 'checkIn']);
-    Route::post('bookings/{booking}/checkout', [BookingsController::class, 'checkOut']);
-    Route::post('bookings/{booking}/extend', [BookingsController::class, 'extendStay']);
+    Route::post('bookings/{booking}/checkin', [BookingsController::class, 'checkIn'])->name('bookings.checkIn');
+    Route::post('bookings/{booking}/checkout', [BookingsController::class, 'checkOut'])->name('bookings.checkOut');
+    Route::post('bookings/{booking}/extend', [BookingsController::class, 'extendStay'])->name('bookings.extendStay');
 
     Route::resource('rooms', RoomController::class)->only(['index', 'show', 'updateStatus']);
     Route::patch('rooms/{room}/status', [RoomController::class, 'updateStatus'])->name('rooms.update-status');
@@ -108,8 +108,9 @@ Route::prefix('frontdesk')->middleware(['auth', 'role:frontdesk|md'])->name('fro
     Route::post('guest-requests/{request}/acknowledge', [GuestRequestController::class, 'acknowledge']);
     Route::post('guest-requests/{request}/complete', [GuestRequestController::class, 'complete']);
 
-    Route::get('billing/{booking}', [BillingController::class, 'viewBill']);
-    Route::post('billing/{booking}/pay', [BillingController::class, 'acceptPayment']);
+    Route::get('billing/{booking}', [BillingController::class, 'viewBill'])->name('billing.show');
+    Route::post('billing/{booking}/pay', [BillingController::class, 'acceptPayment'])->name('billing.pay');
+    Route::post('billing/{booking}/charge', [BillingController::class, 'addCharge'])->name('billing.charge');
 
     //Route::get('reports/occupancy', [ReportController::class, 'occupancyReport']);
     //Route::get('reports/revenue', [ReportController::class, 'revenueReport']);
