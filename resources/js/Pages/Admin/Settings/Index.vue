@@ -37,6 +37,10 @@ const form = useForm({
   hotel_address: props.settings.hotel_address || '',
   map_embed_url: props.settings.map_embed_url || '',
   site_whatsapp: props.settings.site_whatsapp || '',
+  tax_enabled: Boolean(props.settings.tax_enabled),
+  tax_rate: props.settings.tax_rate ?? 0,
+  service_charge_enabled: Boolean(props.settings.service_charge_enabled),
+  service_charge_rate: props.settings.service_charge_rate ?? 0,
   payment_provider_flutterwave_enabled: Boolean(props.settings.payment_provider_flutterwave_enabled),
   payment_provider_paystack_enabled: Boolean(props.settings.payment_provider_paystack_enabled),
   payment_default_provider: props.settings.payment_default_provider || 'flutterwave',
@@ -103,6 +107,15 @@ const healthCards = computed(() => [
     icon: CreditCard,
   },
   {
+    label: 'Extra charges',
+    value: [
+      form.tax_enabled ? `Tax ${Number(form.tax_rate || 0).toFixed(2)}%` : null,
+      form.service_charge_enabled ? `Service ${Number(form.service_charge_rate || 0).toFixed(2)}%` : null,
+    ].filter(Boolean).join(' • ') || 'Disabled',
+    hint: 'Guest-facing tax and service charge controls',
+    icon: CheckCircle2,
+  },
+  {
     label: 'Booking imagery',
     value: [
       form.booking_show_room_images,
@@ -160,7 +173,7 @@ onBeforeUnmount(() => {
 
 <template>
   <ManagerLayout>
-    <Head title="Manager Settings" />
+    <Head title="System Settings" />
 
     <div class="mx-auto max-w-7xl space-y-8 px-4 py-6 md:px-6 lg:px-8">
       <section class="overflow-hidden rounded-[2rem] border border-slate-200 bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 text-white shadow-[0_35px_90px_rgba(15,23,42,0.18)]">
@@ -168,7 +181,7 @@ onBeforeUnmount(() => {
           <div class="space-y-5">
             <div class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-emerald-200">
               <Store class="h-4 w-4" />
-              Manager Settings
+              System Settings
             </div>
             <div class="space-y-3">
               <h1 class="max-w-3xl text-3xl font-black tracking-tight md:text-4xl">
@@ -475,6 +488,96 @@ onBeforeUnmount(() => {
 
           <section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
             <div class="flex items-start gap-4">
+              <div class="rounded-2xl bg-sky-50 p-3 text-sky-700">
+                <CheckCircle2 class="h-5 w-5" />
+              </div>
+              <div>
+                <h2 class="text-xl font-black text-slate-900">Taxes And Charges</h2>
+                <p class="mt-1 text-sm leading-6 text-slate-500">
+                  Control any guest-facing tax and service charge percentages applied by the system.
+                </p>
+              </div>
+            </div>
+
+            <div class="mt-6 grid gap-4">
+              <label class="gateway-card">
+                <div>
+                  <p class="text-sm font-bold text-slate-900">Tax charge</p>
+                  <p class="text-sm text-slate-500">Enable a percentage-based tax charge on eligible payments.</p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  :aria-checked="form.tax_enabled"
+                  @click="form.tax_enabled = !form.tax_enabled"
+                  class="toggle-switch"
+                  :class="form.tax_enabled ? 'toggle-switch-on' : 'toggle-switch-off'"
+                >
+                  <span
+                    class="toggle-thumb"
+                    :class="form.tax_enabled ? 'translate-x-5' : 'translate-x-0'"
+                  />
+                </button>
+              </label>
+
+              <div class="space-y-2">
+                <label for="tax_rate" class="text-sm font-bold text-slate-700">Tax rate (%)</label>
+                <input
+                  id="tax_rate"
+                  v-model.number="form.tax_rate"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  class="field-input"
+                  placeholder="7.50"
+                  :disabled="!form.tax_enabled"
+                />
+                <p class="text-xs text-slate-500">Saved as a percentage rate and applied only when tax charge is enabled.</p>
+                <p v-if="form.errors.tax_rate" class="field-error">{{ form.errors.tax_rate }}</p>
+              </div>
+
+              <label class="gateway-card">
+                <div>
+                  <p class="text-sm font-bold text-slate-900">Service charge</p>
+                  <p class="text-sm text-slate-500">Enable an additional service charge on eligible payments.</p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  :aria-checked="form.service_charge_enabled"
+                  @click="form.service_charge_enabled = !form.service_charge_enabled"
+                  class="toggle-switch"
+                  :class="form.service_charge_enabled ? 'toggle-switch-on' : 'toggle-switch-off'"
+                >
+                  <span
+                    class="toggle-thumb"
+                    :class="form.service_charge_enabled ? 'translate-x-5' : 'translate-x-0'"
+                  />
+                </button>
+              </label>
+
+              <div class="space-y-2">
+                <label for="service_charge_rate" class="text-sm font-bold text-slate-700">Service charge rate (%)</label>
+                <input
+                  id="service_charge_rate"
+                  v-model.number="form.service_charge_rate"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  class="field-input"
+                  placeholder="10.00"
+                  :disabled="!form.service_charge_enabled"
+                />
+                <p class="text-xs text-slate-500">Use this for hotel-defined service percentages that should be tracked separately from tax.</p>
+                <p v-if="form.errors.service_charge_rate" class="field-error">{{ form.errors.service_charge_rate }}</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="flex items-start gap-4">
               <div class="rounded-2xl bg-amber-50 p-3 text-amber-700">
                 <ImageUp class="h-5 w-5" />
               </div>
@@ -636,6 +739,17 @@ onBeforeUnmount(() => {
                       form.payment_provider_flutterwave_enabled ? 'Flutterwave' : null,
                       form.payment_provider_paystack_enabled ? 'Paystack' : null,
                     ].filter(Boolean).join(', ') || 'None'
+                  }}
+                </p>
+              </div>
+              <div class="rounded-2xl bg-slate-50 p-4">
+                <p class="font-semibold text-slate-900">Taxes and charges</p>
+                <p class="mt-1 text-sm text-slate-500">
+                  {{
+                    [
+                      form.tax_enabled ? `Tax ${Number(form.tax_rate || 0).toFixed(2)}%` : null,
+                      form.service_charge_enabled ? `Service charge ${Number(form.service_charge_rate || 0).toFixed(2)}%` : null,
+                    ].filter(Boolean).join(', ') || 'No extra charges applied'
                   }}
                 </p>
               </div>

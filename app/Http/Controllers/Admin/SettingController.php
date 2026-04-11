@@ -20,7 +20,7 @@ class SettingController extends Controller
 
     public function __construct(AuditLoggerService $auditLogger)
     {
-        $this->middleware(['auth','role:manager|md']);
+        $this->middleware(['auth','role:manager|md|superuser']);
         $this->auditLogger = $auditLogger;
     }
 
@@ -52,6 +52,16 @@ class SettingController extends Controller
             $settings['booking_show_room_type_images'] ?? true,
             FILTER_VALIDATE_BOOLEAN
         );
+        $settings['tax_enabled'] = filter_var(
+            $settings['tax_enabled'] ?? config('tax.enabled', false),
+            FILTER_VALIDATE_BOOLEAN
+        );
+        $settings['tax_rate'] = round(((float) ($settings['tax_rate'] ?? config('tax.vat_rate', 0.0))) * 100, 2);
+        $settings['service_charge_enabled'] = filter_var(
+            $settings['service_charge_enabled'] ?? config('tax.enabled', false),
+            FILTER_VALIDATE_BOOLEAN
+        );
+        $settings['service_charge_rate'] = round(((float) ($settings['service_charge_rate'] ?? config('tax.service_charge_rate', 0.0))) * 100, 2);
         $settings['active_mailer'] = config('mail.default');
         $settings['mail_from_address'] = config('mail.from.address');
         $settings['mail_from_name'] = config('mail.from.name');
@@ -76,6 +86,10 @@ class SettingController extends Controller
             'payment_default_provider' => 'required|string|in:flutterwave,paystack',
             'booking_show_room_images' => 'required|boolean',
             'booking_show_room_type_images' => 'required|boolean',
+            'tax_enabled' => 'required|boolean',
+            'tax_rate' => 'required|numeric|min:0|max:100',
+            'service_charge_enabled' => 'required|boolean',
+            'service_charge_rate' => 'required|numeric|min:0|max:100',
         ]);
 
         if (!$data['payment_provider_flutterwave_enabled'] && !$data['payment_provider_paystack_enabled']) {
@@ -111,6 +125,10 @@ class SettingController extends Controller
             'payment_default_provider' => $data['payment_default_provider'],
             'booking_show_room_images' => $data['booking_show_room_images'],
             'booking_show_room_type_images' => $data['booking_show_room_type_images'],
+            'tax_enabled' => $data['tax_enabled'],
+            'tax_rate' => round(((float) $data['tax_rate']) / 100, 4),
+            'service_charge_enabled' => $data['service_charge_enabled'],
+            'service_charge_rate' => round(((float) $data['service_charge_rate']) / 100, 4),
         ];
 
         foreach ($simpleSettings as $key => $value) {

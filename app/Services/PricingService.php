@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Setting;
 use App\Services\Accounting\TaxService;
 
 /**
@@ -34,7 +35,10 @@ class PricingService
      */
     public function calculatePricing(float $baseAmount, ?float $vatRate = null, ?float $serviceChargeRate = null): array
     {
-        if (!config('tax.enabled', true)) {
+        $vatRate = $vatRate ?? $this->getVatRate();
+        $serviceChargeRate = $serviceChargeRate ?? $this->getServiceChargeRate();
+
+        if ($vatRate <= 0 && $serviceChargeRate <= 0) {
             return [
                 'base_amount' => round($baseAmount, 2),
                 'vat' => 0,
@@ -42,10 +46,6 @@ class PricingService
                 'total' => round($baseAmount, 2),
             ];
         }
-
-        // Use provided rates or fall back to config
-        $vatRate = $vatRate ?? config('tax.vat_rate', 0.0);
-        $serviceChargeRate = $serviceChargeRate ?? config('tax.service_charge_rate', 0.0);
 
         $vat = round($baseAmount * $vatRate, 2);
         $serviceCharge = round($baseAmount * $serviceChargeRate, 2);
@@ -68,7 +68,10 @@ class PricingService
      */
     public function getPricingFromTotal(float $total): array
     {
-        if (!config('tax.enabled', true)) {
+        $vatRate = $this->getVatRate();
+        $serviceChargeRate = $this->getServiceChargeRate();
+
+        if ($vatRate <= 0 && $serviceChargeRate <= 0) {
             return [
                 'base_amount' => round($total, 2),
                 'vat' => 0,
@@ -77,8 +80,6 @@ class PricingService
             ];
         }
 
-        $vatRate = config('tax.vat_rate', 0.0);
-        $serviceChargeRate = config('tax.service_charge_rate', 0.0);
         $totalRate = 1 + $vatRate + $serviceChargeRate;
 
         $baseAmount = round($total / $totalRate, 2);
@@ -98,7 +99,17 @@ class PricingService
      */
     public function getVatRate(): float
     {
-        return config('tax.vat_rate', 0.0);
+        $isEnabled = Setting::get('tax_enabled');
+
+        if ($isEnabled !== null && !filter_var($isEnabled, FILTER_VALIDATE_BOOLEAN)) {
+            return 0.0;
+        }
+
+        if ($isEnabled === null && !config('tax.enabled', false)) {
+            return 0.0;
+        }
+
+        return (float) Setting::get('tax_rate', config('tax.vat_rate', 0.0));
     }
 
     /**
@@ -106,7 +117,17 @@ class PricingService
      */
     public function getServiceChargeRate(): float
     {
-        return config('tax.service_charge_rate', 0.0);
+        $isEnabled = Setting::get('service_charge_enabled');
+
+        if ($isEnabled !== null && !filter_var($isEnabled, FILTER_VALIDATE_BOOLEAN)) {
+            return 0.0;
+        }
+
+        if ($isEnabled === null && !config('tax.enabled', false)) {
+            return 0.0;
+        }
+
+        return (float) Setting::get('service_charge_rate', config('tax.service_charge_rate', 0.0));
     }
 
     /**

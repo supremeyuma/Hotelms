@@ -14,14 +14,13 @@ class SettingPolicy
      */
     public function before(User $user, $ability)
     {
-        if ($user->hasRole('md')) {
+        if ($user->hasAnyRole(['md', 'superuser'])) {
             return true;
         }
     }
 
     public function viewAny(User $user): bool
     {
-        // Managers can view settings; staff cannot
         return $user->hasRole('manager');
     }
 
@@ -37,7 +36,6 @@ class SettingPolicy
 
     public function update(User $user): bool
     {
-        // Manager or MD may update settings (MD bypasses above)
         return $user->hasRole('manager');
     }
 

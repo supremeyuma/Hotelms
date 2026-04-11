@@ -3,6 +3,7 @@
 namespace App\Services\Accounting;
 
 use App\Models\Account;
+use App\Models\Setting;
 use App\Services\AccountingService;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -22,11 +23,11 @@ class TaxService
      */
     protected function getVatRate(): float
     {
-        if (! $this->isEnabled()) {
+        if (! $this->isTaxEnabled()) {
             return 0.0;
         }
 
-        return config('tax.vat_rate', 0.075);
+        return (float) Setting::get('tax_rate', config('tax.vat_rate', 0.0));
     }
 
     /**
@@ -34,15 +35,32 @@ class TaxService
      */
     protected function getServiceChargeRate(): float
     {
-        if (! $this->isEnabled()) {
+        if (! $this->isServiceChargeEnabled()) {
             return 0.0;
         }
 
-        return config('tax.service_charge_rate', 0.10);
+        return (float) Setting::get('service_charge_rate', config('tax.service_charge_rate', 0.0));
     }
 
-    protected function isEnabled(): bool
+    protected function isTaxEnabled(): bool
     {
+        $setting = Setting::get('tax_enabled');
+
+        if ($setting !== null) {
+            return filter_var($setting, FILTER_VALIDATE_BOOLEAN);
+        }
+
+        return (bool) config('tax.enabled', false);
+    }
+
+    protected function isServiceChargeEnabled(): bool
+    {
+        $setting = Setting::get('service_charge_enabled');
+
+        if ($setting !== null) {
+            return filter_var($setting, FILTER_VALIDATE_BOOLEAN);
+        }
+
         return (bool) config('tax.enabled', false);
     }
 
