@@ -11,6 +11,10 @@ const props = defineProps({
   routePrefix: { type: String, required: true },
 })
 
+function isSuspended(staff) {
+  return Boolean(staff?.is_suspended ?? staff?.suspended_at)
+}
+
 function badgeClass(type) {
   return type === 'commendation'
     ? 'bg-emerald-100 text-emerald-700 ring-emerald-200'
@@ -38,6 +42,12 @@ function suspendStaff(id) {
 
   router.post(route(`${props.routePrefix}.suspend`, id))
 }
+
+function reinstateStaff(id) {
+  if (!confirm('Reactivate this staff member?')) return
+
+  router.post(route(`${props.routePrefix}.reinstate`, id))
+}
 </script>
 
 <template>
@@ -45,7 +55,10 @@ function suspendStaff(id) {
     <Head :title="`Threads - ${staff.name}`" />
 
     <div class="space-y-8">
-      <section class="rounded-[2rem] bg-slate-900 px-6 py-7 text-white shadow-xl shadow-slate-200">
+      <section
+        class="rounded-[2rem] px-6 py-7 text-white shadow-xl shadow-slate-200"
+        :class="isSuspended(staff) ? 'bg-gradient-to-br from-rose-900 via-rose-800 to-slate-900' : 'bg-slate-900'"
+      >
         <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div class="max-w-3xl">
             <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-300">Staff Communications</p>
@@ -92,11 +105,20 @@ function suspendStaff(id) {
           </div>
 
           <button
+            v-if="!isSuspended(staff)"
             type="button"
             class="inline-flex items-center rounded-xl border border-rose-200 px-4 py-2 text-sm font-bold text-rose-600 transition hover:bg-rose-50"
             @click="suspendStaff(staffId)"
           >
             Suspend staff
+          </button>
+          <button
+            v-else
+            type="button"
+            class="inline-flex items-center rounded-xl border border-emerald-200 px-4 py-2 text-sm font-bold text-emerald-700 transition hover:bg-emerald-50"
+            @click="reinstateStaff(staffId)"
+          >
+            Reactivate staff
           </button>
         </div>
 

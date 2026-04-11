@@ -37,25 +37,35 @@
       </form>
 
       <Table :headers="['Name', 'Role', 'Department', 'Position', 'Status', 'Actions']">
-        <tr v-for="member in staff.data" :key="member.id" :class="member.is_suspended ? 'bg-red-50' : ''">
+        <tr
+          v-for="member in staff.data"
+          :key="member.id"
+          :class="isSuspended(member) ? 'bg-rose-50/80 ring-1 ring-inset ring-rose-100' : 'bg-white'"
+        >
           <td class="px-4 py-3">
-            <div class="font-medium">{{ member.name }}</div>
-            <div class="text-sm text-slate-500">{{ member.email }}</div>
+            <div class="font-medium" :class="isSuspended(member) ? 'text-rose-900' : 'text-slate-900'">{{ member.name }}</div>
+            <div class="text-sm" :class="isSuspended(member) ? 'text-rose-700' : 'text-slate-500'">{{ member.email }}</div>
           </td>
           <td class="px-4 py-3">{{ member.roles[0]?.name || 'Unassigned' }}</td>
           <td class="px-4 py-3">{{ member.department?.name || 'Not set' }}</td>
           <td class="px-4 py-3">{{ member.staff_profile?.position || 'Not set' }}</td>
           <td class="px-4 py-3">
             <span
-              class="rounded px-2 py-1 text-xs font-medium"
-              :class="member.is_suspended ? 'bg-red-600 text-white' : 'bg-emerald-600 text-white'"
+              class="rounded-full px-3 py-1 text-xs font-semibold"
+              :class="isSuspended(member) ? 'bg-rose-100 text-rose-700 ring-1 ring-rose-200' : 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200'"
             >
-              {{ member.is_suspended ? 'Suspended' : 'Active' }}
+              {{ isSuspended(member) ? 'Suspended' : 'Active' }}
             </span>
           </td>
           <td class="relative px-4 py-3">
             <div class="dropdown-wrapper inline-block text-left">
-              <button @click.stop="toggleDropdown(member.id)" class="rounded bg-gray-200 px-2 py-1">Actions</button>
+              <button
+                @click.stop="toggleDropdown(member.id)"
+                class="rounded bg-gray-200 px-2 py-1"
+                :disabled="isBusy(member.id)"
+              >
+                {{ isBusy(member.id) ? 'Working...' : 'Actions' }}
+              </button>
 
               <div
                 v-if="dropdownOpen === member.id"
@@ -65,20 +75,28 @@
                   <Link :href="route(`${routePrefix}.edit`, member.id)" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Edit Profile</Link>
                   <Link :href="route(`${routePrefix}.threads.index`, member.id)" class="block px-4 py-2 text-sm text-indigo-600 hover:bg-gray-100">Notes & Threads</Link>
                   <button
-                    v-if="!member.is_suspended"
+                    v-if="!isSuspended(member)"
                     @click="suspendStaff(member.id)"
+                    :disabled="isBusy(member.id)"
                     class="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100"
                   >
-                    Suspend
+                    {{ isBusy(member.id) ? 'Suspending...' : 'Suspend staff' }}
                   </button>
                   <button
                     v-else
                     @click="reinstateStaff(member.id)"
+                    :disabled="isBusy(member.id)"
                     class="block w-full px-4 py-2 text-left text-sm text-emerald-600 hover:bg-gray-100"
                   >
-                    Reinstate
+                    {{ isBusy(member.id) ? 'Reactivating...' : 'Reactivate staff' }}
                   </button>
-                  <button @click="deleteStaff(member.id)" class="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100">Archive</button>
+                  <button
+                    @click="deleteStaff(member.id)"
+                    :disabled="isBusy(member.id)"
+                    class="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100"
+                  >
+                    {{ isBusy(member.id) ? 'Working...' : 'Archive' }}
+                  </button>
                 </div>
               </div>
             </div>
@@ -112,6 +130,7 @@ const props = defineProps({
 })
 
 const dropdownOpen = ref(null)
+const busyStaffId = ref(null)
 
 const filterForm = useForm({
   search: props.filters?.search ?? '',
@@ -128,7 +147,16 @@ const statusOptions = [
 ]
 
 function toggleDropdown(id) {
+  if (busyStaffId.value === id) return
   dropdownOpen.value = dropdownOpen.value === id ? null : id
+}
+
+function isSuspended(member) {
+  return Boolean(member?.is_suspended ?? member?.suspended_at)
+}
+
+function isBusy(id) {
+  return busyStaffId.value === id
 }
 
 function applyFilters() {
@@ -149,19 +177,43 @@ function clearFilters() {
 function deleteStaff(id) {
   if (!confirm('Archive this staff record?')) return
 
+  busyStaffId.value = id
+  dropdownOpen.value = null
+
   router.delete(route(`${props.routePrefix}.destroy`, id), {
     preserveScroll: true,
+    onFinish: () => {
+      busyStaffId.value = null
+    },
   })
 }
 
 function suspendStaff(id) {
   if (!confirm('Suspend this staff member?')) return
-  router.post(route(`${props.routePrefix}.suspend`, id))
+
+  busyStaffId.value = id
+  dropdownOpen.value = null
+
+  router.post(route(`${props.routePrefix}.suspend`, id), {}, {
+    preserveScroll: true,
+    onFinish: () => {
+      busyStaffId.value = null
+    },
+  })
 }
 
 function reinstateStaff(id) {
-  if (!confirm('Reinstate this staff member?')) return
-  router.post(route(`${props.routePrefix}.reinstate`, id))
+  if (!confirm('Reactivate this staff member?')) return
+
+  busyStaffId.value = id
+  dropdownOpen.value = null
+
+  router.post(route(`${props.routePrefix}.reinstate`, id), {}, {
+    preserveScroll: true,
+    onFinish: () => {
+      busyStaffId.value = null
+    },
+  })
 }
 
 function handleClickOutside(event) {
