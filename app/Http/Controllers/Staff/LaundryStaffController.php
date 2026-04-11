@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Staff;
 
 use App\Http\Controllers\Controller;
+use App\Models\LaundryItem;
 use App\Models\LaundryOrder;
+use App\Models\Room;
 use App\Enums\LaundryStatus;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -30,6 +32,10 @@ class LaundryStaffController extends Controller
             'orders' => $orders,
             'statuses' => LaundryStatus::cases(),
             'activeStatus' => $status,
+            'rooms' => $this->occupiedRooms(),
+            'items' => LaundryItem::query()
+                ->orderBy('name')
+                ->get(['id', 'name', 'price', 'description']),
         ]);
     }
 
@@ -82,6 +88,57 @@ class LaundryStaffController extends Controller
 
         return back();
     }
+
+    public function store(Request $request, LaundryOrderService $service)
+    {
+        $data = $request->validate([
+            'room_id' => ['required', 'exists:rooms,id'],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.laundry_item_id' => ['required', 'exists:laundry_items,id'],
+            'items.*.quantity' => ['required', 'integer', 'min:1'],
+            'images.*' => ['nullable', 'file', 'image', 'max:2048'],
+            'payment_mode' => ['required', 'in:postpaid'],
+        ]);
+
+        $room = Room::query()
+            ->select(['id', 'name'])
+            ->whereKey($data['room_id'])
+            ->with([
+                'bookings' => fn ($query) => $query
+                    ->select(['bookings.id', 'bookings.booking_code', 'bookings.guest_name'])
+                    ->whereIn('bookings.status', ['active', 'checked_in'])
+                    ->latest('check_in'),
+            ])
+            ->firstOrFail();
+
+        $booking = $room->bookings->first();
+
+        if (! $booking) {
+            return back()->withErrors([
+                'room_id' => 'The selected room does not have an active in-house booking.',
+            ]);
+        }
+
+        $uploadedPaths = [];
+
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $file) {
+                $uploadedPaths[] = $file->store('laundry', 'public');
+            }
+        }
+
+        $order = $service->createOrder(
+            $room->id,
+            $booking->id,
+            $data['items'],
+            $uploadedPaths,
+            $request->user()?->id,
+            $data['payment_mode'],
+        );
+
+        return redirect()->route('staff.laundry.show', $order)
+            ->with('success', "Laundry order {$order->order_code} created successfully.");
+    }
     public function cancel(
         LaundryOrder $order,
         LaundryOrderService $service
@@ -129,5 +186,30 @@ class LaundryStaffController extends Controller
         return Inertia::render('Staff/Laundry/Print', [
             'order' => $order,
         ]);
+    }
+
+    protected function occupiedRooms()
+    {
+        return Room::query()
+            ->select(['id', 'name'])
+            ->whereHas('bookings', fn ($query) => $query->whereIn('bookings.status', ['active', 'checked_in']))
+            ->with([
+                'bookings' => fn ($query) => $query
+                    ->select(['bookings.id', 'bookings.booking_code', 'bookings.guest_name'])
+                    ->whereIn('bookings.status', ['active', 'checked_in'])
+                    ->latest('check_in'),
+            ])
+            ->orderBy('name')
+            ->get()
+            ->map(fn (Room $room) => [
+                'id' => $room->id,
+                'name' => $room->name,
+                'active_booking' => optional($room->bookings->first(), fn ($booking) => [
+                    'id' => $booking->id,
+                    'booking_code' => $booking->booking_code,
+                    'guest_name' => $booking->guest_name,
+                ]),
+            ])
+            ->values();
     }
 }

@@ -12,13 +12,24 @@
           </div>
         </div>
 
-        <Link
-          :href="route('staff.laundry-items.index')"
-          class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-2xl font-bold text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm active:scale-95"
-        >
-          <Settings2 class="w-5 h-5" />
-          Manage Items
-        </Link>
+        <div class="flex flex-col sm:flex-row gap-3">
+          <button
+            type="button"
+            @click="showCreateModal = true"
+            class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-slate-900 rounded-2xl font-bold text-white hover:bg-indigo-600 transition-all shadow-xl shadow-slate-200 active:scale-95"
+          >
+            <Plus class="w-5 h-5" />
+            New Laundry Order
+          </button>
+
+          <Link
+            :href="route('staff.laundry-items.index')"
+            class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-2xl font-bold text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm active:scale-95"
+          >
+            <Settings2 class="w-5 h-5" />
+            Manage Items
+          </Link>
+        </div>
       </div>
 
       <div v-if="orders.length === 0" class="flex flex-col items-center justify-center py-20 bg-white rounded-[2.5rem] border-2 border-dashed border-slate-200">
@@ -146,28 +157,39 @@
       </div>
     </div>
   </LaundryLayout>
+
+  <CreateLaundryOrderModal
+    :show="showCreateModal"
+    :rooms="rooms"
+    :items="items"
+    :submit-url="route('staff.laundry.store')"
+    @close="showCreateModal = false"
+  />
 </template>
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { router, Link } from '@inertiajs/vue3';
 import LaundryLayout from '@/Layouts/Staff/LaundryLayout.vue'
+import CreateLaundryOrderModal from '@/Components/Laundry/CreateLaundryOrderModal.vue'
 import { 
   Waves, 
   Settings2, 
   Shirt, 
   Clock, 
   RefreshCw, 
-  Image as ImageIcon 
+  Image as ImageIcon,
+  Plus,
 } from 'lucide-vue-next'
 
 const props = defineProps({
-  orders: Array
+  orders: Array,
+  rooms: Array,
+  items: Array,
 });
 
 const orders = ref([...props.orders]);
-
-console.log(orders)
+const showCreateModal = ref(false)
 const statuses = [
   { value: 'requested' },
   { value: 'pickup_scheduled' },
