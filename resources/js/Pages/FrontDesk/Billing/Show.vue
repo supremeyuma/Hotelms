@@ -8,6 +8,7 @@ import { AlertCircle, ArrowLeft, CheckCircle2, CreditCard, FileText, PlusCircle 
 const props = defineProps({
   booking: { type: Object, required: true },
   billing: { type: Object, required: true },
+  chargeTypeOptions: { type: Array, default: () => [] },
 })
 
 const defaultRoomId = computed(() => {
@@ -19,6 +20,8 @@ const chargeForm = useForm({
   room_id: defaultRoomId.value,
   description: '',
   amount: '',
+  charge_type: 'other',
+  discount_code: '',
 })
 
 const paymentForm = useForm({
@@ -33,8 +36,9 @@ function submitCharge() {
   chargeForm.post(route('frontdesk.billing.charge', props.booking.id), {
     preserveScroll: true,
     onSuccess: () => {
-      chargeForm.reset('description', 'amount')
+      chargeForm.reset('description', 'amount', 'discount_code')
       chargeForm.room_id = defaultRoomId.value
+      chargeForm.charge_type = 'other'
     },
   })
 }
@@ -181,6 +185,19 @@ function formatDate(value) {
               </label>
 
               <label class="space-y-2">
+                <span class="text-sm font-bold text-slate-700">Charge category</span>
+                <select
+                  v-model="chargeForm.charge_type"
+                  class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+                >
+                  <option v-for="option in chargeTypeOptions" :key="option.value" :value="option.value">
+                    {{ option.label }}
+                  </option>
+                </select>
+                <InputError :message="chargeForm.errors.charge_type" />
+              </label>
+
+              <label class="space-y-2">
                 <span class="text-sm font-bold text-slate-700">Amount</span>
                 <input
                   v-model="chargeForm.amount"
@@ -190,6 +207,20 @@ function formatDate(value) {
                   class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
                 />
                 <InputError :message="chargeForm.errors.amount" />
+              </label>
+
+              <label class="space-y-2">
+                <span class="text-sm font-bold text-slate-700">Discount code</span>
+                <input
+                  v-model="chargeForm.discount_code"
+                  type="text"
+                  class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm uppercase text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+                  placeholder="Optional"
+                />
+                <p class="text-xs font-medium text-slate-500">
+                  Match the code to the charge category above when a guest is eligible.
+                </p>
+                <InputError :message="chargeForm.errors.discount_code" />
               </label>
 
               <button

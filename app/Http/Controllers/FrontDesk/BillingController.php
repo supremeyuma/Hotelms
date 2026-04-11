@@ -4,14 +4,18 @@ namespace App\Http\Controllers\FrontDesk;
 
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
+use App\Models\DiscountCode;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Services\BillingService;
+use App\Services\DiscountCodeService;
+use Illuminate\Support\Facades\DB;
 
 class BillingController extends Controller
 {
     public function __construct(
-        protected BillingService $billingService
+        protected BillingService $billingService,
+        protected DiscountCodeService $discountCodeService
     ) {}
 
     public function viewBill(Booking $booking)
@@ -33,6 +37,13 @@ class BillingController extends Controller
                 'has_multiple_rooms' => $booking->rooms->count() > 1,
             ],
             'billing' => $this->billingService->getBillingHistory($booking),
+            'chargeTypeOptions' => [
+                ['label' => 'Room charge', 'value' => DiscountCode::APPLIES_TO_ROOM_RATE],
+                ['label' => 'Food', 'value' => DiscountCode::APPLIES_TO_KITCHEN],
+                ['label' => 'Bar', 'value' => DiscountCode::APPLIES_TO_BAR],
+                ['label' => 'Club', 'value' => DiscountCode::APPLIES_TO_CLUB],
+                ['label' => 'Other', 'value' => 'other'],
+            ],
         ]);
     }
 
@@ -74,6 +85,8 @@ class BillingController extends Controller
             'room_id' => 'nullable|integer',
             'description' => 'required|string|max:255',
             'amount' => 'required|numeric|min:0.01',
+            'charge_type' => 'required|string|in:room_rate,kitchen,bar,club,other',
+            'discount_code' => 'nullable|string|max:50',
         ]);
 
         $roomId = $this->resolveRoomId($booking, $data['room_id'] ?? null);
@@ -86,14 +99,40 @@ class BillingController extends Controller
             ]);
         }
 
-        $this->billingService->addCharge(
-            booking: $booking,
-            roomId: $roomId,
-            description: $data['description'],
-            amount: (float) $data['amount'],
-        );
+        $message = 'Charge added successfully.';
 
-        return back()->with('success', 'Charge added successfully.');
+        DB::transaction(function () use ($booking, $roomId, $data, &$message) {
+            $baseCharge = $this->billingService->addCharge(
+                booking: $booking,
+                roomId: $roomId,
+                description: $data['description'],
+                amount: (float) $data['amount'],
+                type: $data['charge_type']
+            );
+
+            if (! empty($data['discount_code']) && $data['charge_type'] !== 'other') {
+                $preview = $this->discountCodeService->previewForCharge(
+                    (float) $data['amount'],
+                    $data['discount_code'],
+                    $data['charge_type']
+                );
+
+                if ($preview['discount_amount'] > 0) {
+                    $discountCharge = $this->billingService->addCharge(
+                        booking: $booking,
+                        roomId: $roomId,
+                        description: "Discount ({$preview['code']}) - {$data['description']}",
+                        amount: -1 * $preview['discount_amount'],
+                        type: 'discount'
+                    );
+
+                    $this->discountCodeService->reserveForCharge($discountCharge, $preview);
+                    $message = "Charge added with discount code {$preview['code']}.";
+                }
+            }
+        });
+
+        return back()->with('success', $message);
     }
 
     protected function resolveRoomId(Booking $booking, ?int $roomId): ?int

@@ -4,21 +4,26 @@ namespace App\Http\Controllers\FrontDesk;
 
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
+use App\Models\DiscountCode;
 use App\Models\Room;
 use App\Services\BillingService;
 use App\Services\BookingService;
+use App\Services\DiscountCodeService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class BookingsController extends Controller
 {
     protected BookingService $bookingService;
     protected BillingService $billingService;
+    protected DiscountCodeService $discountCodeService;
 
-    public function __construct(BookingService $bookingService, BillingService $billingService)
+    public function __construct(BookingService $bookingService, BillingService $billingService, DiscountCodeService $discountCodeService)
     {
         $this->bookingService = $bookingService;
         $this->billingService = $billingService;
+        $this->discountCodeService = $discountCodeService;
     }
 
     public function index(Request $request)
@@ -85,6 +90,7 @@ class BookingsController extends Controller
                     ],
                 ];
             })->values(),
+            'roomDiscountCodeHint' => DiscountCode::scopeOptions()[DiscountCode::APPLIES_TO_ROOM_RATE],
         ]);
     }
 
@@ -103,13 +109,60 @@ class BookingsController extends Controller
             'emergency_contact_phone' => 'nullable|string|max:20',
             'purpose_of_stay' => 'nullable|string|max:255',
             'special_requests' => 'nullable|string|max:1000',
+            'discount_code' => 'nullable|string|max:50',
         ]);
 
-        $booking = $this->bookingService->createBooking([
-            ...$data,
-            'status' => 'confirmed',
-            'payment_status' => 'pending',
-        ]);
+        $room = Room::with('roomType')->findOrFail($data['room_id']);
+        $discountPreview = null;
+
+        if (! empty($data['discount_code'])) {
+            $discountPreview = $this->discountCodeService->previewForBookingSelection([
+                'room_type_id' => $room->room_type_id,
+                'quantity' => 1,
+                'selected_room_ids' => [$room->id],
+                'check_in' => $data['check_in'],
+                'check_out' => $data['check_out'],
+            ], $data['discount_code']);
+        }
+
+        $booking = DB::transaction(function () use ($data, $room, $discountPreview) {
+            $nights = max(
+                now()->parse($data['check_in'])->startOfDay()->diffInDays(now()->parse($data['check_out'])->startOfDay()),
+                1
+            );
+            $baseAmount = (float) $room->roomType->base_price * $nights;
+            $pricing = $discountPreview['pricing'] ?? $this->discountCodeService->buildPricing($baseAmount);
+
+            $booking = $this->bookingService->createBooking([
+                ...$data,
+                'room_type_id' => $room->room_type_id,
+                'selected_room_ids' => [$room->id],
+                'quantity' => 1,
+                'nightly_rate' => $room->roomType->base_price,
+                'total_amount' => $pricing['total'],
+                'status' => 'confirmed',
+                'payment_status' => 'pending',
+                'details' => $discountPreview ? [
+                    'discount' => [
+                        'discount_code_id' => $discountPreview['discount_code_id'],
+                        'code' => $discountPreview['code'],
+                        'name' => $discountPreview['name'],
+                        'scope' => $discountPreview['scope'],
+                        'discount_type' => $discountPreview['discount_type'],
+                        'discount_value' => $discountPreview['discount_value'],
+                        'discount_amount' => $discountPreview['discount_amount'],
+                        'pricing' => $pricing,
+                    ],
+                ] : null,
+            ]);
+
+            if ($discountPreview) {
+                $this->discountCodeService->reserveForBooking($booking, $discountPreview);
+                $this->discountCodeService->markAppliedForBooking($booking);
+            }
+
+            return $booking;
+        });
 
         return redirect()->route('frontdesk.bookings.show', $booking)
             ->with('success', "Booking created successfully: {$booking->booking_code}");

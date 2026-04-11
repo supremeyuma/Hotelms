@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 class Charge extends Model
 {
@@ -20,5 +21,10 @@ class Charge extends Model
     public function billable()
     {
         return $this->morphTo();
+    }
+
+    public function discountRedemption(): MorphOne
+    {
+        return $this->morphOne(DiscountCodeRedemption::class, 'redeemable');
     }
 }

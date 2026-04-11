@@ -110,7 +110,7 @@ class BookingService
                 'nightly_rate' => $data['nightly_rate'] ?? ($selectedRooms->first()->roomType->base_price ?? 0),
                 'total_amount' => $data['total_amount'] ?? (($selectedRooms->first()->roomType->base_price ?? 0) * $nights * $quantity),
                 'status'       => $data['status'] ?? 'pending_payment',
-                'expires_at'   => now()->addMinutes(45),
+                'expires_at'   => ($data['status'] ?? 'pending_payment') === 'pending_payment' ? now()->addMinutes(45) : null,
                 'guest_name'   => $data['guest_name'],
                 'guest_email'  => $data['guest_email'],
                 'guest_phone'  => $data['guest_phone'],

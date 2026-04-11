@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Booking;
+use App\Models\Charge;
 use App\Models\DiscountCode;
 use App\Models\DiscountCodeRedemption;
 use App\Models\RoomType;
@@ -53,6 +54,29 @@ class DiscountCodeService
             $roomCount,
             $this->resolveNights($booking->check_in, $booking->check_out)
         );
+    }
+
+    public function previewForCharge(float $amount, string $rawCode, string $scope, int $roomCount = 1): array
+    {
+        $discountCode = $this->resolveCode($rawCode);
+
+        $this->assertDiscountForScope($discountCode, $scope, $roomCount);
+
+        $discountAmount = $this->calculateDiscountAmount($discountCode, $amount);
+
+        return [
+            'discount_code_id' => $discountCode->id,
+            'name' => $discountCode->name,
+            'code' => $discountCode->code,
+            'scope' => $discountCode->applies_to,
+            'scope_label' => DiscountCode::scopeOptions()[$discountCode->applies_to] ?? $discountCode->applies_to,
+            'discount_type' => $discountCode->discount_type,
+            'discount_value' => (float) $discountCode->discount_value,
+            'discount_amount' => $discountAmount,
+            'base_amount' => round($amount, 2),
+            'net_amount' => round(max($amount - $discountAmount, 0), 2),
+            'room_count' => $roomCount,
+        ];
     }
 
     public function reserveForBooking(Booking $booking, array $preview): void
@@ -113,9 +137,41 @@ class DiscountCodeService
         });
     }
 
+    public function reserveForCharge(Charge $charge, array $preview): void
+    {
+        DB::transaction(function () use ($charge, $preview) {
+            $discountCode = DiscountCode::query()->lockForUpdate()->findOrFail($preview['discount_code_id']);
+
+            $this->assertDiscountForScope(
+                $discountCode,
+                $preview['scope'],
+                max((int) ($preview['room_count'] ?? 1), 1)
+            );
+
+            $charge->discountRedemption()->updateOrCreate(
+                [
+                    'discount_code_id' => $discountCode->id,
+                ],
+                [
+                    'scope' => $discountCode->applies_to,
+                    'status' => 'applied',
+                    'rooms_used' => max((int) ($preview['room_count'] ?? 1), 1),
+                    'base_amount' => $preview['base_amount'],
+                    'discount_amount' => $preview['discount_amount'],
+                    'meta' => [
+                        'code' => $discountCode->code,
+                        'discount_type' => $discountCode->discount_type,
+                        'discount_value' => $discountCode->discount_value,
+                        'net_amount' => $preview['net_amount'],
+                    ],
+                ]
+            );
+        });
+    }
+
     public function markAppliedForBooking(Booking $booking): void
     {
-        $booking->loadMissing('discountRedemption');
+        $booking->load('discountRedemption');
 
         if (! $booking->discountRedemption || $booking->discountRedemption->released_at) {
             return;
@@ -128,7 +184,7 @@ class DiscountCodeService
 
     public function releaseForBooking(Booking $booking): void
     {
-        $booking->loadMissing('discountRedemption');
+        $booking->load('discountRedemption');
 
         if ($booking->discountRedemption && ! $booking->discountRedemption->released_at) {
             $this->releaseRedemption($booking->discountRedemption);
@@ -218,6 +274,28 @@ class DiscountCodeService
             ]);
         }
 
+        $this->assertRoomCap($discountCode, $roomCount, $ignoreBooking);
+    }
+
+    protected function assertDiscountForScope(DiscountCode $discountCode, string $scope, int $roomCount, mixed $ignoreRedeemable = null): void
+    {
+        if (! $discountCode->is_currently_valid) {
+            throw ValidationException::withMessages([
+                'discount_code' => 'This discount code is not active for use right now.',
+            ]);
+        }
+
+        if ($discountCode->applies_to !== $scope) {
+            throw ValidationException::withMessages([
+                'discount_code' => 'This discount code does not match the charge category you selected.',
+            ]);
+        }
+
+        $this->assertRoomCap($discountCode, $roomCount, $ignoreRedeemable);
+    }
+
+    protected function assertRoomCap(DiscountCode $discountCode, int $roomCount, mixed $ignoreRedeemable = null): void
+    {
         if ($discountCode->max_rooms === null) {
             return;
         }
@@ -225,11 +303,11 @@ class DiscountCodeService
         $usedRooms = (int) $discountCode->redemptions()
             ->whereIn('status', ['reserved', 'applied'])
             ->whereNull('released_at')
-            ->when($ignoreBooking, function ($query) use ($ignoreBooking) {
-                $query->where(function ($nested) use ($ignoreBooking) {
+            ->when($ignoreRedeemable, function ($query) use ($ignoreRedeemable) {
+                $query->where(function ($nested) use ($ignoreRedeemable) {
                     $nested
-                        ->where('redeemable_type', '!=', $ignoreBooking->getMorphClass())
-                        ->orWhere('redeemable_id', '!=', $ignoreBooking->getKey());
+                        ->where('redeemable_type', '!=', $ignoreRedeemable->getMorphClass())
+                        ->orWhere('redeemable_id', '!=', $ignoreRedeemable->getKey());
                 });
             })
             ->sum('rooms_used');

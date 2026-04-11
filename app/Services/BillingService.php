@@ -52,8 +52,8 @@ class BillingService
             ->all();
 
         $totalCharges = max(
-            collect($charges)->sum('amount'),
-            (float) ($booking->total_amount ?? 0)
+            (float) ($booking->total_amount ?? 0) + collect($charges)->sum('amount'),
+            0
         );
         $totalPayments = collect($payments)->sum('amount');
 
@@ -79,13 +79,15 @@ class BillingService
         Booking $booking,
         int $roomId,
         string $description,
-        float $amount
+        float $amount,
+        string $type = 'manual'
     ): Charge {
         $charge = Charge::create([
             'booking_id' => $booking->id,
             'room_id'    => $roomId,
             'description'=> $description,
             'amount'     => $amount,
+            'type'       => $type,
         ]);
 
         event(new BillingUpdated($booking));

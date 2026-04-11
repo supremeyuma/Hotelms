@@ -10,6 +10,10 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  roomDiscountCodeHint: {
+    type: String,
+    default: '',
+  },
 })
 
 const form = useForm({
@@ -25,6 +29,7 @@ const form = useForm({
   special_requests: '',
   check_in: '',
   check_out: '',
+  discount_code: '',
 })
 
 const selectedRoom = computed(() =>
@@ -155,6 +160,15 @@ function submit() {
               <textarea v-model="form.special_requests" rows="4" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100" />
               <InputError :message="form.errors.special_requests" />
             </label>
+
+            <label class="space-y-2 md:col-span-2">
+              <span class="text-sm font-bold text-slate-700">Discount code</span>
+              <input v-model="form.discount_code" type="text" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm uppercase text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100" placeholder="Optional" />
+              <p class="text-xs font-medium text-slate-500">
+                Use a manager-issued {{ roomDiscountCodeHint.toLowerCase() }} code if this reservation qualifies.
+              </p>
+              <InputError :message="form.errors.discount_code" />
+            </label>
           </div>
         </section>
 
@@ -184,6 +198,17 @@ function submit() {
                   </p>
                   <p class="mt-1 text-xs text-slate-300">
                     Estimated room value: ₦{{ estimatedTotal.toLocaleString() }}
+                  </p>
+                </div>
+              </div>
+
+              <div class="flex items-start gap-3 rounded-[1.5rem] bg-white/10 px-4 py-4">
+                <ShieldCheck class="mt-0.5 h-4 w-4 text-slate-200" />
+                <div>
+                  <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-300">Discount</p>
+                  <p class="mt-1 text-sm font-bold text-white">{{ form.discount_code || 'No code applied' }}</p>
+                  <p class="mt-1 text-xs text-slate-300">
+                    Room discounts are validated when the reservation is saved.
                   </p>
                 </div>
               </div>
