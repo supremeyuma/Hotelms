@@ -9,6 +9,7 @@ use App\Models\Payment;
 use App\Services\BookingService;
 use App\Services\EventService;
 use App\Services\PaymentAccountingService;
+use App\Services\PaymentRecordService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -24,6 +25,7 @@ class WebhookController extends Controller
         protected BookingService $bookingService,
         protected EventService $eventService,
         protected PaymentAccountingService $paymentAccountingService,
+        protected PaymentRecordService $paymentRecords,
     ) {}
 
     /**
@@ -396,12 +398,15 @@ class WebhookController extends Controller
             return response()->json(['status' => 'already_processed']);
         }
 
-        $payment = Payment::updateOrCreate(
+        $payment = $this->paymentRecords->upsert(
             [
                 'booking_id' => $booking->id,
                 'reference' => $booking->booking_code,
             ],
             [
+                'booking_id' => $booking->id,
+                'reference' => $booking->booking_code,
+                'payment_reference' => $booking->booking_code,
                 'method' => $provider,
                 'provider' => $provider,
                 'amount' => $booking->total_amount,
@@ -422,12 +427,14 @@ class WebhookController extends Controller
             ]
         );
 
-        try {
-            $this->paymentAccountingService->handleSuccessful($payment);
-        } catch (\Exception $e) {
-            Log::error('Payment accounting handler failed: ' . $e->getMessage(), [
-                'payment_id' => $payment->id,
-            ]);
+        if ($payment) {
+            try {
+                $this->paymentAccountingService->handleSuccessful($payment);
+            } catch (\Exception $e) {
+                Log::error('Payment accounting handler failed: ' . $e->getMessage(), [
+                    'payment_id' => $payment->id,
+                ]);
+            }
         }
 
         $this->bookingService->markPaidAndConfirm($booking, $provider);
@@ -454,10 +461,11 @@ class WebhookController extends Controller
             return;
         }
 
-        Payment::create([
+        $this->paymentRecords->create([
             'booking_id' => $data['booking_id'] ?? null,
             'method' => $data['provider'] ?? null,
             'reference' => $data['reference'] ?? null,
+            'payment_reference' => $data['reference'] ?? null,
             'transaction_ref' => $data['reference'] ?? null,
             'provider' => $data['provider'] ?? null,
             'status' => 'completed',
@@ -499,7 +507,7 @@ class WebhookController extends Controller
      */
     private function isIdempotencyKeyProcessed(string $idempotencyKey): bool
     {
-        return Payment::where('idempotency_key', $idempotencyKey)->exists();
+        return $this->paymentRecords->isIdempotencyKeyProcessed($idempotencyKey);
     }
 
     private function handleStandalonePaymentSuccess(Payment $payment, string $provider, array $data): \Illuminate\Http\JsonResponse
@@ -511,7 +519,7 @@ class WebhookController extends Controller
             return response()->json(['status' => 'already_processed']);
         }
 
-        $payment->update([
+        $payment = $this->paymentRecords->update($payment, [
             'method' => $provider,
             'provider' => $provider,
             'amount_paid' => $payloadData['amount'] ?? $payment->amount_paid ?? $payment->amount,
@@ -538,7 +546,7 @@ class WebhookController extends Controller
     {
         $payloadData = $data['data'] ?? [];
 
-        $payment->update([
+        $this->paymentRecords->update($payment, [
             'method' => $provider,
             'provider' => $provider,
             'status' => 'failed',
@@ -555,12 +563,7 @@ class WebhookController extends Controller
             return null;
         }
 
-        return Payment::query()
-            ->where('reference', $reference)
-            ->orWhere('payment_reference', $reference)
-            ->orWhere('flutterwave_tx_ref', $reference)
-            ->orWhere('external_reference', $reference)
-            ->first();
+        return $this->paymentRecords->findByReference($reference);
     }
 
     /**

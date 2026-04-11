@@ -14,6 +14,7 @@ use App\Services\PricingService;
 use App\Services\AuditLogger;
 use App\Services\PaymentAccountingService;
 use App\Services\PaymentProviderManager;
+use App\Services\PaymentRecordService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Services\RoomAvailabilityService;
@@ -32,6 +33,7 @@ class BookingController extends Controller
     protected PricingService $pricingService;
     protected PaymentProviderManager $paymentManager;
     protected DiscountCodeService $discountCodeService;
+    protected PaymentRecordService $paymentRecords;
     
 
     /*public function __construct(BookingService $service)
@@ -45,7 +47,8 @@ class BookingController extends Controller
         BookingService $bookingService,
         PricingService $pricingService,
         PaymentProviderManager $paymentManager,
-        DiscountCodeService $discountCodeService
+        DiscountCodeService $discountCodeService,
+        PaymentRecordService $paymentRecords,
     )
     {
         $this->availability = $availability;
@@ -53,6 +56,7 @@ class BookingController extends Controller
         $this->pricingService = $pricingService;
         $this->paymentManager = $paymentManager;
         $this->discountCodeService = $discountCodeService;
+        $this->paymentRecords = $paymentRecords;
     }
 
 
@@ -399,26 +403,34 @@ public function payment(Booking $booking)
             }
 
             $verifiedProvider = $verification['provider'] ?? $provider;
-            $payment = $booking->payments()->updateOrCreate(
+            $payment = $this->paymentRecords->upsert(
                 ['reference' => $booking->booking_code],
                 [
+                    'booking_id' => $booking->id,
+                    'reference' => $booking->booking_code,
+                    'payment_reference' => $booking->booking_code,
+                    'method' => $verifiedProvider,
                     'provider' => $verifiedProvider,
                     'amount' => $booking->total_amount,
                     'amount_paid' => $this->normalizeVerifiedAmount($verification['amount'] ?? $booking->total_amount, $verifiedProvider),
                     'currency' => $verification['currency'] ?? 'NGN',
                     'status' => 'completed',
                     'payment_type' => 'booking',
+                    'transaction_ref' => $booking->booking_code,
                     'verified_at' => now(),
                     'external_reference' => $verification['data']['id'] ?? null,
                     'flutterwave_tx_ref' => $verifiedProvider === 'flutterwave' ? ($verification['reference'] ?? $reference) : null,
                     'flutterwave_tx_id' => $verifiedProvider === 'flutterwave' ? ($verification['data']['id'] ?? null) : null,
                     'flutterwave_tx_status' => $verifiedProvider === 'flutterwave' ? ($verification['status'] ?? ($verification['data']['status'] ?? null)) : null,
+                    'meta' => $verification['data'] ?? $verification,
                     'raw_response' => $verification['data'] ?? $verification,
                     'paid_at' => now(),
                 ]
             );
 
-            resolve(PaymentAccountingService::class)->handleSuccessful($payment);
+            if ($payment) {
+                resolve(PaymentAccountingService::class)->handleSuccessful($payment);
+            }
 
             $this->bookingService->markPaidAndConfirm($booking, $verifiedProvider);
             Session::forget('booking');

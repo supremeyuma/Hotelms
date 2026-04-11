@@ -8,7 +8,10 @@ use App\Models\Property;
 use App\Models\Room;
 use App\Models\RoomType;
 use App\Services\BookingService;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 class PaymentGatewayFlowTest extends TestCase
@@ -173,6 +176,46 @@ class PaymentGatewayFlowTest extends TestCase
         $this->assertSame('completed', $payment->status);
         $this->assertSame('90101', (string) $payment->external_reference);
         $this->assertNotNull($payment->verified_at);
+    }
+
+    public function test_paystack_webhook_completes_booking_even_when_payments_method_column_is_missing(): void
+    {
+        Mail::fake();
+
+        $booking = $this->createBooking();
+
+        Schema::table('payments', function (Blueprint $table) {
+            $table->dropColumn('method');
+        });
+
+        $payload = [
+            'event' => 'charge.success',
+            'data' => [
+                'id' => 99101,
+                'reference' => $booking->booking_code,
+                'status' => 'success',
+                'amount' => 5000000,
+                'currency' => 'NGN',
+            ],
+        ];
+
+        $signature = hash_hmac('sha512', json_encode($payload), 'paystack-webhook-secret');
+
+        $this->postJson('/api/webhooks/paystack', $payload, [
+            'x-paystack-signature' => $signature,
+        ])->assertOk()
+            ->assertJson(['status' => 'processed']);
+
+        $booking->refresh();
+
+        $this->assertSame('paid', $booking->payment_status);
+        $this->assertSame('confirmed', $booking->status);
+        $this->assertSame('paystack', $booking->payment_method);
+        $this->assertDatabaseHas('payments', [
+            'reference' => $booking->booking_code,
+            'provider' => 'paystack',
+            'status' => 'completed',
+        ]);
     }
 
     public function test_paid_pending_booking_is_reconciled_to_confirmed_status(): void
