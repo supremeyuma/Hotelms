@@ -30,7 +30,7 @@ const props = defineProps({
   },
 });
 
-const expandedRoomTypeId = ref(props.roomTypes?.[0]?.id ?? null);
+const expandedRoomTypeId = ref(null);
 const selectedRoomIdsByType = reactive({});
 const galleryImages = ref([]);
 const galleryTitle = ref('');
