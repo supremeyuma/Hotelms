@@ -46,6 +46,10 @@ const form = useForm({
   banner: null,
 })
 
+const testMailForm = useForm({
+  test_email: props.settings.contact_email || page.props.auth?.user?.email || '',
+})
+
 const localLogoPreview = ref(null)
 const localBannerPreview = ref(null)
 
@@ -133,6 +137,12 @@ function updateFile(field, event) {
 function submit() {
   form.put(route('admin.settings.update'), {
     forceFormData: true,
+    preserveScroll: true,
+  })
+}
+
+function sendTestMail() {
+  testMailForm.post(route('admin.settings.test-mail'), {
     preserveScroll: true,
   })
 }
@@ -225,6 +235,19 @@ onBeforeUnmount(() => {
           <p class="font-semibold">Settings saved.</p>
           <p class="text-sm text-emerald-700">
             {{ page.props.flash?.success || 'Changes applied.' }}
+          </p>
+        </div>
+      </div>
+
+      <div
+        v-if="testMailForm.recentlySuccessful"
+        class="flex items-start gap-3 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sky-900"
+      >
+        <CheckCircle2 class="mt-0.5 h-5 w-5 flex-none" />
+        <div>
+          <p class="font-semibold">Test email sent.</p>
+          <p class="text-sm text-sky-700">
+            The mail check was sent to {{ testMailForm.test_email }}.
           </p>
         </div>
       </div>
@@ -505,6 +528,48 @@ onBeforeUnmount(() => {
         </div>
 
         <aside class="space-y-8">
+          <section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+            <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">Mail Check</p>
+            <h2 class="mt-2 text-xl font-black text-slate-900">Send a test email</h2>
+            <p class="mt-2 text-sm leading-6 text-slate-500">
+              Send a confirmation message to verify the current mail setup. Active mailer:
+              <span class="font-semibold text-slate-700">{{ props.settings.active_mailer || 'default' }}</span>.
+            </p>
+
+            <div class="mt-6 space-y-4">
+              <div class="space-y-2">
+                <label for="test_email" class="flex items-center gap-2 text-sm font-bold text-slate-700">
+                  <Mail class="h-4 w-4" />
+                  Recipient email
+                </label>
+                <input
+                  id="test_email"
+                  v-model="testMailForm.test_email"
+                  type="email"
+                  class="field-input"
+                  placeholder="manager@hotel.com"
+                />
+                <p v-if="testMailForm.errors.test_email" class="field-error">{{ testMailForm.errors.test_email }}</p>
+              </div>
+
+              <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                <p>From: {{ props.settings.mail_from_name || props.settings.site_name || 'Hotel Management System' }}</p>
+                <p>{{ props.settings.mail_from_address || 'No from address configured' }}</p>
+              </div>
+
+              <button
+                type="button"
+                @click="sendTestMail"
+                :disabled="testMailForm.processing"
+                class="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-5 py-4 text-sm font-black text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <RefreshCw v-if="testMailForm.processing" class="h-5 w-5 animate-spin" />
+                <Mail v-else class="h-5 w-5" />
+                {{ testMailForm.processing ? 'Sending test email...' : 'Send test email' }}
+              </button>
+            </div>
+          </section>
+
           <section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
             <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">Readiness</p>
             <h2 class="mt-2 text-xl font-black text-slate-900">Guest-facing details</h2>

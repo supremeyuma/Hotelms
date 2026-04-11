@@ -6,9 +6,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Mail\ManagerSettingsTestMail;
 use App\Models\Setting;
 use App\Services\AuditLoggerService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class SettingController extends Controller
@@ -49,6 +52,9 @@ class SettingController extends Controller
             $settings['booking_show_room_type_images'] ?? true,
             FILTER_VALIDATE_BOOLEAN
         );
+        $settings['active_mailer'] = config('mail.default');
+        $settings['mail_from_address'] = config('mail.from.address');
+        $settings['mail_from_name'] = config('mail.from.name');
 
         return Inertia::render('Admin/Settings/Index', ['settings' => $settings]);
     }
@@ -126,5 +132,44 @@ class SettingController extends Controller
         $this->auditLogger->log('settings_updated', 'Setting', 0, ['data' => $data]);
 
         return back()->with('success', 'Settings updated.');
+    }
+
+    public function sendTestMail(Request $request)
+    {
+        $data = $request->validate([
+            'test_email' => ['required', 'email'],
+        ]);
+
+        try {
+            Mail::to($data['test_email'])->send(new ManagerSettingsTestMail(
+                hotelName: $this->resolveHotelName(),
+                activeMailer: (string) config('mail.default'),
+                sentBy: (string) ($request->user()?->name ?? 'Manager'),
+                fromAddress: config('mail.from.address'),
+                fromName: config('mail.from.name'),
+            ));
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            throw ValidationException::withMessages([
+                'test_email' => 'The test email could not be sent with the current mail configuration.',
+            ]);
+        }
+
+        $this->auditLogger->log('settings_test_mail_sent', 'Setting', 0, [
+            'recipient' => $data['test_email'],
+            'mailer' => config('mail.default'),
+        ]);
+
+        return back()->with('success', 'Test email sent successfully.');
+    }
+
+    private function resolveHotelName(): string
+    {
+        return Setting::query()
+            ->whereIn('key', ['site_name', 'hotel_name'])
+            ->pluck('value', 'key')
+            ->filter(fn ($value) => filled($value))
+            ->first() ?? config('app.name', 'Hotel Management System');
     }
 }

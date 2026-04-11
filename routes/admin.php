@@ -123,6 +123,7 @@ Route::middleware(['auth', 'role:manager|md'])->prefix('admin')->as('admin.')->g
 
         Route::get('settings', [SettingController::class, 'index'])->name('settings.index');
         Route::put('settings', [SettingController::class, 'update'])->name('settings.update');
+        Route::post('settings/test-mail', [SettingController::class, 'sendTestMail'])->name('settings.test-mail');
     });
 
 
