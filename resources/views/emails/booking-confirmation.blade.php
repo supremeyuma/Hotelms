@@ -56,9 +56,15 @@
 
             <div style="background-color: #f0fdf4; border-left: 4px solid #16a34a; padding: 18px 20px; border-radius: 14px;">
                 <p style="margin: 0 0 8px; font-weight: 700; color: #166534;">Arrival Note</p>
-                <p style="margin: 0; color: #475569;">
+                <p style="margin: 0 0 14px; color: #475569;">
                     If your booking was paid online, you can complete pre-check-in from your confirmation page before arrival. Final room access will still be issued by the front desk after verification.
                 </p>
+                <a
+                    href="{{ $confirmationUrl }}"
+                    style="display: inline-block; padding: 10px 18px; border-radius: 999px; background-color: #166534; color: #ffffff; font-weight: 700; text-decoration: none;"
+                >
+                    Open confirmation page
+                </a>
             </div>
         </div>
     </div>

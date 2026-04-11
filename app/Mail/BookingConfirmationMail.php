@@ -30,6 +30,7 @@ class BookingConfirmationMail extends Mailable
             view: 'emails.booking-confirmation',
             with: [
                 'booking' => $this->booking,
+                'confirmationUrl' => route('booking.confirmation', $this->booking),
             ],
         );
     }

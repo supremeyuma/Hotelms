@@ -41,6 +41,20 @@ class BookingConfirmationNotificationTest extends TestCase
         Mail::assertNothingSent();
     }
 
+    public function test_booking_confirmation_email_includes_confirmation_page_link(): void
+    {
+        $booking = $this->createBooking();
+
+        $mail = new BookingConfirmationMail($booking->fresh(['roomType', 'rooms']));
+        $rendered = $mail->render();
+
+        $this->assertStringContainsString(
+            route('booking.confirmation', $booking),
+            $rendered
+        );
+        $this->assertStringContainsString('Open confirmation page', $rendered);
+    }
+
     private function createBooking(): Booking
     {
         $property = Property::create([
