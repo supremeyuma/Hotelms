@@ -61,6 +61,9 @@ class BookingService
 
             $selectedRoomIds = array_values(array_unique(array_map('intval', $data['selected_room_ids'] ?? [])));
             $quantity = $data['quantity'] ?? max(count($selectedRoomIds), 1);
+            $checkIn = Carbon::parse($data['check_in']);
+            $checkOut = Carbon::parse($data['check_out']);
+            $nights = max($checkIn->diffInDays($checkOut), 1);
 
             // Inventory-level availability check (NO rooms yet)
             $available = $this->availability->checkAvailability(
@@ -105,8 +108,8 @@ class BookingService
                 'adults'       => $data['adults'] ?? 1,
                 'children'     => $data['children'] ?? 0,
                 'nightly_rate' => $data['nightly_rate'] ?? ($selectedRooms->first()->roomType->base_price ?? 0),
-                'total_amount' => $data['total_amount'] ?? (($selectedRooms->first()->roomType->base_price ?? 0) * $quantity),
-                'status'       => 'pending_payment',
+                'total_amount' => $data['total_amount'] ?? (($selectedRooms->first()->roomType->base_price ?? 0) * $nights * $quantity),
+                'status'       => $data['status'] ?? 'pending_payment',
                 'expires_at'   => now()->addMinutes(45),
                 'guest_name'   => $data['guest_name'],
                 'guest_email'  => $data['guest_email'],
@@ -177,6 +180,8 @@ class BookingService
 
     public function reconcilePaidBookingStates(): void
     {
+        $this->normalizeLegacyCheckedInStatuses();
+
         Booking::query()
             ->where('status', 'pending_payment')
             ->where(function ($query) {
@@ -266,6 +271,8 @@ class BookingService
         }*/
 
         return DB::transaction(function () use ($booking, $data) {
+            $this->normalizeLegacyCheckedInStatusForBooking($booking);
+
             if (empty($data['selected_room_ids']) && ! empty($data['room_id'])) {
                 $selectedRoom = Room::findOrFail($data['room_id']);
                 $data['selected_room_ids'] = [$selectedRoom->id];
@@ -452,7 +459,7 @@ class BookingService
 
             if ($booking->rooms()->count() === $booking->quantity) {
                 $booking->update([
-                    'status'        => 'active',
+                    'status'        => 'checked_in',
                     'checked_in_at' => now(),
                 ]);
             }
@@ -475,6 +482,7 @@ class BookingService
     public function checkOut(Booking $booking, ?Room $room = null): Booking
     {
         return DB::transaction(function () use ($booking, $room) {
+            $this->normalizeLegacyCheckedInStatusForBooking($booking);
 
             // -----------------------------------------
             // ROOM-LEVEL CHECKOUT
@@ -561,6 +569,8 @@ class BookingService
      */
     public function extendStay(Booking $booking, string $newCheckOut, ?User $by = null): Booking
     {
+        $this->normalizeLegacyCheckedInStatusForBooking($booking);
+
         if (! $booking->isEditable()) {
             throw new \Exception('Cannot extend a checked-in or completed booking.');
         }
@@ -634,6 +644,7 @@ class BookingService
     public function swapRoom(Booking $booking, Room $oldRoom, Room $newRoom, ?User $by = null): void 
     {
         DB::transaction(function () use ($booking, $oldRoom, $newRoom, $by) {
+            $this->normalizeLegacyCheckedInStatusForBooking($booking);
 
             $pivot = $booking->rooms()
                 ->where('room_id', $oldRoom->id)
@@ -675,6 +686,21 @@ class BookingService
                 'by'   => $by?->id,
             ]);
         });
+    }
+
+    public function normalizeLegacyCheckedInStatuses(): void
+    {
+        Booking::query()
+            ->where('status', 'active')
+            ->update(['status' => 'checked_in']);
+    }
+
+    protected function normalizeLegacyCheckedInStatusForBooking(Booking $booking): void
+    {
+        if ($booking->status === 'active') {
+            $booking->update(['status' => 'checked_in']);
+            $booking->refresh();
+        }
     }
 
 }

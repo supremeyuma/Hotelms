@@ -133,7 +133,6 @@ function formatPreCheckInDate(value) {
                 >
                   <option value="pending_payment">Pending payment</option>
                   <option value="confirmed">Confirmed</option>
-                  <option value="active">Active</option>
                   <option value="checked_in">Checked in</option>
                   <option value="checked_out">Checked out</option>
                   <option value="cancelled">Cancelled</option>

@@ -1,169 +1,225 @@
 <script setup>
 import FrontDeskLayout from '@/Layouts/Staff/FrontDeskLayout.vue'
-import { useForm, Link, Head } from '@inertiajs/vue3'
-import TextInput from '@/Components/TextInput.vue'
 import InputError from '@/Components/InputError.vue'
-import {
-    User,
-    Calendar,
-    ChevronLeft,
-    Save,
-    DoorOpen,
-    StickyNote
-} from 'lucide-vue-next'
+import { Head, Link, useForm } from '@inertiajs/vue3'
+import { computed } from 'vue'
+import { ArrowLeft, CalendarDays, Save, ShieldCheck, UserRound } from 'lucide-vue-next'
 
 const props = defineProps({
-    rooms: {
-        type: Array,
-        default: () => [],
-    },
+  rooms: {
+    type: Array,
+    default: () => [],
+  },
 })
 
-
-console.log('Rooms:', props.rooms)
-
-
 const form = useForm({
-    guest_name: '',
-    guest_email: '',
-    guest_phone: '',
-    room_id: '',
-    check_in: '',
-    check_out: '',
-    notes: '',
+  room_id: '',
+  guest_name: '',
+  guest_email: '',
+  guest_phone: '',
+  adults: '1',
+  children: '0',
+  emergency_contact_name: '',
+  emergency_contact_phone: '',
+  purpose_of_stay: '',
+  special_requests: '',
+  check_in: '',
+  check_out: '',
+})
+
+const selectedRoom = computed(() =>
+  props.rooms.find((room) => Number(room.id) === Number(form.room_id)) ?? null
+)
+
+const nights = computed(() => {
+  if (!form.check_in || !form.check_out) return 0
+
+  const diff = Math.round((new Date(form.check_out) - new Date(form.check_in)) / 86400000)
+
+  return Number.isFinite(diff) && diff > 0 ? diff : 0
+})
+
+const estimatedTotal = computed(() => {
+  if (!selectedRoom.value || !nights.value) return 0
+  return Number(selectedRoom.value.room_type?.base_price || 0) * nights.value
 })
 
 function submit() {
-    form.post(route('frontdesk.bookings.store'), {
-        preserveScroll: true,
-    })
+  if (form.processing) return
+
+  form.post(route('frontdesk.bookings.store'), {
+    preserveScroll: true,
+  })
 }
 </script>
 
 <template>
-    <FrontDeskLayout>
-        <Head title="Create Reservation" />
+  <FrontDeskLayout>
+    <Head title="Create Reservation" />
 
-        <div class="min-h-screen bg-slate-50/50 p-6 md:p-12">
-            <div class="max-w-3xl mx-auto">
+    <div class="mx-auto max-w-7xl space-y-8 px-4 py-8 sm:px-6 lg:px-8">
+      <div>
+        <Link
+          :href="route('frontdesk.bookings.index')"
+          class="inline-flex items-center gap-2 text-sm font-bold text-slate-500 transition hover:text-slate-700"
+        >
+          <ArrowLeft class="h-4 w-4" />
+          Back to reservations
+        </Link>
 
-                <Link
-                    :href="route('frontdesk.bookings.index')"
-                    class="inline-flex items-center gap-2 text-slate-400 font-bold text-sm hover:text-indigo-600 mb-8"
-                >
-                    <ChevronLeft class="w-4 h-4" />
-                    Back to Reservations
-                </Link>
+        <h1 class="mt-4 text-3xl font-black tracking-tight text-slate-900">New reservation</h1>
+        <p class="mt-2 text-sm text-slate-600">
+          Create a front desk booking with the same guest details captured during the online booking flow.
+        </p>
+      </div>
 
-                <h1 class="text-3xl font-black text-slate-900 mb-8">
-                    New Reservation
-                </h1>
+      <form @submit.prevent="submit" class="grid gap-8 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <section class="space-y-6 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <div class="grid gap-6 md:grid-cols-2">
+            <label class="space-y-2 md:col-span-2">
+              <span class="text-sm font-bold text-slate-700">Assign room</span>
+              <select
+                v-model="form.room_id"
+                class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+              >
+                <option value="" disabled>Select room</option>
+                <option v-for="room in rooms" :key="room.id" :value="room.id">
+                  {{ room.room_type?.title }} - {{ room.name || room.room_number }}
+                </option>
+              </select>
+              <InputError :message="form.errors.room_id" />
+            </label>
 
-                <div class="bg-white rounded-[2.5rem] shadow-xl border border-slate-100">
-                    <form @submit.prevent="submit" class="p-8 md:p-12 space-y-8">
+            <label class="space-y-2 md:col-span-2">
+              <span class="text-sm font-bold text-slate-700">Guest full name</span>
+              <input v-model="form.guest_name" type="text" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100" />
+              <InputError :message="form.errors.guest_name" />
+            </label>
 
-                        <!-- Guest Name -->
-                        <div>
-                            <label class="label">
-                                <User class="icon" /> Guest Name
-                            </label>
-                            <TextInput v-model="form.guest_name" class="input" />
-                            <InputError :message="form.errors.guest_name" />
-                        </div>
+            <label class="space-y-2">
+              <span class="text-sm font-bold text-slate-700">Guest email</span>
+              <input v-model="form.guest_email" type="email" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100" />
+              <InputError :message="form.errors.guest_email" />
+            </label>
 
-                        <!-- Contact -->
-                        <div class="grid md:grid-cols-2 gap-6">
-                            <div>
-                                <label class="label">Email</label>
-                                <TextInput v-model="form.guest_email" />
-                            </div>
-                            <div>
-                                <label class="label">Phone</label>
-                                <TextInput v-model="form.guest_phone" />
-                            </div>
-                        </div>
+            <label class="space-y-2">
+              <span class="text-sm font-bold text-slate-700">Guest phone</span>
+              <input v-model="form.guest_phone" type="text" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100" />
+              <InputError :message="form.errors.guest_phone" />
+            </label>
 
-                        <!-- Dates -->
-                        <div class="grid md:grid-cols-2 gap-6">
-                            <div>
-                                <label class="label">
-                                    <Calendar class="icon" /> Check-In
-                                </label>
-                                <input type="date" v-model="form.check_in" class="input" />
-                            </div>
+            <label class="space-y-2">
+              <span class="text-sm font-bold text-slate-700">Adults</span>
+              <input v-model="form.adults" type="number" min="1" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100" />
+              <InputError :message="form.errors.adults" />
+            </label>
 
-                            <div>
-                                <label class="label">Check-Out</label>
-                                <input type="date" v-model="form.check_out" class="input" />
-                            </div>
-                        </div>
+            <label class="space-y-2">
+              <span class="text-sm font-bold text-slate-700">Children</span>
+              <input v-model="form.children" type="number" min="0" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100" />
+              <InputError :message="form.errors.children" />
+            </label>
 
-                        <!-- Room -->
-                        <div>
-                            <label class="label">
-                                <DoorOpen class="icon" /> Room
-                            </label>
-                            <select v-model="form.room_id" class="input">
-                                <option value="">Auto-assign</option>
-                                <option v-for="room in rooms" :key="room.id" :value="room.id">
-                                    {{ room.name }} ({{ room.room_type.title }})
-                                </option>
-                            </select>
-                        </div>
+            <label class="space-y-2">
+              <span class="text-sm font-bold text-slate-700">Emergency contact name</span>
+              <input v-model="form.emergency_contact_name" type="text" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100" />
+              <InputError :message="form.errors.emergency_contact_name" />
+            </label>
 
-                        <!-- Notes -->
-                        <div>
-                            <label class="label">
-                                <StickyNote class="icon" /> Notes
-                            </label>
-                            <textarea
-                                v-model="form.notes"
-                                rows="3"
-                                class="input"
-                            />
-                        </div>
+            <label class="space-y-2">
+              <span class="text-sm font-bold text-slate-700">Emergency contact phone</span>
+              <input v-model="form.emergency_contact_phone" type="text" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100" />
+              <InputError :message="form.errors.emergency_contact_phone" />
+            </label>
 
-                        <!-- Actions -->
-                        <div class="flex gap-4 pt-6">
-                            <button
-                                class="flex-1 btn-primary"
-                                :disabled="form.processing"
-                            >
-                                <Save class="w-5 h-5" />
-                                Create Booking
-                            </button>
+            <label class="space-y-2">
+              <span class="text-sm font-bold text-slate-700">Check-in date</span>
+              <input v-model="form.check_in" type="date" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100" />
+              <InputError :message="form.errors.check_in" />
+            </label>
 
-                            <Link
-                                :href="route('frontdesk.bookings.index')"
-                                class="btn-secondary"
-                            >
-                                Cancel
-                            </Link>
-                        </div>
-                    </form>
+            <label class="space-y-2">
+              <span class="text-sm font-bold text-slate-700">Check-out date</span>
+              <input v-model="form.check_out" type="date" :min="form.check_in || undefined" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100" />
+              <InputError :message="form.errors.check_out" />
+            </label>
+
+            <label class="space-y-2 md:col-span-2">
+              <span class="text-sm font-bold text-slate-700">Purpose of stay</span>
+              <input v-model="form.purpose_of_stay" type="text" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100" />
+              <InputError :message="form.errors.purpose_of_stay" />
+            </label>
+
+            <label class="space-y-2 md:col-span-2">
+              <span class="text-sm font-bold text-slate-700">Special requests</span>
+              <textarea v-model="form.special_requests" rows="4" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100" />
+              <InputError :message="form.errors.special_requests" />
+            </label>
+          </div>
+        </section>
+
+        <aside class="space-y-6">
+          <section class="rounded-[2rem] bg-[linear-gradient(145deg,_#0f172a,_#1e293b)] p-6 text-white shadow-sm">
+            <p class="text-[11px] font-black uppercase tracking-[0.24em] text-slate-300">Reservation summary</p>
+            <h2 class="mt-3 text-2xl font-black tracking-tight">{{ form.guest_name || 'Guest details' }}</h2>
+
+            <div class="mt-6 space-y-4">
+              <div class="flex items-start gap-3 rounded-[1.5rem] bg-white/10 px-4 py-4">
+                <CalendarDays class="mt-0.5 h-4 w-4 text-slate-200" />
+                <div>
+                  <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-300">Stay</p>
+                  <p class="mt-1 text-sm font-bold text-white">{{ form.check_in || 'Select date' }} to {{ form.check_out || 'Select date' }}</p>
+                  <p class="mt-1 text-xs text-slate-300">
+                    {{ nights ? `${nights} night${nights === 1 ? '' : 's'}` : 'Waiting for valid dates' }}
+                  </p>
                 </div>
-            </div>
-        </div>
-    </FrontDeskLayout>
-</template>
+              </div>
 
-<style scoped>
-.label {
-    @apply text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2;
-}
-.input {
-    @apply w-full px-5 py-4 bg-slate-50 border-2 border-slate-50 rounded-2xl font-bold
-           focus:bg-white focus:border-indigo-600 transition;
-}
-.btn-primary {
-    @apply flex items-center justify-center gap-3 py-5 bg-slate-900 text-white
-           rounded-3xl font-black text-lg hover:bg-indigo-600 transition;
-}
-.btn-secondary {
-    @apply flex items-center justify-center py-5 bg-slate-100 text-slate-600
-           rounded-3xl font-black text-lg hover:bg-slate-200;
-}
-.icon {
-    @apply w-3 h-3;
-}
-</style>
+              <div class="flex items-start gap-3 rounded-[1.5rem] bg-white/10 px-4 py-4">
+                <UserRound class="mt-0.5 h-4 w-4 text-slate-200" />
+                <div>
+                  <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-300">Room</p>
+                  <p class="mt-1 text-sm font-bold text-white">
+                    {{ selectedRoom ? `${selectedRoom.room_type?.title} - ${selectedRoom.name || selectedRoom.room_number}` : 'Select room' }}
+                  </p>
+                  <p class="mt-1 text-xs text-slate-300">
+                    Estimated room value: ₦{{ estimatedTotal.toLocaleString() }}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="rounded-[1.5rem] border border-slate-200 bg-slate-50 px-5 py-5">
+            <div class="flex items-start gap-3">
+              <ShieldCheck class="mt-0.5 h-5 w-5 text-slate-500" />
+              <div class="space-y-2 text-sm text-slate-600">
+                <p class="font-bold text-slate-900">Front desk workflow</p>
+                <p>This creates a confirmed booking with the assigned room already reserved for the guest.</p>
+                <p>Payments and extra charges can then be posted against the booking and room from the folio screen.</p>
+              </div>
+            </div>
+          </section>
+
+          <div class="flex flex-col gap-3">
+            <button
+              type="submit"
+              :disabled="form.processing"
+              class="inline-flex w-full items-center justify-center gap-3 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-bold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Save class="h-4 w-4" />
+              {{ form.processing ? 'Creating reservation...' : 'Create reservation' }}
+            </button>
+
+            <Link
+              :href="route('frontdesk.bookings.index')"
+              class="inline-flex w-full items-center justify-center rounded-2xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+            >
+              Cancel
+            </Link>
+          </div>
+        </aside>
+      </form>
+    </div>
+  </FrontDeskLayout>
+</template>

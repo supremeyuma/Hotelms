@@ -24,7 +24,7 @@ const label = computed(() => {
     checked_in: 'Checked In',
     checked_out: 'Checked Out',
     cancelled: 'Cancelled',
-    active: 'Active',
+    active: 'Checked In',
   }[props.status] ?? props.status;
 });
 

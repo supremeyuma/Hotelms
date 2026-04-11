@@ -24,7 +24,7 @@ function checkedInRoomsCount(booking) {
 }
 
 function canCheckIn(booking) {
-    return (booking.status === 'confirmed' || booking.status === 'active' || booking.status === 'checked_in') && 
+    return (booking.status === 'confirmed' || booking.status === 'checked_in' || booking.status === 'active') && 
            checkedInRoomsCount(booking) < booking.quantity;
 }
 
@@ -125,7 +125,7 @@ function formatDate(d) {
                             </button>
 
                             <button
-                                v-if="booking.status === 'active' || booking.status === 'checked_in'"
+                                v-if="booking.status === 'checked_in' || booking.status === 'active'"
                                 @click="$emit('checkout', booking)"
                                 class="flex items-center gap-2 px-4 py-2 bg-rose-50 text-rose-600 rounded-xl text-xs font-black hover:bg-rose-600 hover:text-white transition-all active:scale-95"
                             >

@@ -72,7 +72,20 @@ class BookingsController extends Controller
             ->where('status', 'available')
             ->get();
 
-        return Inertia::render('FrontDesk/Bookings/Create', ['rooms' => $rooms]);
+        return Inertia::render('FrontDesk/Bookings/Create', [
+            'rooms' => $rooms->map(function (Room $room) {
+                return [
+                    'id' => $room->id,
+                    'name' => $room->name,
+                    'room_number' => $room->room_number,
+                    'room_type' => [
+                        'id' => $room->roomType?->id,
+                        'title' => $room->roomType?->title,
+                        'base_price' => (float) ($room->roomType?->base_price ?? 0),
+                    ],
+                ];
+            })->values(),
+        ]);
     }
 
     public function store(Request $request)
@@ -81,20 +94,30 @@ class BookingsController extends Controller
             'guest_name' => 'required|string|max:255',
             'guest_email' => 'nullable|email|max:255',
             'guest_phone' => 'nullable|string|max:20',
-            'room_id' => 'nullable|exists:rooms,id',
+            'room_id' => 'required|exists:rooms,id',
             'check_in' => 'required|date|after_or_equal:today',
             'check_out' => 'required|date|after:check_in',
-            'notes' => 'nullable|string|max:1000',
+            'adults' => 'required|integer|min:1',
+            'children' => 'nullable|integer|min:0',
+            'emergency_contact_name' => 'nullable|string|max:255',
+            'emergency_contact_phone' => 'nullable|string|max:20',
+            'purpose_of_stay' => 'nullable|string|max:255',
+            'special_requests' => 'nullable|string|max:1000',
         ]);
 
-        $booking = $this->bookingService->createBooking($data, auth()->user());
+        $booking = $this->bookingService->createBooking([
+            ...$data,
+            'status' => 'confirmed',
+            'payment_status' => 'pending',
+        ]);
 
-        return redirect()->route('frontdesk.bookings.index')
+        return redirect()->route('frontdesk.bookings.show', $booking)
             ->with('success', "Booking created successfully: {$booking->booking_code}");
     }
 
     public function edit(Booking $booking)
     {
+        $this->bookingService->normalizeLegacyCheckedInStatuses();
         $booking->load(['room.roomType', 'rooms.roomType', 'user']);
         $rooms = Room::with('roomType')->where('status', 'available')->get();
         $details = $booking->details ?? [];
@@ -137,7 +160,7 @@ class BookingsController extends Controller
             'emergency_contact_phone' => 'nullable|string|max:20',
             'purpose_of_stay' => 'nullable|string|max:255',
             'special_requests' => 'nullable|string|max:1000',
-            'status' => 'required|in:pending_payment,confirmed,active,checked_in,checked_out,cancelled',
+            'status' => 'required|in:pending_payment,confirmed,checked_in,checked_out,cancelled',
         ]);
 
         $this->bookingService->updateBooking($booking, $data);
@@ -166,7 +189,7 @@ class BookingsController extends Controller
                 'special_requests' => $booking->special_requests,
                 'check_in' => optional($booking->check_in)?->toDateString(),
                 'check_out' => optional($booking->check_out)?->toDateString(),
-                'status' => $booking->status,
+                'status' => $booking->status === 'active' ? 'checked_in' : $booking->status,
                 'total_amount' => (float) ($booking->total_amount ?? 0),
                 'created_at' => optional($booking->created_at)?->toIso8601String(),
                 'checked_in_rooms_count' => $booking->checked_in_rooms_count,
@@ -258,7 +281,7 @@ class BookingsController extends Controller
             'room_id' => $booking->room_id,
             'check_in' => optional($booking->check_in)?->toDateString(),
             'check_out' => optional($booking->check_out)?->toDateString(),
-            'status' => $booking->status,
+            'status' => $booking->status === 'active' ? 'checked_in' : $booking->status,
             'guest_name' => $booking->guest_name ?: optional($booking->user)->name ?: '',
             'guest_email' => $booking->guest_email,
             'guest_phone' => $booking->guest_phone,

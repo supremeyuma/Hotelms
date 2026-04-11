@@ -142,6 +142,7 @@ class BookingAdminController extends Controller
 
     public function edit(Booking $booking)
     {
+        $this->service->normalizeLegacyCheckedInStatuses();
         $booking->load(['room.roomType', 'rooms.roomType', 'roomType', 'user', 'charges', 'payments']);
         $rooms = Room::with('roomType')->get();
         $details = $booking->details ?? [];
@@ -169,7 +170,6 @@ class BookingAdminController extends Controller
             'statusOptions' => [
                 ['label' => 'Pending payment', 'value' => 'pending_payment'],
                 ['label' => 'Confirmed', 'value' => 'confirmed'],
-                ['label' => 'Active', 'value' => 'active'],
                 ['label' => 'Checked in', 'value' => 'checked_in'],
                 ['label' => 'Checked out', 'value' => 'checked_out'],
                 ['label' => 'Cancelled', 'value' => 'cancelled'],
@@ -183,7 +183,7 @@ class BookingAdminController extends Controller
             'room_id' => 'required|exists:rooms,id',
             'check_in' => 'required|date',
             'check_out' => 'required|date|after:check_in',
-            'status' => 'required|in:pending_payment,confirmed,active,checked_in,checked_out,cancelled',
+            'status' => 'required|in:pending_payment,confirmed,checked_in,checked_out,cancelled',
             'guests' => 'nullable|integer|min:1',
             'adults' => 'required|integer|min:1',
             'children' => 'nullable|integer|min:0',
@@ -292,7 +292,7 @@ class BookingAdminController extends Controller
             'room_id' => $booking->room_id,
             'check_in' => optional($booking->check_in)->toDateString(),
             'check_out' => optional($booking->check_out)->toDateString(),
-            'status' => $booking->status,
+            'status' => $booking->status === 'active' ? 'checked_in' : $booking->status,
             'guests' => (int) ($booking->guests ?: (($booking->adults ?? 0) + ($booking->children ?? 0)) ?: 1),
             'adults' => (int) ($booking->adults ?? 1),
             'children' => (int) ($booking->children ?? 0),
