@@ -49,6 +49,8 @@ Route::middleware(['auth', 'role:manager|md|superuser'])->prefix('admin')->as('a
         Route::get('discount-codes', [DiscountCodeController::class, 'index'])->name('discount-codes.index');
         Route::post('discount-codes', [DiscountCodeController::class, 'store'])->name('discount-codes.store');
         Route::patch('discount-codes/{discountCode}/toggle', [DiscountCodeController::class, 'toggle'])->name('discount-codes.toggle');
+        Route::patch('discount-codes/{discountCode}/extend', [DiscountCodeController::class, 'extend'])->name('discount-codes.extend');
+        Route::delete('discount-codes/{discountCode}', [DiscountCodeController::class, 'destroy'])->name('discount-codes.destroy');
 
         Route::prefix('staff')->name('staff.')->group(function () {
             Route::get('/', [StaffController::class, 'index'])->name('index');

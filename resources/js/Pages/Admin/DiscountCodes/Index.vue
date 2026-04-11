@@ -2,7 +2,7 @@
 import ManagerLayout from '@/Layouts/Staff/ManagerLayout.vue'
 import InputError from '@/Components/InputError.vue'
 import { Head, router, useForm } from '@inertiajs/vue3'
-import { CalendarClock, Percent, Plus, Tag, TicketSlash } from 'lucide-vue-next'
+import { CalendarClock, Percent, Plus, Tag, TicketSlash, Trash2 } from 'lucide-vue-next'
 
 const props = defineProps({
   codes: Array,
@@ -32,6 +32,33 @@ function submit() {
 
 function toggle(code) {
   router.patch(route('admin.discount-codes.toggle', code.id), {}, {
+    preserveScroll: true,
+  })
+}
+
+function extendFormFor(code) {
+  return useForm({
+    valid_until: code.valid_until || '',
+  })
+}
+
+const extendForms = Object.fromEntries(props.codes.map((code) => [code.id, extendFormFor(code)]))
+const deleteForms = Object.fromEntries(props.codes.map((code) => [code.id, useForm({})]))
+
+function extendExpiry(code) {
+  const form = extendForms[code.id]
+
+  form.patch(route('admin.discount-codes.extend', code.id), {
+    preserveScroll: true,
+  })
+}
+
+function destroyCode(code) {
+  if (!window.confirm(`Delete discount code ${code.code}? This cannot be undone.`)) {
+    return
+  }
+
+  deleteForms[code.id].delete(route('admin.discount-codes.destroy', code.id), {
     preserveScroll: true,
   })
 }
@@ -262,6 +289,46 @@ function statusClass(code) {
                 <p class="mt-1 text-sm text-slate-500">
                   {{ code.creator || 'System user not recorded' }}
                 </p>
+              </div>
+            </div>
+
+            <div class="mt-5 grid gap-4 xl:grid-cols-[1fr_auto]">
+              <form @submit.prevent="extendExpiry(code)" class="rounded-[1.5rem] border border-slate-200 p-4">
+                <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Extend expiry</p>
+                <div class="mt-3 flex flex-col gap-3 md:flex-row md:items-start">
+                  <div class="flex-1">
+                    <input
+                      v-model="extendForms[code.id].valid_until"
+                      type="datetime-local"
+                      class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-slate-400"
+                    />
+                    <InputError :message="extendForms[code.id].errors.valid_until" class="mt-2" />
+                  </div>
+
+                  <button
+                    type="submit"
+                    :disabled="extendForms[code.id].processing"
+                    class="inline-flex items-center justify-center rounded-2xl bg-slate-900 px-4 py-3 text-sm font-bold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {{ extendForms[code.id].processing ? 'Updating...' : 'Extend expiry' }}
+                  </button>
+                </div>
+              </form>
+
+              <div class="rounded-[1.5rem] border border-rose-200 bg-rose-50 p-4">
+                <p class="text-[11px] font-black uppercase tracking-[0.18em] text-rose-500">Delete code</p>
+                <p class="mt-3 text-sm leading-6 text-rose-700">
+                  Unused codes can be removed permanently. Codes with redemption history stay protected for audit safety.
+                </p>
+                <button
+                  type="button"
+                  @click="destroyCode(code)"
+                  :disabled="deleteForms[code.id].processing"
+                  class="mt-4 inline-flex items-center gap-2 rounded-2xl border border-rose-200 bg-white px-4 py-3 text-sm font-bold text-rose-700 transition hover:border-rose-300 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <Trash2 class="h-4 w-4" />
+                  {{ deleteForms[code.id].processing ? 'Deleting...' : 'Delete code' }}
+                </button>
               </div>
             </div>
           </article>

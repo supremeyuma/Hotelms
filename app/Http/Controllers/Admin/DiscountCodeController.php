@@ -101,4 +101,31 @@ class DiscountCodeController extends Controller
             ? 'Discount code activated.'
             : 'Discount code paused.');
     }
+
+    public function extend(Request $request, DiscountCode $discountCode)
+    {
+        $data = $request->validate([
+            'valid_until' => ['required', 'date', 'after:now'],
+        ]);
+
+        $discountCode->update([
+            'valid_until' => $data['valid_until'],
+        ]);
+
+        return back()->with('success', 'Discount code expiration updated.');
+    }
+
+    public function destroy(DiscountCode $discountCode)
+    {
+        if ($discountCode->redemptions()->exists()) {
+            return back()->withErrors([
+                'discount_code' => 'This discount code has redemption history and cannot be deleted.',
+            ]);
+        }
+
+        $discountCode->delete();
+
+        return redirect()->route('admin.discount-codes.index')
+            ->with('success', 'Discount code deleted successfully.');
+    }
 }
