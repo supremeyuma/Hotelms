@@ -194,13 +194,24 @@ class BookingController extends Controller
             'guest_name' => 'required|string|max:255',
             'guest_email' => 'required|email',
             'guest_phone' => 'required|string|max:20',
+            'emergency_contact_name' => 'nullable|string|max:255',
+            'emergency_contact_phone' => 'nullable|string|max:20',
+            'purpose_of_stay' => 'nullable|string|max:255',
             'special_requests' => 'nullable|string|max:1000',
         ]);
 
         $booking = Session::get('booking');
         if (!$booking) return redirect()->route('booking.search');
 
-        $booking = array_merge($booking, $request->only(['guest_name','guest_email','guest_phone','special_requests']));
+        $booking = array_merge($booking, $request->only([
+            'guest_name',
+            'guest_email',
+            'guest_phone',
+            'emergency_contact_name',
+            'emergency_contact_phone',
+            'purpose_of_stay',
+            'special_requests',
+        ]));
 
         // Store updated booking in session
         Session::put('booking', $booking);
@@ -289,6 +300,9 @@ class BookingController extends Controller
                     'children' => $bookingData['children'] ?? 0,
                     'guest_email' => $bookingData['guest_email'],
                     'guest_phone' => $bookingData['guest_phone'],
+                    'emergency_contact_name' => $bookingData['emergency_contact_name'] ?? null,
+                    'emergency_contact_phone' => $bookingData['emergency_contact_phone'] ?? null,
+                    'purpose_of_stay' => $bookingData['purpose_of_stay'] ?? null,
                     'special_requests' => $bookingData['special_requests'] ?? null,
                     'quantity' => $bookingData['quantity'],
                     'selected_room_ids' => $bookingData['selected_room_ids'] ?? [],
@@ -597,6 +611,9 @@ public function payment(Booking $booking)
             'guest_name' => $booking->guest_name,
             'guest_email' => $booking->guest_email,
             'guest_phone' => $booking->guest_phone,
+            'emergency_contact_name' => $booking->emergency_contact_name,
+            'emergency_contact_phone' => $booking->emergency_contact_phone,
+            'purpose_of_stay' => $booking->purpose_of_stay,
             'special_requests' => $booking->special_requests,
             'total_amount' => (float) $booking->total_amount,
             'discount_code' => $discountSummary['code'] ?? null,

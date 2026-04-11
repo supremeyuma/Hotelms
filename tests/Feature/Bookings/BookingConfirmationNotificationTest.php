@@ -93,6 +93,9 @@ class BookingConfirmationNotificationTest extends TestCase
             'guest_name' => 'Jane Guest',
             'guest_email' => 'jane@example.com',
             'guest_phone' => '08000000000',
+            'emergency_contact_name' => 'John Guest',
+            'emergency_contact_phone' => '08011111111',
+            'purpose_of_stay' => 'Leisure',
             'details' => [],
         ]);
     }

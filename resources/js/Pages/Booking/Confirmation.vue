@@ -188,6 +188,29 @@ onBeforeUnmount(() => {
               </p>
             </div>
 
+            <div
+              v-if="booking.guest_phone || booking.emergency_contact_name || booking.emergency_contact_phone || booking.purpose_of_stay || booking.special_requests"
+              class="grid gap-4 rounded-[2rem] border border-slate-100 bg-slate-50 p-6 md:grid-cols-2"
+            >
+              <div v-if="booking.guest_phone">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Guest Phone</p>
+                <p class="text-sm font-medium text-slate-700">{{ booking.guest_phone }}</p>
+              </div>
+              <div v-if="booking.purpose_of_stay">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Purpose of Stay</p>
+                <p class="text-sm font-medium text-slate-700">{{ booking.purpose_of_stay }}</p>
+              </div>
+              <div v-if="booking.emergency_contact_name || booking.emergency_contact_phone">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Emergency Contact</p>
+                <p v-if="booking.emergency_contact_name" class="font-bold text-slate-900">{{ booking.emergency_contact_name }}</p>
+                <p v-if="booking.emergency_contact_phone" class="text-sm font-medium text-slate-700">{{ booking.emergency_contact_phone }}</p>
+              </div>
+              <div v-if="booking.special_requests" class="md:col-span-2">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Special Requests</p>
+                <p class="text-sm font-medium text-slate-700">{{ booking.special_requests }}</p>
+              </div>
+            </div>
+
             <div v-if="pre_check_in_url" class="rounded-[2rem] border border-emerald-100 bg-emerald-50 p-6 flex items-start gap-4">
               <div class="mt-1 flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-emerald-600 shadow-sm">
                 <KeyRound class="w-5 h-5" />

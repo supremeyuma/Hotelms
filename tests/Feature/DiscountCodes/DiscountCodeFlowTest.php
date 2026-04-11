@@ -69,6 +69,9 @@ class DiscountCodeFlowTest extends TestCase
                 'guest_name' => 'Guest Tester',
                 'guest_email' => 'guest@example.com',
                 'guest_phone' => '08000000000',
+                'emergency_contact_name' => 'Backup Guest',
+                'emergency_contact_phone' => '08099999999',
+                'purpose_of_stay' => 'Business',
             ],
         ])->post(route('booking.discount.apply'), [
             'discount_code' => 'ROOM10',
@@ -81,6 +84,9 @@ class DiscountCodeFlowTest extends TestCase
         $response->assertRedirect(route('booking.payment', $booking));
         $this->assertNotNull($booking);
         $this->assertEquals(184500.00, (float) $booking->total_amount);
+        $this->assertSame('Backup Guest', $booking->emergency_contact_name);
+        $this->assertSame('08099999999', $booking->emergency_contact_phone);
+        $this->assertSame('Business', $booking->purpose_of_stay);
         $this->assertSame('ROOM10', data_get($booking->details, 'discount.code'));
         $this->assertDatabaseHas('discount_code_redemptions', [
             'discount_code_id' => DiscountCode::where('code', 'ROOM10')->value('id'),

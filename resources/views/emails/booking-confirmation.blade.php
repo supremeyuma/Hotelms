@@ -54,6 +54,21 @@
                 </div>
             @endif
 
+            @if($booking->guest_phone || $booking->emergency_contact_name || $booking->emergency_contact_phone || $booking->purpose_of_stay)
+                <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 18px; padding: 24px; margin-bottom: 24px;">
+                    <h2 style="margin: 0 0 16px; font-size: 18px; color: #0f172a;">Guest Information</h2>
+                    @if($booking->guest_phone)
+                        <p style="margin: 0 0 10px;"><strong>Guest Phone:</strong> {{ $booking->guest_phone }}</p>
+                    @endif
+                    @if($booking->purpose_of_stay)
+                        <p style="margin: 0 0 10px;"><strong>Purpose of Stay:</strong> {{ $booking->purpose_of_stay }}</p>
+                    @endif
+                    @if($booking->emergency_contact_name || $booking->emergency_contact_phone)
+                        <p style="margin: 0 0 10px;"><strong>Emergency Contact:</strong> {{ $booking->emergency_contact_name ?: 'Not provided' }}@if($booking->emergency_contact_phone) ({{ $booking->emergency_contact_phone }})@endif</p>
+                    @endif
+                </div>
+            @endif
+
             <div style="background-color: #f0fdf4; border-left: 4px solid #16a34a; padding: 18px 20px; border-radius: 14px;">
                 <p style="margin: 0 0 8px; font-weight: 700; color: #166534;">Arrival Note</p>
                 <p style="margin: 0 0 14px; color: #475569;">

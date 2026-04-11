@@ -205,6 +205,26 @@ function removeDiscount() {
                   </span>
                 </div>
                 <p class="text-sm text-slate-500 font-medium">{{ booking.guest_email }}</p>
+                <p class="text-sm text-slate-500 font-medium">{{ booking.guest_phone }}</p>
+              </div>
+
+              <div
+                v-if="booking.emergency_contact_name || booking.emergency_contact_phone || booking.purpose_of_stay || booking.special_requests"
+                class="mt-6 grid gap-4 rounded-3xl border border-slate-200 bg-slate-50 p-5 md:grid-cols-2"
+              >
+                <div v-if="booking.emergency_contact_name || booking.emergency_contact_phone">
+                  <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Emergency Contact</p>
+                  <p v-if="booking.emergency_contact_name" class="font-bold text-slate-800">{{ booking.emergency_contact_name }}</p>
+                  <p v-if="booking.emergency_contact_phone" class="text-sm font-medium text-slate-500">{{ booking.emergency_contact_phone }}</p>
+                </div>
+                <div v-if="booking.purpose_of_stay">
+                  <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Purpose of Stay</p>
+                  <p class="text-sm font-medium text-slate-600">{{ booking.purpose_of_stay }}</p>
+                </div>
+                <div v-if="booking.special_requests" class="md:col-span-2">
+                  <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Special Requests</p>
+                  <p class="text-sm font-medium text-slate-600">{{ booking.special_requests }}</p>
+                </div>
               </div>
 
               <div class="mt-8 rounded-3xl border border-slate-200 bg-slate-50 p-5">

@@ -10,7 +10,8 @@ import {
   ChevronLeft,
   ArrowRight, 
   ShieldCheck,
-  ClipboardList
+  ClipboardList,
+  RefreshCw
 } from 'lucide-vue-next';
 
 const props = defineProps({
@@ -21,11 +22,14 @@ const form = useForm({
   guest_name: props.booking.guest_name || '',
   guest_email: props.booking.guest_email || '',
   guest_phone: props.booking.guest_phone || '',
+  emergency_contact_name: props.booking.emergency_contact_name || '',
+  emergency_contact_phone: props.booking.emergency_contact_phone || '',
+  purpose_of_stay: props.booking.purpose_of_stay || '',
   special_requests: props.booking.special_requests || '',
 });
 
 function submit() {
-  router.post('/booking/guest', form, {
+  form.post('/booking/guest', {
     preserveScroll: true,
   });
 }
@@ -132,6 +136,53 @@ function submit() {
                 </div>
               </div>
 
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-2">
+                  <label class="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Emergency Contact Name</label>
+                  <div class="relative group">
+                    <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-indigo-600 transition-colors">
+                      <User class="w-5 h-5" />
+                    </div>
+                    <input
+                      type="text"
+                      v-model="form.emergency_contact_name"
+                      placeholder="Jane Doe"
+                      class="block w-full pl-12 pr-5 py-4 bg-slate-50 border-2 border-slate-50 rounded-2xl focus:bg-white focus:border-indigo-600 focus:ring-0 transition-all font-bold text-slate-700"
+                    />
+                  </div>
+                </div>
+
+                <div class="space-y-2">
+                  <label class="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Emergency Contact Phone</label>
+                  <div class="relative group">
+                    <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-indigo-600 transition-colors">
+                      <Phone class="w-5 h-5" />
+                    </div>
+                    <input
+                      type="text"
+                      v-model="form.emergency_contact_phone"
+                      placeholder="+234 801 234 5678"
+                      class="block w-full pl-12 pr-5 py-4 bg-slate-50 border-2 border-slate-50 rounded-2xl focus:bg-white focus:border-indigo-600 focus:ring-0 transition-all font-bold text-slate-700"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div class="space-y-2">
+                <label class="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Purpose of Stay</label>
+                <div class="relative group">
+                  <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-indigo-600 transition-colors">
+                    <ClipboardList class="w-5 h-5" />
+                  </div>
+                  <input
+                    type="text"
+                    v-model="form.purpose_of_stay"
+                    placeholder="Business, leisure, events..."
+                    class="block w-full pl-12 pr-5 py-4 bg-slate-50 border-2 border-slate-50 rounded-2xl focus:bg-white focus:border-indigo-600 focus:ring-0 transition-all font-bold text-slate-700"
+                  />
+                </div>
+              </div>
+
               <div class="space-y-2">
                 <label class="text-xs font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center justify-between">
                   Special Requests
@@ -144,7 +195,7 @@ function submit() {
                   <textarea
                     v-model="form.special_requests"
                     rows="4"
-                    placeholder="Late arrival, extra towels, airport pickup..."
+                    placeholder="Late arrival, extra towels, airport pickup, allergies..."
                     class="block w-full pl-12 pr-5 py-4 bg-slate-50 border-2 border-slate-50 rounded-2xl focus:bg-white focus:border-indigo-600 focus:ring-0 transition-all font-medium text-slate-700"
                   ></textarea>
                 </div>
@@ -154,10 +205,12 @@ function submit() {
             <div class="pt-6 border-t border-slate-100">
               <button
                 type="submit"
-                class="w-full group flex items-center justify-center gap-3 py-5 bg-slate-900 text-white rounded-3xl font-black text-lg hover:bg-indigo-600 transition-all shadow-xl shadow-slate-200 active:scale-[0.98]"
+                :disabled="form.processing"
+                class="w-full group flex items-center justify-center gap-3 py-5 bg-slate-900 text-white rounded-3xl font-black text-lg hover:bg-indigo-600 transition-all shadow-xl shadow-slate-200 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Continue to Review
-                <ArrowRight class="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                <RefreshCw v-if="form.processing" class="w-5 h-5 animate-spin" />
+                <ArrowRight v-else class="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                {{ form.processing ? 'Saving Guest Details...' : 'Continue to Review' }}
               </button>
               
               <div class="flex items-center justify-center gap-4 mt-6 text-slate-400">
