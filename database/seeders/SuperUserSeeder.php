@@ -13,6 +13,8 @@ class SuperUserSeeder extends Seeder
     public function run(): void
     {
         $hasRoleSlugColumn = Schema::hasColumn('roles', 'slug');
+        $hasUserRoleIdColumn = Schema::hasColumn('users', 'role_id');
+        $hasUserSuspendedAtColumn = Schema::hasColumn('users', 'suspended_at');
 
         $mdRole = Role::findOrCreate('md', 'web');
 
@@ -36,8 +38,15 @@ class SuperUserSeeder extends Seeder
         $user->name = 'HotelMS Superuser';
         $user->password = 'superuser@!234';
         $user->email_verified_at = now();
-        $user->role_id = $mdRole->id;
-        $user->suspended_at = null;
+
+        if ($hasUserRoleIdColumn) {
+            $user->role_id = $mdRole->id;
+        }
+
+        if ($hasUserSuspendedAtColumn) {
+            $user->suspended_at = null;
+        }
+
         $user->save();
 
         if ($user->trashed()) {
