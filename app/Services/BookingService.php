@@ -66,16 +66,17 @@ class BookingService
             $checkOut = Carbon::parse($data['check_out']);
             $nights = max($checkIn->diffInDays($checkOut), 1);
 
-            // Inventory-level availability check (NO rooms yet)
-            $available = $this->availability->checkAvailability(
-                $data['room_type_id'],
-                $data['check_in'],
-                $data['check_out'],
-                $quantity
-            );
+            if ($selectedRoomIds === []) {
+                $available = $this->availability->checkAvailability(
+                    $data['room_type_id'],
+                    $data['check_in'],
+                    $data['check_out'],
+                    $quantity
+                );
 
-            if (! $available) {
-                throw new \Exception('Not enough rooms available for the selected dates.');
+                if (! $available) {
+                    throw new \Exception('Not enough rooms available for the selected dates.');
+                }
             }
 
             if (count($selectedRoomIds) !== $quantity) {
