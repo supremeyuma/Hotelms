@@ -1,5 +1,5 @@
 <script setup>
-import { ref,onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { router } from '@inertiajs/vue3';
 import PublicLayout from '@/Layouts/PublicLayout.vue';
 import { 
@@ -27,6 +27,45 @@ const paymentData = ref(null)
 const selectedProvider = ref(null)
 const flutterwaveReady = ref(false)
 const paystackReady = ref(false)
+const paymentLoadError = ref(null)
+
+const providerOptions = computed(() => {
+  const options = paymentData.value?.available_providers ?? []
+
+  if (options.length > 0) {
+    return options
+  }
+
+  if (paymentData.value?.provider) {
+    return [
+      {
+        value: paymentData.value.provider,
+        label: paymentData.value.provider === 'paystack' ? 'Paystack' : 'Flutterwave',
+      },
+    ]
+  }
+
+  return []
+})
+
+const shouldChooseProvider = computed(() => paymentMethod.value === 'online' && providerOptions.value.length > 1)
+const hasOnlineProvider = computed(() => providerOptions.value.length > 0)
+
+const applyProviderSelection = (data) => {
+  const options = data?.available_providers ?? []
+
+  if (options.length === 1) {
+    selectedProvider.value = options[0].value
+    return
+  }
+
+  if (data?.provider) {
+    selectedProvider.value = data.provider
+    return
+  }
+
+  selectedProvider.value = options[0]?.value ?? null
+}
 
 const loadFlutterwave = () => {
   return new Promise((resolve, reject) => {
@@ -65,8 +104,9 @@ const loadPaystack = () =>
   })
 
 
-  onMounted(async () => {
+onMounted(async () => {
   try {
+    paymentLoadError.value = null
     const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
     const res = await fetch('/payments/initialize-booking', {
       method: 'POST',
@@ -85,21 +125,22 @@ const loadPaystack = () =>
     if (!res.ok) throw new Error('Failed to load payment data')
 
     paymentData.value = await res.json()
-    selectedProvider.value = paymentData.value.provider
+    applyProviderSelection(paymentData.value)
 
     
 
     const promises = []
-    if (paymentData.value.available_providers.some(p => p.value === 'flutterwave')) {
+    if (providerOptions.value.some(p => p.value === 'flutterwave')) {
       promises.push(loadFlutterwave().catch(() => console.warn('Flutterwave load failed')))
     }
-    if (paymentData.value.available_providers.some(p => p.value === 'paystack')) {
+    if (providerOptions.value.some(p => p.value === 'paystack')) {
       promises.push(loadPaystack().catch(() => console.warn('Paystack load failed')))
     }
 
     await Promise.all(promises)
   } catch (e) {
     console.error('Payment initialization error:', e)
+    paymentLoadError.value = 'We could not load the available payment gateways right now.'
   }
 })
 
@@ -108,6 +149,12 @@ const processPayment = async () => {
   try {
     if (paymentMethod.value === 'offline') {
       router.post(`/booking/payment/${props.booking.id}/confirm`)
+      return
+    }
+
+    if (!hasOnlineProvider.value) {
+      alert('No online payment gateway is available right now. Please choose pay at checkout or contact reception.')
+      processing.value = false
       return
     }
 
@@ -150,6 +197,7 @@ const processPayment = async () => {
     }
 
     const data = await initRes.json()
+    applyProviderSelection(data)
 
     if (selectedProvider.value === 'flutterwave') {
       handleFlutterwave(data)
@@ -361,13 +409,18 @@ const removeDiscount = () => {
                 </div>
               </div>
 
+              <div v-if="paymentLoadError" class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
+                {{ paymentLoadError }}
+              </div>
+
               <!-- Provider Selection (shown when online payment is selected) -->
-              <div v-if="paymentMethod === 'online' && paymentData?.available_providers" class="space-y-3">
+              <div v-if="shouldChooseProvider" class="space-y-3">
                 <label class="block text-sm font-semibold text-slate-700 mb-3">Payment Provider</label>
                 <div class="space-y-2">
                   <button
-                    v-for="prov in paymentData.available_providers"
+                    v-for="prov in providerOptions"
                     :key="prov.value"
+                    type="button"
                     @click="selectedProvider = prov.value"
                     :class="[
                       'w-full flex items-center justify-between px-4 py-3 border-2 rounded-xl transition-all',
@@ -384,9 +437,16 @@ const removeDiscount = () => {
                 </div>
               </div>
 
+              <div v-else-if="paymentMethod === 'online' && selectedProvider" class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+                <p class="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700">Payment Gateway</p>
+                <p class="mt-1 text-sm font-bold text-emerald-900">
+                  {{ providerOptions.find((prov) => prov.value === selectedProvider)?.label || selectedProvider }}
+                </p>
+              </div>
+
               <button
                 @click="processPayment"
-                :disabled="processing"
+                :disabled="processing || (paymentMethod === 'online' && !selectedProvider && hasOnlineProvider)"
                 class="w-full group flex items-center justify-center gap-3 py-5 bg-emerald-600 text-white rounded-[2rem] font-black text-lg hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-100 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span v-if="processing">Processing...</span>
@@ -405,17 +465,7 @@ const removeDiscount = () => {
               </div>
             </div>
           </div>
-
-          <div class="bg-slate-900 p-4 text-center">
-            <p class="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">
-              Environment: <span class="text-amber-400">Sandbox / Demo Mode</span>
-            </p>
-          </div>
         </div>
-
-        <p class="mt-8 text-center text-xs text-slate-400 font-medium leading-relaxed max-w-[280px] mx-auto">
-          No real funds will be deducted. This is part of the reservation demonstration flow.
-        </p>
       </div>
     </div>
   </PublicLayout>
