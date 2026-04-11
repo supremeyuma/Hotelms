@@ -131,6 +131,9 @@ const occupancyText = computed(() => {
   if (props.children > 0) bits.push(`${props.children} child${props.children > 1 ? 'ren' : ''}`);
   return bits.join(', ');
 });
+
+const roomImageVisibilityEnabled = computed(() => Boolean(props.imageSettings?.show_room_images));
+const roomTypeImageVisibilityEnabled = computed(() => Boolean(props.imageSettings?.show_room_type_images));
 </script>
 
 <template>
@@ -177,28 +180,35 @@ const occupancyText = computed(() => {
           >
             <div class="grid lg:grid-cols-[1.1fr,1fr] gap-0">
               <div
-                class="relative bg-slate-100 min-h-[280px]"
-                :class="imageSettings.show_room_type_images && hasImages(roomType) ? 'cursor-zoom-in' : ''"
-                @click="imageSettings.show_room_type_images && hasImages(roomType) ? openGallery(roomType.images, `${roomType.name} photos`) : null"
+                class="relative min-h-[280px]"
+                :class="roomTypeImageVisibilityEnabled
+                  ? ['bg-slate-100', hasImages(roomType) ? 'cursor-zoom-in' : '']
+                  : 'bg-slate-950'"
+                @click="roomTypeImageVisibilityEnabled && hasImages(roomType) ? openGallery(roomType.images, `${roomType.name} photos`) : null"
               >
                 <img
-                  v-if="imageSettings.show_room_type_images && primaryImage(roomType)"
+                  v-if="roomTypeImageVisibilityEnabled && primaryImage(roomType)"
                   :src="primaryImage(roomType)"
                   :alt="roomType.name"
                   class="absolute inset-0 h-full w-full object-cover"
                 />
-                <div v-else class="absolute inset-0 flex items-center justify-center text-slate-300">
+                <div v-else-if="roomTypeImageVisibilityEnabled" class="absolute inset-0 flex items-center justify-center text-slate-300">
                   <ImageIcon class="w-16 h-16" />
                 </div>
                 <div
-                  v-if="imageSettings.show_room_type_images && hasImages(roomType)"
+                  v-if="roomTypeImageVisibilityEnabled && hasImages(roomType)"
                   class="pointer-events-none absolute left-6 top-6 z-10 inline-flex items-center gap-2 rounded-full border border-white/30 bg-slate-950/45 px-4 py-2 text-[11px] font-black uppercase tracking-[0.22em] text-white backdrop-blur"
                 >
                   <ImageIcon class="h-4 w-4" />
                   View Photos
                   <span class="text-white/70">{{ roomType.images.length }}</span>
                 </div>
-                <div class="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-slate-950/10 to-transparent"></div>
+                <div
+                  class="absolute inset-0"
+                  :class="roomTypeImageVisibilityEnabled
+                    ? 'bg-gradient-to-t from-slate-950/75 via-slate-950/10 to-transparent'
+                    : 'bg-gradient-to-r from-slate-950 via-slate-900 to-slate-800'"
+                ></div>
                 <div class="absolute left-6 right-6 bottom-6 flex items-end justify-between gap-4">
                   <div>
                     <p class="text-[10px] font-black text-white/70 uppercase tracking-[0.3em] mb-2">Room Type</p>
@@ -268,12 +278,13 @@ const occupancyText = computed(() => {
                     : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-lg'"
                 >
                   <div
+                    v-if="roomImageVisibilityEnabled"
                     class="relative h-48 bg-slate-100"
-                    :class="imageSettings.show_room_images && hasImages(room) ? 'cursor-zoom-in' : ''"
-                    @click.stop="imageSettings.show_room_images && hasImages(room) ? openGallery(room.images, `${room.name} photos`) : null"
+                    :class="hasImages(room) ? 'cursor-zoom-in' : ''"
+                    @click.stop="hasImages(room) ? openGallery(room.images, `${room.name} photos`) : null"
                   >
                     <img
-                      v-if="imageSettings.show_room_images && primaryImage(room)"
+                      v-if="primaryImage(room)"
                       :src="primaryImage(room)"
                       :alt="room.name"
                       class="h-full w-full object-cover transition duration-500 group-hover:scale-105"
@@ -282,7 +293,7 @@ const occupancyText = computed(() => {
                       <BedDouble class="w-14 h-14" />
                     </div>
                     <div
-                      v-if="imageSettings.show_room_images && hasImages(room)"
+                      v-if="hasImages(room)"
                       class="pointer-events-none absolute left-4 top-4 z-10 inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/90 px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-700 backdrop-blur"
                     >
                       <ImageIcon class="h-4 w-4" />
@@ -300,9 +311,19 @@ const occupancyText = computed(() => {
                     </div>
                   </div>
 
-                  <div class="p-5">
+                  <div class="p-5" :class="roomImageVisibilityEnabled ? '' : 'relative'">
+                    <div v-if="!roomImageVisibilityEnabled" class="absolute right-5 top-5">
+                      <div
+                        class="flex h-10 w-10 items-center justify-center rounded-2xl border backdrop-blur"
+                        :class="isSelected(roomType.id, room.id)
+                          ? 'border-indigo-500 bg-indigo-600 text-white'
+                          : 'border-slate-200 bg-slate-50 text-slate-500'"
+                      >
+                        <CheckCircle2 class="w-5 h-5" />
+                      </div>
+                    </div>
                     <div class="flex items-start justify-between gap-3">
-                      <div>
+                      <div :class="!roomImageVisibilityEnabled ? 'pr-14' : ''">
                         <h4 class="text-lg font-black text-slate-900">{{ room.name }}</h4>
                         <p v-if="roomSubtitle(room)" class="mt-1 text-xs font-bold uppercase tracking-widest text-slate-400">
                           {{ roomSubtitle(room) }}

@@ -85,9 +85,9 @@ onUnmounted(() => {
     <div
       v-if="show && currentImage"
       class="fixed inset-0 z-[100] flex flex-col bg-slate-950/95 backdrop-blur-xl"
-      @click.self="close"
+      @click="close"
     >
-      <div class="flex items-center justify-between gap-4 px-4 py-4 text-white md:px-8">
+      <div class="flex items-center justify-between gap-4 px-4 py-4 text-white md:px-8" @click.stop>
         <div class="min-w-0">
           <p class="truncate text-xs font-black uppercase tracking-[0.28em] text-white/60">
             {{ title }}
@@ -106,7 +106,7 @@ onUnmounted(() => {
         </button>
       </div>
 
-      <div class="relative flex flex-1 items-center justify-center px-4 pb-4 md:px-8">
+      <div class="relative flex flex-1 items-center justify-center px-4 pb-4 md:px-8" @click.stop>
         <button
           v-if="images.length > 1"
           type="button"
@@ -135,6 +135,7 @@ onUnmounted(() => {
       <div
         v-if="images.length > 1"
         class="flex gap-3 overflow-x-auto px-4 pb-6 md:px-8"
+        @click.stop
       >
         <button
           v-for="(image, index) in images"
