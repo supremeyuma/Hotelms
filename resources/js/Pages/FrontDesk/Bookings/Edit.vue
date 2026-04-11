@@ -3,7 +3,7 @@ import FrontDeskLayout from '@/Layouts/Staff/FrontDeskLayout.vue'
 import InputError from '@/Components/InputError.vue'
 import { Head, Link, useForm } from '@inertiajs/vue3'
 import { computed } from 'vue'
-import { ArrowLeft, CalendarDays, Save, ShieldCheck, UserRound } from 'lucide-vue-next'
+import { ArrowLeft, CalendarDays, DoorOpen, Save, ShieldCheck, UserRound } from 'lucide-vue-next'
 
 const props = defineProps({
   booking: { type: Object, required: true },
@@ -12,7 +12,7 @@ const props = defineProps({
 })
 
 const form = useForm({
-  room_id: props.booking.room_id ?? props.booking.assigned_room_options?.[0]?.id ?? '',
+  selected_room_ids: props.booking.selected_room_ids ?? props.booking.assigned_room_options?.map((room) => room.id) ?? [],
   guest_name: props.booking.guest_name ?? '',
   guest_email: props.booking.guest_email ?? '',
   guest_phone: props.booking.guest_phone ?? '',
@@ -30,22 +30,32 @@ const form = useForm({
 const roomOptions = computed(() => {
   const current = (props.booking.assigned_room_options ?? []).map((room) => ({
     id: room.id,
-    label: `${room.label} (currently assigned)`,
+    name: room.label,
+    room_number: room.label,
+    status: 'currently_assigned',
+    room_type: {
+      id: props.booking.room_type_id ?? null,
+      title: room.label.split(' - ')[0] ?? 'Assigned room',
+      base_price: props.booking.nightly_rate ?? 0,
+    },
   }))
 
   const available = props.rooms.map((room) => ({
-    id: room.id,
-    label: [
-      room.room_type?.title,
-      room.name || room.room_number,
-      room.status ? `(${String(room.status).replaceAll('_', ' ')})` : null,
-    ].filter(Boolean).join(' - '),
+    ...room,
+    room_number: room.room_number ?? room.name,
   }))
 
   return [...current, ...available].filter(
     (room, index, items) => items.findIndex((item) => Number(item.id) === Number(room.id)) === index
   )
 })
+
+const selectedRooms = computed(() =>
+  roomOptions.value.filter((room) => form.selected_room_ids.includes(room.id))
+)
+
+const selectedRoomTypeId = computed(() => selectedRooms.value[0]?.room_type?.id ?? null)
+const selectedRoomTypeName = computed(() => selectedRooms.value[0]?.room_type?.title ?? '')
 
 const nights = computed(() => {
   if (!form.check_in || !form.check_out) return 0
@@ -56,6 +66,38 @@ const nights = computed(() => {
 })
 
 const invalidStay = computed(() => Boolean(form.check_in && form.check_out && !nights.value))
+
+const estimatedTotal = computed(() => {
+  if (!selectedRooms.value.length || !nights.value) return 0
+
+  return selectedRooms.value.reduce(
+    (total, room) => total + (Number(room.room_type?.base_price || 0) * nights.value),
+    0
+  )
+})
+
+function isSelected(roomId) {
+  return form.selected_room_ids.includes(roomId)
+}
+
+function isDisabled(room) {
+  return Boolean(selectedRoomTypeId.value) && Number(room.room_type?.id) !== Number(selectedRoomTypeId.value)
+}
+
+function toggleRoom(roomId) {
+  if (form.processing) return
+
+  if (isSelected(roomId)) {
+    form.selected_room_ids = form.selected_room_ids.filter((id) => id !== roomId)
+    return
+  }
+
+  const room = roomOptions.value.find((item) => Number(item.id) === Number(roomId))
+
+  if (!room || isDisabled(room)) return
+
+  form.selected_room_ids = [...form.selected_room_ids, room.id]
+}
 
 function submit() {
   if (form.processing || invalidStay.value) return
@@ -104,7 +146,7 @@ function formatPreCheckInDate(value) {
 
           <h1 class="mt-4 text-3xl font-black tracking-tight text-slate-900">Edit reservation</h1>
           <p class="mt-2 text-sm text-slate-600">
-            Update guest details, stay information, and reservation notes before arrival.
+            Update guest details, stay information, and room allocation before arrival or while the booking is active.
           </p>
         </div>
       </div>
@@ -112,33 +154,75 @@ function formatPreCheckInDate(value) {
       <form @submit.prevent="submit" class="grid gap-8 xl:grid-cols-[minmax(0,1fr)_360px]">
         <section class="space-y-6 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
           <div class="grid gap-6 md:grid-cols-2">
-            <label class="space-y-2">
-              <span class="text-sm font-bold text-slate-700">Assigned room</span>
-              <select
-                v-model="form.room_id"
-                class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
-              >
-                <option v-for="room in roomOptions" :key="room.id" :value="room.id">
-                  {{ room.label }}
-                </option>
-              </select>
-              <InputError :message="form.errors.room_id" />
+            <label class="space-y-2 md:col-span-2">
+              <div class="flex items-center justify-between gap-3">
+                <span class="text-sm font-bold text-slate-700">Assigned room(s)</span>
+                <span class="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-slate-600">
+                  {{ form.selected_room_ids.length }} selected
+                </span>
+              </div>
+
+              <div class="grid gap-3 md:grid-cols-2">
+                <button
+                  v-for="room in roomOptions"
+                  :key="room.id"
+                  type="button"
+                  :disabled="isDisabled(room)"
+                  @click="toggleRoom(room.id)"
+                  class="rounded-[1.5rem] border px-4 py-4 text-left transition disabled:cursor-not-allowed disabled:opacity-45"
+                  :class="isSelected(room.id)
+                    ? 'border-emerald-400 bg-emerald-50 shadow-sm'
+                    : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white'"
+                >
+                  <div class="flex items-start justify-between gap-3">
+                    <div>
+                      <p class="text-sm font-black text-slate-900">{{ room.room_type?.title || 'Room' }}</p>
+                      <p class="mt-1 text-sm font-medium text-slate-600">{{ room.name || room.room_number }}</p>
+                      <p class="mt-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                        <span v-if="room.status === 'currently_assigned'">Currently assigned</span>
+                        <span v-else>{{ String(room.status || 'available').replaceAll('_', ' ') }}</span>
+                      </p>
+                    </div>
+                    <div
+                      class="flex h-9 w-9 items-center justify-center rounded-2xl border text-xs font-black"
+                      :class="isSelected(room.id)
+                        ? 'border-emerald-500 bg-emerald-500 text-white'
+                        : 'border-slate-300 bg-white text-slate-500'"
+                    >
+                      {{ isSelected(room.id) ? 'ON' : 'OFF' }}
+                    </div>
+                  </div>
+                </button>
+              </div>
+
+              <p class="text-xs font-medium text-slate-500">
+                All rooms kept under one booking code must stay within the same room type.
+              </p>
+              <InputError :message="form.errors.selected_room_ids" />
             </label>
 
             <label class="space-y-2">
               <span class="text-sm font-bold text-slate-700">Booking status</span>
-                <select
-                  v-model="form.status"
-                  class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
-                >
-                  <option value="pending_payment">Pending payment</option>
-                  <option value="confirmed">Confirmed</option>
-                  <option value="checked_in">Checked in</option>
-                  <option value="checked_out">Checked out</option>
-                  <option value="cancelled">Cancelled</option>
-                </select>
+              <select
+                v-model="form.status"
+                class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+              >
+                <option value="pending_payment">Pending payment</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="checked_in">Checked in</option>
+                <option value="checked_out">Checked out</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
               <InputError :message="form.errors.status" />
             </label>
+
+            <div class="rounded-[1.5rem] border border-slate-200 bg-slate-50 px-4 py-4">
+              <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">Current room estimate</p>
+              <p class="mt-2 text-lg font-black text-slate-900">NGN {{ estimatedTotal.toLocaleString() }}</p>
+              <p class="mt-1 text-sm text-slate-500">
+                Based on {{ selectedRooms.length || 0 }} room<span v-if="selectedRooms.length !== 1">s</span> for {{ nights || 0 }} night<span v-if="nights !== 1">s</span>.
+              </p>
+            </div>
 
             <label class="space-y-2 md:col-span-2">
               <span class="text-sm font-bold text-slate-700">Guest full name</span>
@@ -275,6 +359,23 @@ function formatPreCheckInDate(value) {
                   <p class="mt-1 text-sm font-bold text-white">{{ form.check_in || 'Select date' }} to {{ form.check_out || 'Select date' }}</p>
                   <p class="mt-1 text-xs text-slate-300">
                     {{ nights ? `${nights} night${nights === 1 ? '' : 's'}` : 'Waiting for valid dates' }}
+                  </p>
+                </div>
+              </div>
+
+              <div class="flex items-start gap-3 rounded-[1.5rem] bg-white/10 px-4 py-4">
+                <DoorOpen class="mt-0.5 h-4 w-4 text-slate-200" />
+                <div>
+                  <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-300">Rooms</p>
+                  <p class="mt-1 text-sm font-bold text-white">
+                    {{ selectedRooms.length ? `${selectedRooms.length} ${selectedRoomTypeName || 'room'} selected` : 'Select room(s)' }}
+                  </p>
+                  <p class="mt-1 text-xs text-slate-300">
+                    <span v-if="selectedRooms.length">{{ selectedRooms.map((room) => room.name || room.room_number).join(', ') }}</span>
+                    <span v-else>Select one or more rooms to continue</span>
+                  </p>
+                  <p class="mt-2 text-xs text-slate-300">
+                    Estimated room value: NGN {{ estimatedTotal.toLocaleString() }}
                   </p>
                 </div>
               </div>

@@ -37,7 +37,7 @@ class FrontDeskDiscountCodeTest extends TestCase
             'guest_name' => 'Manual Guest',
             'guest_email' => 'desk@example.com',
             'guest_phone' => '08030000000',
-            'room_id' => $room->id,
+            'selected_room_ids' => [$room->id],
             'check_in' => now()->addDay()->toDateString(),
             'check_out' => now()->addDays(3)->toDateString(),
             'adults' => 2,
@@ -56,6 +56,93 @@ class FrontDeskDiscountCodeTest extends TestCase
             'redeemable_id' => $booking->id,
             'status' => 'applied',
         ]);
+    }
+
+    public function test_frontdesk_can_create_manual_booking_with_multiple_rooms_under_one_booking_code(): void
+    {
+        $frontdesk = $this->frontdeskUser();
+        [$property, $roomType, $roomOne] = $this->roomFixture(80000);
+        $roomTwo = Room::create([
+            'property_id' => $property->id,
+            'room_type_id' => $roomType->id,
+            'name' => 'Executive 202',
+            'status' => 'available',
+            'meta' => [],
+        ]);
+
+        $response = $this->actingAs($frontdesk)->post(route('frontdesk.bookings.store'), [
+            'guest_name' => 'Family Guest',
+            'guest_email' => 'family@example.com',
+            'guest_phone' => '08035550000',
+            'selected_room_ids' => [$roomOne->id, $roomTwo->id],
+            'check_in' => now()->addDay()->toDateString(),
+            'check_out' => now()->addDays(3)->toDateString(),
+            'adults' => 4,
+            'children' => 2,
+        ]);
+
+        $booking = Booking::with('rooms')->latest('id')->first();
+
+        $response->assertRedirect(route('frontdesk.bookings.show', $booking));
+        $this->assertSame('confirmed', $booking->status);
+        $this->assertSame(2, (int) $booking->quantity);
+        $this->assertSame($roomType->id, (int) $booking->room_type_id);
+        $this->assertEquals(320000.00, (float) $booking->total_amount);
+        $this->assertSame([$roomOne->id, $roomTwo->id], $booking->rooms->pluck('id')->sort()->values()->all());
+    }
+
+    public function test_frontdesk_can_update_booking_to_assign_multiple_rooms_under_one_booking_code(): void
+    {
+        $frontdesk = $this->frontdeskUser();
+        [$property, $roomType, $roomOne] = $this->roomFixture(80000);
+        $roomTwo = Room::create([
+            'property_id' => $property->id,
+            'room_type_id' => $roomType->id,
+            'name' => 'Executive 202',
+            'status' => 'available',
+            'meta' => [],
+        ]);
+
+        $booking = Booking::create([
+            'property_id' => $property->id,
+            'room_id' => $roomOne->id,
+            'booking_code' => 'FD-MULTI-1',
+            'check_in' => now()->addDay()->toDateString(),
+            'check_out' => now()->addDays(3)->toDateString(),
+            'guest_name' => 'Manual Guest',
+            'guest_email' => 'desk@example.com',
+            'guest_phone' => '08030000000',
+            'room_type_id' => $roomType->id,
+            'quantity' => 1,
+            'nightly_rate' => 80000,
+            'total_amount' => 160000,
+            'status' => 'confirmed',
+            'payment_status' => 'pending',
+            'adults' => 2,
+            'children' => 0,
+        ]);
+        $booking->rooms()->attach($roomOne->id, ['status' => 'reserved']);
+
+        $response = $this->actingAs($frontdesk)->put(route('frontdesk.bookings.update', $booking), [
+            'guest_name' => 'Manual Guest',
+            'guest_email' => 'desk@example.com',
+            'guest_phone' => '08030000000',
+            'selected_room_ids' => [$roomOne->id, $roomTwo->id],
+            'check_in' => now()->addDay()->toDateString(),
+            'check_out' => now()->addDays(3)->toDateString(),
+            'adults' => 4,
+            'children' => 1,
+            'status' => 'confirmed',
+        ]);
+
+        $response->assertRedirect(route('frontdesk.bookings.index'));
+
+        $booking->refresh()->load('rooms');
+
+        $this->assertSame(2, (int) $booking->quantity);
+        $this->assertSame($roomOne->id, (int) $booking->room_id);
+        $this->assertEquals(320000.00, (float) $booking->total_amount);
+        $this->assertSame([$roomOne->id, $roomTwo->id], $booking->rooms->pluck('id')->sort()->values()->all());
     }
 
     public function test_frontdesk_can_apply_discount_code_to_in_house_charge(): void

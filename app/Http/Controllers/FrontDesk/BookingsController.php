@@ -11,6 +11,7 @@ use App\Services\BookingService;
 use App\Services\DiscountCodeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class BookingsController extends Controller
@@ -100,7 +101,8 @@ class BookingsController extends Controller
             'guest_name' => 'required|string|max:255',
             'guest_email' => 'nullable|email|max:255',
             'guest_phone' => 'nullable|string|max:20',
-            'room_id' => 'required|exists:rooms,id',
+            'selected_room_ids' => 'required|array|min:1',
+            'selected_room_ids.*' => 'integer|exists:rooms,id',
             'check_in' => 'required|date|after_or_equal:today',
             'check_out' => 'required|date|after:check_in',
             'adults' => 'required|integer|min:1',
@@ -112,33 +114,36 @@ class BookingsController extends Controller
             'discount_code' => 'nullable|string|max:50',
         ]);
 
-        $room = Room::with('roomType')->findOrFail($data['room_id']);
+        $selectedRooms = $this->resolveSelectedRooms($data['selected_room_ids']);
+        $roomType = $selectedRooms->first()->roomType;
+        $quantity = $selectedRooms->count();
         $discountPreview = null;
 
         if (! empty($data['discount_code'])) {
             $discountPreview = $this->discountCodeService->previewForBookingSelection([
-                'room_type_id' => $room->room_type_id,
-                'quantity' => 1,
-                'selected_room_ids' => [$room->id],
+                'room_type_id' => $roomType->id,
+                'quantity' => $quantity,
+                'selected_room_ids' => $selectedRooms->pluck('id')->all(),
                 'check_in' => $data['check_in'],
                 'check_out' => $data['check_out'],
             ], $data['discount_code']);
         }
 
-        $booking = DB::transaction(function () use ($data, $room, $discountPreview) {
+        $booking = DB::transaction(function () use ($data, $roomType, $selectedRooms, $discountPreview, $quantity) {
             $nights = max(
                 now()->parse($data['check_in'])->startOfDay()->diffInDays(now()->parse($data['check_out'])->startOfDay()),
                 1
             );
-            $baseAmount = (float) $room->roomType->base_price * $nights;
+            $baseAmount = (float) $roomType->base_price * $nights * $quantity;
             $pricing = $discountPreview['pricing'] ?? $this->discountCodeService->buildPricing($baseAmount);
 
             $booking = $this->bookingService->createBooking([
                 ...$data,
-                'room_type_id' => $room->room_type_id,
-                'selected_room_ids' => [$room->id],
-                'quantity' => 1,
-                'nightly_rate' => $room->roomType->base_price,
+                'room_type_id' => $roomType->id,
+                'room_id' => $selectedRooms->first()->id,
+                'selected_room_ids' => $selectedRooms->pluck('id')->all(),
+                'quantity' => $quantity,
+                'nightly_rate' => $roomType->base_price,
                 'total_amount' => $pricing['total'],
                 'status' => 'confirmed',
                 'payment_status' => 'pending',
@@ -191,7 +196,9 @@ class BookingsController extends Controller
                     'room_number' => $room->room_number,
                     'status' => $room->status,
                     'room_type' => [
+                        'id' => $room->roomType?->id,
                         'title' => $room->roomType?->title,
+                        'base_price' => (float) ($room->roomType?->base_price ?? 0),
                     ],
                 ];
             })->values(),
@@ -204,7 +211,8 @@ class BookingsController extends Controller
             'guest_name' => 'required|string|max:255',
             'guest_email' => 'nullable|email|max:255',
             'guest_phone' => 'nullable|string|max:20',
-            'room_id' => 'nullable|exists:rooms,id',
+            'selected_room_ids' => 'required|array|min:1',
+            'selected_room_ids.*' => 'integer|exists:rooms,id',
             'check_in' => 'required|date',
             'check_out' => 'required|date|after:check_in',
             'adults' => 'required|integer|min:1',
@@ -216,7 +224,47 @@ class BookingsController extends Controller
             'status' => 'required|in:pending_payment,confirmed,checked_in,checked_out,cancelled',
         ]);
 
-        $this->bookingService->updateBooking($booking, $data);
+        $selectedRooms = $this->resolveSelectedRooms($data['selected_room_ids']);
+        $roomType = $selectedRooms->first()->roomType;
+        $quantity = $selectedRooms->count();
+        $nights = max(
+            now()->parse($data['check_in'])->startOfDay()->diffInDays(now()->parse($data['check_out'])->startOfDay()),
+            1
+        );
+        $baseAmount = (float) $roomType->base_price * $nights * $quantity;
+        $discountSummary = $this->discountCodeService->bookingDiscountSummary($booking->loadMissing('discountRedemption.discountCode'));
+        $discountPreview = $discountSummary && ! empty($discountSummary['code'])
+            ? $this->discountCodeService->previewForBookingSelection([
+                'room_type_id' => $roomType->id,
+                'quantity' => $quantity,
+                'selected_room_ids' => $selectedRooms->pluck('id')->all(),
+                'check_in' => $data['check_in'],
+                'check_out' => $data['check_out'],
+            ], $discountSummary['code'])
+            : null;
+        $pricing = $discountPreview['pricing'] ?? $this->discountCodeService->buildPricing($baseAmount);
+
+        $booking = DB::transaction(function () use ($booking, $data, $selectedRooms, $roomType, $quantity, $pricing, $discountPreview, $discountSummary) {
+            $booking = $this->bookingService->updateBooking($booking, [
+                ...$data,
+                'room_type_id' => $roomType->id,
+                'room_id' => $selectedRooms->first()->id,
+                'selected_room_ids' => $selectedRooms->pluck('id')->all(),
+                'quantity' => $quantity,
+                'nightly_rate' => $roomType->base_price,
+                'total_amount' => $pricing['total'],
+            ]);
+
+            if ($discountPreview) {
+                $this->discountCodeService->reserveForBooking($booking, $discountPreview);
+
+                if (($booking->status === 'confirmed' || $booking->status === 'checked_in') && $discountSummary) {
+                    $this->discountCodeService->markAppliedForBooking($booking);
+                }
+            }
+
+            return $booking;
+        });
 
         return redirect()->route('frontdesk.bookings.index')
             ->with('success', "Booking {$booking->booking_code} updated successfully.");
@@ -332,6 +380,9 @@ class BookingsController extends Controller
             'id' => $booking->id,
             'booking_code' => $booking->booking_code,
             'room_id' => $booking->room_id,
+            'room_type_id' => $booking->room_type_id,
+            'nightly_rate' => (float) ($booking->nightly_rate ?? 0),
+            'selected_room_ids' => $booking->rooms->pluck('id')->values()->all(),
             'check_in' => optional($booking->check_in)?->toDateString(),
             'check_out' => optional($booking->check_out)?->toDateString(),
             'status' => $booking->status === 'active' ? 'checked_in' : $booking->status,
@@ -354,5 +405,36 @@ class BookingsController extends Controller
                 ];
             })->values()->all(),
         ];
+    }
+
+    protected function resolveSelectedRooms(array $selectedRoomIds)
+    {
+        $roomIds = array_values(array_unique(array_map('intval', $selectedRoomIds)));
+
+        if ($roomIds === []) {
+            throw ValidationException::withMessages([
+                'selected_room_ids' => 'Select at least one room for this booking.',
+            ]);
+        }
+
+        $rooms = Room::with('roomType')
+            ->whereIn('id', $roomIds)
+            ->get()
+            ->sortBy(fn (Room $room) => array_search($room->id, $roomIds, true))
+            ->values();
+
+        if ($rooms->count() !== count($roomIds)) {
+            throw ValidationException::withMessages([
+                'selected_room_ids' => 'One or more selected rooms could not be found.',
+            ]);
+        }
+
+        if ($rooms->pluck('room_type_id')->unique()->count() !== 1) {
+            throw ValidationException::withMessages([
+                'selected_room_ids' => 'All selected rooms must belong to the same room type.',
+            ]);
+        }
+
+        return $rooms;
     }
 }
