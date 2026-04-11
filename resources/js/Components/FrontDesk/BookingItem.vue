@@ -10,17 +10,18 @@ const props = defineProps({
 //console.log(props.booking)
 
 const outstandingAmount = computed(() => {
-  // Convert each charge amount string to a float number
   const charges = props.booking.charges?.reduce((sum, c) => {
     return sum + parseFloat(c.amount || 0);
   }, 0) || 0;
 
-  // Do the same for payments just in case they are also strings
   const payments = props.booking.payments?.reduce((sum, p) => {
-    return sum + parseFloat(p.amount || 0);
+    return sum + parseFloat(p.amount_paid || p.amount || 0);
   }, 0) || 0;
 
-  return charges - payments;
+  const bookingTotal = parseFloat(props.booking.total_amount || 0);
+  const effectiveCharges = Math.max(charges, bookingTotal);
+
+  return Math.max(effectiveCharges - payments, 0);
 });
 
 //console.log(props.booking);

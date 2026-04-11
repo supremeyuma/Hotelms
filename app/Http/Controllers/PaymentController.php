@@ -9,6 +9,7 @@ use App\Models\Order;
 use App\Models\Payment;
 use App\Services\DiscountCodeService;
 use App\Services\EventService;
+use App\Services\BookingService;
 use App\Services\PaymentAccountingService;
 use App\Services\PaymentProviderManager;
 use Illuminate\Http\JsonResponse;
@@ -22,6 +23,7 @@ class PaymentController extends Controller
     public function __construct(
         protected PaymentProviderManager $paymentManager,
         protected EventService $eventService,
+        protected BookingService $bookingService,
         protected DiscountCodeService $discountCodeService,
         protected PaymentAccountingService $paymentAccountingService,
     ) {}
@@ -324,13 +326,6 @@ class PaymentController extends Controller
             }
 
             if ($booking = Booking::where('booking_code', $reference)->first()) {
-                $booking->update([
-                    'payment_status' => 'paid',
-                    'payment_method' => $provider,
-                    'status' => 'confirmed',
-                    'expires_at' => null,
-                ]);
-
                 $payment = Payment::updateOrCreate(
                     [
                         'booking_id' => $booking->id,
@@ -353,6 +348,7 @@ class PaymentController extends Controller
                 );
 
                 $this->paymentAccountingService->handleSuccessful($payment);
+                $this->bookingService->markPaidAndConfirm($booking, $provider);
 
                 Log::info('Booking payment confirmed', [
                     'booking_id' => $booking->id,

@@ -7,6 +7,7 @@ use App\Models\Payment;
 use App\Models\Property;
 use App\Models\Room;
 use App\Models\RoomType;
+use App\Services\BookingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -172,6 +173,52 @@ class PaymentGatewayFlowTest extends TestCase
         $this->assertSame('completed', $payment->status);
         $this->assertSame('90101', (string) $payment->external_reference);
         $this->assertNotNull($payment->verified_at);
+    }
+
+    public function test_paid_pending_booking_is_reconciled_to_confirmed_status(): void
+    {
+        $booking = $this->createBooking();
+
+        $booking->update([
+            'payment_status' => 'paid',
+            'status' => 'pending_payment',
+        ]);
+
+        app(BookingService::class)->reconcilePaidBookingStates();
+
+        $booking->refresh();
+
+        $this->assertSame('confirmed', $booking->status);
+        $this->assertSame('paid', $booking->payment_status);
+        $this->assertNull($booking->expires_at);
+    }
+
+    public function test_successful_payment_record_reconciles_booking_to_paid_and_confirmed(): void
+    {
+        $booking = $this->createBooking();
+
+        Payment::create([
+            'booking_id' => $booking->id,
+            'method' => 'paystack',
+            'reference' => $booking->booking_code,
+            'transaction_ref' => $booking->booking_code,
+            'payment_reference' => $booking->booking_code,
+            'provider' => 'paystack',
+            'amount' => 50000,
+            'amount_paid' => 50000,
+            'currency' => 'NGN',
+            'status' => 'completed',
+            'payment_type' => 'booking',
+            'paid_at' => now(),
+        ]);
+
+        app(BookingService::class)->reconcilePaidBookingStates();
+
+        $booking->refresh();
+
+        $this->assertSame('confirmed', $booking->status);
+        $this->assertSame('paid', $booking->payment_status);
+        $this->assertSame('paystack', $booking->payment_method);
     }
 
     private function createBooking(): Booking

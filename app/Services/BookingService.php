@@ -152,6 +152,58 @@ class BookingService
         return $booking;
     }
 
+    public function markPaidAndConfirm(Booking $booking, string $paymentMethod): Booking
+    {
+        $wasPendingPayment = $booking->status === 'pending_payment';
+
+        $booking->update([
+            'payment_status' => 'paid',
+            'payment_method' => $paymentMethod,
+            'expires_at' => null,
+            ...($wasPendingPayment ? ['status' => 'confirmed'] : []),
+        ]);
+
+        if ($wasPendingPayment) {
+            app(DiscountCodeService::class)->markAppliedForBooking($booking);
+            $this->sendBookingConfirmationToGuest($booking->fresh(['roomType', 'rooms']));
+            $this->audit->log('booking_confirmed', $booking, $booking->id);
+        }
+
+        return $booking->fresh(['roomType', 'rooms', 'payments']);
+    }
+
+    public function reconcilePaidBookingStates(): void
+    {
+        Booking::query()
+            ->where('status', 'pending_payment')
+            ->where(function ($query) {
+                $query->where('payment_status', 'paid')
+                    ->orWhereHas('payments', function ($paymentQuery) {
+                        $paymentQuery->whereIn('status', ['completed', 'successful']);
+                    });
+            })
+            ->with(['payments' => function ($query) {
+                $query->whereIn('status', ['completed', 'successful'])
+                    ->latest('paid_at')
+                    ->latest('id');
+            }])
+            ->chunkById(100, function ($bookings) {
+                foreach ($bookings as $booking) {
+                    $latestSuccessfulPayment = $booking->payments->first();
+                    $resolvedPaymentMethod = $latestSuccessfulPayment?->provider
+                        ?: $latestSuccessfulPayment?->method
+                        ?: $booking->payment_method;
+
+                    $booking->update([
+                        'status' => 'confirmed',
+                        'expires_at' => null,
+                        'payment_status' => $latestSuccessfulPayment ? 'paid' : ($booking->payment_status ?: 'paid'),
+                        'payment_method' => $resolvedPaymentMethod,
+                    ]);
+                }
+            });
+    }
+
     protected function sendBookingConfirmationToGuest(Booking $booking): void
     {
         if (! $booking->guest_email) {

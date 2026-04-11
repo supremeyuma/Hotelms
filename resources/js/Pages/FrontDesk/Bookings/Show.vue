@@ -25,14 +25,17 @@ const props = defineProps({
 /* ---------------- Computed ---------------- */
 
 const totalCharges = computed(() =>
-  props.booking.charges.reduce((sum, c) => sum + Number(c.amount), 0)
+  Math.max(
+    props.booking.charges.reduce((sum, c) => sum + Number(c.amount), 0),
+    Number(props.booking.total_amount || 0)
+  )
 )
 
 const totalPayments = computed(() =>
-  props.booking.payments.reduce((sum, p) => sum + Number(p.amount), 0)
+  props.booking.payments.reduce((sum, p) => sum + Number(p.amount_paid ?? p.amount), 0)
 )
 
-const balanceDue = computed(() => totalCharges.value - totalPayments.value)
+const balanceDue = computed(() => Math.max(totalCharges.value - totalPayments.value, 0))
 
 /* ---------------- Actions ---------------- */
 

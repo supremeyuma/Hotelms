@@ -23,6 +23,8 @@ class BookingsController extends Controller
 
     public function index(Request $request)
     {
+        $this->bookingService->reconcilePaidBookingStates();
+
         $search = $request->string('search')->toString();
         $filter = $request->string('filter')->toString();
 
@@ -128,6 +130,9 @@ class BookingsController extends Controller
 
     public function show(Booking $booking)
     {
+        $this->bookingService->reconcilePaidBookingStates();
+        $booking->refresh();
+
         return Inertia::render('FrontDesk/Bookings/Show', [
             'booking' => $booking->load([
                 'room',

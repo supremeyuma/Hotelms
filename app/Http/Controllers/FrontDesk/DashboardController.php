@@ -7,13 +7,20 @@ use Illuminate\Http\Request;
 use App\Models\Booking;
 use App\Models\Room;
 use App\Models\GuestRequest;
+use App\Services\BookingService;
 use Carbon\Carbon;
 use Inertia\Inertia;
 
 class DashboardController extends Controller
 {
+    public function __construct(
+        protected BookingService $bookingService
+    ) {}
+
     public function index(Request $request)
     {
+        $this->bookingService->reconcilePaidBookingStates();
+
         $today = Carbon::today();
 
         // Rooms KPIs
@@ -30,9 +37,15 @@ class DashboardController extends Controller
 
         // Outstanding bookings
         $allBookings = Booking::with('charges', 'payments')->get();
-        $outstandingBookingList = $allBookings->filter(fn($b) => 
-            ($b->charges->sum('amount') - $b->payments->sum('amount')) > 0
-        )->values();
+        $outstandingBookingList = $allBookings->filter(function ($booking) {
+            $charges = (float) $booking->charges->sum('amount');
+            $payments = (float) $booking->payments->sum(function ($payment) {
+                return $payment->amount_paid ?? $payment->amount;
+            });
+            $effectiveCharges = max($charges, (float) $booking->total_amount);
+
+            return ($effectiveCharges - $payments) > 0;
+        })->values();
 
         $outstandingBookings = $outstandingBookingList->count();
 

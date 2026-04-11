@@ -26,6 +26,8 @@ class BookingAdminController extends Controller
 
     public function index(Request $request)
     {
+        $this->service->reconcilePaidBookingStates();
+
         $today = Carbon::today();
         $filter = $request->string('filter')->toString();
         $allowedFilters = ['arrivals_today', 'departures_today', 'in_house', 'unsettled'];

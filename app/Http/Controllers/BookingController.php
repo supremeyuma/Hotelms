@@ -420,12 +420,7 @@ public function payment(Booking $booking)
 
             resolve(PaymentAccountingService::class)->handleSuccessful($payment);
 
-            $booking->update([
-                'payment_status' => 'paid',
-                'payment_method' => $verifiedProvider,
-            ]);
-
-            $this->bookingService->confirmBooking($booking);
+            $this->bookingService->markPaidAndConfirm($booking, $verifiedProvider);
             Session::forget('booking');
 
             return redirect()->route('booking.confirmation', $booking)

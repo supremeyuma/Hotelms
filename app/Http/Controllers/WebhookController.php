@@ -396,11 +396,6 @@ class WebhookController extends Controller
             return response()->json(['status' => 'already_processed']);
         }
 
-        $booking->update([
-            'payment_status' => 'paid',
-            'payment_method' => $provider,
-        ]);
-
         $payment = Payment::updateOrCreate(
             [
                 'booking_id' => $booking->id,
@@ -435,7 +430,7 @@ class WebhookController extends Controller
             ]);
         }
 
-        $this->bookingService->confirmBooking($booking);
+        $this->bookingService->markPaidAndConfirm($booking, $provider);
 
         Log::info('Booking payment confirmed via webhook', [
             'booking_id' => $booking->id,
