@@ -7,6 +7,7 @@ import {
   BedDouble,
   Users,
   Baby,
+  ChevronLeft,
   ChevronRight,
   Info,
   Calendar,
@@ -165,6 +166,15 @@ const roomTypeImageVisibilityEnabled = computed(() => Boolean(props.imageSetting
       </div>
 
       <div class="max-w-6xl mx-auto px-4 pt-12">
+        <button
+          type="button"
+          @click="router.visit(route('booking.search'))"
+          class="mb-8 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-600 transition hover:border-indigo-200 hover:text-indigo-600"
+        >
+          <ChevronLeft class="w-4 h-4" />
+          Back to Search
+        </button>
+
         <div class="mb-10">
           <h1 class="text-4xl font-black text-slate-900 tracking-tight mb-2">Choose Your Room</h1>
           <p class="text-slate-500 font-medium">

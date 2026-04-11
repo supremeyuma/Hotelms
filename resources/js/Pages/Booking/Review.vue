@@ -8,6 +8,7 @@ import {
   BedDouble,
   Moon,
   Wallet,
+  ChevronLeft,
   CheckCircle2,
   ShieldCheck,
   RefreshCw,
@@ -77,6 +78,15 @@ function removeDiscount() {
   <PublicLayout header-mode="static">
     <div class="min-h-screen bg-slate-50/50 py-12 px-4">
       <div class="max-w-4xl mx-auto">
+        <button
+          type="button"
+          @click="router.visit(route('booking.guest'))"
+          class="mb-8 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-600 transition hover:border-indigo-200 hover:text-indigo-600"
+        >
+          <ChevronLeft class="w-4 h-4" />
+          Back to Guest Details
+        </button>
+
         <div class="flex items-center justify-center gap-4 mb-10">
           <div class="flex items-center gap-2">
             <div class="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center">

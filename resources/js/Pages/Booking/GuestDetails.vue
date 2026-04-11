@@ -7,6 +7,7 @@ import {
   Mail, 
   Phone, 
   MessageSquare, 
+  ChevronLeft,
   ArrowRight, 
   ShieldCheck,
   ClipboardList
@@ -34,6 +35,20 @@ function submit() {
   <PublicLayout header-mode="static">
     <div class="min-h-screen bg-slate-50/50 py-12 px-4">
       <div class="max-w-2xl mx-auto">
+        <button
+          type="button"
+          @click="router.visit(route('booking.rooms', {
+            check_in: booking.check_in,
+            check_out: booking.check_out,
+            adults: booking.adults,
+            children: booking.children,
+          }))"
+          class="mb-8 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-600 transition hover:border-indigo-200 hover:text-indigo-600"
+        >
+          <ChevronLeft class="w-4 h-4" />
+          Back to Room Selection
+        </button>
+
         
         <div class="flex items-center justify-center gap-4 mb-10">
           <div class="flex items-center gap-2">
@@ -157,13 +172,6 @@ function submit() {
             </div>
           </form>
         </div>
-        
-        <button 
-          @click="window.history.back()" 
-          class="mt-8 mx-auto flex items-center gap-2 text-slate-400 font-bold text-sm hover:text-slate-600 transition-colors"
-        >
-          Change room selection
-        </button>
       </div>
     </div>
   </PublicLayout>
