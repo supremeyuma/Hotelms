@@ -261,7 +261,7 @@ const handlePaystack = (data) => {
     onClose: () => {
       processing.value = false
     },
-    onSuccess: (response) => {
+    callback: (response) => {
       const callbackUrl = buildCallbackUrl(
         data.callback_url || `/booking/payment/${props.booking.id}/callback`,
         {

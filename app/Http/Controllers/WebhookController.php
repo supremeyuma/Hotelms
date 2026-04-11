@@ -6,6 +6,7 @@ use App\Models\EventTicket;
 use App\Models\EventTableReservation;
 use App\Models\Booking;
 use App\Models\Payment;
+use App\Services\BookingService;
 use App\Services\EventService;
 use App\Services\PaymentAccountingService;
 use Illuminate\Http\Request;
@@ -20,6 +21,7 @@ use Illuminate\Support\Facades\Log;
 class WebhookController extends Controller
 {
     public function __construct(
+        protected BookingService $bookingService,
         protected EventService $eventService,
         protected PaymentAccountingService $paymentAccountingService,
     ) {}
@@ -397,8 +399,6 @@ class WebhookController extends Controller
         $booking->update([
             'payment_status' => 'paid',
             'payment_method' => $provider,
-            'status' => 'confirmed',
-            'expires_at' => null,
         ]);
 
         $payment = Payment::updateOrCreate(
@@ -434,6 +434,8 @@ class WebhookController extends Controller
                 'payment_id' => $payment->id,
             ]);
         }
+
+        $this->bookingService->confirmBooking($booking);
 
         Log::info('Booking payment confirmed via webhook', [
             'booking_id' => $booking->id,

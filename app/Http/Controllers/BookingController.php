@@ -316,6 +316,10 @@ class BookingController extends Controller
 
     public function payment(Booking $booking)
 {
+    if ($booking->payment_status === 'paid' || $booking->status === 'confirmed') {
+        return redirect()->route('booking.confirmation', $booking);
+    }
+
     abort_if($booking->status !== 'pending_payment', 404);
 
     return Inertia::render('Booking/Payment', [

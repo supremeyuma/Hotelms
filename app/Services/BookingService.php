@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Jobs\SendGuestMessageJob;
 use App\Models\Booking;
 use App\Models\User;
 use App\Services\RoomAvailabilityService;
@@ -143,10 +144,48 @@ class BookingService
         ]);
 
         app(DiscountCodeService::class)->markAppliedForBooking($booking);
+        $this->sendBookingConfirmationToGuest($booking->fresh(['roomType', 'rooms']));
 
         $this->audit->log('booking_confirmed', $booking, $booking->id);
 
         return $booking;
+    }
+
+    protected function sendBookingConfirmationToGuest(Booking $booking): void
+    {
+        if (! $booking->guest_email) {
+            return;
+        }
+
+        $details = $booking->details ?? [];
+        $notifications = $details['notifications'] ?? [];
+
+        if (! empty($notifications['booking_confirmation_sent_at'])) {
+            return;
+        }
+
+        $roomLabel = $booking->roomType?->title
+            ?? $booking->rooms->pluck('name')->filter()->join(', ')
+            ?? 'your room';
+
+        $subject = "Booking Confirmation - {$booking->booking_code}";
+        $body = implode(PHP_EOL . PHP_EOL, [
+            "Dear {$booking->guest_name},",
+            "Your booking {$booking->booking_code} has been confirmed.",
+            "Stay details: {$roomLabel} from {$booking->check_in->toDateString()} to {$booking->check_out->toDateString()}.",
+            'We look forward to welcoming you.',
+        ]);
+
+        try {
+            SendGuestMessageJob::dispatchSync($booking->guest_email, $subject, $body);
+
+            $notifications['booking_confirmation_sent_at'] = now()->toIso8601String();
+            $details['notifications'] = $notifications;
+
+            $booking->forceFill(['details' => $details])->save();
+        } catch (\Throwable $e) {
+            report($e);
+        }
     }
 
 
