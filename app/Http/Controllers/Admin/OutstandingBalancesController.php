@@ -37,8 +37,12 @@ class OutstandingBalancesController extends Controller
 
     protected function getRoomOutstandingBalances(string $search): array
     {
-        $query = Room::with(['booking', 'booking.user'])
-            ->whereHas('booking', function ($q) {
+        $query = Room::with(['bookings' => function ($query) {
+                $query->with('user')
+                    ->whereNotIn('status', ['cancelled', 'completed'])
+                    ->latest('check_in');
+            }])
+            ->whereHas('bookings', function ($q) {
                 $q->whereNotIn('status', ['cancelled', 'completed']);
             })
             ->where('status', '!=', 'available');
@@ -47,7 +51,7 @@ class OutstandingBalancesController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('room_number', 'like', "%{$search}%")
                   ->orWhere('name', 'like', "%{$search}%")
-                  ->orWhereHas('booking', function ($bq) use ($search) {
+                  ->orWhereHas('bookings', function ($bq) use ($search) {
                       $bq->where('booking_code', 'like', "%{$search}%")
                         ->orWhereHas('user', function ($uq) use ($search) {
                             $uq->where('name', 'like', "%{$search}%")
@@ -60,7 +64,7 @@ class OutstandingBalancesController extends Controller
         $rooms = $query->get();
 
         $outstandingRooms = $rooms->filter(function ($room) {
-            return $this->billingService->outstanding($room) > 0;
+            return $room->bookings->first() && $this->billingService->outstanding($room) > 0;
         });
 
         $totalOutstanding = $outstandingRooms->sum(function ($room) {
@@ -76,24 +80,26 @@ class OutstandingBalancesController extends Controller
                     : 0,
             ],
             'balances' => $outstandingRooms->map(function ($room) {
+                $booking = $room->bookings->first();
                 $outstanding = $this->billingService->outstanding($room);
+
                 return [
                     'room_id' => $room->id,
                     'room_number' => $room->room_number,
                     'room_name' => $room->name,
                     'booking' => [
-                        'id' => $room->booking->id,
-                        'code' => $room->booking->booking_code,
-                        'guest' => $room->booking->user ? $room->booking->user->name : 'Guest',
-                        'email' => $room->booking->guest_email,
-                        'check_in' => $room->booking->check_in,
-                        'check_out' => $room->booking->check_out,
-                        'status' => $room->booking->status,
+                        'id' => $booking->id,
+                        'code' => $booking->booking_code,
+                        'guest' => $booking->user ? $booking->user->name : 'Guest',
+                        'email' => $booking->guest_email,
+                        'check_in' => $booking->check_in,
+                        'check_out' => $booking->check_out,
+                        'status' => $booking->status,
                     ],
                     'outstanding' => round($outstanding, 2),
                     'room_status' => $room->status,
-                    'days_occupied' => $room->booking->check_in 
-                        ? now()->diffInDays($room->booking->check_in) 
+                    'days_occupied' => $booking->check_in 
+                        ? now()->diffInDays($booking->check_in) 
                         : 0,
                 ];
             })->values(),
