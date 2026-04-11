@@ -22,17 +22,9 @@ class PaystackService
     public function __construct()
     {
         $this->baseUrl = config('payment.paystack.base_url', 'https://api.paystack.co');
-        $this->secretKey = config('payment.paystack.secret_key');
-        $this->publicKey = config('payment.paystack.public_key');
+        $this->secretKey = (string) config('payment.paystack.secret_key', '');
+        $this->publicKey = (string) config('payment.paystack.public_key', '');
         $this->timeout = config('payment.paystack.timeout', 30);
-
-        if (!$this->secretKey) {
-            throw new Exception('Paystack secret key is not configured');
-        }
-
-        if (!$this->publicKey) {
-            throw new Exception('Paystack public key is not configured');
-        }
     }
 
     /**
@@ -51,6 +43,8 @@ class PaystackService
     public function initializePayment(array $paymentData): array
     {
         try {
+            $this->ensureConfigured();
+
             // Validate required fields
             if (empty($paymentData['email'])) {
                 throw new Exception('Customer email is required');
@@ -133,6 +127,8 @@ class PaystackService
     public function verifyPayment(string $reference): array
     {
         try {
+            $this->ensureConfigured();
+
             if (empty($reference)) {
                 throw new Exception('Payment reference is required');
             }
@@ -194,6 +190,10 @@ class PaystackService
      */
     public function getAvailablePaymentMethods(): array
     {
+        if (! $this->isConfigured()) {
+            return [];
+        }
+
         return [
             [
                 'value' => 'paystack',
@@ -279,6 +279,8 @@ class PaystackService
     public function createPaymentPlan(array $planData): array
     {
         try {
+            $this->ensureConfigured();
+
             $response = Http::withToken($this->secretKey)
                 ->timeout($this->timeout)
                 ->post("{$this->baseUrl}/plan", $planData);
@@ -318,6 +320,8 @@ class PaystackService
     public function getCustomerTransactions(string $customerEmail): array
     {
         try {
+            $this->ensureConfigured();
+
             $response = Http::withToken($this->secretKey)
                 ->timeout($this->timeout)
                 ->get("{$this->baseUrl}/customer/{$customerEmail}");
@@ -369,8 +373,24 @@ class PaystackService
      * 
      * @return string
      */
-    public function getPublicKey(): string
+    public function getPublicKey(): ?string
     {
-        return $this->publicKey;
+        return $this->publicKey ?: null;
+    }
+
+    public function isConfigured(): bool
+    {
+        return $this->secretKey !== '' && $this->publicKey !== '';
+    }
+
+    protected function ensureConfigured(): void
+    {
+        if (! $this->secretKey) {
+            throw new Exception('Paystack secret key is not configured');
+        }
+
+        if (! $this->publicKey) {
+            throw new Exception('Paystack public key is not configured');
+        }
     }
 }

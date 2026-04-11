@@ -42,17 +42,16 @@ class PaymentProviderManager
         $providers = $this->getProviderSettings();
 
         foreach ($providers as $provider => $isEnabled) {
-            if ($isEnabled) {
+            if ($isEnabled && $this->isProviderConfigured($provider)) {
                 $enabled[] = $provider;
             }
         }
 
         if (empty($enabled)) {
-            Log::warning('No payment providers are enabled. Using default provider.');
-            return [$this->getConfiguredDefaultProvider()];
+            Log::warning('No operational payment providers are enabled.');
         }
 
-        return $enabled;
+        return array_values($enabled);
     }
 
     /**
@@ -63,7 +62,7 @@ class PaymentProviderManager
      */
     public function isProviderEnabled(string $provider): bool
     {
-        return $this->getProviderSettings()[$provider] ?? false;
+        return ($this->getProviderSettings()[$provider] ?? false) && $this->isProviderConfigured($provider);
     }
 
     /**
@@ -258,6 +257,10 @@ class PaymentProviderManager
             $provider = $this->getDefaultProvider();
         }
 
+        if (! $this->isProviderEnabled($provider)) {
+            return null;
+        }
+
         try {
             $service = $this->getProviderService($provider);
 
@@ -320,5 +323,24 @@ class PaymentProviderManager
         return in_array($configuredDefault, self::SUPPORTED_PROVIDERS, true)
             ? $configuredDefault
             : 'flutterwave';
+    }
+
+    protected function isProviderConfigured(string $provider): bool
+    {
+        try {
+            $service = $this->getProviderService($provider);
+
+            if (method_exists($service, 'isConfigured')) {
+                return (bool) $service->isConfigured();
+            }
+
+            return true;
+        } catch (Exception $e) {
+            Log::warning("Payment provider configuration check failed for {$provider}", [
+                'error' => $e->getMessage(),
+            ]);
+
+            return false;
+        }
     }
 }

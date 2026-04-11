@@ -50,9 +50,49 @@ class PaymentGatewayFlowTest extends TestCase
             'reference' => $booking->booking_code,
             'payment_reference' => $booking->booking_code,
             'provider' => 'paystack',
+            'method' => 'paystack',
             'status' => 'pending',
             'payment_type' => 'booking',
         ]);
+    }
+
+    public function test_booking_initialization_without_provider_uses_default_provider(): void
+    {
+        $booking = $this->createBooking();
+
+        $response = $this->postJson('/payments/initialize-booking', [
+            'booking_id' => $booking->id,
+            'provider' => null,
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('provider', 'flutterwave')
+            ->assertJsonCount(2, 'available_providers');
+    }
+
+    public function test_booking_initialization_only_returns_operational_gateway_when_other_provider_is_disabled_and_unconfigured(): void
+    {
+        $booking = $this->createBooking();
+
+        config()->set('payment.providers.flutterwave', true);
+        config()->set('payment.providers.paystack', false);
+        config()->set('payment.default', 'paystack');
+        config()->set('payment.paystack.public_key', null);
+        config()->set('payment.paystack.secret_key', null);
+
+        $response = $this->postJson('/payments/initialize-booking', [
+            'booking_id' => $booking->id,
+            'provider' => null,
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('provider', 'flutterwave')
+            ->assertJsonPath('show_provider_options', false)
+            ->assertJsonCount(1, 'available_providers')
+            ->assertJsonPath('available_providers.0.value', 'flutterwave')
+            ->assertJsonPath('public_key', 'FLWPUBK_TEST');
     }
 
     public function test_flutterwave_webhook_marks_existing_payment_as_completed(): void

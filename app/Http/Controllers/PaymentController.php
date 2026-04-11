@@ -14,6 +14,8 @@ use App\Services\PaymentProviderManager;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class PaymentController extends Controller
 {
@@ -413,23 +415,37 @@ class PaymentController extends Controller
         string $currency = 'NGN',
     ): JsonResponse {
         try {
-            $provider = $this->paymentManager->isProviderEnabled($provider)
-                ? $provider
-                : $this->paymentManager->getDefaultProvider();
-
             $availableProviders = collect($this->paymentManager->getAvailablePaymentMethods())
                 ->unique('value')
                 ->values()
                 ->all();
 
-            $this->upsertPendingPaymentRecord(
-                type: $type,
-                reference: $reference,
-                provider: $provider,
-                amount: $amount,
-                currency: $currency,
-                meta: $meta,
-            );
+            $providerKeys = collect($availableProviders)
+                ->pluck('value')
+                ->filter()
+                ->values()
+                ->all();
+
+            $provider = in_array($provider, $providerKeys, true)
+                ? $provider
+                : ($providerKeys[0] ?? $provider);
+
+            try {
+                $this->upsertPendingPaymentRecord(
+                    type: $type,
+                    reference: $reference,
+                    provider: $provider,
+                    amount: $amount,
+                    currency: $currency,
+                    meta: $meta,
+                );
+            } catch (\Throwable $e) {
+                Log::warning('Pending payment bootstrap storage failed; continuing with gateway response', [
+                    'error' => $e->getMessage(),
+                    'type' => $type,
+                    'reference' => $reference,
+                ]);
+            }
 
             $response = [
                 'success' => true,
@@ -450,7 +466,7 @@ class PaymentController extends Controller
                 'available_providers' => $availableProviders,
             ];
 
-            if ($publicKey = $this->paymentManager->getPublicKey($provider)) {
+            if ($provider && ($publicKey = $this->paymentManager->getPublicKey($provider))) {
                 $response['public_key'] = $publicKey;
             }
 
@@ -486,27 +502,91 @@ class PaymentController extends Controller
         string $currency,
         array $meta,
     ): void {
-        $bookingId = $meta['booking_id'] ?? null;
+        if (! Schema::hasTable('payments')) {
+            return;
+        }
 
-        Payment::updateOrCreate(
-            [
-                'reference' => $reference,
-            ],
-            [
-                'booking_id' => $bookingId,
-                'method' => $provider,
-                'payment_reference' => $reference,
-                'transaction_ref' => $reference,
-                'provider' => $provider,
-                'amount' => $amount,
-                'amount_paid' => $amount,
-                'currency' => $currency,
-                'status' => 'pending',
-                'payment_type' => $type,
-                'meta' => $meta,
-                'raw_response' => $meta,
-            ]
-        );
+        $columns = array_flip(Schema::getColumnListing('payments'));
+        $bookingId = $meta['booking_id'] ?? null;
+        $roomId = $meta['room_id'] ?? null;
+
+        if (! $roomId && $bookingId && isset($columns['room_id'])) {
+            $roomId = Booking::query()->whereKey($bookingId)->value('room_id');
+        }
+
+        $lookup = [];
+
+        if (isset($columns['reference'])) {
+            $lookup['reference'] = $reference;
+        } elseif (isset($columns['payment_reference'])) {
+            $lookup['payment_reference'] = $reference;
+        } else {
+            return;
+        }
+
+        $values = [];
+
+        if ($bookingId && isset($columns['booking_id'])) {
+            $values['booking_id'] = $bookingId;
+        }
+
+        if ($roomId && isset($columns['room_id'])) {
+            $values['room_id'] = $roomId;
+        }
+
+        if (isset($columns['method'])) {
+            $values['method'] = $provider;
+        }
+
+        if (isset($columns['payment_reference'])) {
+            $values['payment_reference'] = $reference;
+        }
+
+        if (isset($columns['transaction_ref'])) {
+            $values['transaction_ref'] = $reference;
+        }
+
+        if (isset($columns['provider'])) {
+            $values['provider'] = $provider;
+        }
+
+        if (isset($columns['amount'])) {
+            $values['amount'] = $amount;
+        }
+
+        if (isset($columns['amount_paid'])) {
+            $values['amount_paid'] = $amount;
+        }
+
+        if (isset($columns['currency'])) {
+            $values['currency'] = $currency;
+        }
+
+        if (isset($columns['status'])) {
+            $values['status'] = 'pending';
+        }
+
+        if (isset($columns['payment_type'])) {
+            $values['payment_type'] = $type;
+        }
+
+        if (isset($columns['meta'])) {
+            $values['meta'] = json_encode($meta, JSON_THROW_ON_ERROR);
+        }
+
+        if (isset($columns['raw_response'])) {
+            $values['raw_response'] = json_encode($meta, JSON_THROW_ON_ERROR);
+        }
+
+        if (isset($columns['updated_at'])) {
+            $values['updated_at'] = now();
+        }
+
+        if (isset($columns['created_at'])) {
+            $values['created_at'] = now();
+        }
+
+        DB::table('payments')->updateOrInsert($lookup, $values);
     }
 
     private function findPaymentByReference(string $reference): ?Payment
