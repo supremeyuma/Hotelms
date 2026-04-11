@@ -52,10 +52,16 @@ class RoomGuestAccessService
             throw new \RuntimeException('Room QR code has not been generated.');
         }
 
-        return $this->qrCodeService->generateSvg(
+        $svg = $this->qrCodeService->generateSvg(
             $this->entryUrl($room),
             $size
         );
+
+        // Browsers can reject SVGs if anything precedes the XML declaration.
+        // Returning bare <svg> markup is more tolerant for inline viewing/downloads.
+        $svg = preg_replace('/^\s*<\?xml[^>]+\?>\s*/', '', $svg) ?? $svg;
+
+        return ltrim($svg, "\xEF\xBB\xBF\x00..\x20");
     }
 
     public function resolveCurrentAccessTokenForRoom(Room $room): ?RoomAccessToken
