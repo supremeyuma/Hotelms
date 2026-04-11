@@ -15,6 +15,13 @@ import {
 const props = defineProps({
   booking: Object,
   pre_check_in_url: String,
+  image_settings: {
+    type: Object,
+    default: () => ({
+      show_room_images: true,
+      show_room_type_images: true,
+    }),
+  },
 });
 
 const formatCurrency = (value) => {
@@ -106,7 +113,7 @@ function primaryImage(room) {
                   class="flex items-center gap-4 rounded-2xl bg-white px-4 py-3 border border-slate-100"
                 >
                   <img
-                    v-if="primaryImage(room)"
+                    v-if="image_settings.show_room_images && primaryImage(room)"
                     :src="primaryImage(room)"
                     :alt="room.name"
                     class="h-16 w-16 rounded-2xl object-cover"

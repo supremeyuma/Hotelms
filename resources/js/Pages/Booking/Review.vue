@@ -20,6 +20,13 @@ const props = defineProps({
   nights: Number,
   total_price: Number,
   discount_preview: Object,
+  image_settings: {
+    type: Object,
+    default: () => ({
+      show_room_images: true,
+      show_room_type_images: true,
+    }),
+  },
 });
 
 const form = useForm({});
@@ -139,7 +146,7 @@ function removeDiscount() {
                     class="flex items-center gap-4 rounded-2xl bg-white px-4 py-3 border border-slate-100"
                   >
                     <img
-                      v-if="room.primary_image_url"
+                      v-if="image_settings.show_room_images && room.primary_image_url"
                       :src="room.primary_image_url"
                       :alt="room.name"
                       class="h-14 w-14 rounded-2xl object-cover"

@@ -6,6 +6,8 @@ import {
   Building2,
   CheckCircle2,
   CreditCard,
+  Eye,
+  EyeOff,
   ImageUp,
   Link2,
   Mail,
@@ -38,6 +40,8 @@ const form = useForm({
   payment_provider_flutterwave_enabled: Boolean(props.settings.payment_provider_flutterwave_enabled),
   payment_provider_paystack_enabled: Boolean(props.settings.payment_provider_paystack_enabled),
   payment_default_provider: props.settings.payment_default_provider || 'flutterwave',
+  booking_show_room_images: Boolean(props.settings.booking_show_room_images ?? true),
+  booking_show_room_type_images: Boolean(props.settings.booking_show_room_type_images ?? true),
   logo: null,
   banner: null,
 })
@@ -93,6 +97,15 @@ const healthCards = computed(() => [
     ].filter(Boolean).length,
     hint: 'Available payment gateways',
     icon: CreditCard,
+  },
+  {
+    label: 'Booking imagery',
+    value: [
+      form.booking_show_room_images,
+      form.booking_show_room_type_images,
+    ].filter(Boolean).length,
+    hint: 'Guest-visible image groups in booking',
+    icon: form.booking_show_room_images || form.booking_show_room_type_images ? Eye : EyeOff,
   },
 ])
 
@@ -384,7 +397,19 @@ onBeforeUnmount(() => {
                     <p class="text-sm font-bold text-slate-900">Flutterwave</p>
                     <p class="text-sm text-slate-500">Enable Flutterwave checkout</p>
                   </div>
-                  <input v-model="form.payment_provider_flutterwave_enabled" type="checkbox" class="h-5 w-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                  <button
+                    type="button"
+                    role="switch"
+                    :aria-checked="form.payment_provider_flutterwave_enabled"
+                    @click="form.payment_provider_flutterwave_enabled = !form.payment_provider_flutterwave_enabled"
+                    class="toggle-switch"
+                    :class="form.payment_provider_flutterwave_enabled ? 'toggle-switch-on' : 'toggle-switch-off'"
+                  >
+                    <span
+                      class="toggle-thumb"
+                      :class="form.payment_provider_flutterwave_enabled ? 'translate-x-5' : 'translate-x-0'"
+                    />
+                  </button>
                 </label>
 
                 <label class="gateway-card">
@@ -392,7 +417,19 @@ onBeforeUnmount(() => {
                     <p class="text-sm font-bold text-slate-900">Paystack</p>
                     <p class="text-sm text-slate-500">Enable Paystack checkout</p>
                   </div>
-                  <input v-model="form.payment_provider_paystack_enabled" type="checkbox" class="h-5 w-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                  <button
+                    type="button"
+                    role="switch"
+                    :aria-checked="form.payment_provider_paystack_enabled"
+                    @click="form.payment_provider_paystack_enabled = !form.payment_provider_paystack_enabled"
+                    class="toggle-switch"
+                    :class="form.payment_provider_paystack_enabled ? 'toggle-switch-on' : 'toggle-switch-off'"
+                  >
+                    <span
+                      class="toggle-thumb"
+                      :class="form.payment_provider_paystack_enabled ? 'translate-x-5' : 'translate-x-0'"
+                    />
+                  </button>
                 </label>
               </div>
 
@@ -410,6 +447,59 @@ onBeforeUnmount(() => {
 
               <p v-if="form.errors.payment_providers" class="field-error">{{ form.errors.payment_providers }}</p>
               <p v-if="form.errors.payment_default_provider" class="field-error">{{ form.errors.payment_default_provider }}</p>
+            </div>
+          </section>
+
+          <section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="flex items-start gap-4">
+              <div class="rounded-2xl bg-amber-50 p-3 text-amber-700">
+                <ImageUp class="h-5 w-5" />
+              </div>
+              <div>
+                <h2 class="text-xl font-black text-slate-900">Booking Image Visibility</h2>
+              </div>
+            </div>
+
+            <div class="mt-6 grid gap-4">
+              <label class="gateway-card">
+                <div>
+                  <p class="text-sm font-bold text-slate-900">Room images</p>
+                  <p class="text-sm text-slate-500">Show individual room photos during selection, review, and confirmation.</p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  :aria-checked="form.booking_show_room_images"
+                  @click="form.booking_show_room_images = !form.booking_show_room_images"
+                  class="toggle-switch"
+                  :class="form.booking_show_room_images ? 'toggle-switch-on' : 'toggle-switch-off'"
+                >
+                  <span
+                    class="toggle-thumb"
+                    :class="form.booking_show_room_images ? 'translate-x-5' : 'translate-x-0'"
+                  />
+                </button>
+              </label>
+
+              <label class="gateway-card">
+                <div>
+                  <p class="text-sm font-bold text-slate-900">Room type images</p>
+                  <p class="text-sm text-slate-500">Show room type gallery images in the guest booking selection screen.</p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  :aria-checked="form.booking_show_room_type_images"
+                  @click="form.booking_show_room_type_images = !form.booking_show_room_type_images"
+                  class="toggle-switch"
+                  :class="form.booking_show_room_type_images ? 'toggle-switch-on' : 'toggle-switch-off'"
+                >
+                  <span
+                    class="toggle-thumb"
+                    :class="form.booking_show_room_type_images ? 'translate-x-5' : 'translate-x-0'"
+                  />
+                </button>
+              </label>
             </div>
           </section>
         </div>
@@ -484,6 +574,17 @@ onBeforeUnmount(() => {
                   }}
                 </p>
               </div>
+              <div class="rounded-2xl bg-slate-50 p-4">
+                <p class="font-semibold text-slate-900">Booking image visibility</p>
+                <p class="mt-1 text-sm text-slate-500">
+                  {{
+                    [
+                      form.booking_show_room_images ? 'Room images' : null,
+                      form.booking_show_room_type_images ? 'Room type images' : null,
+                    ].filter(Boolean).join(', ') || 'All hidden'
+                  }}
+                </p>
+              </div>
             </div>
           </section>
 
@@ -522,6 +623,22 @@ onBeforeUnmount(() => {
 
 .gateway-card {
   @apply flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4;
+}
+
+.toggle-switch {
+  @apply relative inline-flex h-7 w-12 shrink-0 items-center rounded-full border transition focus:outline-none focus:ring-4 focus:ring-emerald-100;
+}
+
+.toggle-switch-on {
+  @apply border-emerald-500 bg-emerald-500;
+}
+
+.toggle-switch-off {
+  @apply border-slate-300 bg-white;
+}
+
+.toggle-thumb {
+  @apply inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform;
 }
 
 .readiness-item {

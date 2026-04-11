@@ -8,6 +8,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\BookingRequest;
 use App\Models\Booking;
 use App\Models\Room;
+use App\Models\Setting;
 use App\Services\BookingService;
 use App\Services\PricingService;
 use App\Services\AuditLogger;
@@ -121,6 +122,7 @@ class BookingController extends Controller
             'check_out' => $checkOut,
             'adults' => (int)$adults,
             'children' => (int)$children,
+            'image_settings' => $this->bookingImageSettings(),
         ]);
     }
 
@@ -231,6 +233,7 @@ class BookingController extends Controller
             'nights' => $nights,
             'total_price' => $totalPrice,
             'discount_preview' => $booking['discount_preview'] ?? null,
+            'image_settings' => $this->bookingImageSettings(),
         ]);
     }
 
@@ -438,6 +441,7 @@ class BookingController extends Controller
                     ['booking' => $booking->id]
                 )
                 : null,
+            'image_settings' => $this->bookingImageSettings(),
         ]);
     }
 
@@ -525,6 +529,22 @@ class BookingController extends Controller
             'room_type_id' => $room->room_type_id,
             'images' => ($roomImages->isNotEmpty() ? $roomImages : $fallbackImages)->values(),
             'primary_image_url' => $roomImages->first()['url'] ?? $fallbackImages->first()['url'] ?? null,
+        ];
+    }
+
+    protected function bookingImageSettings(): array
+    {
+        $settings = Setting::query()
+            ->whereIn('key', ['booking_show_room_images', 'booking_show_room_type_images'])
+            ->pluck('value', 'key');
+
+        return [
+            'show_room_images' => $settings->has('booking_show_room_images')
+                ? filter_var($settings['booking_show_room_images'], FILTER_VALIDATE_BOOLEAN)
+                : true,
+            'show_room_type_images' => $settings->has('booking_show_room_type_images')
+                ? filter_var($settings['booking_show_room_type_images'], FILTER_VALIDATE_BOOLEAN)
+                : true,
         ];
     }
 

@@ -2,6 +2,7 @@
 import { computed, reactive, ref } from 'vue';
 import { router } from '@inertiajs/vue3';
 import PublicLayout from '@/Layouts/PublicLayout.vue';
+import ImageLightbox from '@/Components/Booking/ImageLightbox.vue';
 import {
   BedDouble,
   Users,
@@ -20,10 +21,21 @@ const props = defineProps({
   check_out: String,
   adults: Number,
   children: Number,
+  imageSettings: {
+    type: Object,
+    default: () => ({
+      show_room_images: true,
+      show_room_type_images: true,
+    }),
+  },
 });
 
 const expandedRoomTypeId = ref(props.roomTypes?.[0]?.id ?? null);
 const selectedRoomIdsByType = reactive({});
+const galleryImages = ref([]);
+const galleryTitle = ref('');
+const galleryIndex = ref(0);
+const isGalleryOpen = ref(false);
 
 props.roomTypes.forEach((roomType) => {
   selectedRoomIdsByType[roomType.id] = [];
@@ -59,6 +71,15 @@ function toggleRoom(roomTypeId, roomId) {
   selectedRoomIdsByType[roomTypeId] = [...selected, roomId];
 }
 
+function handleRoomCardKeydown(event, roomTypeId, roomId) {
+  if (event.key !== 'Enter' && event.key !== ' ') {
+    return;
+  }
+
+  event.preventDefault();
+  toggleRoom(roomTypeId, roomId);
+}
+
 function submitSelection(roomType) {
   router.post('/booking/select-room', {
     room_type_id: roomType.id,
@@ -74,6 +95,25 @@ function submitSelection(roomType) {
 
 function primaryImage(item) {
   return item.primary_image_url || item.images?.[0]?.url || null;
+}
+
+function hasImages(item) {
+  return Array.isArray(item?.images) && item.images.length > 0;
+}
+
+function openGallery(images, title, index = 0) {
+  if (!Array.isArray(images) || images.length === 0) {
+    return;
+  }
+
+  galleryImages.value = images;
+  galleryTitle.value = title;
+  galleryIndex.value = index;
+  isGalleryOpen.value = true;
+}
+
+function closeGallery() {
+  isGalleryOpen.value = false;
 }
 
 function roomSubtitle(room) {
@@ -136,15 +176,27 @@ const occupancyText = computed(() => {
             class="bg-white rounded-[2.5rem] border border-slate-200 overflow-hidden shadow-sm"
           >
             <div class="grid lg:grid-cols-[1.1fr,1fr] gap-0">
-              <div class="relative bg-slate-100 min-h-[280px]">
+              <div
+                class="relative bg-slate-100 min-h-[280px]"
+                :class="imageSettings.show_room_type_images && hasImages(roomType) ? 'cursor-zoom-in' : ''"
+                @click="imageSettings.show_room_type_images && hasImages(roomType) ? openGallery(roomType.images, `${roomType.name} photos`) : null"
+              >
                 <img
-                  v-if="primaryImage(roomType)"
+                  v-if="imageSettings.show_room_type_images && primaryImage(roomType)"
                   :src="primaryImage(roomType)"
                   :alt="roomType.name"
                   class="absolute inset-0 h-full w-full object-cover"
                 />
                 <div v-else class="absolute inset-0 flex items-center justify-center text-slate-300">
                   <ImageIcon class="w-16 h-16" />
+                </div>
+                <div
+                  v-if="imageSettings.show_room_type_images && hasImages(roomType)"
+                  class="pointer-events-none absolute left-6 top-6 z-10 inline-flex items-center gap-2 rounded-full border border-white/30 bg-slate-950/45 px-4 py-2 text-[11px] font-black uppercase tracking-[0.22em] text-white backdrop-blur"
+                >
+                  <ImageIcon class="h-4 w-4" />
+                  View Photos
+                  <span class="text-white/70">{{ roomType.images.length }}</span>
                 </div>
                 <div class="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-slate-950/10 to-transparent"></div>
                 <div class="absolute left-6 right-6 bottom-6 flex items-end justify-between gap-4">
@@ -203,25 +255,38 @@ const occupancyText = computed(() => {
               </div>
 
               <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-                <button
+                <div
                   v-for="room in roomType.available_rooms"
                   :key="room.id"
-                  type="button"
+                  role="button"
+                  tabindex="0"
                   @click="toggleRoom(roomType.id, room.id)"
+                  @keydown="handleRoomCardKeydown($event, roomType.id, room.id)"
                   class="group overflow-hidden rounded-[2rem] border text-left transition-all"
                   :class="isSelected(roomType.id, room.id)
                     ? 'border-indigo-500 bg-white shadow-xl shadow-indigo-100'
                     : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-lg'"
                 >
-                  <div class="relative h-48 bg-slate-100">
+                  <div
+                    class="relative h-48 bg-slate-100"
+                    :class="imageSettings.show_room_images && hasImages(room) ? 'cursor-zoom-in' : ''"
+                    @click.stop="imageSettings.show_room_images && hasImages(room) ? openGallery(room.images, `${room.name} photos`) : null"
+                  >
                     <img
-                      v-if="primaryImage(room)"
+                      v-if="imageSettings.show_room_images && primaryImage(room)"
                       :src="primaryImage(room)"
                       :alt="room.name"
                       class="h-full w-full object-cover transition duration-500 group-hover:scale-105"
                     />
                     <div v-else class="absolute inset-0 flex items-center justify-center text-slate-300">
                       <BedDouble class="w-14 h-14" />
+                    </div>
+                    <div
+                      v-if="imageSettings.show_room_images && hasImages(room)"
+                      class="pointer-events-none absolute left-4 top-4 z-10 inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/90 px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-700 backdrop-blur"
+                    >
+                      <ImageIcon class="h-4 w-4" />
+                      View
                     </div>
                     <div class="absolute right-4 top-4">
                       <div
@@ -249,7 +314,7 @@ const occupancyText = computed(() => {
                       {{ room.meta?.description || roomType.description || 'Room details available for your selected stay.' }}
                     </p>
                   </div>
-                </button>
+                </div>
               </div>
 
               <div class="mt-8 flex flex-col gap-4 border-t border-slate-200 pt-6 md:flex-row md:items-center md:justify-between">
@@ -283,5 +348,13 @@ const occupancyText = computed(() => {
         </div>
       </div>
     </div>
+    <ImageLightbox
+      :show="isGalleryOpen"
+      :images="galleryImages"
+      :start-index="galleryIndex"
+      :title="galleryTitle"
+      @close="closeGallery"
+      @update:start-index="galleryIndex = $event"
+    />
   </PublicLayout>
 </template>

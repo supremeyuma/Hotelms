@@ -7,6 +7,7 @@ defineProps({
   check_out: String,
   adults: Number,
   children: Number,
+  image_settings: Object,
 });
 </script>
 
@@ -17,5 +18,6 @@ defineProps({
     :check_out="check_out"
     :adults="adults"
     :children="children"
+    :image-settings="image_settings"
   />
 </template>

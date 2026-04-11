@@ -41,6 +41,14 @@ class SettingController extends Controller
             FILTER_VALIDATE_BOOLEAN
         );
         $settings['payment_default_provider'] = $settings['payment_default_provider'] ?? config('payment.default', 'flutterwave');
+        $settings['booking_show_room_images'] = filter_var(
+            $settings['booking_show_room_images'] ?? true,
+            FILTER_VALIDATE_BOOLEAN
+        );
+        $settings['booking_show_room_type_images'] = filter_var(
+            $settings['booking_show_room_type_images'] ?? true,
+            FILTER_VALIDATE_BOOLEAN
+        );
 
         return Inertia::render('Admin/Settings/Index', ['settings' => $settings]);
     }
@@ -60,6 +68,8 @@ class SettingController extends Controller
             'payment_provider_flutterwave_enabled' => 'required|boolean',
             'payment_provider_paystack_enabled' => 'required|boolean',
             'payment_default_provider' => 'required|string|in:flutterwave,paystack',
+            'booking_show_room_images' => 'required|boolean',
+            'booking_show_room_type_images' => 'required|boolean',
         ]);
 
         if (!$data['payment_provider_flutterwave_enabled'] && !$data['payment_provider_paystack_enabled']) {
@@ -93,6 +103,8 @@ class SettingController extends Controller
             'payment_provider_flutterwave_enabled' => $data['payment_provider_flutterwave_enabled'],
             'payment_provider_paystack_enabled' => $data['payment_provider_paystack_enabled'],
             'payment_default_provider' => $data['payment_default_provider'],
+            'booking_show_room_images' => $data['booking_show_room_images'],
+            'booking_show_room_type_images' => $data['booking_show_room_type_images'],
         ];
 
         foreach ($simpleSettings as $key => $value) {
