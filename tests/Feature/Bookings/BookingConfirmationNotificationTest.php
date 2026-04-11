@@ -2,14 +2,14 @@
 
 namespace Tests\Feature\Bookings;
 
-use App\Jobs\SendGuestMessageJob;
+use App\Mail\BookingConfirmationMail;
 use App\Models\Booking;
 use App\Models\Property;
 use App\Models\Room;
 use App\Models\RoomType;
 use App\Services\BookingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 class BookingConfirmationNotificationTest extends TestCase
@@ -18,15 +18,15 @@ class BookingConfirmationNotificationTest extends TestCase
 
     public function test_confirm_booking_dispatches_guest_confirmation_email_once(): void
     {
-        Bus::fake();
+        Mail::fake();
 
         $booking = $this->createBooking();
 
         app(BookingService::class)->confirmBooking($booking);
 
-        Bus::assertDispatchedSync(SendGuestMessageJob::class, function (SendGuestMessageJob $job) use ($booking) {
-            return $job->to === $booking->guest_email
-                && str_contains($job->subject, $booking->booking_code);
+        Mail::assertSent(BookingConfirmationMail::class, function (BookingConfirmationMail $mail) use ($booking) {
+            return $mail->hasTo($booking->guest_email)
+                && $mail->booking->is($booking->fresh());
         });
 
         $booking->refresh();
@@ -34,11 +34,11 @@ class BookingConfirmationNotificationTest extends TestCase
         $this->assertSame('confirmed', $booking->status);
         $this->assertNotNull(data_get($booking->details, 'notifications.booking_confirmation_sent_at'));
 
-        Bus::fake();
+        Mail::fake();
 
         app(BookingService::class)->confirmBooking($booking->fresh());
 
-        Bus::assertNothingDispatched();
+        Mail::assertNothingSent();
     }
 
     private function createBooking(): Booking

@@ -1,4 +1,5 @@
 <script setup>
+import { onBeforeUnmount, ref } from 'vue';
 import PublicLayout from '@/Layouts/PublicLayout.vue';
 import { router } from '@inertiajs/vue3';
 import {
@@ -10,6 +11,8 @@ import {
   Mail,
   KeyRound,
   BedDouble,
+  Copy,
+  Check,
 } from 'lucide-vue-next';
 
 const props = defineProps({
@@ -45,6 +48,36 @@ function printPage() {
 function primaryImage(room) {
   return room.images?.[0]?.url || null;
 }
+
+const copyFeedback = ref(false);
+let copyFeedbackTimer = null;
+
+async function copyBookingCode() {
+  if (!navigator?.clipboard?.writeText) {
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(props.booking.booking_code);
+    copyFeedback.value = true;
+
+    if (copyFeedbackTimer) {
+      window.clearTimeout(copyFeedbackTimer);
+    }
+
+    copyFeedbackTimer = window.setTimeout(() => {
+      copyFeedback.value = false;
+    }, 2000);
+  } catch (error) {
+    console.error('Failed to copy booking code', error);
+  }
+}
+
+onBeforeUnmount(() => {
+  if (copyFeedbackTimer) {
+    window.clearTimeout(copyFeedbackTimer);
+  }
+});
 </script>
 
 <template>
@@ -63,7 +96,18 @@ function primaryImage(room) {
           <div class="bg-slate-900 px-8 py-6 flex flex-col md:flex-row items-center justify-between gap-4">
             <div class="text-center md:text-left">
               <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Reservation Code</p>
-              <h2 class="text-2xl font-black text-white tracking-widest uppercase">{{ booking.booking_code }}</h2>
+              <div class="flex items-center justify-center gap-3 md:justify-start">
+                <h2 class="text-2xl font-black text-white tracking-widest uppercase">{{ booking.booking_code }}</h2>
+                <button
+                  type="button"
+                  @click="copyBookingCode"
+                  class="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/10 px-3 py-2 text-[11px] font-black uppercase tracking-widest text-white transition hover:bg-white/20"
+                >
+                  <Check v-if="copyFeedback" class="w-4 h-4" />
+                  <Copy v-else class="w-4 h-4" />
+                  {{ copyFeedback ? 'Copied' : 'Copy' }}
+                </button>
+              </div>
             </div>
             <button @click="printPage" class="p-3 bg-white/10 hover:bg-white/20 rounded-2xl text-white transition-colors">
               <Printer class="w-5 h-5" />

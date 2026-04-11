@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Jobs\SendGuestMessageJob;
+use App\Mail\BookingConfirmationMail;
 use App\Models\Booking;
 use App\Models\User;
 use App\Services\RoomAvailabilityService;
@@ -11,6 +11,7 @@ use App\Services\RoomCheckoutService;
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Support\Collection;
 use Exception;
@@ -164,20 +165,10 @@ class BookingService
             return;
         }
 
-        $roomLabel = $booking->roomType?->title
-            ?? $booking->rooms->pluck('name')->filter()->join(', ')
-            ?? 'your room';
-
-        $subject = "Booking Confirmation - {$booking->booking_code}";
-        $body = implode(PHP_EOL . PHP_EOL, [
-            "Dear {$booking->guest_name},",
-            "Your booking {$booking->booking_code} has been confirmed.",
-            "Stay details: {$roomLabel} from {$booking->check_in->toDateString()} to {$booking->check_out->toDateString()}.",
-            'We look forward to welcoming you.',
-        ]);
-
         try {
-            SendGuestMessageJob::dispatchSync($booking->guest_email, $subject, $body);
+            Mail::to($booking->guest_email)->send(new BookingConfirmationMail(
+                $booking->fresh(['roomType', 'rooms'])
+            ));
 
             $notifications['booking_confirmation_sent_at'] = now()->toIso8601String();
             $details['notifications'] = $notifications;
