@@ -81,4 +81,7 @@ Route::prefix('menu/view')->name('menu.view.')->group(function () {
 
 // Public order endpoint
 Route::post('/public/orders', [PublicOrderController::class, 'store'])->name('public.orders.store');
+Route::get('/public/orders/{order}/payment/callback', [PublicOrderController::class, 'paymentCallback'])->name('public.payment.callback');
+Route::get('/public/orders/{order}/payment/success', [PublicOrderController::class, 'paymentSuccess'])->name('public.orders.payment.success');
+Route::get('/public/orders/{order}/payment/failed', [PublicOrderController::class, 'paymentFailed'])->name('public.orders.payment.failed');
 

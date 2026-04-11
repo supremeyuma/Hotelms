@@ -245,7 +245,7 @@ class PaymentController extends Controller
                     'department' => $order->department,
                 ],
                 description: ucfirst($order->department) . ' Order - ' . $order->order_code,
-                callbackUrl: null,
+                callbackUrl: route('public.payment.callback', ['order' => $order->id]),
             );
         } catch (\Throwable $e) {
             Log::error('Public order payment initialization failed', [

@@ -6,13 +6,18 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Enums\OrderStatus;
-use App\Services\AuditLoggerService;
+use App\Services\PaymentProviderManager;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class PublicOrderController extends Controller
 {
+    public function __construct(
+        protected PaymentProviderManager $paymentManager,
+    ) {}
+
     /**
      * Store a new online order from public customers
      * Prepaid payment only
@@ -65,10 +70,8 @@ class PublicOrderController extends Controller
                 return $order;
             });
 
-            // Redirect to payment initialization
-            return inertia()->location(
-                route('payments.initialize.public.order', ['order' => $order->id])
-            );
+            return redirect()->route('menu.online.show', ['type' => $validated['department']])
+                ->with('success', "Order {$order->order_code} created. Payment can now be completed.");
 
         } catch (\Throwable $e) {
             report($e);
@@ -78,5 +81,61 @@ class PublicOrderController extends Controller
                 'Failed to place order. Please try again.'
             );
         }
+    }
+
+    public function paymentCallback(Request $request, Order $order)
+    {
+        $reference = $request->input('tx_ref') ?? $request->input('reference') ?? $order->order_code;
+        $provider = strtolower((string) ($request->input('provider') ?? config('payment.default', 'flutterwave')));
+
+        try {
+            $verification = $this->paymentManager->verifyPayment($reference, $provider);
+
+            if (! ($verification['success'] ?? false) || ! ($verification['verified'] ?? false)) {
+                $order->update([
+                    'payment_status' => 'pending',
+                    'payment_reference' => $reference,
+                ]);
+
+                return redirect()->route('public.orders.payment.failed', ['order' => $order->id, 'reference' => $reference])
+                    ->with('error', 'We could not confirm your payment yet.');
+            }
+
+            $resolvedProvider = $verification['provider'] ?? $provider;
+
+            $order->update([
+                'payment_status' => 'paid',
+                'payment_method' => $resolvedProvider,
+                'payment_reference' => $reference,
+            ]);
+
+            return redirect()->route('public.orders.payment.success', ['order' => $order->id, 'reference' => $reference])
+                ->with('success', 'Payment confirmed successfully.');
+        } catch (\Throwable $e) {
+            report($e);
+
+            return redirect()->route('public.orders.payment.failed', ['order' => $order->id, 'reference' => $reference])
+                ->with('error', 'We could not confirm your payment right now.');
+        }
+    }
+
+    public function paymentSuccess(Request $request, Order $order)
+    {
+        return Inertia::render('Public/OrderPaymentResult', [
+            'order' => $order->load('items'),
+            'status' => 'success',
+            'reference' => $request->query('reference') ?? $order->payment_reference,
+            'message' => session('success', 'Payment confirmed successfully.'),
+        ]);
+    }
+
+    public function paymentFailed(Request $request, Order $order)
+    {
+        return Inertia::render('Public/OrderPaymentResult', [
+            'order' => $order->load('items'),
+            'status' => 'failed',
+            'reference' => $request->query('reference') ?? $order->payment_reference,
+            'message' => session('error', 'Payment was not confirmed.'),
+        ]);
     }
 }

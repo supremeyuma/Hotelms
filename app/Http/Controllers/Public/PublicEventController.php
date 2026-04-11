@@ -7,14 +7,15 @@ use App\Models\Event;
 use App\Models\EventTicket;
 use App\Models\EventTableReservation;
 use App\Services\EventService;
+use App\Services\PaymentProviderManager;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 use Inertia\Inertia;
 
 class PublicEventController extends Controller
 {
     public function __construct(
-        protected EventService $eventService
+        protected EventService $eventService,
+        protected PaymentProviderManager $paymentManager,
     ) {}
 
     /* ===================== EVENTS ===================== */
@@ -171,73 +172,73 @@ class PublicEventController extends Controller
         abort(404);
     }
 
-    public function flutterwaveInitialize(Request $request)
-    {
-        $data = $request->validate([
-            'reference' => 'required|string',
-            'amount'    => 'required|numeric|min:1',
-            'email'     => 'required|email',
-            'name'      => 'required|string',
-        ]);
-
-        $response = Http::withToken(config('services.flutterwave.secret_key'))
-            ->post('https://api.flutterwave.com/v3/payments', [
-                'tx_ref'   => $data['reference'],
-                'amount'   => $data['amount'],
-                'currency' => 'NGN',
-                'redirect_url' => route('events.payment.callback'),
-                'customer' => [
-                    'email' => $data['email'],
-                    'name'  => $data['name'],
-                ],
-                'customizations' => [
-                    'title'       => 'MooreLife Resort',
-                    'description' => 'Event Payment',
-                ],
-            ])
-            ->throw()
-            ->json();
-
-        return response()->json($response['data']);
-    }
-
     public function paymentCallback(Request $request)
     {
         $request->validate([
-            'transaction_id' => 'required',
-            'tx_ref'         => 'required|string',
+            'tx_ref' => 'nullable|string',
+            'reference' => 'nullable|string',
+            'provider' => 'nullable|string|in:flutterwave,paystack',
         ]);
 
-        $verify = Http::withToken(config('services.flutterwave.secret_key'))
-            ->get("https://api.flutterwave.com/v3/transactions/{$request->transaction_id}/verify")
-            ->throw()
-            ->json();
+        $reference = $request->input('tx_ref') ?? $request->input('reference');
+        abort_unless($reference, 422, 'Payment reference is required.');
 
-        if (
-            $verify['status'] === 'success' &&
-            $verify['data']['status'] === 'successful'
-        ) {
-            $this->eventService->confirmPayment(
-                $request->tx_ref,
-                'flutterwave',
-                'paid',
-                $verify['data']['id']
-            );
+        $provider = strtolower((string) ($request->input('provider') ?? config('payment.default', 'flutterwave')));
+        $verification = $this->paymentManager->verifyPayment($reference, $provider);
 
-            return redirect()->route('events.purchase.success', [
-                'reference' => $request->tx_ref,
-            ]);
+        if (($verification['success'] ?? false) && ($verification['verified'] ?? false)) {
+            $resolvedProvider = $verification['provider'] ?? $provider;
+            $this->eventService->confirmPayment($reference, $resolvedProvider, 'paid');
+
+            if (EventTicket::where('qr_code', $reference)->exists()) {
+                return redirect()->route('events.purchase.success', ['reference' => $reference])
+                    ->with('success', 'Payment confirmed successfully.');
+            }
+
+            if (EventTableReservation::where('qr_code', $reference)->exists()) {
+                return redirect()->route('events.reservation.success', ['reference' => $reference])
+                    ->with('success', 'Payment confirmed successfully.');
+            }
         }
 
-        $this->eventService->confirmPayment(
-            $request->tx_ref,
-            'flutterwave',
-            'failed'
-        );
+        $this->eventService->confirmPayment($reference, $provider, 'failed');
 
-        return redirect()->route('events.payment.failed', [
-            'reference' => $request->tx_ref,
+        return redirect()->route('events.payment.failed', ['reference' => $reference])
+            ->with('error', 'We could not confirm your payment yet.');
+    }
+
+    public function purchaseSuccess(Request $request)
+    {
+        $reference = $request->query('reference');
+        $ticket = EventTicket::with(['event', 'ticketType'])
+            ->where('qr_code', $reference)
+            ->orWhere('payment_reference', $reference)
+            ->firstOrFail();
+
+        return Inertia::render('Public/TicketPurchaseSuccess', [
+            'ticket' => $ticket,
         ]);
+    }
+
+    public function reservationSuccess(Request $request)
+    {
+        $reference = $request->query('reference');
+        $reservation = EventTableReservation::with('event')
+            ->where('qr_code', $reference)
+            ->orWhere('payment_reference', $reference)
+            ->firstOrFail();
+
+        return Inertia::render('Public/TableReservationSuccess', [
+            'reservation' => $reservation,
+        ]);
+    }
+
+    public function paymentFailed(Request $request)
+    {
+        $reference = $request->query('reference');
+
+        return redirect()->route('events.payment.process', ['reference' => $reference])
+            ->with('error', 'Payment was not confirmed. Please try again or contact support.');
     }
 
     /* ===================== CHECK-IN ===================== */
