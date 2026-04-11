@@ -8,7 +8,7 @@ class RoleRedirectService
 {
     public function redirectPath(User $user): string
     {
-        if ($user->hasRole('md') || $user->hasRole('ceo')) {
+        if ($user->hasRole('superuser') || $user->hasRole('md') || $user->hasRole('ceo')) {
             return route('admin.dashboard');
         }
 

@@ -83,6 +83,8 @@ function normalizeRole(value) {
     .replace(/[\s_-]+/g, '')
 
   const roleAliases = {
+    superuser: 'md',
+    superadmin: 'md',
     ceo: 'md',
     inventorymanager: 'inventory',
     cleaner: 'clean',

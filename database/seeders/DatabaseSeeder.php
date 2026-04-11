@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
         // Users & staff
         $this->call([
             UsersSeeder::class,
+            SuperUserSeeder::class,
             StaffProfilesSeeder::class,
             HrUserSeeder::class,
             AccountantUserSeeder::class,

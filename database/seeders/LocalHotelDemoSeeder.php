@@ -35,6 +35,7 @@ class LocalHotelDemoSeeder extends Seeder
     protected function seedRoles(): array
     {
         $definitions = [
+            'superuser' => 'Superuser',
             'md' => 'Managing Director',
             'manager' => 'Hotel Manager',
             'frontdesk' => 'Front Desk',
@@ -95,6 +96,7 @@ class LocalHotelDemoSeeder extends Seeder
     protected function seedUsers(array $roles, array $departments): array
     {
         $definitions = [
+            ['key' => 'superuser', 'name' => 'Platform Superuser', 'email' => 'superuser@hotelms.local', 'role' => 'superuser', 'department' => 'Management', 'position' => 'Platform Administrator'],
             ['key' => 'md', 'name' => 'Executive Director', 'email' => 'md@email.com', 'role' => 'md', 'department' => 'Management', 'position' => 'Managing Director'],
             ['key' => 'manager', 'name' => 'Hotel Manager', 'email' => 'manager@email.com', 'role' => 'manager', 'department' => 'Management', 'position' => 'Operations Manager'],
             ['key' => 'frontdesk', 'name' => 'Front Desk Lead', 'email' => 'frontdesk@email.com', 'role' => 'frontdesk', 'department' => 'Front Desk', 'position' => 'Front Desk Supervisor'],
@@ -131,7 +133,13 @@ class LocalHotelDemoSeeder extends Seeder
                 $user->restore();
             }
 
-            $user->syncRoles([$definition['role']]);
+            $rolesToAssign = [$definition['role']];
+
+            if ($definition['role'] === 'superuser') {
+                $rolesToAssign[] = 'md';
+            }
+
+            $user->syncRoles($rolesToAssign);
 
             if (isset($definition['position'])) {
                 $profile = StaffProfile::firstOrNew(
