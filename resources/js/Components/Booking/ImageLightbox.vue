@@ -106,11 +106,12 @@ onUnmounted(() => {
         </button>
       </div>
 
-      <div class="relative flex flex-1 items-center justify-center px-4 pb-4 md:px-8" @click.stop>
+      <div class="relative flex flex-1 items-center justify-center px-4 pb-4 md:px-8">
         <button
           v-if="images.length > 1"
           type="button"
           @click="previousImage"
+          @click.stop
           class="absolute left-4 z-10 inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/10 text-white transition hover:bg-white/20 md:left-8"
         >
           <ChevronLeft class="h-5 w-5" />
@@ -119,6 +120,7 @@ onUnmounted(() => {
         <img
           :src="currentImage.url"
           :alt="currentImage.caption || title"
+          @click.stop
           class="max-h-full max-w-full rounded-[2rem] object-contain shadow-[0_35px_120px_rgba(15,23,42,0.55)]"
         />
 
@@ -126,6 +128,7 @@ onUnmounted(() => {
           v-if="images.length > 1"
           type="button"
           @click="nextImage"
+          @click.stop
           class="absolute right-4 z-10 inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/10 text-white transition hover:bg-white/20 md:right-8"
         >
           <ChevronRight class="h-5 w-5" />
