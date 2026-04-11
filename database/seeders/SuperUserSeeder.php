@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
 
@@ -11,16 +12,18 @@ class SuperUserSeeder extends Seeder
 {
     public function run(): void
     {
+        $hasRoleSlugColumn = Schema::hasColumn('roles', 'slug');
+
         $mdRole = Role::findOrCreate('md', 'web');
 
-        if (blank($mdRole->slug)) {
+        if ($hasRoleSlugColumn && blank($mdRole->slug)) {
             $mdRole->slug = 'md';
             $mdRole->save();
         }
 
         $superUserRole = Role::findOrCreate('superuser', 'web');
 
-        if (blank($superUserRole->slug)) {
+        if ($hasRoleSlugColumn && blank($superUserRole->slug)) {
             $superUserRole->slug = 'superuser';
             $superUserRole->save();
         }
