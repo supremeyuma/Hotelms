@@ -219,7 +219,7 @@ function removeDiscount() {
                 <div v-if="discount_preview" class="mt-4 rounded-2xl bg-white p-4 border border-emerald-100">
                   <p class="text-sm font-black text-slate-900">{{ discount_preview.name }} ({{ discount_preview.code }})</p>
                   <p class="mt-1 text-sm text-slate-500">
-                    {{ discount_preview.scope_label }} discount saving NGN {{ formatCurrency(discount_preview.discount_amount) }}
+                    {{ discount_preview.scope_label }} discount saving ₦{{ formatCurrency(discount_preview.discount_amount) }}
                   </p>
                 </div>
               </div>

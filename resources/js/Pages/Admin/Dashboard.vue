@@ -377,7 +377,7 @@ function cardToneClasses(tone) {
                   </span>
                 </td>
                 <td class="px-6 py-4 text-right font-bold text-slate-900">
-                  NGN {{ Number(booking.total_amount || 0).toLocaleString() }}
+                  ₦{{ Number(booking.total_amount || 0).toLocaleString() }}
                 </td>
               </tr>
               <tr v-if="!recentBookings.length">

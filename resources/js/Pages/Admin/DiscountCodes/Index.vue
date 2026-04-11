@@ -39,7 +39,7 @@ function toggle(code) {
 function formatValue(code) {
   return code.discount_type === 'percentage'
     ? `${Number(code.discount_value).toLocaleString()}%`
-    : `NGN ${Number(code.discount_value).toLocaleString()}`
+    : `₦${Number(code.discount_value).toLocaleString()}`
 }
 
 function statusClass(code) {

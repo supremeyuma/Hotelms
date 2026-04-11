@@ -9,9 +9,9 @@ defineProps({
 })
 
 function formatMoney(value) {
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('en-NG', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'NGN',
     minimumFractionDigits: 2,
   }).format(Number(value ?? 0))
 }

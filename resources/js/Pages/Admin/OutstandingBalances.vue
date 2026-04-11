@@ -22,7 +22,7 @@
             </div>
             <div class="ml-4">
               <p class="text-sm text-gray-600 dark:text-gray-400">Total Outstanding</p>
-              <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">NGN {{ formatNumber(summary.total_outstanding) }}</p>
+              <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">₦{{ formatNumber(summary.total_outstanding) }}</p>
             </div>
           </div>
         </div>
@@ -46,7 +46,7 @@
             </div>
             <div class="ml-4">
               <p class="text-sm text-gray-600 dark:text-gray-400">Average Outstanding</p>
-              <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">NGN {{ formatNumber(summary.average_outstanding) }}</p>
+              <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">₦{{ formatNumber(summary.average_outstanding) }}</p>
             </div>
           </div>
         </div>
@@ -90,7 +90,7 @@
                   <div class="text-sm text-gray-500 dark:text-gray-400">{{ item.days_occupied }} days</div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-right">
-                  <div class="text-lg font-bold text-red-600 dark:text-red-400">NGN {{ formatNumber(item.outstanding) }}</div>
+                  <div class="text-lg font-bold text-red-600 dark:text-red-400">₦{{ formatNumber(item.outstanding) }}</div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-center">
                   <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium" :class="getStatusClass(item)">{{ getStatusText(item) }}</span>

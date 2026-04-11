@@ -41,7 +41,7 @@
                 >
                   <span class="text-gray-700 dark:text-gray-300">{{ item.account }}</span>
                   <span class="font-medium text-blue-600 dark:text-blue-400">
-                    NGN {{ formatNumber(item.balance) }}
+                    ₦{{ formatNumber(item.balance) }}
                   </span>
                 </div>
               </div>
@@ -60,7 +60,7 @@
                   >
                     <span class="text-gray-700 dark:text-gray-300">{{ item.account }}</span>
                     <span class="font-medium text-orange-600 dark:text-orange-400">
-                      NGN {{ formatNumber(item.balance) }}
+                      ₦{{ formatNumber(item.balance) }}
                     </span>
                   </div>
                 </div>
@@ -76,7 +76,7 @@
                   >
                     <span class="text-gray-700 dark:text-gray-300">{{ item.account }}</span>
                     <span class="font-medium text-purple-600 dark:text-purple-400">
-                      NGN {{ formatNumber(item.balance) }}
+                      ₦{{ formatNumber(item.balance) }}
                     </span>
                   </div>
                 </div>
@@ -89,13 +89,13 @@
               <div class="text-center">
                 <div class="mb-2 text-lg font-semibold text-gray-700 dark:text-gray-300">Total Assets</div>
                 <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                  NGN {{ formatNumber(report.totals.assets) }}
+                  ₦{{ formatNumber(report.totals.assets) }}
                 </div>
               </div>
               <div class="text-center">
                 <div class="mb-2 text-lg font-semibold text-gray-700 dark:text-gray-300">Total Liabilities &amp; Equity</div>
                 <div class="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                  NGN {{ formatNumber(report.totals.liabilities_equity) }}
+                  ₦{{ formatNumber(report.totals.liabilities_equity) }}
                 </div>
               </div>
             </div>
@@ -111,7 +111,7 @@
                   Balanced
                 </span>
                 <span v-else>
-                  Out of Balance: NGN {{ formatNumber(Math.abs(report.totals.assets - report.totals.liabilities_equity)) }}
+                  Out of Balance: ₦{{ formatNumber(Math.abs(report.totals.assets - report.totals.liabilities_equity)) }}
                 </span>
               </div>
             </div>

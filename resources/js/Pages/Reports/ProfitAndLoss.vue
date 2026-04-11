@@ -46,7 +46,7 @@
               >
                 <span class="text-gray-700 dark:text-gray-300">{{ item.account }}</span>
                 <span class="font-medium text-green-600 dark:text-green-400">
-                  NGN {{ formatNumber(item.amount) }}
+                  ₦{{ formatNumber(item.amount) }}
                 </span>
               </div>
             </div>
@@ -62,7 +62,7 @@
               >
                 <span class="text-gray-700 dark:text-gray-300">{{ item.account }}</span>
                 <span class="font-medium text-red-600 dark:text-red-400">
-                  NGN {{ formatNumber(item.amount) }}
+                  ₦{{ formatNumber(item.amount) }}
                 </span>
               </div>
             </div>
@@ -73,19 +73,19 @@
               <div class="flex justify-between py-2">
                 <span class="text-lg font-semibold text-gray-700 dark:text-gray-300">Total Revenue</span>
                 <span class="text-lg font-semibold text-green-600 dark:text-green-400">
-                  NGN {{ formatNumber(report.totals.revenue) }}
+                  ₦{{ formatNumber(report.totals.revenue) }}
                 </span>
               </div>
               <div class="flex justify-between py-2">
                 <span class="text-lg font-semibold text-gray-700 dark:text-gray-300">Total Expenses</span>
                 <span class="text-lg font-semibold text-red-600 dark:text-red-400">
-                  NGN {{ formatNumber(report.totals.expenses) }}
+                  ₦{{ formatNumber(report.totals.expenses) }}
                 </span>
               </div>
               <div class="flex justify-between border-t-2 border-gray-300 py-3 text-xl font-bold dark:border-gray-600">
                 <span class="text-gray-900 dark:text-gray-100">Net Profit</span>
                 <span :class="report.totals.net_profit >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">
-                  NGN {{ formatNumber(report.totals.net_profit) }}
+                  ₦{{ formatNumber(report.totals.net_profit) }}
                 </span>
               </div>
             </div>

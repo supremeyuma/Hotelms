@@ -33,7 +33,7 @@
             <div class="rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-900/20">
               <div class="text-sm font-medium text-green-600 dark:text-green-400">Total Revenue</div>
               <div class="text-2xl font-bold text-green-700 dark:text-green-300">
-                NGN {{ formatNumber(totalRevenue) }}
+                ₦{{ formatNumber(totalRevenue) }}
               </div>
             </div>
 
@@ -44,7 +44,7 @@
             >
               <div class="text-sm font-medium text-blue-600 dark:text-blue-400">{{ dept.department }}</div>
               <div class="text-xl font-bold text-blue-700 dark:text-blue-300">
-                NGN {{ formatNumber(dept.amount) }}
+                ₦{{ formatNumber(dept.amount) }}
               </div>
               <div class="mt-1 text-xs text-blue-500 dark:text-blue-400">
                 {{ percentage(dept.amount, totalRevenue) }}% of total
@@ -72,7 +72,7 @@
                     <div class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ item.department }}</div>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-right">
-                    <div class="text-sm font-semibold text-gray-900 dark:text-gray-100">NGN {{ formatNumber(item.amount) }}</div>
+                    <div class="text-sm font-semibold text-gray-900 dark:text-gray-100">₦{{ formatNumber(item.amount) }}</div>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-right">
                     <div class="text-sm text-gray-600 dark:text-gray-400">{{ percentage(item.amount, totalRevenue) }}%</div>

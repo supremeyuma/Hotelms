@@ -29,7 +29,7 @@
           >
             <div class="flex-1">
               <p class="font-bold text-slate-800">{{ item.name }}</p>
-              <p class="text-xs font-black text-purple-600 italic">N{{ Number(item.price).toLocaleString() }}</p>
+              <p class="text-xs font-black text-purple-600 italic">₦{{ Number(item.price).toLocaleString() }}</p>
             </div>
 
             <div class="flex items-center bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
@@ -104,7 +104,7 @@
         <div class="bg-slate-900 rounded-[2rem] p-6 text-white flex justify-between items-center shadow-xl shadow-slate-200">
           <div>
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Estimated Total</p>
-            <p class="text-2xl font-black">N{{ total.toLocaleString() }}</p>
+            <p class="text-2xl font-black">₦{{ total.toLocaleString() }}</p>
           </div>
           <button
             type="submit"

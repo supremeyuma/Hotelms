@@ -101,7 +101,7 @@ function filterLabel() {
 }
 
 function formatCurrency(amount) {
-  return `NGN ${Number(amount || 0).toLocaleString()}`
+  return `₦${Number(amount || 0).toLocaleString()}`
 }
 
 function guestBreakdown(booking) {

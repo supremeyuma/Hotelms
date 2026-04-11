@@ -46,7 +46,7 @@ const operationsCards = computed(() => [
 const financeCards = computed(() => [
   {
     label: 'Recognized revenue',
-    value: `NGN ${Number(props.kpis?.revenue?.revenue ?? 0).toLocaleString()}`,
+    value: `₦${Number(props.kpis?.revenue?.revenue ?? 0).toLocaleString()}`,
     hint: 'Confirmed booking revenue in current summary',
     href: props.links?.primary,
     icon: Hotel,
@@ -55,7 +55,7 @@ const financeCards = computed(() => [
   {
     label: 'Outstanding balances',
     value: Number(props.kpis?.outstanding?.count ?? 0).toLocaleString(),
-    hint: `NGN ${Number(props.kpis?.outstanding?.total ?? 0).toLocaleString()} unsettled`,
+    hint: `₦${Number(props.kpis?.outstanding?.total ?? 0).toLocaleString()} unsettled`,
     href: props.links?.secondary,
     icon: BedDouble,
     tone: 'amber',
@@ -70,7 +70,7 @@ const financeCards = computed(() => [
   },
   {
     label: 'Daily revenue',
-    value: `NGN ${Number(props.kpis?.daily_revenue?.total ?? 0).toLocaleString()}`,
+    value: `₦${Number(props.kpis?.daily_revenue?.total ?? 0).toLocaleString()}`,
     hint: 'Revenue posted today',
     href: props.links?.quaternary,
     icon: ArrowUpRight,

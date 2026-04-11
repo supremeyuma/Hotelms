@@ -51,7 +51,7 @@ function formatDate(dateString) {
               class="border-b border-gray-200 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800"
             >
               <td class="px-4 py-2">{{ r.id }}</td>
-              <td class="px-4 py-2">NGN {{ r.total_amount }}</td>
+              <td class="px-4 py-2">₦{{ r.total_amount }}</td>
               <td class="px-4 py-2">{{ r.customer_name ?? '-' }}</td>
               <td class="px-4 py-2">{{ formatDate(r.created_at) }}</td>
             </tr>

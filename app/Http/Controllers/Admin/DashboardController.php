@@ -88,7 +88,7 @@ class DashboardController extends Controller
                 [
                     'name' => 'Finance',
                     'metric' => Booking::whereIn('status', ['confirmed', 'active', 'checked_in'])->where('payment_status', '!=', 'paid')->count(),
-                    'secondary' => 'NGN ' . number_format((float) Booking::whereDate('created_at', $today)->sum('total_amount'), 2),
+                    'secondary' => '₦' . number_format((float) Booking::whereDate('created_at', $today)->sum('total_amount'), 2),
                     'route' => route('finance.dashboard'),
                 ],
             ];
