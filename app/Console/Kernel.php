@@ -45,6 +45,10 @@ class Kernel extends ConsoleKernel
         $schedule->job(new GenerateRevenueReportJob(now()->subDays(1)->toDateString(), now()->toDateString()))->dailyAt('04:00');
         $schedule->job(new GenerateOccupancyReportJob(now()->subDays(7)->toDateString(), now()->toDateString()))->weekly();
 
+        // Reporting aggregation and exception detection
+        $schedule->command('reporting:aggregate')->dailyAt('03:30');  // Aggregate yesterday's facts
+        $schedule->command('reporting:detect-exceptions')->hourly();  // Check for exceptions hourly
+
         // Cleanup tasks
         $schedule->job(new CleanupOldImagesJob())->dailyAt('04:30');
         $schedule->job(new CleanupAuditLogsJob())->weekly()->sundays()->at('05:00');
