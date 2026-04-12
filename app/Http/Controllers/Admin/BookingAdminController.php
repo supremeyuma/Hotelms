@@ -400,6 +400,26 @@ class BookingAdminController extends Controller
         }
     }
 
+    /**
+     * Check out a booking - marks rooms as dirty and records check-out timestamps
+     */
+    public function checkOut(Booking $booking)
+    {
+        if (! in_array($booking->status, ['checked_in', 'checked_out'], true)) {
+            return back()->withErrors(['status' => 'Booking must be checked in before check-out.']);
+        }
+
+        try {
+            $this->service->checkOut($booking, null);
+            AuditLogger::log('booking_checked_out', $booking, $booking->id, [
+                'by_admin' => auth()->user()?->id,
+            ]);
+            return back()->with('success', 'Guest checked out successfully. Rooms marked for cleaning.');
+        } catch (\Exception $e) {
+            return back()->withErrors(['general' => $e->getMessage()]);
+        }
+    }
+
     protected function editPayload(Booking $booking): array
     {
         $paymentColumns = ['id', 'room_id', 'amount', 'amount_paid', 'method', 'created_at'];

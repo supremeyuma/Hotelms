@@ -55,6 +55,7 @@ const paymentForm = useForm({
 const approveOverrideForm = useForm({})
 const rejectOverrideForm = useForm({})
 const checkInForm = useForm({})
+const checkOutForm = useForm({})
 
 const roomOptions = computed(() => {
   const current = (props.booking.assigned_room_options ?? []).map((room) => ({
@@ -164,6 +165,23 @@ function handleCheckIn() {
     preserveScroll: true,
   })
 }
+
+function handleCheckOut() {
+  if (checkOutForm.processing) return
+  
+  if (!['checked_in', 'checked_out'].includes(props.booking.status)) {
+    alert('Booking must be checked in before check-out')
+    return
+  }
+
+  if (!confirm('Mark all rooms as checked out and ready for cleaning?')) {
+    return
+  }
+
+  checkOutForm.post(route('admin.bookings.check-out', props.booking.id), {
+    preserveScroll: true,
+  })
+}
 </script>
 
 <template>
@@ -216,14 +234,31 @@ function handleCheckIn() {
       <div v-if="['confirmed', 'checked_in'].includes(booking.status)" class="rounded-[2rem] border border-emerald-200 bg-gradient-to-br from-emerald-50 to-emerald-50/50 p-6 shadow-sm">
         <p class="text-sm font-bold text-emerald-700">Guest check-in</p>
         <p class="mt-1 text-sm text-emerald-600">Mark rooms as occupied and record check-in timestamps for the reporting system.</p>
-        <button
-          type="button"
-          @click="handleCheckIn"
-          :disabled="checkInForm.processing"
-          class="mt-4 inline-flex items-center justify-center rounded-2xl bg-emerald-600 px-6 py-3 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {{ checkInForm.processing ? 'Checking in...' : 'Check in guest now' }}
-        </button>
+        <div class="mt-4 flex gap-3">
+          <button
+            type="button"
+            @click="handleCheckIn"
+            :disabled="checkInForm.processing"
+            class="inline-flex items-center justify-center rounded-2xl bg-emerald-600 px-6 py-3 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {{ checkInForm.processing ? 'Checking in...' : 'Check in guest now' }}
+          </button>
+        </div>
+      </div>
+
+      <div v-if="['checked_in', 'checked_out'].includes(booking.status)" class="rounded-[2rem] border border-rose-200 bg-gradient-to-br from-rose-50 to-rose-50/50 p-6 shadow-sm">
+        <p class="text-sm font-bold text-rose-700">Guest check-out</p>
+        <p class="mt-1 text-sm text-rose-600">Mark rooms as checked out and ready for cleaning. Finalizes all room charges.</p>
+        <div class="mt-4 flex gap-3">
+          <button
+            type="button"
+            @click="handleCheckOut"
+            :disabled="checkOutForm.processing"
+            class="inline-flex items-center justify-center rounded-2xl bg-rose-600 px-6 py-3 text-sm font-bold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {{ checkOutForm.processing ? 'Checking out...' : 'Check out guest now' }}
+          </button>
+        </div>
       </div>
 
       <div class="grid gap-8 xl:grid-cols-[minmax(0,1fr)_380px]">
