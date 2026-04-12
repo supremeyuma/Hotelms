@@ -118,6 +118,8 @@ Route::prefix('frontdesk')->middleware(['auth', 'role:frontdesk|md'])->name('fro
 
     Route::get('/laundry-requests', [FrontDeskLaundryController::class, 'index'])->name('laundry.index');
     Route::get('/laundry-requests/{guestRequest}', [FrontDeskLaundryController::class, 'show'])->name('frontdesk.laundry.show');
+    Route::post('/laundry-orders/{order}/status', [FrontDeskLaundryController::class, 'updateStatus'])->name('frontdesk.laundry.updateStatus');
+    Route::get('/laundry-orders/{order}/print', [FrontDeskLaundryController::class, 'print'])->name('frontdesk.laundry.print');
 
     Route::get('/receipts', [ReceiptController::class, 'index']);
     Route::get('/receipts/{receipt}', [ReceiptController::class, 'show']);

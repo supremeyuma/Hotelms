@@ -31,7 +31,7 @@ class LaundryProjector
                 'ready_at' => $order->ready_at,
                 'delivered_at' => $order->delivered_at,
                 'cancelled_at' => $order->cancelled_at,
-                'item_count' => $order->laundryOrderItems()->count(),
+                'item_count' => $order->items()->count(),
                 'total_amount' => $order->total_amount ?? 0,
                 'payment_status' => $order->payment_status ?? 'pending',
                 'was_refunded' => $order->refunded ?? false,

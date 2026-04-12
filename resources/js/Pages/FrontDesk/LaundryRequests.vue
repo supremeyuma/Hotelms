@@ -1,6 +1,6 @@
 <script setup>
 import FrontDeskLayout from '@/Layouts/Staff/FrontDeskLayout.vue'
-import { Head } from '@inertiajs/vue3'
+import { Head, router } from '@inertiajs/vue3'
 import { 
   WashingMachine, 
   Clock, 
@@ -10,7 +10,8 @@ import {
   Tag,
   ChevronDown,
   User,
-  PackageCheck
+  PackageCheck,
+  Loader
 } from 'lucide-vue-next'
 import { ref } from 'vue'
 
@@ -19,6 +20,10 @@ const props = defineProps({
 })
 
 const expandedHistory = ref({})
+const showStatusModal = ref(false)
+const selectedOrder = ref(null)
+const selectedStatus = ref('')
+const isLoading = ref(false)
 
 const toggleHistory = (id) => {
   expandedHistory.value[id] = !expandedHistory.value[id]
@@ -34,9 +39,60 @@ const getStatusTheme = (status) => {
   return themes[status] || 'bg-slate-100 text-slate-600'
 }
 
+const getAvailableStatuses = (currentStatus) => {
+  const transitions = {
+    'pending': ['processing', 'cancelled'],
+    'processing': ['ready', 'pending', 'cancelled'],
+    'ready': ['delivered', 'processing', 'cancelled'],
+    'delivered': ['cancelled'],
+    'cancelled': []
+  }
+  return transitions[currentStatus] || []
+}
+
 function formatDate(dateString) {
   return new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
+
+const handlePrintTag = (order) => {
+  window.open(route('frontdesk.laundry.print', { order: order.id }), '_blank')
+}
+
+const openStatusModal = (order) => {
+  selectedOrder.value = order
+  selectedStatus.value = ''
+  showStatusModal.value = true
+}
+
+const closeStatusModal = () => {
+  showStatusModal.value = false
+  selectedOrder.value = null
+  selectedStatus.value = ''
+}
+
+const submitStatusUpdate = () => {
+  if (!selectedOrder.value || !selectedStatus.value) {
+    return
+  }
+
+  isLoading.value = true
+
+  router.post(
+    route('frontdesk.laundry.updateStatus', { order: selectedOrder.value.id }),
+    { status: selectedStatus.value },
+    {
+      onFinish: () => {
+        isLoading.value = false
+        closeStatusModal()
+      }
+    }
+  )
+}
+</script>
+
+<template>
+  <FrontDeskLayout>
+    <Head title="Laundry Operations" />
 </script>
 
 <template>
@@ -142,12 +198,64 @@ function formatDate(dateString) {
           </div>
           
           <div class="bg-slate-50 px-8 py-4 flex justify-end gap-3 border-t border-slate-100">
-              <button class="px-6 py-2 bg-white border border-slate-200 text-slate-600 font-black text-xs rounded-xl uppercase tracking-widest hover:bg-slate-100 transition-all">
+              <button 
+                @click="handlePrintTag(req.requestable)"
+                class="px-6 py-2 bg-white border border-slate-200 text-slate-600 font-black text-xs rounded-xl uppercase tracking-widest hover:bg-slate-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                :disabled="isLoading">
                 Print Tag
               </button>
-              <button class="px-6 py-2 bg-slate-900 text-white font-black text-xs rounded-xl uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-lg shadow-slate-200">
+              <button 
+                @click="openStatusModal(req.requestable)"
+                class="px-6 py-2 bg-slate-900 text-white font-black text-xs rounded-xl uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-lg shadow-slate-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                :disabled="isLoading">
+                <Loader v-if="isLoading" class="w-3 h-3 animate-spin" />
                 Update Status
               </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status Update Modal -->
+      <div v-if="showStatusModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full">
+          <div class="p-8">
+            <h2 class="text-2xl font-black text-slate-900 mb-2">Update Status</h2>
+            <p class="text-slate-500 font-medium mb-6">Order {{ selectedOrder?.order_code }} - Room {{ selectedOrder?.room?.name }}</p>
+            
+            <div class="mb-6">
+              <label class="block text-xs font-black text-slate-600 uppercase tracking-widest mb-3">Select New Status</label>
+              <div class="space-y-2">
+                <button 
+                  v-for="status in getAvailableStatuses(selectedOrder?.status)"
+                  :key="status"
+                  @click="selectedStatus = status"
+                  class="w-full text-left p-3 rounded-xl border-2 transition-all"
+                  :class="selectedStatus === status 
+                    ? 'border-indigo-600 bg-indigo-50 text-indigo-700 font-black'
+                    : 'border-slate-200 hover:border-slate-300 text-slate-700 font-bold'">
+                  {{ status.charAt(0).toUpperCase() + status.slice(1) }}
+                </button>
+              </div>
+              <p v-if="getAvailableStatuses(selectedOrder?.status).length === 0" class="text-sm text-slate-500 mt-3">
+                No status transitions available for this order.
+              </p>
+            </div>
+
+            <div class="flex gap-3">
+              <button 
+                @click="closeStatusModal"
+                class="flex-1 px-4 py-2 bg-slate-100 text-slate-700 font-black text-xs rounded-xl uppercase tracking-widest hover:bg-slate-200 transition-all disabled:opacity-50"
+                :disabled="isLoading">
+                Cancel
+              </button>
+              <button 
+                @click="submitStatusUpdate"
+                class="flex-1 px-4 py-2 bg-indigo-600 text-white font-black text-xs rounded-xl uppercase tracking-widest hover:bg-indigo-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                :disabled="isLoading || !selectedStatus">
+                <Loader v-if="isLoading" class="w-3 h-3 animate-spin" />
+                {{ isLoading ? 'Updating...' : 'Update' }}
+              </button>
+            </div>
           </div>
         </div>
       </div>
