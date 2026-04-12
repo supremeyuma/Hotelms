@@ -11,11 +11,13 @@ use Illuminate\Support\Collection;
 
 class OccupancyReportService
 {
+    // Booking statuses that should be counted as occupancy
+    // Excludes: pending_payment, cancelled, checked_out
     protected array $reportableStatuses = [
+        'pending',
         'confirmed',
         'active',
         'checked_in',
-        'completed',
     ];
 
     public function filters(array $filters): array
