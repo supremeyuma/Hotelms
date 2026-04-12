@@ -93,11 +93,6 @@ const submitStatusUpdate = () => {
 <template>
   <FrontDeskLayout>
     <Head title="Laundry Operations" />
-</script>
-
-<template>
-  <FrontDeskLayout>
-    <Head title="Laundry Operations" />
 
     <div class="p-8 max-w-6xl mx-auto space-y-8">
       <div class="flex items-center justify-between mb-10">
