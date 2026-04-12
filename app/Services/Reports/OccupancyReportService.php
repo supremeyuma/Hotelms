@@ -12,12 +12,14 @@ use Illuminate\Support\Collection;
 class OccupancyReportService
 {
     // Booking statuses that should be counted as occupancy
-    // Excludes: pending_payment, cancelled, checked_out
+    // Includes historical checked_out bookings to show past occupancy
+    // Excludes: pending_payment, cancelled
     protected array $reportableStatuses = [
         'pending',
         'confirmed',
         'active',
         'checked_in',
+        'checked_out',
     ];
 
     public function filters(array $filters): array
