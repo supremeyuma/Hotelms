@@ -121,7 +121,8 @@ class BillingService
         float $amount,
         string $method,
         ?string $reference = null,
-        ?string $notes = null
+        ?string $notes = null,
+        ?string $provider = 'manual'
     ): Payment {
         return DB::transaction(function () use (
             $booking,
@@ -129,7 +130,8 @@ class BillingService
             $amount,
             $method,
             $reference,
-            $notes
+            $notes,
+            $provider
         ) {
             $payment = Payment::create([
                 'booking_id' => $booking->id,
@@ -139,6 +141,7 @@ class BillingService
                 'reference'  => $reference,
                 'status'     => 'successful',
                 'notes'      => $notes,
+                'provider'   => $provider,
                 'paid_at'    => now(),
             ]);
 
