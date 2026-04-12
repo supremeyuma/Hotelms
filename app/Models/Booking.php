@@ -87,12 +87,12 @@ class Booking extends Model
 
     public function scopeActive($query)
     {
-        return $query->whereIn('status', ['active', 'checked_in']);
+        return $query->whereIn($this->qualifyColumn('status'), ['active', 'checked_in']);
     }
 
     public function scopeUpcoming($query)
     {
-        return $query->where('check_in', '>', now());
+        return $query->where($this->qualifyColumn('check_in'), '>', now());
     }
 
     public function rooms()
