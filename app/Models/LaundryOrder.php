@@ -29,15 +29,6 @@ class LaundryOrder extends Model
         return $this->hasMany(LaundryOrderItem::class);
     }
 
-    /**
-     * Backward-compatible alias for older code paths that still use the
-     * original relationship name.
-     */
-    public function laundryOrderItems()
-    {
-        return $this->items();
-    }
-
     public function images()
     {
         return $this->hasMany(LaundryOrderImage::class);
