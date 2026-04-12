@@ -15,27 +15,39 @@ class BookingProjector
      */
     public static function project(Booking $booking)
     {
+        // Calculate nights between check-in and check-out
+        $nights = 1;
+        if ($booking->check_in && $booking->check_out) {
+            $nights = $booking->check_out->diffInDays($booking->check_in) ?: 1;
+        }
+        
+        // Count booked rooms
+        $roomCount = $booking->rooms()->count() ?: 1;
+        
+        // Calculate total payments from completed payments
+        $totalPayments = $booking->payments()->where('status', 'completed')->sum('amount') ?? 0;
+        
         $fact = ReportingBookingFact::updateOrCreate(
             ['booking_id' => $booking->id],
             [
-                'booking_source' => $booking->source ?? 'direct',
-                'check_in_date' => $booking->check_in_date,
-                'check_out_date' => $booking->check_out_date,
-                'actual_check_in' => $booking->checked_in_at?->toDateString(),
-                'actual_check_out' => $booking->checked_out_at?->toDateString(),
-                'room_nights' => $booking->bookingRooms()->count(),
-                'guest_count' => $booking->guest_count ?? 0,
-                'room_count' => $booking->bookingRooms()->count(),
-                'room_revenue' => $booking->total_room_charges ?? 0,
-                'ancillary_revenue' => $booking->ancillary_charges ?? 0,
-                'total_charges' => $booking->total_charge ?? 0,
-                'total_payments' => $booking->payments()->where('status', 'completed')->sum('amount') ?? 0,
-                'outstanding_balance' => $booking->outstanding_balance ?? 0,
-                'complaints_count' => $booking->complaints_count ?? 0,
-                'service_requests_count' => $booking->service_requests_count ?? 0,
-                'checkout_delay' => $booking->checkout_delay ?? false,
-                'checkin_delay' => $booking->checkin_delay ?? false,
-                'requires_follow_up' => $booking->status === 'complaint_pending',
+                'booking_source' => 'direct',
+                'check_in_date' => $booking->check_in,
+                'check_out_date' => $booking->check_out,
+                'actual_check_in' => null,
+                'actual_check_out' => null,
+                'room_nights' => $nights * $roomCount,
+                'guest_count' => $booking->guests ?? 0,
+                'room_count' => $roomCount,
+                'room_revenue' => $booking->total_amount ?? 0,
+                'ancillary_revenue' => $booking->charges()->sum('amount') ?? 0,
+                'total_charges' => $booking->total_amount ?? 0,
+                'total_payments' => $totalPayments,
+                'outstanding_balance' => max(0, ($booking->total_amount ?? 0) - $totalPayments),
+                'complaints_count' => 0,
+                'service_requests_count' => $booking->orders()->count() ?? 0,
+                'checkout_delay' => false,
+                'checkin_delay' => false,
+                'requires_follow_up' => false,
             ]
         );
 
