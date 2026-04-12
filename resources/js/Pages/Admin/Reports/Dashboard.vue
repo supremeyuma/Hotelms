@@ -10,6 +10,10 @@ const props = defineProps({
   title: String,
   kpis: Object,
   links: Object,
+  recentTransactions: {
+    type: Array,
+    default: () => [],
+  },
   charts: Array,
 })
 
@@ -45,34 +49,34 @@ const operationsCards = computed(() => [
 
 const financeCards = computed(() => [
   {
-    label: 'Recognized revenue',
-    value: `₦${Number(props.kpis?.revenue?.revenue ?? 0).toLocaleString()}`,
-    hint: 'Confirmed booking revenue in current summary',
+    label: 'Charges posted',
+    value: formatCompactCurrency(props.kpis?.charges?.total ?? 0),
+    hint: `${Number(props.kpis?.charges?.count ?? 0).toLocaleString()} charge transactions in the current 30-day summary`,
     href: props.links?.primary,
     icon: Hotel,
     tone: 'indigo',
   },
   {
-    label: 'Outstanding balances',
-    value: Number(props.kpis?.outstanding?.count ?? 0).toLocaleString(),
-    hint: `₦${Number(props.kpis?.outstanding?.total ?? 0).toLocaleString()} unsettled`,
+    label: 'Payments recorded',
+    value: formatCompactCurrency(props.kpis?.payments?.total ?? 0),
+    hint: `${formatCompactCurrency(props.kpis?.payments?.today_total ?? 0)} posted today`,
     href: props.links?.secondary,
     icon: BedDouble,
     tone: 'amber',
+  },
+  {
+    label: 'Outstanding bookings',
+    value: Number(props.kpis?.outstanding?.count ?? 0).toLocaleString(),
+    hint: `${formatCompactCurrency(props.kpis?.outstanding?.total ?? 0)} still unsettled`,
+    href: props.links?.primary,
+    icon: ClipboardList,
+    tone: 'emerald',
   },
   {
     label: 'Open periods',
     value: Number(props.kpis?.periods?.open ?? 0).toLocaleString(),
     hint: 'Accounting periods currently open',
     href: props.links?.tertiary,
-    icon: ClipboardList,
-    tone: 'emerald',
-  },
-  {
-    label: 'Daily revenue',
-    value: `₦${Number(props.kpis?.daily_revenue?.total ?? 0).toLocaleString()}`,
-    hint: 'Revenue posted today',
-    href: props.links?.quaternary,
     icon: ArrowUpRight,
     tone: 'indigo',
   },
@@ -86,6 +90,31 @@ function toneClasses(tone) {
   }
 
   return tones[tone] ?? 'from-slate-500/10 via-slate-500/5 to-white text-slate-600 ring-slate-100'
+}
+
+function formatCompactCurrency(value) {
+  return `NGN ${Number(value ?? 0).toLocaleString()}`
+}
+
+function formatCurrency(value) {
+  return `NGN ${Number(value ?? 0).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`
+}
+
+function formatDateTime(value) {
+  if (!value) {
+    return 'No timestamp'
+  }
+
+  return new Date(value).toLocaleString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  })
 }
 </script>
 
@@ -216,6 +245,72 @@ function toneClasses(tone) {
           :title="chart.title"
           :endpoint="chart.endpoint"
         />
+      </section>
+
+      <section
+        v-if="mode === 'finance'"
+        class="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm"
+      >
+        <div class="flex flex-col gap-2 border-b border-slate-100 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Recent activity</p>
+            <h2 class="mt-2 text-2xl font-black tracking-tight text-slate-900">Latest posted transactions</h2>
+          </div>
+          <Link
+            :href="links.secondary"
+            class="inline-flex items-center gap-2 text-sm font-semibold text-indigo-600 transition hover:text-indigo-700"
+          >
+            Open finance audit
+            <ArrowUpRight class="h-4 w-4" />
+          </Link>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="min-w-full text-sm">
+            <thead class="bg-slate-50 text-left text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
+              <tr>
+                <th class="px-6 py-4">Time</th>
+                <th class="px-6 py-4">Type</th>
+                <th class="px-6 py-4">Reference</th>
+                <th class="px-6 py-4">Guest</th>
+                <th class="px-6 py-4">Room</th>
+                <th class="px-6 py-4 text-right">Amount</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              <tr
+                v-for="transaction in recentTransactions"
+                :key="transaction.id"
+                class="transition hover:bg-slate-50/80"
+              >
+                <td class="px-6 py-4 text-slate-600">{{ formatDateTime(transaction.occurred_at) }}</td>
+                <td class="px-6 py-4">
+                  <span
+                    class="inline-flex rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wide"
+                    :class="transaction.kind === 'payment' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'"
+                  >
+                    {{ transaction.kind }}
+                  </span>
+                </td>
+                <td class="px-6 py-4">
+                  <div class="space-y-1">
+                    <p class="font-semibold text-slate-900">{{ transaction.label }}</p>
+                    <p class="text-xs text-slate-500">{{ transaction.booking_code || 'No booking reference' }}</p>
+                  </div>
+                </td>
+                <td class="px-6 py-4 text-slate-700">{{ transaction.guest }}</td>
+                <td class="px-6 py-4 text-slate-700">{{ transaction.room }}</td>
+                <td class="px-6 py-4 text-right font-bold text-slate-900">{{ formatCurrency(transaction.amount) }}</td>
+              </tr>
+
+              <tr v-if="recentTransactions.length === 0">
+                <td colspan="6" class="px-6 py-16 text-center text-slate-500">
+                  No posted charges or payments have been captured yet.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </section>
     </div>
   </ManagerLayout>

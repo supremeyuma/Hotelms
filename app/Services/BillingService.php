@@ -141,27 +141,18 @@ class BillingService
 
     public function outstandingForRoom(Booking $booking, int $roomId): float
     {
-        $debits = $this->arAmount($booking->id, $roomId, 'debit');
-        $credits = $this->arAmount($booking->id, $roomId, 'credit');
+        $charges = (float) Charge::query()
+            ->where('booking_id', $booking->id)
+            ->where('room_id', $roomId)
+            ->sum('amount');
 
-        return max($debits - $credits, 0);
-    }
+        $payments = (float) Payment::query()
+            ->where('booking_id', $booking->id)
+            ->where('room_id', $roomId)
+            ->whereIn('status', ['successful', 'completed'])
+            ->sum(DB::raw('COALESCE(amount_paid, amount)'));
 
-    protected function arAmount(
-        int $bookingId,
-        int $roomId,
-        string $column
-    ): float {
-        return (float) DB::table('journal_lines')
-            ->join('journal_entries', 'journal_entries.id', '=', 'journal_lines.journal_entry_id')
-            ->join('accounts', 'accounts.id', '=', 'journal_lines.account_id')
-            ->where('accounts.name', 'Accounts Receivable')
-            ->where('journal_entries.reference_id', $bookingId)
-            ->where(function ($q) use ($roomId) {
-                $q->where('journal_entries.description', 'like', "%Room {$roomId}%")
-                  ->orWhere('journal_entries.reference_type', 'like', '%room%');
-            })
-            ->sum("journal_lines.$column");
+        return round(max($charges - $payments, 0), 2);
     }
 
     protected function roomLabel($room): string

@@ -4,6 +4,7 @@ namespace Tests\Feature\Admin;
 
 use App\Models\Booking;
 use App\Models\Charge;
+use App\Models\Payment;
 use App\Models\Property;
 use App\Models\Room;
 use App\Models\RoomType;
@@ -93,13 +94,34 @@ class FinanceDashboardAccessTest extends TestCase
             'charge_date' => now()->toDateString(),
         ]);
 
+        Payment::create([
+            'booking_id' => $booking->id,
+            'room_id' => $room->id,
+            'amount' => 20000,
+            'amount_paid' => 20000,
+            'currency' => 'NGN',
+            'method' => 'card',
+            'reference' => 'PAY-1001',
+            'transaction_ref' => 'PAY-1001',
+            'status' => 'completed',
+            'provider' => 'manual',
+            'payment_type' => 'booking',
+            'paid_at' => now(),
+        ]);
+
         $response = $this->actingAs($user)->get(route('finance.dashboard'));
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
             ->component('Admin/Reports/Dashboard')
             ->where('mode', 'finance')
+            ->where('kpis.charges.count', 1)
+            ->where('kpis.charges.total', 50000)
+            ->where('kpis.payments.count', 1)
+            ->where('kpis.payments.total', 20000)
             ->where('kpis.outstanding.count', 1)
+            ->where('kpis.outstanding.total', 30000)
+            ->has('recentTransactions', 2)
         );
     }
 

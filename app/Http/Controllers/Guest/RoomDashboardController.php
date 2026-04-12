@@ -12,14 +12,13 @@ use App\Services\BillingService;
 use App\Services\BookingExtensionService;
 use App\Services\CheckoutService;
 use App\Services\PaymentProviderManager;
+use App\Services\PaymentAccountingService;
 use App\Services\RoomGuestAccessService;
 use App\Events\ServiceRequested;
 use App\Events\MaintenanceReported;
-use App\Events\BillingUpdated;
 use App\Models\LaundryItem;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Models\Receipt;
 use App\Models\RoomCleaning;
 use App\Models\Payment;
 
@@ -31,6 +30,7 @@ protected RoomServiceService $roomService;
     protected BookingExtensionService $extensionService;
     protected CheckoutService $checkoutService;
     protected PaymentProviderManager $paymentManager;
+    protected PaymentAccountingService $paymentAccountingService;
     protected RoomGuestAccessService $roomGuestAccessService;
 
     public function __construct(
@@ -40,6 +40,7 @@ protected RoomServiceService $roomService;
         BookingExtensionService $extensionService,
         CheckoutService $checkoutService,
         PaymentProviderManager $paymentManager,
+        PaymentAccountingService $paymentAccountingService,
         RoomGuestAccessService $roomGuestAccessService
     ) {
         $this->roomService = $roomService;
@@ -48,6 +49,7 @@ protected RoomServiceService $roomService;
         $this->extensionService = $extensionService;
         $this->checkoutService = $checkoutService;
         $this->paymentManager = $paymentManager;
+        $this->paymentAccountingService = $paymentAccountingService;
         $this->roomGuestAccessService = $roomGuestAccessService;
     }
 
@@ -79,17 +81,6 @@ protected RoomServiceService $roomService;
     }
 
     /**
-     * ROOM-SPECIFIC outstanding balance
-     */
-    protected function outstandingForRoom($room): float
-    {
-        $charges = $room->charges()->sum('amount');
-        $payments = $room->payments()->sum('amount');
-
-        return max($charges - $payments, 0);
-    }
-
-    /**
      * Guest bill history (ROOM-SCOPED)
      */
     public function billHistory(Request $request)
@@ -97,27 +88,32 @@ protected RoomServiceService $roomService;
         $room = $this->room($request);
         $booking = $this->booking($request);
 
+        $charges = $booking->charges()
+            ->where('room_id', $room->id)
+            ->select('id', 'description', 'amount', 'created_at')
+            ->get()
+            ->map(fn ($charge) => [
+                'type' => 'charge',
+                'description' => $charge->description,
+                'amount' => (float) $charge->amount,
+                'created_at' => $charge->created_at,
+            ]);
+
+        $payments = $booking->payments()
+            ->where('room_id', $room->id)
+            ->whereIn('status', ['successful', 'completed'])
+            ->select('id', 'amount', 'amount_paid', 'created_at', 'paid_at')
+            ->get()
+            ->map(fn ($payment) => [
+                'type' => 'payment',
+                'description' => 'Payment',
+                'amount' => (float) ($payment->amount_paid ?? $payment->amount),
+                'created_at' => $payment->paid_at ?? $payment->created_at,
+            ]);
+
         return response()->json([
-            'history' => $room->charges()
-                ->select('id', 'description', 'amount', 'created_at')
-                ->get()
-                ->map(fn ($c) => [
-                    'type' => 'charge',
-                    'description' => $c->description,
-                    'amount' => $c->amount,
-                    'created_at' => $c->created_at,
-                ])
-                ->merge(
-                    $room->payments()
-                        ->select('id', 'amount', 'created_at')
-                        ->get()
-                        ->map(fn ($p) => [
-                            'type' => 'payment',
-                            'description' => 'Payment',
-                            'amount' => $p->amount,
-                            'created_at' => $p->created_at,
-                        ])
-                )
+            'history' => $charges
+                ->merge($payments)
                 ->sortBy('created_at')
                 ->values(),
             'outstanding' => $this->billingService
@@ -244,6 +240,8 @@ protected RoomServiceService $roomService;
             // Create payment record in database for tracking
             $payment = Payment::create([
                 'booking_id' => $booking->id,
+                'room_id' => $room->id,
+                'method' => $provider,
                 'reference' => $reference,
                 'payment_reference' => $reference,
                 'provider' => $provider,
@@ -332,21 +330,20 @@ protected RoomServiceService $roomService;
             $payment = Payment::where('reference', $reference)->first();
 
             if ($payment) {
-                // Update payment status
+                $wasCompleted = in_array($payment->status, ['successful', 'completed'], true);
+
                 $payment->update([
                     'status' => 'completed',
+                    'method' => $payment->method ?? $payment->provider,
+                    'room_id' => $payment->room_id ?? $roomModel->id,
+                    'amount_paid' => $payment->amount_paid ?? $payment->amount,
+                    'paid_at' => $payment->paid_at ?? now(),
                     'verified_at' => now(),
                 ]);
 
-                // Add payment to billing system
-                $booking = $payment->booking;
-                $this->billingService->addPayment(
-                    booking: $booking,
-                    roomId: $roomModel->id,
-                    amount: $payment->amount,
-                    method: $payment->provider,
-                    reference: $reference
-                );
+                if (! $wasCompleted) {
+                    $this->paymentAccountingService->handleSuccessful($payment->fresh());
+                }
 
                 \Log::info('Bill payment confirmed', [
                     'reference' => $reference,
