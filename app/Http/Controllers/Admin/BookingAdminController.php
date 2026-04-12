@@ -380,6 +380,26 @@ class BookingAdminController extends Controller
         return back()->with('success', 'Payment recorded successfully.');
     }
 
+    /**
+     * Check in a booking - marks rooms as occupied and records check-in timestamps
+     */
+    public function checkIn(Booking $booking)
+    {
+        if (! in_array($booking->status, ['confirmed', 'checked_in'], true)) {
+            return back()->withErrors(['status' => 'Booking must be confirmed before check-in.']);
+        }
+
+        try {
+            $this->service->checkIn($booking, null, auth()->user());
+            AuditLogger::log('booking_checked_in', $booking, $booking->id, [
+                'by_admin' => auth()->user()?->id,
+            ]);
+            return back()->with('success', 'Guest checked in successfully. Rooms marked as occupied.');
+        } catch (\Exception $e) {
+            return back()->withErrors(['general' => $e->getMessage()]);
+        }
+    }
+
     protected function editPayload(Booking $booking): array
     {
         $paymentColumns = ['id', 'room_id', 'amount', 'amount_paid', 'method', 'created_at'];

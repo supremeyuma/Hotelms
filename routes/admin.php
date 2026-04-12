@@ -45,6 +45,7 @@ Route::middleware(['auth', 'role:manager|md|superuser'])->prefix('admin')->as('a
         Route::get('bookings', [BookingAdminController::class, 'index'])->name('bookings.index');
         Route::get('bookings/{booking}/edit', [BookingAdminController::class, 'edit'])->name('bookings.edit');
         Route::put('bookings/{booking}', [BookingAdminController::class, 'update'])->name('bookings.update');
+        Route::post('bookings/{booking}/check-in', [BookingAdminController::class, 'checkIn'])->name('bookings.check-in');
         Route::post('bookings/{booking}/approve-price-override', [BookingAdminController::class, 'approvePriceOverride'])->name('bookings.price-override.approve');
         Route::post('bookings/{booking}/reject-price-override', [BookingAdminController::class, 'rejectPriceOverride'])->name('bookings.price-override.reject');
         Route::post('bookings/{booking}/charges', [BookingAdminController::class, 'addCharge'])->name('bookings.charges.store');

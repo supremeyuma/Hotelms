@@ -54,6 +54,7 @@ const paymentForm = useForm({
 
 const approveOverrideForm = useForm({})
 const rejectOverrideForm = useForm({})
+const checkInForm = useForm({})
 
 const roomOptions = computed(() => {
   const current = (props.booking.assigned_room_options ?? []).map((room) => ({
@@ -150,6 +151,19 @@ function rejectPriceOverride() {
     preserveScroll: true,
   })
 }
+
+function handleCheckIn() {
+  if (checkInForm.processing) return
+  
+  if (!['confirmed', 'checked_in'].includes(props.booking.status)) {
+    alert('Booking must be confirmed before check-in')
+    return
+  }
+
+  checkInForm.post(route('admin.bookings.check-in', props.booking.id), {
+    preserveScroll: true,
+  })
+}
 </script>
 
 <template>
@@ -196,6 +210,20 @@ function rejectPriceOverride() {
             <p class="mt-2 text-sm font-black text-slate-900">{{ formatCurrency(booking.total_amount) }}</p>
           </div>
         </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div v-if="['confirmed', 'checked_in'].includes(booking.status)" class="rounded-[2rem] border border-emerald-200 bg-gradient-to-br from-emerald-50 to-emerald-50/50 p-6 shadow-sm">
+        <p class="text-sm font-bold text-emerald-700">Guest check-in</p>
+        <p class="mt-1 text-sm text-emerald-600">Mark rooms as occupied and record check-in timestamps for the reporting system.</p>
+        <button
+          type="button"
+          @click="handleCheckIn"
+          :disabled="checkInForm.processing"
+          class="mt-4 inline-flex items-center justify-center rounded-2xl bg-emerald-600 px-6 py-3 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {{ checkInForm.processing ? 'Checking in...' : 'Check in guest now' }}
+        </button>
       </div>
 
       <div class="grid gap-8 xl:grid-cols-[minmax(0,1fr)_380px]">
