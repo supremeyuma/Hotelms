@@ -14,11 +14,15 @@ use App\Jobs\CleanupAuditLogsJob;
 use App\Jobs\PurgeOldNotificationsJob;
 use App\Jobs\GenerateRevenueReportJob;
 use App\Jobs\GenerateOccupancyReportJob;
+use App\Jobs\AutomaticCheckoutJob;
 
 class Kernel extends ConsoleKernel
 {
     protected function schedule(Schedule $schedule): void
     {
+        // Auto-checkout guests at midday on their checkout date
+        $schedule->job(new AutomaticCheckoutJob())->dailyAt('12:00');
+
         // Run schedule every minute to process queue:work --once (Hostinger compatible)
         $schedule->command('queue:work --once')->everyMinute()->withoutOverlapping();
 
