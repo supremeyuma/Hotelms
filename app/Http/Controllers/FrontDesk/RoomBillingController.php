@@ -5,36 +5,56 @@ namespace App\Http\Controllers\FrontDesk;
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
-use App\Services\RoomBillingService;
 use App\Models\Room;
+use App\Services\BillingService;
+use Illuminate\Http\RedirectResponse;
+
 class RoomBillingController extends Controller
 {
-    public function show(Room $room, RoomBillingService $billing)
+    public function __construct(
+        protected BillingService $billingService,
+    ) {}
+
+    public function show(Room $room): RedirectResponse
     {
-        return Inertia::render('FrontDesk/Rooms/Billing', [
-            'room' => $room,
-            'billing' => $billing->history($room),
-        ]);
+        $booking = $this->resolveCurrentBooking($room);
+
+        return redirect()->route('frontdesk.billing.show', $booking);
     }
 
-    public function pay(Request $request, Room $room, RoomBillingService $billing)
+    public function pay(Request $request, Room $room): RedirectResponse
     {
         $data = $request->validate([
-            'booking_id' => 'required|exists:bookings,id',
             'amount' => 'required|numeric|min:0.01',
-            'method' => 'required|string',
-            'notes' => 'nullable|string',
+            'method' => 'required|string|max:50',
+            'reference' => 'nullable|string|max:100',
+            'notes' => 'nullable|string|max:255',
         ]);
 
-        $billing->pay(
-            $room,
-            Booking::findOrFail($data['booking_id']),
-            $data['amount'],
-            $data['method'],
-            $data['notes']
+        $booking = $this->resolveCurrentBooking($room);
+
+        $this->billingService->addPayment(
+            booking: $booking,
+            roomId: $room->id,
+            amount: (float) $data['amount'],
+            method: $data['method'],
+            reference: $data['reference'] ?? null,
+            notes: $data['notes'] ?? null,
         );
 
-        return back()->with('success', 'Payment recorded');
+        return redirect()
+            ->route('frontdesk.billing.show', $booking)
+            ->with('success', 'Payment recorded successfully.');
+    }
+
+    protected function resolveCurrentBooking(Room $room): Booking
+    {
+        return Booking::query()
+            ->whereHas('rooms', fn ($query) => $query->where('rooms.id', $room->id))
+            ->whereIn('status', ['checked_in', 'confirmed', 'pending_payment'])
+            ->orderByRaw("CASE status WHEN 'checked_in' THEN 0 WHEN 'confirmed' THEN 1 WHEN 'pending_payment' THEN 2 ELSE 3 END")
+            ->latest('check_in')
+            ->latest('id')
+            ->firstOrFail();
     }
 }
