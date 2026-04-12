@@ -117,7 +117,13 @@ class ReportDashboardController extends Controller
                 ->sum(fn (Payment $payment) => (float) ($payment->amount_paid ?? $payment->amount ?? 0));
 
             $baseBookingAmount = $this->effectiveBookingAmount($booking);
-            $outstanding = max(($baseBookingAmount + $extraCharges) - $paymentsReceived, 0);
+            $totalDue = max($baseBookingAmount + $extraCharges, 0);
+            $outstanding = max($totalDue - $paymentsReceived, 0);
+            $paymentStatus = $this->reportPaymentStatus(
+                storedStatus: $booking->payment_status,
+                amountDue: $totalDue,
+                paymentsReceived: $paymentsReceived,
+            );
             $guestCount = (int) ($booking->guests ?: (($booking->adults ?? 0) + ($booking->children ?? 0)) ?: 1);
 
             return [
@@ -130,7 +136,7 @@ class ReportDashboardController extends Controller
                 'room_summary' => $roomLabels->join(', '),
                 'guests' => $guestCount,
                 'status' => $booking->status,
-                'payment_status' => $booking->payment_status ?: 'unpaid',
+                'payment_status' => $paymentStatus,
                 'payment_method' => $booking->payment_method ?: 'Not recorded',
                 'check_in' => optional($booking->check_in)?->toDateString(),
                 'check_out' => optional($booking->check_out)?->toDateString(),
@@ -138,6 +144,7 @@ class ReportDashboardController extends Controller
                 'actual_check_out' => optional($actualCheckOut)?->toIso8601String(),
                 'booked_amount' => round($baseBookingAmount, 2),
                 'extra_charges' => round($extraCharges, 2),
+                'total_due' => round($totalDue, 2),
                 'payments_received' => round($paymentsReceived, 2),
                 'outstanding_balance' => round($outstanding, 2),
                 'created_at' => optional($booking->created_at)?->toIso8601String(),
@@ -647,5 +654,24 @@ class ReportDashboardController extends Controller
             : 1;
 
         return round($nightlyRate * $roomCount * $nights, 2);
+    }
+
+    protected function reportPaymentStatus(?string $storedStatus, float $amountDue, float $paymentsReceived): string
+    {
+        $normalizedStoredStatus = strtolower(trim((string) $storedStatus));
+
+        if ($amountDue <= 0) {
+            return $paymentsReceived > 0 ? 'paid' : ($normalizedStoredStatus !== '' ? $normalizedStoredStatus : 'not_required');
+        }
+
+        if ($paymentsReceived >= $amountDue) {
+            return 'paid';
+        }
+
+        if ($paymentsReceived > 0) {
+            return 'partial';
+        }
+
+        return $normalizedStoredStatus !== '' ? $normalizedStoredStatus : 'unpaid';
     }
 }
