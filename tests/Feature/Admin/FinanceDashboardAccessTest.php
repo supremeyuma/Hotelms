@@ -7,6 +7,7 @@ use App\Models\Charge;
 use App\Models\Property;
 use App\Models\Room;
 use App\Models\RoomType;
+use App\Models\AccountingPeriod;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
@@ -186,5 +187,33 @@ class FinanceDashboardAccessTest extends TestCase
             ->where('view', 'room')
             ->where('summary.total_rooms', 1)
         );
+    }
+
+    public function test_finance_accounting_period_check_status_route_does_not_fall_through_to_show_route(): void
+    {
+        $accountantRole = Role::create([
+            'name' => 'accountant',
+            'slug' => 'accountant',
+            'guard_name' => 'web',
+        ]);
+
+        $user = User::factory()->create();
+        $user->assignRole($accountantRole);
+
+        AccountingPeriod::create([
+            'start_date' => now()->startOfMonth()->toDateString(),
+            'end_date' => now()->endOfMonth()->toDateString(),
+            'is_closed' => false,
+        ]);
+
+        $response = $this->actingAs($user)->get(route('finance.accounting-periods.check-status', [
+            'date' => now()->toDateString(),
+        ]));
+
+        $response->assertOk();
+        $response->assertJson([
+            'status' => 'open',
+            'is_open' => true,
+        ]);
     }
 }

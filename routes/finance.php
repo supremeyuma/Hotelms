@@ -38,12 +38,12 @@ Route::middleware(['auth', 'role:accountant|Accountant|md'])->prefix('finance')-
     Route::prefix('accounting-periods')->name('accounting-periods.')->group(function () {
         Route::get('/', [AccountingPeriodController::class, 'index'])->name('index');
         Route::post('/', [AccountingPeriodController::class, 'store'])->name('store');
-        Route::post('/{period}/close', [AccountingPeriodController::class, 'close'])->name('close');
-        Route::post('/{period}/reopen', [AccountingPeriodController::class, 'reopen'])->name('reopen');
-        Route::get('/{period}', [AccountingPeriodController::class, 'show'])->name('show');
         Route::post('/initialize-tax-accounts', [AccountingPeriodController::class, 'initializeTaxAccounts'])->name('initialize-tax-accounts');
         Route::get('/check-status', [AccountingPeriodController::class, 'checkPeriodStatus'])->name('check-status');
         Route::post('/auto-close-expired', [AccountingPeriodController::class, 'autoCloseExpired'])->name('auto-close-expired');
+        Route::post('/{period}/close', [AccountingPeriodController::class, 'close'])->whereNumber('period')->name('close');
+        Route::post('/{period}/reopen', [AccountingPeriodController::class, 'reopen'])->whereNumber('period')->name('reopen');
+        Route::get('/{period}', [AccountingPeriodController::class, 'show'])->whereNumber('period')->name('show');
     });
 
     Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit.index');
