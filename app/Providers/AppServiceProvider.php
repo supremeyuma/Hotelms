@@ -10,6 +10,16 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Booking;
 use App\Observers\BookingObserver;
+use App\Models\Order;
+use App\Observers\OrderObserver;
+use App\Models\LaundryOrder;
+use App\Observers\LaundryOrderObserver;
+use App\Models\MaintenanceTicket;
+use App\Observers\MaintenanceTicketObserver;
+use App\Models\Charge;
+use App\Observers\ChargeObserver;
+use App\Models\Payment;
+use App\Observers\PaymentObserver;
 use App\Services\ContentService;
 use App\Services\Accounting\TaxService;
 use App\Services\AccountingService;
@@ -96,6 +106,11 @@ class AppServiceProvider extends ServiceProvider
 
 
         Booking::observe(BookingObserver::class);
+        Order::observe(OrderObserver::class);
+        LaundryOrder::observe(LaundryOrderObserver::class);
+        MaintenanceTicket::observe(MaintenanceTicketObserver::class);
+        Charge::observe(ChargeObserver::class);
+        Payment::observe(PaymentObserver::class);
         
     }
 }
