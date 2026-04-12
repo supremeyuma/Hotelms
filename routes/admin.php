@@ -21,6 +21,7 @@ use App\Http\Controllers\Admin\{
     FeedbackController,
 };
 use App\Http\Controllers\Admin\ReportDashboardController;
+use App\Http\Controllers\Admin\ReportingDashboardController;
 use App\Http\Controllers\Admin\Reports\StaffReportController;
 use App\Http\Controllers\Admin\Reports\InventoryReportController;
 use App\Http\Controllers\Admin\Reports\OccupancyReportController;
@@ -108,6 +109,12 @@ Route::middleware(['auth', 'role:manager|md|superuser'])->prefix('admin')->as('a
 
         Route::prefix('reports')->name('reports.')->group(function () {
             Route::get('/', [ReportDashboardController::class, 'operations'])->name('dashboard');
+
+            // Executive reporting
+            Route::get('/executive-overview', [ReportingDashboardController::class, 'executiveOverview'])->name('executive-overview');
+            Route::get('/exceptions', [ReportingDashboardController::class, 'exceptions'])->name('exceptions');
+            Route::get('/room/{room}', [ReportingDashboardController::class, 'roomIntelligence'])->name('room-intelligence');
+            Route::get('/department/{department}', [ReportingDashboardController::class, 'departmentCommand'])->name('department-command');
 
             Route::get('/staff', [StaffReportController::class, 'index'])->name('staff');
             Route::get('/staff/export/{format}', [StaffReportController::class, 'export'])->name('staff.export');
