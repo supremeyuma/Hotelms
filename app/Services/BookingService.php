@@ -512,7 +512,10 @@ class BookingService
     {
         return DB::transaction(function () use ($booking, $roomsToCheckIn, $by) {
 
-            if ($booking->status !== 'confirmed') {
+            // Allow check-in if confirmed, or if already checked_in with remaining rooms to check in
+            $this->normalizeLegacyCheckedInStatusForBooking($booking);
+            
+            if (! in_array($booking->status, ['confirmed', 'checked_in'], true)) {
                 throw new \Exception('Booking not eligible for check-in.');
             }
 
@@ -537,10 +540,22 @@ class BookingService
             $alreadyCheckedIn = $reservedRooms->filter(fn ($room) => ! is_null($room->pivot->checked_in_at))->count();
             $remaining = $booking->quantity - $alreadyCheckedIn;
 
+            // If all rooms already checked in, no action needed
+            if ($remaining <= 0) {
+                return $booking;
+            }
+
             $roomsToCheckIn ??= $remaining;
 
             if ($roomsToCheckIn > $remaining) {
                 throw new \Exception('Exceeds remaining rooms.');
+            }
+
+            // Extract price override from booking details if present
+            $priceOverride = null;
+            $details = is_array($booking->details) ? $booking->details : [];
+            if (! empty($details['price_override']['override_amount'])) {
+                $priceOverride = (float) $details['price_override']['override_amount'];
             }
 
             $rooms = $reservedRooms
@@ -558,11 +573,13 @@ class BookingService
                         'status'        => 'active',
                         'checked_in_at' => now(),
                         'checked_out_at' => null,
+                        'rate_override' => $priceOverride,
                     ]);
                 } else {
                     $booking->rooms()->attach($room->id, [
                         'status'        => 'active',
                         'checked_in_at' => now(),
+                        'rate_override' => $priceOverride,
                     ]);
                 }
 
@@ -582,6 +599,7 @@ class BookingService
 
             $this->audit->log('booking_checked_in', $booking, $booking->id, [
                 'rooms' => $rooms->pluck('name'),
+                'price_override' => $priceOverride,
                 'by'    => $by?->id,
             ]);
 
