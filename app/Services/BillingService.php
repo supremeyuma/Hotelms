@@ -17,9 +17,9 @@ class BillingService
 
     public function getBillingHistory(Booking $booking): array
     {
-        $booking->loadMissing(['rooms.roomType', 'charges.room.roomType', 'payments.room.roomType']);
+        $booking->loadMissing(['room.roomType', 'roomType', 'rooms.roomType', 'charges.room.roomType', 'payments.room.roomType']);
 
-        $charges = $booking->charges
+        $persistedCharges = $booking->charges
             ->sortByDesc('created_at')
             ->values()
             ->map(function (Charge $charge) {
@@ -32,9 +32,28 @@ class BillingService
                     'created_at' => optional($charge->created_at)?->toIso8601String(),
                 ];
             })
+            ->values();
+
+        $baseBookingAmount = $this->effectiveBookingAmount($booking);
+        $baseCharge = collect();
+
+        if ($baseBookingAmount > 0) {
+            $baseCharge = collect([[
+                'id' => 'booking-base-' . $booking->id,
+                'room_id' => $booking->room_id,
+                'room_label' => $this->bookingRoomLabel($booking),
+                'description' => 'Accommodation',
+                'amount' => $baseBookingAmount,
+                'created_at' => optional($booking->created_at)?->toIso8601String(),
+            ]]);
+        }
+
+        $charges = $baseCharge
+            ->concat($persistedCharges)
             ->all();
 
         $payments = $booking->payments
+            ->filter(fn (Payment $payment) => in_array(strtolower((string) $payment->status), ['successful', 'completed', 'paid'], true))
             ->sortByDesc('created_at')
             ->values()
             ->map(function (Payment $payment) {
@@ -51,10 +70,7 @@ class BillingService
             })
             ->all();
 
-        $totalCharges = max(
-            (float) ($booking->total_amount ?? 0) + collect($charges)->sum('amount'),
-            0
-        );
+        $totalCharges = max((float) collect($charges)->sum('amount'), 0);
         $totalPayments = collect($payments)->sum('amount');
 
         return [
@@ -165,5 +181,59 @@ class BillingService
             $room->roomType?->title,
             $room->name ?: $room->room_number,
         ])->filter()->implode(' - '));
+    }
+
+    protected function bookingRoomLabel(Booking $booking): string
+    {
+        $labels = $booking->rooms
+            ->map(fn ($room) => $this->roomLabel($room))
+            ->filter()
+            ->values();
+
+        if ($labels->isNotEmpty()) {
+            return $labels->implode(', ');
+        }
+
+        return $this->roomLabel($booking->room);
+    }
+
+    protected function effectiveBookingAmount(Booking $booking): float
+    {
+        $details = is_array($booking->details) ? $booking->details : [];
+        $override = is_array($details['price_override'] ?? null) ? $details['price_override'] : null;
+        $discount = is_array($details['discount'] ?? null) ? $details['discount'] : null;
+        $discountPricing = is_array($discount['pricing'] ?? null) ? $discount['pricing'] : null;
+
+        $overrideAmount = isset($override['override_amount'])
+            ? round((float) $override['override_amount'], 2)
+            : null;
+
+        if ($overrideAmount !== null) {
+            return $overrideAmount;
+        }
+
+        $discountedTotal = isset($discountPricing['total'])
+            ? round((float) $discountPricing['total'], 2)
+            : null;
+
+        if ($discountedTotal !== null) {
+            return $discountedTotal;
+        }
+
+        $storedTotal = $booking->total_amount !== null
+            ? round((float) $booking->total_amount, 2)
+            : null;
+
+        if ($storedTotal !== null) {
+            return $storedTotal;
+        }
+
+        $nightlyRate = (float) ($booking->nightly_rate ?: $booking->roomType?->base_price ?: $booking->room?->roomType?->base_price ?: 0);
+        $roomCount = max((int) ($booking->quantity ?: $booking->rooms->count() ?: 1), 1);
+        $nights = $booking->check_in && $booking->check_out
+            ? max($booking->check_in->diffInDays($booking->check_out), 1)
+            : 1;
+
+        return round($nightlyRate * $roomCount * $nights, 2);
     }
 }
