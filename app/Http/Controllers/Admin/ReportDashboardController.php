@@ -7,16 +7,435 @@ use App\Http\Controllers\Controller;
 use App\Models\AccountingPeriod;
 use App\Models\Booking;
 use App\Models\Charge;
+use App\Models\LaundryOrder;
+use App\Models\MaintenanceTicket;
+use App\Models\Order;
 use App\Models\Payment;
+use App\Models\Room;
 use App\Services\Reports\OccupancyReportService;
 use App\Services\Reports\StaffReportService;
 use App\Services\Reports\InventoryReportService;
-use Inertia\Inertia;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class ReportDashboardController extends Controller
 {
+    public function index(Request $request)
+    {
+        $mode = $request->string('mode')->toString() === 'range' ? 'range' : 'day';
+        $day = $request->filled('day')
+            ? Carbon::parse($request->string('day')->toString())
+            : Carbon::today();
+
+        $from = $request->filled('from')
+            ? Carbon::parse($request->string('from')->toString())
+            : $day->copy();
+
+        $to = $request->filled('to')
+            ? Carbon::parse($request->string('to')->toString())
+            : $from->copy();
+
+        if ($mode === 'day') {
+            $from = $day->copy();
+            $to = $day->copy();
+        } elseif ($from->gt($to)) {
+            [$from, $to] = [$to, $from];
+        }
+
+        $roomId = $request->integer('room_id') ?: null;
+        $successfulPaymentStatuses = ['successful', 'completed', 'paid'];
+        $periodStart = $from->copy()->startOfDay();
+        $periodEnd = $to->copy()->endOfDay();
+        $fromDate = $from->toDateString();
+        $toDate = $to->toDateString();
+
+        $roomOptions = Room::query()
+            ->with('roomType:id,title')
+            ->orderBy('name')
+            ->get()
+            ->map(fn (Room $room) => [
+                'id' => $room->id,
+                'label' => $this->roomLabel($room),
+            ])
+            ->values();
+
+        $selectedRoom = $roomId
+            ? Room::query()
+                ->with('roomType:id,title')
+                ->find($roomId)
+            : null;
+
+        $bookings = Booking::query()
+            ->with([
+                'user:id,name,email',
+                'room.roomType:id,title',
+                'roomType:id,title',
+                'rooms.roomType:id,title',
+                'charges:id,booking_id,room_id,description,amount,charge_date,created_at',
+                'payments:id,booking_id,room_id,amount,amount_paid,method,status,reference,payment_reference,paid_at,created_at',
+            ])
+            ->where(function ($query) use ($fromDate, $toDate) {
+                $query->whereDate('check_in', '<=', $toDate)
+                    ->whereDate('check_out', '>=', $fromDate);
+            })
+            ->when($roomId, function ($query) use ($roomId) {
+                $query->where(function ($bookingQuery) use ($roomId) {
+                    $bookingQuery->where('room_id', $roomId)
+                        ->orWhereHas('rooms', fn ($roomQuery) => $roomQuery->where('rooms.id', $roomId));
+                });
+            })
+            ->latest('check_in')
+            ->get();
+
+        $bookingRows = $bookings->map(function (Booking $booking) use ($successfulPaymentStatuses) {
+            $roomLabels = $booking->rooms
+                ->map(fn (Room $room) => $this->roomLabel($room))
+                ->filter()
+                ->values();
+
+            if ($roomLabels->isEmpty() && $booking->room) {
+                $roomLabels = collect([$this->roomLabel($booking->room)]);
+            }
+
+            $actualCheckIn = $booking->rooms
+                ->map(fn (Room $room) => $room->pivot?->checked_in_at)
+                ->filter()
+                ->sort()
+                ->first();
+
+            $actualCheckOut = $booking->rooms
+                ->map(fn (Room $room) => $room->pivot?->checked_out_at)
+                ->filter()
+                ->sortDesc()
+                ->first();
+
+            $extraCharges = (float) $booking->charges->sum('amount');
+            $paymentsReceived = (float) $booking->payments
+                ->filter(fn (Payment $payment) => in_array($payment->status, $successfulPaymentStatuses, true))
+                ->sum(fn (Payment $payment) => (float) ($payment->amount_paid ?? $payment->amount ?? 0));
+
+            $baseBookingAmount = (float) ($booking->total_amount ?? 0);
+            $outstanding = max(($baseBookingAmount + $extraCharges) - $paymentsReceived, 0);
+            $guestCount = (int) ($booking->guests ?: (($booking->adults ?? 0) + ($booking->children ?? 0)) ?: 1);
+
+            return [
+                'id' => $booking->id,
+                'booking_code' => $booking->booking_code,
+                'guest_name' => $booking->guest_name ?: $booking->user?->name ?: 'Walk-in guest',
+                'guest_email' => $booking->guest_email ?: $booking->user?->email,
+                'guest_phone' => $booking->guest_phone,
+                'rooms' => $roomLabels->all(),
+                'room_summary' => $roomLabels->join(', '),
+                'guests' => $guestCount,
+                'status' => $booking->status,
+                'payment_status' => $booking->payment_status ?: 'unpaid',
+                'payment_method' => $booking->payment_method ?: 'Not recorded',
+                'check_in' => optional($booking->check_in)?->toDateString(),
+                'check_out' => optional($booking->check_out)?->toDateString(),
+                'actual_check_in' => optional($actualCheckIn)?->toIso8601String(),
+                'actual_check_out' => optional($actualCheckOut)?->toIso8601String(),
+                'booked_amount' => round($baseBookingAmount, 2),
+                'extra_charges' => round($extraCharges, 2),
+                'payments_received' => round($paymentsReceived, 2),
+                'outstanding_balance' => round($outstanding, 2),
+                'created_at' => optional($booking->created_at)?->toIso8601String(),
+            ];
+        })->values();
+
+        $charges = Charge::query()
+            ->with([
+                'booking:id,booking_code,guest_name,guest_email,guest_phone,user_id',
+                'booking.user:id,name,email',
+                'room.roomType:id,title',
+            ])
+            ->where(function ($query) use ($fromDate, $toDate) {
+                $query->whereBetween('charge_date', [$fromDate, $toDate])
+                    ->orWhere(function ($nested) use ($fromDate, $toDate) {
+                        $nested->whereNull('charge_date')
+                            ->whereBetween(DB::raw('DATE(created_at)'), [$fromDate, $toDate]);
+                    });
+            })
+            ->when($roomId, fn ($query) => $query->where('room_id', $roomId))
+            ->latest('created_at')
+            ->get()
+            ->map(fn (Charge $charge) => [
+                'id' => $charge->id,
+                'booking_code' => $charge->booking?->booking_code,
+                'guest_name' => $charge->booking?->guest_name ?: $charge->booking?->user?->name ?: 'Walk-in guest',
+                'description' => $charge->description,
+                'amount' => round((float) $charge->amount, 2),
+                'status' => $charge->status ?: 'unpaid',
+                'payment_mode' => $charge->payment_mode ?: 'postpaid',
+                'room_label' => $this->roomLabel($charge->room),
+                'recorded_at' => optional($charge->charge_date ?? $charge->created_at)?->toDateString(),
+                'created_at' => optional($charge->created_at)?->toIso8601String(),
+            ])
+            ->values();
+
+        $payments = Payment::query()
+            ->with([
+                'booking:id,booking_code,guest_name,guest_email,guest_phone,user_id',
+                'booking.user:id,name,email',
+                'room.roomType:id,title',
+            ])
+            ->whereIn('status', $successfulPaymentStatuses)
+            ->where(function ($query) use ($periodStart, $periodEnd) {
+                $query->whereBetween('paid_at', [$periodStart, $periodEnd])
+                    ->orWhere(function ($nested) use ($periodStart, $periodEnd) {
+                        $nested->whereNull('paid_at')
+                            ->whereBetween('created_at', [$periodStart, $periodEnd]);
+                    });
+            })
+            ->when($roomId, fn ($query) => $query->where('room_id', $roomId))
+            ->latest(DB::raw('COALESCE(paid_at, created_at)'))
+            ->get()
+            ->map(fn (Payment $payment) => [
+                'id' => $payment->id,
+                'booking_code' => $payment->booking?->booking_code,
+                'guest_name' => $payment->booking?->guest_name ?: $payment->booking?->user?->name ?: 'Walk-in guest',
+                'amount' => round((float) ($payment->amount_paid ?? $payment->amount ?? 0), 2),
+                'method' => $payment->method ?: 'Not recorded',
+                'status' => $payment->status,
+                'provider' => $payment->provider ?: 'Manual',
+                'reference' => $payment->payment_reference ?: $payment->reference ?: $payment->transaction_ref,
+                'room_label' => $this->roomLabel($payment->room),
+                'recorded_at' => optional($payment->paid_at ?? $payment->created_at)?->toIso8601String(),
+            ])
+            ->values();
+
+        $hotelSummary = [
+            'bookings' => $bookingRows->count(),
+            'distinct_rooms' => $bookingRows->flatMap(fn (array $booking) => $booking['rooms'])->filter()->unique()->count(),
+            'guest_volume' => $bookingRows->sum('guests'),
+            'arrivals' => $bookings->filter(fn (Booking $booking) => optional($booking->check_in)?->betweenIncluded($from, $to))->count(),
+            'departures' => $bookings->filter(fn (Booking $booking) => optional($booking->check_out)?->betweenIncluded($from, $to))->count(),
+            'booking_value' => round((float) $bookingRows->sum('booked_amount'), 2),
+            'charges_posted' => round((float) $charges->sum('amount'), 2),
+            'payments_received' => round((float) $payments->sum('amount'), 2),
+            'outstanding_exposure' => round((float) $bookingRows->sum('outstanding_balance'), 2),
+        ];
+
+        $roomReport = null;
+
+        if ($selectedRoom) {
+            $roomReport = [
+                'label' => $this->roomLabel($selectedRoom),
+                'bookings' => $bookingRows->count(),
+                'guest_volume' => $bookingRows->sum('guests'),
+                'booking_value' => round((float) $bookingRows->sum('booked_amount'), 2),
+                'charges_posted' => round((float) $charges->sum('amount'), 2),
+                'payments_received' => round((float) $payments->sum('amount'), 2),
+                'outstanding_exposure' => round((float) $bookingRows->sum('outstanding_balance'), 2),
+                'maintenance_tickets' => MaintenanceTicket::query()
+                    ->where('room_id', $selectedRoom->id)
+                    ->whereBetween('created_at', [$periodStart, $periodEnd])
+                    ->count(),
+                'service_orders' => Order::query()
+                    ->where('room_id', $selectedRoom->id)
+                    ->whereBetween('created_at', [$periodStart, $periodEnd])
+                    ->count(),
+                'laundry_orders' => LaundryOrder::query()
+                    ->where('room_id', $selectedRoom->id)
+                    ->whereBetween('created_at', [$periodStart, $periodEnd])
+                    ->count(),
+            ];
+        }
+
+        $departmentReports = collect([
+            [
+                'name' => 'Front Desk',
+                'summary' => 'Stay activity and guest movement during the selected period.',
+                'primary_metric' => $hotelSummary['bookings'],
+                'primary_label' => 'Bookings in scope',
+                'secondary_metric' => $hotelSummary['arrivals'],
+                'secondary_label' => 'Arrivals',
+                'tertiary_metric' => $hotelSummary['departures'],
+                'tertiary_label' => 'Departures',
+                'amount' => $hotelSummary['booking_value'],
+                'amount_label' => 'Booking value',
+            ],
+            [
+                'name' => 'Kitchen',
+                'summary' => 'Food service activity captured from room orders.',
+                'primary_metric' => Order::query()
+                    ->where('service_area', 'kitchen')
+                    ->when($roomId, fn ($query) => $query->where('room_id', $roomId))
+                    ->whereBetween('created_at', [$periodStart, $periodEnd])
+                    ->count(),
+                'primary_label' => 'Orders',
+                'secondary_metric' => Order::query()
+                    ->where('service_area', 'kitchen')
+                    ->whereIn('status', ['pending', 'processing'])
+                    ->when($roomId, fn ($query) => $query->where('room_id', $roomId))
+                    ->whereBetween('created_at', [$periodStart, $periodEnd])
+                    ->count(),
+                'secondary_label' => 'Open',
+                'tertiary_metric' => Order::query()
+                    ->where('service_area', 'kitchen')
+                    ->where('payment_status', 'paid')
+                    ->when($roomId, fn ($query) => $query->where('room_id', $roomId))
+                    ->whereBetween('created_at', [$periodStart, $periodEnd])
+                    ->count(),
+                'tertiary_label' => 'Paid',
+                'amount' => round((float) Order::query()
+                    ->where('service_area', 'kitchen')
+                    ->when($roomId, fn ($query) => $query->where('room_id', $roomId))
+                    ->whereBetween('created_at', [$periodStart, $periodEnd])
+                    ->sum('total'), 2),
+                'amount_label' => 'Order value',
+            ],
+            [
+                'name' => 'Bar',
+                'summary' => 'Bar orders and payment capture during the selected period.',
+                'primary_metric' => Order::query()
+                    ->where('service_area', 'bar')
+                    ->when($roomId, fn ($query) => $query->where('room_id', $roomId))
+                    ->whereBetween('created_at', [$periodStart, $periodEnd])
+                    ->count(),
+                'primary_label' => 'Orders',
+                'secondary_metric' => Order::query()
+                    ->where('service_area', 'bar')
+                    ->whereIn('status', ['pending', 'processing'])
+                    ->when($roomId, fn ($query) => $query->where('room_id', $roomId))
+                    ->whereBetween('created_at', [$periodStart, $periodEnd])
+                    ->count(),
+                'secondary_label' => 'Open',
+                'tertiary_metric' => Order::query()
+                    ->where('service_area', 'bar')
+                    ->where('payment_status', 'paid')
+                    ->when($roomId, fn ($query) => $query->where('room_id', $roomId))
+                    ->whereBetween('created_at', [$periodStart, $periodEnd])
+                    ->count(),
+                'tertiary_label' => 'Paid',
+                'amount' => round((float) Order::query()
+                    ->where('service_area', 'bar')
+                    ->when($roomId, fn ($query) => $query->where('room_id', $roomId))
+                    ->whereBetween('created_at', [$periodStart, $periodEnd])
+                    ->sum('total'), 2),
+                'amount_label' => 'Order value',
+            ],
+            [
+                'name' => 'Laundry',
+                'summary' => 'Laundry pickup and completion activity for the selected period.',
+                'primary_metric' => LaundryOrder::query()
+                    ->when($roomId, fn ($query) => $query->where('room_id', $roomId))
+                    ->whereBetween('created_at', [$periodStart, $periodEnd])
+                    ->count(),
+                'primary_label' => 'Orders',
+                'secondary_metric' => LaundryOrder::query()
+                    ->whereNotIn('status', ['delivered', 'cancelled'])
+                    ->when($roomId, fn ($query) => $query->where('room_id', $roomId))
+                    ->whereBetween('created_at', [$periodStart, $periodEnd])
+                    ->count(),
+                'secondary_label' => 'Open',
+                'tertiary_metric' => LaundryOrder::query()
+                    ->where('status', 'delivered')
+                    ->when($roomId, fn ($query) => $query->where('room_id', $roomId))
+                    ->whereBetween('created_at', [$periodStart, $periodEnd])
+                    ->count(),
+                'tertiary_label' => 'Delivered',
+                'amount' => round((float) LaundryOrder::query()
+                    ->when($roomId, fn ($query) => $query->where('room_id', $roomId))
+                    ->whereBetween('created_at', [$periodStart, $periodEnd])
+                    ->sum('total_amount'), 2),
+                'amount_label' => 'Order value',
+            ],
+            [
+                'name' => 'Maintenance',
+                'summary' => 'Issue intake and unresolved tickets within the reporting window.',
+                'primary_metric' => MaintenanceTicket::query()
+                    ->when($roomId, fn ($query) => $query->where('room_id', $roomId))
+                    ->whereBetween('created_at', [$periodStart, $periodEnd])
+                    ->count(),
+                'primary_label' => 'Tickets',
+                'secondary_metric' => MaintenanceTicket::query()
+                    ->whereNotIn('status', ['resolved', 'closed', 'completed'])
+                    ->when($roomId, fn ($query) => $query->where('room_id', $roomId))
+                    ->whereBetween('created_at', [$periodStart, $periodEnd])
+                    ->count(),
+                'secondary_label' => 'Open',
+                'tertiary_metric' => MaintenanceTicket::query()
+                    ->whereIn('status', ['resolved', 'closed', 'completed'])
+                    ->when($roomId, fn ($query) => $query->where('room_id', $roomId))
+                    ->whereBetween('created_at', [$periodStart, $periodEnd])
+                    ->count(),
+                'tertiary_label' => 'Resolved',
+                'amount' => null,
+                'amount_label' => null,
+            ],
+            [
+                'name' => 'Finance',
+                'summary' => 'Posted monetary activity tied to the selected hotel period.',
+                'primary_metric' => $payments->count(),
+                'primary_label' => 'Payments',
+                'secondary_metric' => $charges->count(),
+                'secondary_label' => 'Charges',
+                'tertiary_metric' => $bookingRows->filter(fn (array $booking) => $booking['outstanding_balance'] > 0)->count(),
+                'tertiary_label' => 'Open balances',
+                'amount' => $hotelSummary['payments_received'],
+                'amount_label' => 'Cash in',
+            ],
+        ])->values();
+
+        return Inertia::render('Admin/Reports/Hub', [
+            'filters' => [
+                'mode' => $mode,
+                'day' => $day->toDateString(),
+                'from' => $from->toDateString(),
+                'to' => $to->toDateString(),
+                'room_id' => $roomId,
+            ],
+            'period' => [
+                'label' => $mode === 'day'
+                    ? $day->format('l, d M Y')
+                    : $from->format('d M Y') . ' to ' . $to->format('d M Y'),
+                'mode' => $mode,
+                'from' => $from->toDateString(),
+                'to' => $to->toDateString(),
+                'selected_room' => $selectedRoom ? [
+                    'id' => $selectedRoom->id,
+                    'label' => $this->roomLabel($selectedRoom),
+                ] : null,
+            ],
+            'roomOptions' => $roomOptions,
+            'hotelSummary' => $hotelSummary,
+            'roomReport' => $roomReport,
+            'departmentReports' => $departmentReports,
+            'bookings' => $bookingRows,
+            'charges' => $charges,
+            'payments' => $payments,
+            'reportLinks' => [
+                [
+                    'label' => 'Operations Snapshot',
+                    'href' => route('admin.reports.operations'),
+                    'description' => 'Open the legacy occupancy, staff, and inventory dashboard.',
+                ],
+                [
+                    'label' => 'Occupancy Report',
+                    'href' => route('admin.reports.occupancy'),
+                    'description' => 'Review stay volume and occupancy trend in detail.',
+                ],
+                [
+                    'label' => 'Staff Report',
+                    'href' => route('admin.reports.staff'),
+                    'description' => 'Inspect staffing coverage and team filters.',
+                ],
+                [
+                    'label' => 'Inventory Report',
+                    'href' => route('admin.reports.inventory'),
+                    'description' => 'Check stock movement and inventory pressure.',
+                ],
+                [
+                    'label' => 'Executive Overview',
+                    'href' => route('admin.reports.executive-overview'),
+                    'description' => 'Open the executive exception and department overview.',
+                ],
+            ],
+        ]);
+    }
+
     public function operations(
         OccupancyReportService $occupancy,
         StaffReportService $staff,
@@ -175,5 +594,18 @@ class ReportDashboardController extends Controller
     protected function successfulPaymentsQuery()
     {
         return Payment::query()->whereIn('status', ['successful', 'completed']);
+    }
+
+    protected function roomLabel(?Room $room): string
+    {
+        if (! $room) {
+            return 'Unassigned room';
+        }
+
+        return trim(collect([
+            $room->roomType?->title,
+            $room->display_name,
+            $room->name ?: $room->room_number ?: $room->code,
+        ])->filter()->implode(' - '));
     }
 }

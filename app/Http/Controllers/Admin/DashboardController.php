@@ -193,20 +193,12 @@ class DashboardController extends Controller
             'departmentSnapshots' => $departmentSnapshots,
             'reportLinks' => [
                 [
-                    'label' => 'Operations Reports',
+                    'label' => 'Reports',
                     'route' => route('admin.reports.dashboard'),
                 ],
                 [
-                    'label' => 'Staff Reports',
-                    'route' => route('admin.reports.staff'),
-                ],
-                [
-                    'label' => 'Occupancy Reports',
-                    'route' => route('admin.reports.occupancy'),
-                ],
-                [
-                    'label' => 'Inventory Reports',
-                    'route' => route('admin.reports.inventory'),
+                    'label' => 'Operations Snapshot',
+                    'route' => route('admin.reports.operations'),
                 ],
                 [
                     'label' => 'Revenue Reports',

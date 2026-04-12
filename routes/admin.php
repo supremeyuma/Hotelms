@@ -108,7 +108,8 @@ Route::middleware(['auth', 'role:manager|md|superuser'])->prefix('admin')->as('a
         Route::patch('feedback/{feedback}', [FeedbackController::class, 'update'])->name('feedback.update');
 
         Route::prefix('reports')->name('reports.')->group(function () {
-            Route::get('/', [ReportDashboardController::class, 'operations'])->name('dashboard');
+            Route::get('/', [ReportDashboardController::class, 'index'])->name('dashboard');
+            Route::get('/operations', [ReportDashboardController::class, 'operations'])->name('operations');
 
             // Executive reporting
             Route::get('/executive-overview', [ReportingDashboardController::class, 'executiveOverview'])->name('executive-overview');
