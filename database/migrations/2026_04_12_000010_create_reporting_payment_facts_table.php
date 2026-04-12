@@ -57,7 +57,6 @@ return new class extends Migration
 
             $table->index(['paid_at', 'status']);
             $table->index(['booking_id', 'status']);
-            $table->index(['payment_method']);
         });
     }
 

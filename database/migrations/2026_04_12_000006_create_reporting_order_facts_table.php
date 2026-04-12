@@ -19,7 +19,6 @@ return new class extends Migration
             $table->string('service_area')->index(); // 'kitchen', 'bar', 'room_service'
             
             // Timestamps
-            $table->timestamp('created_at')->index();
             $table->timestamp('accepted_at')->nullable();
             $table->timestamp('prepared_at')->nullable();
             $table->timestamp('delivered_at')->nullable();

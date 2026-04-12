@@ -47,9 +47,8 @@ return new class extends Migration
             
             $table->timestamps();
 
-            $table->unique(['reference_type', 'reference_id', 'exception_type']);
+            $table->unique(['reference_type', 'reference_id', 'exception_type'], 'ref_exception_unique');
             $table->index(['status', 'severity']);
-            $table->index(['detected_at']);
         });
     }
 

@@ -20,7 +20,6 @@ return new class extends Migration
             $table->unsignedBigInteger('booking_id')->nullable()->index();
             
             // Timeline
-            $table->timestamp('created_at')->index();
             $table->timestamp('pickup_at')->nullable();
             $table->timestamp('processing_started_at')->nullable();
             $table->timestamp('ready_at')->nullable();
