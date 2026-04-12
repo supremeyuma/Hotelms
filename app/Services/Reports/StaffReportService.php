@@ -5,6 +5,8 @@ namespace App\Services\Reports;
 use App\Models\Department;
 use App\Models\Role;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Schema;
 
 class StaffReportService
 {
@@ -24,10 +26,10 @@ class StaffReportService
 
     public function query(array $filters)
     {
-        return User::query()
+        $query = User::query()
             ->with(['roles', 'department', 'staffProfile'])
             ->whereHas('roles', fn ($query) => $query->whereIn('name', $this->workforceRoles))
-            ->withCount(['orders','bookings','maintenanceTasks'])
+            ->withCount(['orders', 'bookings'])
             ->when($filters['search'] ?? null, function ($query, $search) {
                 $query->where(function ($inner) use ($search) {
                     $inner->where('name', 'like', "%{$search}%")
@@ -47,6 +49,8 @@ class StaffReportService
                 $query->whereNotNull('suspended_at')
             )
             ->orderBy('name');
+
+        return $this->applyMaintenanceTaskCount($query);
     }
 
     public function summary(): array
@@ -61,7 +65,7 @@ class StaffReportService
             'departments' => (clone $staffQuery)->whereNotNull('department_id')->distinct('department_id')->count('department_id'),
             'orders' => (clone $staffQuery)->withCount('orders')->get()->sum('orders_count'),
             'bookings' => (clone $staffQuery)->withCount('bookings')->get()->sum('bookings_count'),
-            'maintenance_tasks' => (clone $staffQuery)->withCount('maintenanceTasks')->get()->sum('maintenance_tasks_count'),
+            'maintenance_tasks' => $this->applyMaintenanceTaskCount(clone $staffQuery)->get()->sum('maintenance_tasks_count'),
         ];
     }
 
@@ -78,5 +82,17 @@ class StaffReportService
         return Department::query()
             ->orderBy('name')
             ->get(['id', 'name']);
+    }
+
+    protected function applyMaintenanceTaskCount(Builder $query): Builder
+    {
+        if (
+            ! Schema::hasTable('maintenance_tickets')
+            || ! Schema::hasColumn('maintenance_tickets', 'staff_id')
+        ) {
+            return $query->select('users.*')->selectRaw('0 as maintenance_tasks_count');
+        }
+
+        return $query->withCount('maintenanceTasks');
     }
 }

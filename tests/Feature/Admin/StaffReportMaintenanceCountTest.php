@@ -7,7 +7,10 @@ use App\Models\Property;
 use App\Models\Room;
 use App\Models\RoomType;
 use App\Models\User;
+use App\Services\Reports\StaffReportService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class StaffReportMaintenanceCountTest extends TestCase
@@ -55,5 +58,29 @@ class StaffReportMaintenanceCountTest extends TestCase
             ->findOrFail($staff->id);
 
         $this->assertSame(1, $staffWithCount->maintenance_tasks_count);
+    }
+
+    public function test_staff_report_service_tolerates_legacy_maintenance_schema_without_staff_id(): void
+    {
+        Schema::table('maintenance_tickets', function ($table) {
+            $table->dropConstrainedForeignId('staff_id');
+        });
+
+        $user = User::create([
+            'name' => 'Legacy Staff',
+            'email' => 'legacy-staff@example.com',
+            'password' => 'password',
+        ]);
+        $user->assignRole(Role::create([
+            'name' => 'staff',
+            'slug' => 'staff',
+            'guard_name' => 'web',
+        ]));
+
+        $service = app(StaffReportService::class);
+
+        $row = $service->query([])->whereKey($user->id)->firstOrFail();
+
+        $this->assertSame(0, $row->maintenance_tasks_count);
     }
 }
