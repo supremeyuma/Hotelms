@@ -12,6 +12,7 @@ use App\Models\MaintenanceTicket;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\Room;
+use App\Services\BookingService;
 use App\Services\Reports\OccupancyReportService;
 use App\Services\Reports\StaffReportService;
 use App\Services\Reports\InventoryReportService;
@@ -22,8 +23,10 @@ use Inertia\Inertia;
 
 class ReportDashboardController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, BookingService $bookingService)
     {
+        $bookingService->reconcilePaidBookingStates();
+
         $mode = $request->string('mode')->toString() === 'range' ? 'range' : 'day';
         $day = $request->filled('day')
             ? Carbon::parse($request->string('day')->toString())

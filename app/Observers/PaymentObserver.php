@@ -2,8 +2,10 @@
 
 namespace App\Observers;
 
+use App\Models\Booking;
 use App\Models\Payment;
 use App\Reporting\Projectors\BookingProjector;
+use App\Services\BookingService;
 
 class PaymentObserver
 {
@@ -12,9 +14,10 @@ class PaymentObserver
      */
     public function created(Payment $payment)
     {
-        // Track payment in booking's financial facts
+        $this->syncBookingPaymentState($payment);
+
         if ($payment->payable_type === 'App\Models\Booking' && $payment->payable_id) {
-            $booking = \App\Models\Booking::find($payment->payable_id);
+            $booking = Booking::find($payment->payable_id);
             if ($booking) {
                 BookingProjector::projectFinancialTransaction(
                     $booking,
@@ -30,10 +33,11 @@ class PaymentObserver
      */
     public function updated(Payment $payment)
     {
-        // Track status changes (pending → completed → failed)
+        $this->syncBookingPaymentState($payment);
+
         if ($payment->isDirty('status') && $payment->status === 'completed') {
             if ($payment->payable_type === 'App\Models\Booking' && $payment->payable_id) {
-                $booking = \App\Models\Booking::find($payment->payable_id);
+                $booking = Booking::find($payment->payable_id);
                 if ($booking) {
                     BookingProjector::project($booking);
                 }
@@ -46,9 +50,10 @@ class PaymentObserver
      */
     public function deleted(Payment $payment)
     {
-        // Track payment reversal
+        $this->syncBookingPaymentState($payment);
+
         if ($payment->payable_type === 'App\Models\Booking' && $payment->payable_id) {
-            $booking = \App\Models\Booking::find($payment->payable_id);
+            $booking = Booking::find($payment->payable_id);
             if ($booking) {
                 BookingProjector::projectFinancialTransaction(
                     $booking,
@@ -57,5 +62,20 @@ class PaymentObserver
                 );
             }
         }
+    }
+
+    protected function syncBookingPaymentState(Payment $payment): void
+    {
+        $booking = $payment->booking;
+
+        if (! $booking && $payment->payable_type === 'App\Models\Booking' && $payment->payable_id) {
+            $booking = Booking::find($payment->payable_id);
+        }
+
+        if (! $booking) {
+            return;
+        }
+
+        app(BookingService::class)->syncBookingPaymentState($booking);
     }
 }

@@ -185,33 +185,147 @@ class BookingService
         $this->normalizeLegacyCheckedInStatuses();
 
         Booking::query()
-            ->where('status', 'pending_payment')
             ->where(function ($query) {
-                $query->where('payment_status', 'paid')
-                    ->orWhereHas('payments', function ($paymentQuery) {
-                        $paymentQuery->whereIn('status', ['completed', 'successful']);
-                    });
+                $query->where('status', 'pending_payment')
+                    ->orWhereHas('payments');
             })
-            ->with(['payments' => function ($query) {
-                $query->whereIn('status', ['completed', 'successful'])
-                    ->latest('paid_at')
-                    ->latest('id');
-            }])
+            ->with([
+                'payments' => function ($query) {
+                    $query->latest('paid_at')
+                        ->latest('id');
+                },
+                'charges:id,booking_id,amount',
+                'room.roomType',
+                'roomType',
+                'rooms.roomType',
+            ])
             ->chunkById(100, function ($bookings) {
                 foreach ($bookings as $booking) {
-                    $latestSuccessfulPayment = $booking->payments->first();
-                    $resolvedPaymentMethod = $latestSuccessfulPayment?->provider
-                        ?: $latestSuccessfulPayment?->method
-                        ?: $booking->payment_method;
-
-                    $booking->update([
-                        'status' => 'confirmed',
-                        'expires_at' => null,
-                        'payment_status' => $latestSuccessfulPayment ? 'paid' : ($booking->payment_status ?: 'paid'),
-                        'payment_method' => $resolvedPaymentMethod,
-                    ]);
+                    $this->syncBookingPaymentState($booking);
                 }
             });
+    }
+
+    public function syncBookingPaymentState(Booking $booking): void
+    {
+        $booking->loadMissing([
+            'payments',
+            'charges:id,booking_id,amount',
+            'room.roomType',
+            'roomType',
+            'rooms.roomType',
+        ]);
+
+        $successfulPayments = $booking->payments
+            ->filter(fn ($payment) => in_array(strtolower((string) $payment->status), ['completed', 'successful', 'paid'], true))
+            ->sortByDesc(fn ($payment) => optional($payment->paid_at ?? $payment->created_at)?->getTimestamp() ?? 0)
+            ->values();
+
+        $paymentsReceived = round(
+            $successfulPayments->sum(fn ($payment) => (float) ($payment->amount_paid ?? $payment->amount ?? 0)),
+            2
+        );
+
+        $extraCharges = round(
+            (float) $booking->charges->sum(fn ($charge) => (float) ($charge->amount ?? 0)),
+            2
+        );
+
+        $totalDue = max($this->effectiveBookingAmount($booking) + $extraCharges, 0);
+        $paymentStatus = $this->resolveBookingPaymentStatus(
+            storedStatus: $booking->payment_status,
+            amountDue: $totalDue,
+            paymentsReceived: $paymentsReceived,
+        );
+
+        $latestSuccessfulPayment = $successfulPayments->first();
+        $resolvedPaymentMethod = $latestSuccessfulPayment?->provider
+            ?: $latestSuccessfulPayment?->method
+            ?: $booking->payment_method;
+
+        $updates = [];
+
+        if (($booking->payment_status ?: null) !== $paymentStatus) {
+            $updates['payment_status'] = $paymentStatus;
+        }
+
+        if ($resolvedPaymentMethod && $booking->payment_method !== $resolvedPaymentMethod) {
+            $updates['payment_method'] = $resolvedPaymentMethod;
+        }
+
+        if ($booking->status === 'pending_payment' && $paymentStatus === 'paid') {
+            $updates['status'] = 'confirmed';
+            $updates['expires_at'] = null;
+        }
+
+        if ($updates === []) {
+            return;
+        }
+
+        $booking->forceFill($updates)->save();
+    }
+
+    protected function effectiveBookingAmount(Booking $booking): float
+    {
+        $details = is_array($booking->details) ? $booking->details : [];
+        $override = is_array($details['price_override'] ?? null) ? $details['price_override'] : null;
+        $discount = is_array($details['discount'] ?? null) ? $details['discount'] : null;
+        $discountPricing = is_array($discount['pricing'] ?? null) ? $discount['pricing'] : null;
+
+        $overrideAmount = isset($override['override_amount'])
+            ? round((float) $override['override_amount'], 2)
+            : null;
+
+        if ($overrideAmount !== null) {
+            return $overrideAmount;
+        }
+
+        $discountedTotal = isset($discountPricing['total'])
+            ? round((float) $discountPricing['total'], 2)
+            : null;
+
+        if ($discountedTotal !== null) {
+            return $discountedTotal;
+        }
+
+        $storedTotal = $booking->total_amount !== null
+            ? round((float) $booking->total_amount, 2)
+            : null;
+
+        if ($storedTotal !== null) {
+            return $storedTotal;
+        }
+
+        $nightlyRate = (float) ($booking->nightly_rate ?: $booking->roomType?->base_price ?: $booking->room?->roomType?->base_price ?: 0);
+        $roomCount = max((int) ($booking->quantity ?: $booking->rooms->count() ?: 1), 1);
+        $nights = $booking->check_in && $booking->check_out
+            ? max($booking->check_in->diffInDays($booking->check_out), 1)
+            : 1;
+
+        return round($nightlyRate * $roomCount * $nights, 2);
+    }
+
+    protected function resolveBookingPaymentStatus(?string $storedStatus, float $amountDue, float $paymentsReceived): string
+    {
+        $normalizedStoredStatus = strtolower(trim((string) $storedStatus));
+
+        if ($amountDue <= 0) {
+            return $paymentsReceived > 0 ? 'paid' : ($normalizedStoredStatus !== '' ? $normalizedStoredStatus : 'not_required');
+        }
+
+        if ($paymentsReceived >= $amountDue) {
+            return 'paid';
+        }
+
+        if ($paymentsReceived > 0) {
+            return 'partial';
+        }
+
+        if ($normalizedStoredStatus === 'failed') {
+            return 'failed';
+        }
+
+        return 'pending';
     }
 
     protected function sendBookingConfirmationToGuest(Booking $booking): void
