@@ -116,7 +116,7 @@ class ReportDashboardController extends Controller
                 ->filter(fn (Payment $payment) => in_array($payment->status, $successfulPaymentStatuses, true))
                 ->sum(fn (Payment $payment) => (float) ($payment->amount_paid ?? $payment->amount ?? 0));
 
-            $baseBookingAmount = (float) ($booking->total_amount ?? 0);
+            $baseBookingAmount = $this->effectiveBookingAmount($booking);
             $outstanding = max(($baseBookingAmount + $extraCharges) - $paymentsReceived, 0);
             $guestCount = (int) ($booking->guests ?: (($booking->adults ?? 0) + ($booking->children ?? 0)) ?: 1);
 
@@ -607,5 +607,45 @@ class ReportDashboardController extends Controller
             $room->display_name,
             $room->name ?: $room->room_number ?: $room->code,
         ])->filter()->implode(' - '));
+    }
+
+    protected function effectiveBookingAmount(Booking $booking): float
+    {
+        $details = is_array($booking->details) ? $booking->details : [];
+        $override = is_array($details['price_override'] ?? null) ? $details['price_override'] : null;
+        $discount = is_array($details['discount'] ?? null) ? $details['discount'] : null;
+        $discountPricing = is_array($discount['pricing'] ?? null) ? $discount['pricing'] : null;
+
+        $overrideAmount = isset($override['override_amount'])
+            ? round((float) $override['override_amount'], 2)
+            : null;
+
+        if ($overrideAmount !== null) {
+            return $overrideAmount;
+        }
+
+        $discountedTotal = isset($discountPricing['total'])
+            ? round((float) $discountPricing['total'], 2)
+            : null;
+
+        if ($discountedTotal !== null) {
+            return $discountedTotal;
+        }
+
+        $storedTotal = $booking->total_amount !== null
+            ? round((float) $booking->total_amount, 2)
+            : null;
+
+        if ($storedTotal !== null) {
+            return $storedTotal;
+        }
+
+        $nightlyRate = (float) ($booking->nightly_rate ?: $booking->roomType?->base_price ?: $booking->room?->roomType?->base_price ?: 0);
+        $roomCount = max((int) ($booking->quantity ?: $booking->rooms->count() ?: 1), 1);
+        $nights = $booking->check_in && $booking->check_out
+            ? max($booking->check_in->diffInDays($booking->check_out), 1)
+            : 1;
+
+        return round($nightlyRate * $roomCount * $nights, 2);
     }
 }
