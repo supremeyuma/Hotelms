@@ -42,18 +42,25 @@ onUnmounted(() => {
 
 <template>
   <transition name="modal-fade">
-    <div v-if="isVisible" class="fixed inset-0 z-50 flex items-center justify-center">
+    <div v-if="isVisible" class="fixed inset-0 z-50 overflow-y-auto">
       <!-- Backdrop -->
       <div class="absolute inset-0 bg-gray-500 bg-opacity-75" @click="close"></div>
 
-      <!-- Modal Content -->
-      <div :class="['relative bg-white rounded-lg shadow-xl w-full mx-4 sm:mx-auto', maxWidthClass]">
-        <header class="px-4 py-3 border-b flex justify-between items-center">
-          <slot name="title" />
-          <button @click="close" class="text-gray-500 hover:text-gray-700">&times;</button>
-        </header>
-        <div class="p-4">
-          <slot name="content" />
+      <div class="relative flex min-h-full items-start justify-center p-4 sm:items-center sm:p-6">
+        <!-- Modal Content -->
+        <div
+          :class="[
+            'relative flex max-h-[calc(100vh-2rem)] w-full flex-col overflow-hidden rounded-lg bg-white shadow-xl sm:max-h-[calc(100vh-3rem)]',
+            maxWidthClass,
+          ]"
+        >
+          <header class="flex shrink-0 items-center justify-between border-b px-4 py-3">
+            <slot name="title" />
+            <button @click="close" class="text-gray-500 hover:text-gray-700">&times;</button>
+          </header>
+          <div class="min-h-0 overflow-y-auto p-4">
+            <slot name="content" />
+          </div>
         </div>
       </div>
     </div>
