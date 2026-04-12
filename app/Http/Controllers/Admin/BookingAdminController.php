@@ -33,7 +33,12 @@ class BookingAdminController extends Controller
         $this->service->reconcilePaidBookingStates();
 
         $today = Carbon::today();
+        $search = trim($request->string('search')->toString());
         $filter = $request->string('filter')->toString();
+        $dateType = $request->string('dateType')->toString() === 'check_out' ? 'check_out' : 'check_in';
+        $date = $dateType === 'check_out'
+            ? $request->string('check_out_date')->toString()
+            : $request->string('check_in_date')->toString();
         $allowedFilters = ['arrivals_today', 'departures_today', 'in_house', 'unsettled', 'pending_override'];
 
         if (! in_array($filter, $allowedFilters, true)) {
@@ -41,6 +46,30 @@ class BookingAdminController extends Controller
         }
 
         $bookings = Booking::with(['room.roomType', 'roomType', 'rooms.roomType', 'user'])
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($bookingQuery) use ($search) {
+                    $bookingQuery->where('booking_code', 'like', "%{$search}%")
+                        ->orWhere('guest_name', 'like', "%{$search}%")
+                        ->orWhere('guest_email', 'like', "%{$search}%")
+                        ->orWhere('guest_phone', 'like', "%{$search}%")
+                        ->orWhereHas('user', function ($userQuery) use ($search) {
+                            $userQuery->where('name', 'like', "%{$search}%")
+                                ->orWhere('email', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('rooms', function ($roomQuery) use ($search) {
+                            $roomQuery->where('name', 'like', "%{$search}%")
+                                ->orWhere('room_number', 'like', "%{$search}%")
+                                ->orWhere('display_name', 'like', "%{$search}%")
+                                ->orWhere('code', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('room', function ($roomQuery) use ($search) {
+                            $roomQuery->where('name', 'like', "%{$search}%")
+                                ->orWhere('room_number', 'like', "%{$search}%")
+                                ->orWhere('display_name', 'like', "%{$search}%")
+                                ->orWhere('code', 'like', "%{$search}%");
+                        });
+                });
+            })
             ->when($filter === 'arrivals_today', function ($query) use ($today) {
                 $query->whereDate('check_in', $today)
                     ->whereNotIn('status', ['cancelled']);
@@ -60,6 +89,9 @@ class BookingAdminController extends Controller
             })
             ->when($filter === 'pending_override', function ($query) {
                 $query->where('details->price_override->approval_status', 'pending');
+            })
+            ->when($date !== '', function ($query) use ($date, $dateType) {
+                $query->whereDate($dateType, $date);
             })
             ->latest()
             ->paginate(25)
@@ -143,6 +175,9 @@ class BookingAdminController extends Controller
             ],
             'filters' => [
                 'active' => $filter,
+                'search' => $search,
+                'date' => $date,
+                'dateType' => $dateType,
             ],
             'todayLabel' => $today->format('l, d M Y'),
         ]);
