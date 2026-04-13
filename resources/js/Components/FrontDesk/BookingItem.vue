@@ -10,6 +10,10 @@ const props = defineProps({
 //console.log(props.booking)
 
 const outstandingAmount = computed(() => {
+  if (props.booking.status === 'cancelled') {
+    return 0;
+  }
+
   const charges = props.booking.charges?.reduce((sum, c) => {
     return sum + parseFloat(c.amount || 0);
   }, 0) || 0;

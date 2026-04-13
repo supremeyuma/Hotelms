@@ -22,17 +22,21 @@ const props = defineProps({
 })
 
 const totalCharges = computed(() =>
-  Math.max(
-    props.booking.charges.reduce((sum, charge) => sum + Number(charge.amount), 0),
-    Number(props.booking.total_amount || 0)
-  )
+  bookingIsCancelled.value
+    ? 0
+    : Math.max(
+      props.booking.charges.reduce((sum, charge) => sum + Number(charge.amount), 0),
+      Number(props.booking.total_amount || 0)
+    )
 )
 
 const totalPayments = computed(() =>
   props.booking.payments.reduce((sum, payment) => sum + Number(payment.amount), 0)
 )
 
-const balanceDue = computed(() => Math.max(totalCharges.value - totalPayments.value, 0))
+const bookingIsCancelled = computed(() => props.booking.status === 'cancelled')
+
+const balanceDue = computed(() => bookingIsCancelled.value ? 0 : Math.max(totalCharges.value - totalPayments.value, 0))
 const isInHouse = computed(() => ['active', 'checked_in'].includes(props.booking.status))
 
 function checkIn() {

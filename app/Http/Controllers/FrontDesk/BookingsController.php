@@ -294,6 +294,7 @@ class BookingsController extends Controller
     {
         $this->bookingService->reconcilePaidBookingStates();
         $booking->refresh()->load(['room.roomType', 'rooms.roomType', 'charges', 'payments', 'orders', 'user']);
+        $billing = $this->billingService->getBillingHistory($booking);
         $details = $booking->details ?? [];
         $preCheckIn = $details['pre_check_in'] ?? null;
 
@@ -332,17 +333,17 @@ class BookingsController extends Controller
                         ],
                     ];
                 })->values(),
-                'charges' => $booking->charges->map(fn ($charge) => [
+                'charges' => collect($billing['charges'])->map(fn ($charge) => [
                     'id' => $charge->id,
                     'room_id' => $charge->room_id,
                     'description' => $charge->description,
                     'amount' => (float) $charge->amount,
                 ])->values(),
-                'payments' => $booking->payments->map(fn ($payment) => [
+                'payments' => collect($billing['payments'])->map(fn ($payment) => [
                     'id' => $payment->id,
                     'room_id' => $payment->room_id,
                     'method' => $payment->method,
-                    'amount' => (float) ($payment->amount_paid ?? $payment->amount),
+                    'amount' => (float) $payment->amount,
                 ])->values(),
                 'assigned_room_options' => $booking->rooms->map(function (Room $room) {
                     return [

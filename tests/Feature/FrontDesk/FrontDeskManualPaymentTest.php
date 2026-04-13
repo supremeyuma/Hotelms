@@ -3,11 +3,13 @@
 namespace Tests\Feature\FrontDesk;
 
 use App\Models\Booking;
+use App\Models\Charge;
 use App\Models\Payment;
 use App\Models\Property;
 use App\Models\Room;
 use App\Models\RoomType;
 use App\Models\User;
+use App\Services\BillingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -45,8 +47,10 @@ class FrontDeskManualPaymentTest extends TestCase
             'booking_id' => $booking->id,
             'room_id' => $room->id,
             'amount' => 50000,
+            'amount_paid' => 50000,
             'method' => 'Cash',
             'reference' => 'FD-ROOM-CASH-1',
+            'provider' => 'manual',
             'status' => 'successful',
         ]);
         $this->assertDatabaseCount('room_payments', 0);
@@ -75,14 +79,39 @@ class FrontDeskManualPaymentTest extends TestCase
             'booking_id' => $booking->id,
             'room_id' => $room->id,
             'amount' => 30000,
+            'amount_paid' => 30000,
             'method' => 'Transfer',
             'reference' => 'FD-BOOKING-TRANSFER-1',
+            'provider' => 'manual',
             'status' => 'successful',
         ]);
 
         $booking->refresh();
         $this->assertSame('partial', $booking->payment_status);
         $this->assertSame('Transfer', $booking->payment_method);
+    }
+
+    public function test_cancelled_booking_has_no_outstanding_balance_in_billing_history(): void
+    {
+        [$room, $booking] = $this->checkedInBookingFixture(amount: 120000);
+
+        Charge::create([
+            'booking_id' => $booking->id,
+            'room_id' => $room->id,
+            'description' => 'Mini bar',
+            'amount' => 15000,
+            'status' => 'unpaid',
+            'payment_mode' => 'postpaid',
+            'charge_date' => now()->toDateString(),
+            'type' => 'bar',
+        ]);
+
+        $booking->update(['status' => 'cancelled']);
+
+        $history = app(BillingService::class)->getBillingHistory($booking->fresh());
+
+        $this->assertSame(0.0, (float) $history['total_charges']);
+        $this->assertSame(0.0, (float) $history['outstanding']);
     }
 
     protected function checkedInBookingFixture(float $amount = 50000): array

@@ -122,6 +122,9 @@ class RoomOrderManagementTest extends TestCase
             'room_id' => $room->id,
             'reference' => $order->payment_reference,
             'method' => 'cash',
+            'amount' => 6000,
+            'amount_paid' => 6000,
+            'provider' => 'manual',
             'payment_type' => 'order',
             'status' => 'completed',
         ]);

@@ -115,9 +115,17 @@ class OrderController extends Controller
             return back()->with('error', 'This order can no longer be cancelled.');
         }
 
-        $order->update([
-            'status' => OrderStatus::CANCELLED,
-        ]);
+        DB::transaction(function () use ($order) {
+            $order->update([
+                'status' => OrderStatus::CANCELLED,
+            ]);
+
+            if ($order->charge && $order->charge->status !== 'paid') {
+                $order->charge->update([
+                    'status' => 'cancelled',
+                ]);
+            }
+        });
 
         event(new OrderStatusUpdated($order));
 
