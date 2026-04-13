@@ -630,6 +630,15 @@ class ReportDashboardController extends Controller
             ? round((float) $override['override_amount'], 2)
             : null;
 
+        if ($booking->status === 'cancelled' && $booking->cancellation_fee !== null) {
+            return round((float) $booking->cancellation_fee, 2);
+        }
+
+        if ($booking->status === 'cancelled' /*&& $booking->cancellation_fee !== null*/) {
+            return 0;
+        }
+
+
         if ($overrideAmount !== null) {
             return $overrideAmount;
         }
