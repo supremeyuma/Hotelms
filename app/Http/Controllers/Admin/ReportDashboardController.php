@@ -114,7 +114,7 @@ class ReportDashboardController extends Controller
                 ->sortDesc()
                 ->first();
 
-            $extraCharges = (float) $booking->charges->sum('amount');
+            $extraCharges = $this->reportExtraCharges($booking);
             $paymentsReceived = (float) $booking->payments
                 ->filter(fn (Payment $payment) => in_array($payment->status, $successfulPaymentStatuses, true))
                 ->sum(fn (Payment $payment) => (float) ($payment->amount_paid ?? $payment->amount ?? 0));
@@ -676,5 +676,15 @@ class ReportDashboardController extends Controller
         }
 
         return $normalizedStoredStatus !== '' ? $normalizedStoredStatus : 'unpaid';
+    }
+
+    protected function reportExtraCharges(Booking $booking): float
+    {
+        return round(
+            (float) $booking->charges
+                ->reject(fn (Charge $charge) => strtolower((string) $charge->type) === 'nightly')
+                ->sum(fn (Charge $charge) => (float) ($charge->amount ?? 0)),
+            2
+        );
     }
 }
