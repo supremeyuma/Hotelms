@@ -671,7 +671,7 @@ class ReportDashboardController extends Controller
             return 'paid';
         }
 
-        if ($paymentsReceived > 0) {
+        if ($paymentsReceived > 0 && $paymentsReceived < $amountDue) {
             return 'partial';
         }
 
