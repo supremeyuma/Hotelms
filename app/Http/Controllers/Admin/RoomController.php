@@ -69,7 +69,7 @@ class RoomController extends Controller
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($roomQuery) use ($search) {
                     $roomQuery->where('rooms.name', 'like', "%{$search}%")
-                        ->orWhere('rooms.room_number', 'like', "%{$search}%")
+                        //->orWhere('rooms.room_number', 'like', "%{$search}%")
                         ->orWhere('rooms.code', 'like', "%{$search}%")
                         ->orWhereHas('roomType', fn ($roomTypeQuery) => $roomTypeQuery->where('title', 'like', "%{$search}%"));
                 });
