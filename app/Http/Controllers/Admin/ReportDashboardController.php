@@ -682,7 +682,7 @@ class ReportDashboardController extends Controller
     {
         return round(
             (float) $booking->charges
-                ->reject(fn (Charge $charge) => strtolower((string) $charge->type) === 'nightly')
+                ->reject(fn (Charge $charge) => strtolower((string) $charge->description) === 'Nightly room charge')
                 ->sum(fn (Charge $charge) => (float) ($charge->amount ?? 0)),
             2
         );
