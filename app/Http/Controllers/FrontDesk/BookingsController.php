@@ -334,16 +334,16 @@ class BookingsController extends Controller
                     ];
                 })->values(),
                 'charges' => collect($billing['charges'])->map(fn ($charge) => [
-                    'id' => $charge->id,
-                    'room_id' => $charge->room_id,
-                    'description' => $charge->description,
-                    'amount' => (float) $charge->amount,
+                    'id' => $charge['id'],
+                    'room_id' => $charge['room_id'],
+                    'description' => $charge['description'],
+                    'amount' => (float) $charge['amount'],
                 ])->values(),
                 'payments' => collect($billing['payments'])->map(fn ($payment) => [
-                    'id' => $payment->id,
-                    'room_id' => $payment->room_id,
-                    'method' => $payment->method,
-                    'amount' => (float) $payment->amount,
+                    'id' => $payment['id'],
+                    'room_id' => $payment['room_id'],
+                    'method' => $payment['method'],
+                    'amount' => (float) $payment['amount'],
                 ])->values(),
                 'assigned_room_options' => $booking->rooms->map(function (Room $room) {
                     return [
