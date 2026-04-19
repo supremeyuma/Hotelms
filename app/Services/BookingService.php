@@ -615,7 +615,7 @@ class BookingService
      */
     public function checkOut(Booking $booking, ?Room $room = null, bool $isOnOrPastCheckoutDay = false): Booking
     {
-        return DB::transaction(function () use ($booking, $room) {
+        return DB::transaction(function () use ($booking, $room, $isOnOrPastCheckoutDay) {
             $this->normalizeLegacyCheckedInStatusForBooking($booking);
 
             // -----------------------------------------
