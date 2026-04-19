@@ -5,12 +5,6 @@ namespace App\Jobs;
 use App\Models\Booking;
 use App\Services\RoomCheckoutService;
 use App\Services\AuditLoggerService;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Queue\SerializesModels;
-use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\Log;
 
@@ -20,10 +14,8 @@ use Illuminate\Support\Facades\Log;
  * Automatically checks out guests at midday (12:00 PM) on their checkout date.
  * This ensures rooms are released for cleaning and new check-ins by the standard checkout time.
  */
-class AutomaticCheckoutJob implements ShouldQueue
+class AutomaticCheckoutJob
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
-
     public int $tries = 3;
     public int $timeout = 300;
 

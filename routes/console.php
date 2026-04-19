@@ -11,6 +11,8 @@ use App\Jobs\GenerateRevenueReportJob;
 use App\Jobs\PurgeOldNotificationsJob;
 use App\Jobs\ScheduleMaintenanceRoutineJob;
 use App\Jobs\UpdateOrderQueueJob;
+use App\Services\AuditLoggerService;
+use App\Services\RoomCheckoutService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -19,7 +21,12 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-Schedule::job(new AutomaticCheckoutJob)->dailyAt('12:00');
+Schedule::call(function () {
+    app(AutomaticCheckoutJob::class)->handle(
+        app(RoomCheckoutService::class),
+        app(AuditLoggerService::class)
+    );
+})->dailyAt('12:00');
 Schedule::command('queue:work --once')->everyMinute()->withoutOverlapping();
 Schedule::job(new UpdateOrderQueueJob)->everyFiveMinutes();
 Schedule::job(new AutoCloseCompletedOrdersJob)->dailyAt('00:30');
