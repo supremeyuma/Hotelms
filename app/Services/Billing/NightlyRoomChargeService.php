@@ -42,12 +42,20 @@ class NightlyRoomChargeService
         event(new RoomBillingUpdated($room));
     }
 
-    public function finalize(Booking $booking, Room $room): void
+public function finalize(Booking $booking, Room $room, bool $skipCheckoutDayCharge = false): void
     {
-        $chargeDate = Carbon::parse($booking->check_out)->subDay()->startOfDay();
+        $checkoutDay = Carbon::parse($booking->check_out)->startOfDay();
+        $checkInDay = Carbon::parse($booking->check_in)->startOfDay();
+        $today = now()->startOfDay();
 
-        if ($chargeDate->lt(Carbon::parse($booking->check_in)->startOfDay())) {
-            $chargeDate = Carbon::parse($booking->check_in)->startOfDay();
+        if ($skipCheckoutDayCharge && $checkoutDay->eq($today)) {
+            return;
+        }
+
+        $chargeDate = $checkoutDay->copy()->subDay();
+
+        if ($chargeDate->lt($checkInDay)) {
+            $chargeDate = $checkInDay;
         }
 
         $this->charge($room, $booking, $chargeDate);

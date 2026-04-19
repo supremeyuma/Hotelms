@@ -18,9 +18,9 @@ class RoomCheckoutService
     ) {
         DB::transaction(function () use ($booking, $room, $by) {
 
-            // 1. Apply final nightly charges if needed
+// 1. Apply final nightly charges if needed
             app(NightlyRoomChargeService::class)
-                ->finalize($booking, $room);
+                ->finalize($booking, $room, false);
 
             // 2. Enforce room balance = 0
             if (! app(RoomBalanceService::class)

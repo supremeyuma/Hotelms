@@ -9,12 +9,17 @@ class RoomRateResolver
 {
     public function nightly(Room $room, Booking $booking): float
     {
-        $pivot = $booking->rooms()
-            ->where('rooms.id', $room->id)
-            ->first()
-            ->pivot;
+        $effectiveAmount = app(BookingService::class)->effectiveBookingAmount($booking);
 
-        return $pivot->rate_override
-            ?? $room->roomType->base_price;
+        $nights = max(
+            $booking->check_in && $booking->check_out
+                ? $booking->check_in->diffInDays($booking->check_out)
+                : 1,
+            1
+        );
+
+        $roomCount = max((int) ($booking->quantity ?: $booking->rooms->count() ?: 1), 1);
+
+        return round($effectiveAmount / ($nights * $roomCount), 2);
     }
 }
