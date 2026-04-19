@@ -265,7 +265,7 @@ class BookingService
         $booking->forceFill($updates)->save();
     }
 
-    protected function effectiveBookingAmount(Booking $booking): float
+    public function effectiveBookingAmount(Booking $booking): float
     {
         $details = is_array($booking->details) ? $booking->details : [];
         $override = is_array($details['price_override'] ?? null) ? $details['price_override'] : null;

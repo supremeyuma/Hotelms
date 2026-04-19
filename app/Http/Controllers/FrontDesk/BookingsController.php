@@ -312,7 +312,7 @@ class BookingsController extends Controller
                 'check_in' => optional($booking->check_in)?->toDateString(),
                 'check_out' => optional($booking->check_out)?->toDateString(),
                 'status' => $booking->status === 'active' ? 'checked_in' : $booking->status,
-                'total_amount' => (float) ($booking->total_amount ?? 0),
+                'total_amount' => (float) $this->bookingService->effectiveBookingAmount($booking),
                 'created_at' => optional($booking->created_at)?->toIso8601String(),
                 'checked_in_rooms_count' => $booking->checked_in_rooms_count,
                 'price_override' => $booking->price_override,
