@@ -389,9 +389,9 @@ class BookingsController extends Controller
     public function checkOut(Booking $booking)
     {
         $checkoutDay = $booking->check_out?->startOfDay();
-        $isOnCheckoutDay = $checkoutDay && $checkoutDay->eq(now()->startOfDay());
+        $isOnOrPastCheckoutDay = $checkoutDay && $checkoutDay->lte(now()->startOfDay());
 
-        $this->bookingService->checkOut($booking, null, $isOnCheckoutDay);
+        $this->bookingService->checkOut($booking, null, $isOnOrPastCheckoutDay);
 
         return back()->with('success', "Guest {$booking->guest_name} checked out successfully.");
     }

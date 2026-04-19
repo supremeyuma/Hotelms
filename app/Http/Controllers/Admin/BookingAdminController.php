@@ -411,9 +411,9 @@ class BookingAdminController extends Controller
 
         try {
             $checkoutDay = $booking->check_out?->startOfDay();
-            $isOnCheckoutDay = $checkoutDay && $checkoutDay->eq(now()->startOfDay());
+            $isOnOrPastCheckoutDay = $checkoutDay && $checkoutDay->lte(now()->startOfDay());
 
-            $this->service->checkOut($booking, null, $isOnCheckoutDay);
+            $this->service->checkOut($booking, null, $isOnOrPastCheckoutDay);
             AuditLogger::log('booking_checked_out', $booking, $booking->id, [
                 'by_admin' => auth()->user()?->id,
             ]);

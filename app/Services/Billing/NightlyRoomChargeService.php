@@ -48,7 +48,7 @@ public function finalize(Booking $booking, Room $room, bool $skipCheckoutDayChar
         $checkInDay = Carbon::parse($booking->check_in)->startOfDay();
         $today = now()->startOfDay();
 
-        if ($skipCheckoutDayCharge && $checkoutDay->eq($today)) {
+        if ($skipCheckoutDayCharge && $checkoutDay->lte($today)) {
             return;
         }
 
