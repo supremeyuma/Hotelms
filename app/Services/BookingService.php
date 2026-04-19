@@ -613,7 +613,7 @@ class BookingService
     /**
      * Check-out workflow.
      */
-    public function checkOut(Booking $booking, ?Room $room = null, bool $isOnCheckoutDay = false): Booking
+    public function checkOut(Booking $booking, ?Room $room = null, bool $isOnOrPastCheckoutDay = false): Booking
     {
         return DB::transaction(function () use ($booking, $room) {
             $this->normalizeLegacyCheckedInStatusForBooking($booking);
@@ -625,7 +625,7 @@ class BookingService
 
                 // 1. Finalize nightly revenue (idempotent)
                 app(NightlyRoomChargeService::class)
-                    ->finalize($booking, $room, $isOnCheckoutDay);
+                    ->finalize($booking, $room, $isOnOrPastCheckoutDay);
 
                 // 2. Enforce GL-based room balance
                 if (! app(RoomBalanceService::class)
@@ -655,7 +655,7 @@ class BookingService
 
                     // Finalize nightly revenue per room
                     app(NightlyRoomChargeService::class)
-                        ->finalize($booking, $r, $isOnCheckoutDay);
+                        ->finalize($booking, $r, $isOnOrPastCheckoutDay);
 
                     // Enforce GL-based balance per room
                     if (! app(RoomBalanceService::class)
