@@ -57,7 +57,7 @@ return new class extends Migration
         ],
         'Comfort Meals' => [
             ['name' => 'Stew', 'price' => 1500],
-            ['name' => 'Currry Sauce', 'price' => 1500],
+            ['name' => 'Curry Sauce', 'price' => 1500],
             ['name' => 'Casserole', 'price' => 2000],
         ],
         'Small Plates' => [
