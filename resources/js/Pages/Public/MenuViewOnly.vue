@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue'
-import { router, Head } from '@inertiajs/vue3'
-import GuestLayout from '@/Layouts/GuestLayout.vue'
+import { router } from '@inertiajs/vue3'
+import PublicMenuLayout from '@/Layouts/PublicMenuLayout.vue'
 import { ArrowLeft, Star } from 'lucide-vue-next'
 
 /* ================= PROPS ================= */
@@ -40,26 +40,25 @@ function closeDetails() {
 </script>
 
 <template>
-  <GuestLayout>
-    <Head title="Menu" />
+  <PublicMenuLayout title="Menu">
 
     <!-- HEADER -->
     <div class="sticky top-0 z-30 bg-white border-b border-gray-200">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4 flex items-center justify-between gap-3">
         <button
           @click="goHome"
-          class="flex items-center gap-2 text-sm font-bold text-gray-600 hover:text-gray-900 transition"
+          class="shrink-0 flex items-center gap-1.5 sm:gap-2 text-sm font-bold text-gray-600 hover:text-gray-900 transition"
         >
           <ArrowLeft class="w-4 h-4" />
           Back
         </button>
 
-        <div class="text-center">
-          <h1 class="text-2xl font-black text-gray-900">Menu</h1>
-          <div class="flex items-center justify-center gap-2 mt-2">
+        <div class="min-w-0 flex-1 text-center">
+          <h1 class="text-xl sm:text-2xl font-black text-gray-900">Menu</h1>
+          <div class="mt-1.5 sm:mt-2 flex items-center justify-center gap-1.5 sm:gap-2">
             <button
               @click="router.visit(route('menu.view.show', { type: 'kitchen' }))"
-              class="px-4 py-1.5 rounded-full text-xs font-bold transition"
+              class="px-3 py-1 sm:px-4 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-bold transition"
               :class="type === 'kitchen' 
                 ? 'bg-black text-white' 
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'"
@@ -68,7 +67,7 @@ function closeDetails() {
             </button>
             <button
               @click="router.visit(route('menu.view.show', { type: 'bar' }))"
-              class="px-4 py-1.5 rounded-full text-xs font-bold transition"
+              class="px-3 py-1 sm:px-4 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-bold transition"
               :class="type === 'bar' 
                 ? 'bg-black text-white' 
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'"
@@ -78,7 +77,7 @@ function closeDetails() {
           </div>
         </div>
 
-        <div class="w-8"></div>
+        <div class="w-10 sm:w-8 shrink-0"></div>
       </div>
     </div>
 
@@ -254,7 +253,7 @@ function closeDetails() {
         </div>
       </div>
     </div>
-  </GuestLayout>
+  </PublicMenuLayout>
 </template>
 
 <style scoped>
