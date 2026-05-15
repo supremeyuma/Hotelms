@@ -131,14 +131,14 @@ function closeDetails() {
             <p class="text-gray-500 text-lg">No items available in this category</p>
           </div>
 
-          <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             <div
               v-for="item in items"
               :key="item.id"
               @click="openDetails(item)"
               class="group cursor-pointer bg-white rounded-2xl overflow-hidden border border-gray-200 hover:border-black hover:shadow-xl transition-all duration-300"
             >
-              <div class="relative overflow-hidden bg-gray-100 h-48">
+              <div class="relative overflow-hidden bg-gray-100 h-32 sm:h-36">
                 <img
                   v-if="item.images?.length"
                   :src="`/storage/${item.images[0].path}`"
@@ -150,18 +150,18 @@ function closeDetails() {
                 </div>
               </div>
 
-              <div class="p-4 space-y-2">
-                <h3 class="font-bold text-sm text-gray-900 line-clamp-2">
+              <div class="p-3 space-y-1.5">
+                <h3 class="font-bold text-xs sm:text-sm text-gray-900 line-clamp-2 leading-snug">
                   {{ item.name }}
                 </h3>
-                <p v-if="item.description" class="text-xs text-gray-500 line-clamp-2">
+                <p v-if="item.description" class="text-[11px] sm:text-xs text-gray-500 line-clamp-2 leading-snug">
                   {{ item.description }}
                 </p>
-                <div class="flex items-center justify-between pt-2 border-t border-gray-100">
-                  <span class="font-black text-base text-gray-900">â‚¦{{ item.price }}</span>
-                  <div class="flex gap-1">
-                    <Star class="w-4 h-4 text-amber-400 fill-amber-400" />
-                    <span class="text-xs font-semibold text-gray-700">Popular</span>
+                <div class="flex items-center justify-between pt-1.5 border-t border-gray-100">
+                  <span class="font-black text-sm sm:text-base text-gray-900">â‚¦{{ item.price }}</span>
+                  <div class="flex gap-1 items-center">
+                    <Star class="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                    <span class="text-[10px] sm:text-xs font-semibold text-gray-700">Popular</span>
                   </div>
                 </div>
               </div>

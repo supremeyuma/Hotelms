@@ -255,13 +255,13 @@ function goHome() {
 
         <div class="grid lg:grid-cols-4 gap-8">
           <div class="lg:col-span-3">
-            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
               <div
                 v-for="item in items"
                 :key="item.id"
                 class="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition group cursor-pointer"
               >
-                <div class="relative overflow-hidden bg-gray-100 h-40">
+                <div class="relative overflow-hidden bg-gray-100 h-28 sm:h-32">
                   <img
                     v-if="item.images?.length"
                     :src="`/storage/${item.images[0].path}`"
@@ -273,32 +273,32 @@ function goHome() {
                   </div>
                 </div>
 
-                <div class="p-4 space-y-3">
+                <div class="p-3 space-y-2">
                   <div>
-                    <h3 class="font-bold text-sm text-gray-900">{{ item.name }}</h3>
-                    <p v-if="item.description" class="text-xs text-gray-500 mt-1 line-clamp-2">
+                    <h3 class="font-bold text-xs sm:text-sm text-gray-900 leading-snug">{{ item.name }}</h3>
+                    <p v-if="item.description" class="text-[11px] sm:text-xs text-gray-500 mt-0.5 line-clamp-2 leading-snug">
                       {{ item.description }}
                     </p>
                   </div>
 
-                  <div class="flex items-center justify-between pt-2 border-t border-gray-100">
-                    <span class="font-bold text-base text-gray-900">â‚¦{{ item.price }}</span>
+                  <div class="flex items-center justify-between pt-1.5 border-t border-gray-100">
+                    <span class="font-bold text-sm sm:text-base text-gray-900">â‚¦{{ item.price }}</span>
 
-                    <div class="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+                    <div class="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
                       <button
                         @click="remove(item)"
                         class="p-1 hover:bg-gray-200 rounded transition"
                       >
-                        <Minus class="w-4 h-4 text-gray-600" />
+                        <Minus class="w-3.5 h-3.5 text-gray-600" />
                       </button>
-                      <span class="w-6 text-center text-sm font-semibold">
+                      <span class="w-5 text-center text-xs sm:text-sm font-semibold">
                         {{ cart.find(i => i.id === item.id)?.quantity || 0 }}
                       </span>
                       <button
                         @click="add(item)"
                         class="p-1 hover:bg-gray-200 rounded transition"
                       >
-                        <Plus class="w-4 h-4 text-gray-600" />
+                        <Plus class="w-3.5 h-3.5 text-gray-600" />
                       </button>
                     </div>
                   </div>
