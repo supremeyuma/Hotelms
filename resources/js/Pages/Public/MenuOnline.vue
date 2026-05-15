@@ -150,8 +150,8 @@ function goHome() {
   <PublicMenuLayout title="Order Online">
 
     <!-- HEADER -->
-    <div class="sticky top-0 z-30 bg-white border-b border-gray-200">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4 flex items-center justify-between gap-3">
+    <div class="sticky top-0 z-30 bg-white">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-0 sm:py-4 flex items-center justify-between gap-3">
         <button
           @click="goHome"
           class="shrink-0 text-gray-600 hover:text-gray-900 font-semibold text-sm transition"
