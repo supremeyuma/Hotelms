@@ -10,7 +10,11 @@ use Inertia\Inertia;
 use Illuminate\Validation\Rule;
 use App\Services\MenuPrepTimeService;
 use App\Models\MenuItemImage;
+use Illuminate\Http\Client\RequestException;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class MenuItemController extends Controller
 {
@@ -60,19 +64,13 @@ class MenuItemController extends Controller
             'service_area' => 'required|in:kitchen,bar',
             'is_available' => 'required|boolean',
             'images.*' => 'image|max:8192',
+            'image_urls' => 'nullable|array',
+            'image_urls.*' => 'nullable|url',
         ]);
 
         $item = MenuItem::create($validated);
-
-        if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $image) {
-                $path = $image->store('menu-items', 'public');
-
-                $item->images()->create([
-                    'path' => $path
-                ]);
-            }
-        }
+        $this->storeUploadedImages($request, $item);
+        $this->storeRemoteImages($request->input('image_urls', []), $item);
 
         return back();
     }
@@ -88,6 +86,9 @@ class MenuItemController extends Controller
             'menu_subcategory_id' => 'nullable|exists:menu_subcategories,id',
             'prep_time_adjustment' => 'nullable|integer',
             'is_available' => 'required|boolean',
+            'images.*' => 'image|max:8192',
+            'image_urls' => 'nullable|array',
+            'image_urls.*' => 'nullable|url',
         ]);
 
         $item->update([
@@ -102,6 +103,9 @@ class MenuItemController extends Controller
         if (array_key_exists('prep_time_adjustment', $data)) {
             MenuPrepTimeService::adjustForItem($item, (int) $data['prep_time_adjustment']);
         }
+
+        $this->storeUploadedImages($request, $item);
+        $this->storeRemoteImages($request->input('image_urls', []), $item);
 
         return back();
     }
@@ -148,6 +152,70 @@ class MenuItemController extends Controller
         return back();
     }
 
+    private function storeUploadedImages(Request $request, MenuItem $item): void
+    {
+        if (! $request->hasFile('images')) {
+            return;
+        }
+
+        foreach ($request->file('images') as $image) {
+            $path = $image->store('menu-items', 'public');
+
+            $item->images()->create([
+                'path' => $path,
+            ]);
+        }
+    }
+
+    private function storeRemoteImages(array $imageUrls, MenuItem $item): void
+    {
+        foreach (array_filter($imageUrls) as $imageUrl) {
+            try {
+                $response = Http::timeout(15)->get($imageUrl)->throw();
+            } catch (RequestException $exception) {
+                throw ValidationException::withMessages([
+                    'image_urls' => 'One of the image URLs could not be downloaded.',
+                ]);
+            }
+
+            $contentType = Str::before((string) $response->header('Content-Type'), ';');
+
+            if (! Str::startsWith($contentType, 'image/')) {
+                throw ValidationException::withMessages([
+                    'image_urls' => 'One of the provided URLs did not return an image.',
+                ]);
+            }
+
+            $contents = $response->body();
+
+            if (strlen($contents) > 8 * 1024 * 1024) {
+                throw ValidationException::withMessages([
+                    'image_urls' => 'One of the provided image URLs exceeds the 8MB limit.',
+                ]);
+            }
+
+            $extension = $this->extensionFromContentType($contentType);
+            $filename = 'menu-items/' . Str::uuid() . '.' . $extension;
+
+            Storage::disk('public')->put($filename, $contents);
+
+            $item->images()->create([
+                'path' => $filename,
+            ]);
+        }
+    }
+
+    private function extensionFromContentType(string $contentType): string
+    {
+        return match ($contentType) {
+            'image/jpeg', 'image/jpg' => 'jpg',
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+            'image/gif' => 'gif',
+            'image/svg+xml' => 'svg',
+            default => 'jpg',
+        };
+    }
 
 
 }

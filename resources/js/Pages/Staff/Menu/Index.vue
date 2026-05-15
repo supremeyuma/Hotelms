@@ -49,7 +49,8 @@ const itemForm = reactive({
   prep_time_adjustment: '',
   service_area: props.area,
   is_available: true,
-  images: []
+  images: [],
+  image_urls: ['']
 })
 
 /* =========================
@@ -100,13 +101,27 @@ function resetItemForm() {
     price: '',
     prep_time_adjustment: '',
     is_available: true,
-    images: []
+    images: [],
+    image_urls: ['']
   })
   editingItem.value = null
 }
 
 function handleImages(e) {
   itemForm.images = Array.from(e.target.files)
+}
+
+function addImageUrlField() {
+  itemForm.image_urls.push('')
+}
+
+function removeImageUrlField(index) {
+  if (itemForm.image_urls.length === 1) {
+    itemForm.image_urls[0] = ''
+    return
+  }
+
+  itemForm.image_urls.splice(index, 1)
 }
 
 /* =========================
@@ -155,6 +170,11 @@ function submitItem() {
   Object.entries(itemForm).forEach(([k, v]) => {
     if (k === 'images') {
       v.forEach((f, i) => data.append(`images[${i}]`, f))
+    } else if (k === 'image_urls') {
+      v
+        .map(url => url.trim())
+        .filter(Boolean)
+        .forEach((url, i) => data.append(`image_urls[${i}]`, url))
     } else if (v !== null && v !== '') {
       data.append(k, typeof v === 'boolean' ? (v ? 1 : 0) : v)
     }
@@ -190,7 +210,8 @@ function editItem(item) {
     price: item.price,
     prep_time_adjustment: '',
     is_available: item.is_available,
-    images: []
+    images: [],
+    image_urls: ['']
   })
 }
 
@@ -308,7 +329,40 @@ watch(() => itemForm.menu_category_id, () => {
             </label>
           </label>
 
-          <input type="file" multiple @change="handleImages" class="col-span-2 text-xs" />
+          <div class="col-span-2 space-y-3 rounded-lg border border-gray-200 p-3">
+            <div>
+              <p class="text-sm font-semibold text-gray-900">Images</p>
+              <p class="text-xs text-gray-500">Upload files, paste image URLs, or use both.</p>
+            </div>
+
+            <input type="file" multiple accept="image/*" @change="handleImages" class="text-xs" />
+
+            <div class="space-y-2">
+              <div
+                v-for="(imageUrl, index) in itemForm.image_urls"
+                :key="`image-url-${index}`"
+                class="flex items-center gap-2"
+              >
+                <input
+                  v-model="itemForm.image_urls[index]"
+                  type="url"
+                  class="input"
+                  placeholder="https://example.com/menu-item.jpg"
+                />
+                <button
+                  type="button"
+                  class="btn"
+                  @click="removeImageUrlField(index)"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+
+            <button type="button" class="btn" @click="addImageUrlField()">
+              Add Image URL
+            </button>
+          </div>
 
           <div class="col-span-2 flex justify-end gap-3 pt-4 border-t">
             <button type="button" @click="showItem=false; resetItemForm()" class="btn">Cancel</button>
