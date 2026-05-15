@@ -10,7 +10,6 @@ import {
   CheckCircle,
 } from 'lucide-vue-next'
 
-/* ================= PROPS ================= */
 const page = usePage()
 
 const props = defineProps({
@@ -18,7 +17,6 @@ const props = defineProps({
   type: String,
 })
 
-/* ================= STATE ================= */
 const activeCategory = ref(props.categories?.[0] || null)
 const activeSubcategory = ref(null)
 const cart = ref([])
@@ -28,7 +26,6 @@ const toast = ref(null)
 const toastType = ref('success')
 const showConfirm = ref(false)
 
-/* ================= CART PERSISTENCE ================= */
 onMounted(() => {
   const saved = sessionStorage.getItem('public-online-cart')
   if (saved) {
@@ -42,14 +39,13 @@ onMounted(() => {
 
 watch(
   cart,
-  (val) => sessionStorage.setItem('public-online-cart', JSON.stringify(val)),
+  val => sessionStorage.setItem('public-online-cart', JSON.stringify(val)),
   { deep: true }
 )
 
-/* ================= FLASH MESSAGES ================= */
 watch(
   () => page.props.flash,
-  (flash) => {
+  flash => {
     if (flash?.success) {
       toastType.value = 'success'
       toast.value = flash.success
@@ -70,7 +66,6 @@ watch(
   { deep: true, immediate: true }
 )
 
-/* ================= COMPUTED ================= */
 const items = computed(() => {
   if (!activeCategory.value) return []
   if (activeSubcategory.value) return activeSubcategory.value.items
@@ -84,11 +79,6 @@ const total = computed(() =>
   cart.value.reduce((t, i) => t + i.price * i.quantity, 0)
 )
 
-const itemCount = computed(() =>
-  cart.value.reduce((sum, i) => sum + i.quantity, 0)
-)
-
-/* ================= CART ACTIONS ================= */
 function add(item) {
   const found = cart.value.find(i => i.id === item.id)
   found ? found.quantity++ : cart.value.push({ ...item, quantity: 1 })
@@ -106,7 +96,6 @@ function removeFromCart(itemId) {
   cart.value = cart.value.filter(i => i.id !== itemId)
 }
 
-/* ================= ORDER FLOW ================= */
 function openPreview() {
   if (!cart.value.length) return
   showPreview.value = true
@@ -148,46 +137,51 @@ function goHome() {
 
 <template>
   <PublicMenuLayout title="Order Online">
-
-    <!-- HEADER -->
     <div class="sticky top-0 z-30 bg-white">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-0 sm:py-4 flex items-center justify-between gap-3">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-0 sm:py-2 flex items-center justify-between gap-3">
         <button
           @click="goHome"
           class="shrink-0 text-gray-600 hover:text-gray-900 font-semibold text-sm transition"
         >
-          ← Back Home
+          Back Home
         </button>
 
         <div class="min-w-0 flex-1 text-center">
-          <h1 class="text-xl sm:text-2xl font-black text-gray-900">Order Online</h1>
-          <div class="mt-1.5 sm:mt-2 flex items-center justify-center gap-1.5 sm:gap-2">
-            <button
-              @click="router.visit(route('menu.online.show', { type: 'kitchen' }))"
-              class="px-3 py-1 sm:px-4 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-bold transition"
-              :class="type === 'kitchen' 
-                ? 'bg-black text-white' 
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'"
-            >
-              🍽️ Kitchen
-            </button>
-            <button
-              @click="router.visit(route('menu.online.show', { type: 'bar' }))"
-              class="px-3 py-1 sm:px-4 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-bold transition"
-              :class="type === 'bar' 
-                ? 'bg-black text-white' 
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'"
-            >
-              🍹 Bar
-            </button>
-          </div>
+          <h1 class="text-lg sm:text-xl font-black text-gray-900">Menu</h1>
+          <p class="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">
+            Order Online
+          </p>
         </div>
 
         <div class="w-16 sm:w-20 shrink-0"></div>
       </div>
     </div>
 
-    <!-- TOAST -->
+    <div class="sticky top-[40px] sm:top-[72px] z-30 bg-white">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-0 sm:py-2">
+        <div class="flex items-center justify-center gap-1.5 sm:gap-2">
+          <button
+            @click="router.visit(route('menu.online.show', { type: 'kitchen' }))"
+            class="px-3 py-1 sm:px-4 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-bold transition"
+            :class="type === 'kitchen'
+              ? 'bg-black text-white'
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'"
+          >
+            Kitchen
+          </button>
+          <button
+            @click="router.visit(route('menu.online.show', { type: 'bar' }))"
+            class="px-3 py-1 sm:px-4 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-bold transition"
+            :class="type === 'bar'
+              ? 'bg-black text-white'
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'"
+          >
+            Bar
+          </button>
+        </div>
+      </div>
+    </div>
+
     <transition name="toast">
       <div
         v-if="toast"
@@ -198,7 +192,6 @@ function goHome() {
       </div>
     </transition>
 
-    <!-- SUCCESS MODAL -->
     <div
       v-if="showConfirm"
       class="fixed inset-0 bg-black/40 z-40 flex items-center justify-center p-4"
@@ -222,10 +215,8 @@ function goHome() {
       </div>
     </div>
 
-    <!-- MAIN CONTENT -->
     <div class="bg-gray-50 min-h-screen">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- CATEGORIES SIDEBAR OR TOP TABS -->
         <div class="mb-8">
           <div class="flex gap-2 overflow-x-auto pb-2">
             <button
@@ -244,7 +235,6 @@ function goHome() {
           </div>
         </div>
 
-        <!-- SUBCATEGORIES -->
         <div v-if="activeCategory?.subcategories?.length" class="mb-8">
           <div class="flex gap-2 overflow-x-auto">
             <button
@@ -263,9 +253,7 @@ function goHome() {
           </div>
         </div>
 
-        <!-- ITEMS GRID + CART -->
         <div class="grid lg:grid-cols-4 gap-8">
-          <!-- ITEMS SECTION -->
           <div class="lg:col-span-3">
             <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div
@@ -273,7 +261,6 @@ function goHome() {
                 :key="item.id"
                 class="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition group cursor-pointer"
               >
-                <!-- IMAGE -->
                 <div class="relative overflow-hidden bg-gray-100 h-40">
                   <img
                     v-if="item.images?.length"
@@ -286,7 +273,6 @@ function goHome() {
                   </div>
                 </div>
 
-                <!-- CONTENT -->
                 <div class="p-4 space-y-3">
                   <div>
                     <h3 class="font-bold text-sm text-gray-900">{{ item.name }}</h3>
@@ -296,9 +282,8 @@ function goHome() {
                   </div>
 
                   <div class="flex items-center justify-between pt-2 border-t border-gray-100">
-                    <span class="font-bold text-base text-gray-900">₦{{ item.price }}</span>
+                    <span class="font-bold text-base text-gray-900">â‚¦{{ item.price }}</span>
 
-                    <!-- QUANTITY SELECTOR -->
                     <div class="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
                       <button
                         @click="remove(item)"
@@ -322,7 +307,6 @@ function goHome() {
             </div>
           </div>
 
-          <!-- CART SIDEBAR -->
           <div class="lg:col-span-1">
             <div
               class="sticky top-24 bg-white rounded-xl shadow-lg p-6 space-y-4 border border-gray-100"
@@ -340,7 +324,6 @@ function goHome() {
                 <p class="text-sm">No items yet</p>
               </div>
 
-              <!-- CART ITEMS -->
               <div v-else class="space-y-3 max-h-96 overflow-y-auto">
                 <div
                   v-for="item in cart"
@@ -351,7 +334,7 @@ function goHome() {
                     <div class="flex-1">
                       <p class="font-semibold text-sm text-gray-900">{{ item.name }}</p>
                       <p class="text-xs text-gray-500">
-                        {{ item.quantity }} × ₦{{ item.price }}
+                        {{ item.quantity }} Ã— â‚¦{{ item.price }}
                       </p>
                     </div>
                     <button
@@ -362,26 +345,24 @@ function goHome() {
                     </button>
                   </div>
                   <p class="font-bold text-sm text-right text-gray-900">
-                    ₦{{ item.price * item.quantity }}
+                    â‚¦{{ item.price * item.quantity }}
                   </p>
                 </div>
               </div>
 
-              <!-- TOTALS -->
               <div v-if="cart.length" class="border-t border-gray-200 pt-4 space-y-2">
                 <div class="flex justify-between text-sm">
                   <span class="text-gray-600">Subtotal</span>
-                  <span class="font-semibold text-gray-900">₦{{ total }}</span>
+                  <span class="font-semibold text-gray-900">â‚¦{{ total }}</span>
                 </div>
                 <div class="bg-gray-50 p-3 rounded-lg">
                   <div class="flex justify-between items-center">
                     <span class="font-bold text-gray-900">Total</span>
-                    <span class="font-black text-lg text-gray-900">₦{{ total }}</span>
+                    <span class="font-black text-lg text-gray-900">â‚¦{{ total }}</span>
                   </div>
                 </div>
               </div>
 
-              <!-- CTA -->
               <button
                 v-if="cart.length"
                 @click="openPreview"
@@ -403,7 +384,6 @@ function goHome() {
       </div>
     </div>
 
-    <!-- PREVIEW/PAYMENT MODAL -->
     <div
       v-if="showPreview"
       class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
@@ -416,35 +396,31 @@ function goHome() {
           </button>
         </div>
 
-        <!-- ORDER SUMMARY -->
         <div class="space-y-3 max-h-64 overflow-y-auto">
           <div v-for="item in cart" :key="item.id" class="flex justify-between text-sm">
             <div class="flex-1">
               <p class="font-semibold text-gray-900">{{ item.name }}</p>
               <p class="text-xs text-gray-500">
-                {{ item.quantity }} × ₦{{ item.price }}
+                {{ item.quantity }} Ã— â‚¦{{ item.price }}
               </p>
             </div>
-            <p class="font-bold text-gray-900">₦{{ item.price * item.quantity }}</p>
+            <p class="font-bold text-gray-900">â‚¦{{ item.price * item.quantity }}</p>
           </div>
         </div>
 
-        <!-- TOTAL -->
         <div class="bg-gray-50 p-4 rounded-lg">
           <div class="flex justify-between items-center">
             <span class="font-bold text-gray-900">Order Total</span>
-            <span class="font-black text-xl text-gray-900">₦{{ total }}</span>
+            <span class="font-black text-xl text-gray-900">â‚¦{{ total }}</span>
           </div>
         </div>
 
-        <!-- INFO -->
         <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <p class="text-sm text-blue-900">
             <span class="font-semibold">Payment Method:</span> Online Payment (Prepaid)
           </p>
         </div>
 
-        <!-- ACTIONS -->
         <div class="flex gap-3">
           <button
             @click="showPreview = false"
