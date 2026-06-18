@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
         // Core foundational data
         $this->call([
             RolesSeeder::class,
+            ClubRolesAndPermissionsSeeder::class,
             DepartmentSeeder::class,
             PropertiesSeeder::class,
             RoomTypesSeeder::class,
