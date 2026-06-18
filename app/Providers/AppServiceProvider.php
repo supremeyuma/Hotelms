@@ -27,6 +27,9 @@ use App\Services\PricingService;
 use App\Services\PaymentProviderManager;
 use App\Services\PaystackService;
 use App\Services\FlutterwaveService;
+use App\Services\ClubPosService;
+use App\Services\DrinkStockService;
+use App\Services\AuditLoggerService;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -59,6 +62,21 @@ class AppServiceProvider extends ServiceProvider
             return new PaymentProviderManager(
                 $app->make(FlutterwaveService::class),
                 $app->make(PaystackService::class)
+            );
+        });
+
+        // Register club POS services
+        $this->app->singleton(DrinkStockService::class, function ($app) {
+            return new DrinkStockService(
+                $app->make(AuditLoggerService::class),
+            );
+        });
+
+        $this->app->singleton(ClubPosService::class, function ($app) {
+            return new ClubPosService(
+                $app->make(PricingService::class),
+                $app->make(AuditLoggerService::class),
+                $app->make(DrinkStockService::class),
             );
         });
     }
