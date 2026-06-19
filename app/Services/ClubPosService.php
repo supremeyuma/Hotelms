@@ -184,6 +184,32 @@ class ClubPosService
         });
     }
 
+    public function removeItem(PosDocket $docket, PosDocketItem $item, User $staff): PosDocket
+    {
+        if ($docket->status !== 'open') {
+            throw new \RuntimeException('Cannot remove items from a closed docket.');
+        }
+
+        return DB::transaction(function () use ($docket, $item, $staff) {
+            $docket->subtotal -= $item->subtotal;
+            $pricing = $this->pricing->calculatePricing(max(0, $docket->subtotal));
+            $docket->vat = $pricing['vat'];
+            $docket->service_charge = $pricing['service_charge'];
+            $docket->total = $pricing['total'];
+            $docket->save();
+
+            $item->delete();
+
+            $this->audit->log('pos_docket_item_removed', $docket, $docket->id, [
+                'menu_item' => $item->item_name,
+                'quantity' => $item->quantity,
+                'subtotal' => $item->subtotal,
+            ]);
+
+            return $docket->fresh();
+        });
+    }
+
     public function voidDocket(PosDocket $docket, string $reason, User $voidedBy): PosDocket
     {
         if ($docket->status !== 'open') {

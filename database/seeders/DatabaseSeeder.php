@@ -59,5 +59,10 @@ class DatabaseSeeder extends Seeder
             GallerySeeder::class,
             InventoryStockSeeder::class,
         ]);
+
+        // Club POS demo data
+        $this->call([
+            ClubDrinkSeeder::class,
+        ]);
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\ClubPos;
 
 use App\Http\Controllers\Controller;
 use App\Models\PosDocket;
+use App\Models\PosDocketItem;
 use App\Models\MenuItem;
 use App\Services\ClubPosService;
 use Illuminate\Http\Request;
@@ -42,6 +43,21 @@ class DocketController extends Controller
         return response()->json(
             $docket->load(['items', 'items.menuItem', 'payments', 'staff', 'session'])
         );
+    }
+
+    public function removeItem(Request $request, PosDocket $docket, PosDocketItem $item)
+    {
+        if ($docket->status !== 'open') {
+            return response()->json(['error' => 'Docket is not open.'], 422);
+        }
+
+        if ($item->docket_id !== $docket->id) {
+            return response()->json(['error' => 'Item does not belong to this docket.'], 422);
+        }
+
+        $this->clubPos->removeItem($docket, $item, $request->user());
+
+        return response()->json($docket->fresh()->load('items', 'payments'));
     }
 
     public function addItem(Request $request, PosDocket $docket)

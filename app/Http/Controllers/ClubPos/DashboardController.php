@@ -34,7 +34,7 @@ class DashboardController extends Controller
                     $q->where('is_active', true)->orderBy('sort_order');
                 }])
                 ->get(),
-            'menuItems' => MenuItem::where('service_area', 'bar')
+            'menuItems' => MenuItem::where('service_area', 'club')
                 ->where('is_available', true)
                 ->with('category')
                 ->orderBy('name')

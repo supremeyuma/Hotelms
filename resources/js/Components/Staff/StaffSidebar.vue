@@ -249,6 +249,22 @@ const nav = computed(() => {
           { label: 'Order History', route: 'staff.bar.orders.history', icon: 'clock', activeRoute: 'staff.bar.orders.history' },
           { label: 'Bar Menu', route: 'staff.menu.bar', icon: 'menu', activeRoute: 'staff.menu.bar' },
         ]
+      case 'clubstaff':
+        return [
+          { label: 'POS', route: 'club.pos.dashboard', icon: 'clipboard', activeRoute: 'club.pos.*' },
+          { label: 'Stock', route: 'club.pos.stock.index', icon: 'boxes', activeRoute: 'club.pos.stock.*' },
+          { label: 'Submit Feedback', route: 'staff.feedback.create', icon: 'edit', activeRoute: 'staff.feedback.*' },
+          { label: 'My Threads', route: 'staff.threads.index', icon: 'clipboard', activeRoute: 'staff.threads.*' },
+        ]
+      case 'clubsupervisor':
+        return [
+          { label: 'POS', route: 'club.pos.dashboard', icon: 'clipboard', activeRoute: 'club.pos.*' },
+          { label: 'Stock', route: 'club.pos.stock.index', icon: 'boxes', activeRoute: 'club.pos.stock.*' },
+          { label: 'Reports', route: 'club.pos.reports.sales', icon: 'bar-chart', activeRoute: 'club.pos.reports.*' },
+          { label: 'Shift History', route: 'club.pos.shifts.current', icon: 'clock', activeRoute: 'club.pos.shifts.*' },
+          { label: 'Submit Feedback', route: 'staff.feedback.create', icon: 'edit', activeRoute: 'staff.feedback.*' },
+          { label: 'My Threads', route: 'staff.threads.index', icon: 'clipboard', activeRoute: 'staff.threads.*' },
+        ]
       default:
         return [
           { label: 'Dashboard', route: 'staff.dashboard', icon: 'home', activeRoute: 'staff.dashboard' },

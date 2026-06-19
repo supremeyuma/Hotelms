@@ -145,7 +145,7 @@ class ReportController extends Controller
 
     public function stock()
     {
-        $items = MenuItem::where('service_area', 'bar')
+        $items = MenuItem::where('service_area', 'club')
             ->where('is_available', true)
             ->orderBy('name')
             ->get()

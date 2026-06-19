@@ -7,6 +7,26 @@ use App\Http\Controllers\ClubPos\ShiftController;
 use App\Http\Controllers\ClubPos\StockController;
 use App\Http\Controllers\ClubPos\ReportController;
 
+Route::middleware('auth')->post('/pos/staff/switch', function (Illuminate\Http\Request $request) {
+    $validated = $request->validate(['pin' => 'required|string|min:4|max:10']);
+
+    $user = \App\Models\User::whereHas('roles', function ($q) {
+        $q->whereIn('name', ['club_staff', 'club_supervisor']);
+    })->whereHas('staffProfile', function ($q) use ($validated) {
+        $q->where('action_code', $validated['pin']);
+    })->first();
+
+    if (!$user) {
+        return response()->json(['error' => 'Invalid PIN.'], 422);
+    }
+
+    \Illuminate\Support\Facades\Auth::login($user);
+    session()->regenerate();
+    session()->put('pos_pin_verified', true);
+
+    return response()->json(['success' => true]);
+})->name('pos.staff.switch');
+
 Route::middleware(['auth', 'permission:club.pos.access'])->prefix('club')->name('club.')->group(function () {
 
     /* ==============================
@@ -21,6 +41,7 @@ Route::middleware(['auth', 'permission:club.pos.access'])->prefix('club')->name(
     Route::post('/pos/dockets', [DocketController::class, 'store'])->name('pos.dockets.store');
     Route::get('/pos/dockets/{docket}', [DocketController::class, 'show'])->name('pos.dockets.show');
     Route::post('/pos/dockets/{docket}/items', [DocketController::class, 'addItem'])->name('pos.dockets.items.store');
+    Route::delete('/pos/dockets/{docket}/items/{item}', [DocketController::class, 'removeItem'])->name('pos.dockets.items.destroy');
     Route::post('/pos/dockets/{docket}/pay', [DocketController::class, 'pay'])->name('pos.dockets.pay');
     Route::post('/pos/dockets/{docket}/void', [DocketController::class, 'void'])->name('pos.dockets.void');
 

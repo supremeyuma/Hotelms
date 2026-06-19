@@ -40,6 +40,10 @@ class HandleInertiaRequests extends Middleware
                 return Content::all()->pluck('value', 'key');
             },
             'settings' => fn () => Setting::pluck('value', 'key'),
+            'club_pos' => [
+                'device_id' => fn () => request()->cookie('pos_device_id'),
+                'pin_verified' => fn () => request()->session()->get('pos_pin_verified', false),
+            ],
         ];
     }
 }

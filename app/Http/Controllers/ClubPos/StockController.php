@@ -17,7 +17,7 @@ class StockController extends Controller
 
     public function index()
     {
-        $items = MenuItem::where('service_area', 'bar')
+        $items = MenuItem::where('service_area', 'club')
             ->where('is_available', true)
             ->orderBy('name')
             ->get()
