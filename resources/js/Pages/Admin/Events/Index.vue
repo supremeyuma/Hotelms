@@ -42,7 +42,7 @@ const getEventStatus = (event) => {
   // Use start_datetime instead of event_date
   const eventDate = new Date(event.start_datetime?.replace(/-/g, "/"))
   
-  if (!event.is_active) return { text: 'Inactive', color: 'bg-slate-500' }
+  if (!event.is_active) return { text: 'Inactive', color: 'bg-gray-500' }
   if (event.status === 'cancelled') return { text: 'Cancelled', color: 'bg-red-500' }
   if (eventDate < now) return { text: 'Past', color: 'bg-slate-500' }
   if (event.is_featured) return { text: 'Featured', color: 'bg-yellow-500' }

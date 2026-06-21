@@ -39,7 +39,7 @@
       <!-- SLA Performance Chart -->
       <div class="bg-white rounded-lg shadow p-6">
         <h2 class="text-xl font-bold mb-4">SLA Compliance Trend</h2>
-        <div class="h-64 bg-slate-50 rounded flex items-center justify-center text-slate-400">
+        <div class="h-64 bg-gray-50 rounded flex items-center justify-center text-gray-400">
           <ChartComponent :data="data.backlog" />
         </div>
       </div>
@@ -61,7 +61,7 @@
               <tr
                 v-for="item in data.backlog.slice(0, 7)"
                 :key="item.date"
-                class="border-b hover:bg-slate-50"
+                class="border-b hover:bg-gray-50"
               >
                 <td class="py-2">{{ formatDate(item.date) }}</td>
                 <td class="text-right">{{ item.backlog }}</td>
@@ -76,25 +76,25 @@
           <h3 class="text-lg font-bold mb-4">Revenue Impact</h3>
           <div class="space-y-4">
             <div class="flex justify-between items-center pb-4 border-b">
-              <span class="text-slate-600">Total Revenue</span>
+              <span class="text-gray-600">Total Revenue</span>
               <span class="text-2xl font-bold text-green-600">
                 ${{ data.revenue.total_revenue.toFixed(2) }}
               </span>
             </div>
             <div class="flex justify-between items-center pb-4 border-b">
-              <span class="text-slate-600">Total Refunds</span>
+              <span class="text-gray-600">Total Refunds</span>
               <span class="text-lg font-bold text-red-600">
                 -${{ data.revenue.total_refunds.toFixed(2) }}
               </span>
             </div>
             <div class="flex justify-between items-center pb-4 border-b">
-              <span class="text-slate-600">Net Revenue</span>
+              <span class="text-gray-600">Net Revenue</span>
               <span class="text-2xl font-bold text-blue-600">
                 ${{ data.revenue.net_revenue.toFixed(2) }}
               </span>
             </div>
             <div class="flex justify-between items-center">
-              <span class="text-slate-600">Avg Daily</span>
+              <span class="text-gray-600">Avg Daily</span>
               <span class="text-lg font-bold">
                 ${{ data.revenue.average_daily_revenue.toFixed(2) }}
               </span>
@@ -107,19 +107,19 @@
           <h3 class="text-lg font-bold mb-4">Staffing Metrics</h3>
           <div class="space-y-4">
             <div class="flex justify-between items-center pb-4 border-b">
-              <span class="text-slate-600">Avg Staff on Duty</span>
+              <span class="text-gray-600">Avg Staff on Duty</span>
               <span class="text-2xl font-bold">
                 {{ Math.round(data.staffing.average_staff_on_duty) }}
               </span>
             </div>
             <div class="flex justify-between items-center pb-4 border-b">
-              <span class="text-slate-600">Assignments/Staff</span>
+              <span class="text-gray-600">Assignments/Staff</span>
               <span class="text-lg font-bold">
                 {{ (data.staffing.average_assignments_per_staff || 0).toFixed(1) }}
               </span>
             </div>
             <div class="flex justify-between items-center">
-              <span class="text-slate-600">Total Assignments</span>
+              <span class="text-gray-600">Total Assignments</span>
               <span class="text-lg font-bold">
                 {{ data.staffing.total_assignments }}
               </span>
@@ -132,19 +132,19 @@
           <h3 class="text-lg font-bold mb-4">SLA Details</h3>
           <div class="space-y-4">
             <div class="flex justify-between items-center pb-4 border-b">
-              <span class="text-slate-600">Days Tracked</span>
+              <span class="text-gray-600">Days Tracked</span>
               <span class="text-2xl font-bold">
                 {{ data.sla.total_days_tracked }}
               </span>
             </div>
             <div class="flex justify-between items-center pb-4 border-b">
-              <span class="text-slate-600">SLA Breach Days</span>
+              <span class="text-gray-600">SLA Breach Days</span>
               <span class="text-lg font-bold text-orange-600">
                 {{ data.sla.sla_breach_days }}
               </span>
             </div>
             <div class="flex justify-between items-center pb-4 border-b">
-              <span class="text-slate-600">Avg Completion</span>
+              <span class="text-gray-600">Avg Completion</span>
               <span class="text-lg font-mono">
                 {{ Math.round(data.sla.average_completion_minutes) }}min
               </span>

@@ -16,14 +16,14 @@ const props = defineProps({
     class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition"
     :class="item.active
       ? 'bg-blue-600 text-white'
-      : 'text-gray-700 hover:bg-gray-100 dark:text-slate-300 dark:hover:bg-slate-800'"
+      : 'text-gray-700 hover:bg-gray-100'"
   >
     <component 
       :is="item.iconComponent" 
       v-if="item.iconComponent" 
       class="w-5 h-5 shrink-0" 
     />
-    <div v-else class="w-5 h-5 bg-gray-200 rounded-full shrink-0 dark:bg-slate-700" />
+    <div v-else class="w-5 h-5 bg-gray-200 rounded-full shrink-0" />
     
     <span>{{ item.label }}</span>
   </Link>
@@ -31,14 +31,14 @@ const props = defineProps({
   <Link
     v-else-if="item.href"
     :href="item.href"
-    class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition text-gray-700 hover:bg-gray-100 dark:text-slate-300 dark:hover:bg-slate-800"
+    class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition text-gray-700 hover:bg-gray-100"
   >
     <component 
       :is="item.iconComponent" 
       v-if="item.iconComponent" 
       class="w-5 h-5 shrink-0" 
     />
-    <div v-else class="w-5 h-5 bg-gray-200 rounded-full shrink-0 dark:bg-slate-700" />
+    <div v-else class="w-5 h-5 bg-gray-200 rounded-full shrink-0" />
 
     <span>{{ item.label }}</span>
   </Link>

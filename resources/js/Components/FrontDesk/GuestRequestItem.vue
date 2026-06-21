@@ -8,11 +8,13 @@ import {
   User, 
   MapPin, 
   ArrowRight,
-  MessageSquareText
+  MessageSquareText,
+  Loader2
 } from 'lucide-vue-next'
 
 const props = defineProps({
   request: { type: Object, required: true },
+  loading: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['acknowledge', 'complete']);
@@ -82,7 +84,7 @@ function formatTime(date) {
           class="shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-lg transition-transform group-hover:scale-110"
           :class="statusConfig.iconBg"
         >
-          <Bell v-if="request.status === 'requested'" class="w-6 h-6 animate-pulse" />
+          <Bell v-if="request.status === 'requested'" class="w-6 h-6 motion-safe:animate-pulse" />
           <Clock v-else-if="request.status === 'acknowledged'" class="w-6 h-6" />
           <CheckCircle2 v-else class="w-6 h-6" />
         </div>
@@ -92,7 +94,7 @@ function formatTime(date) {
             <span class="text-xs uppercase font-semibold tracking-wide" :class="statusConfig.textColor">
               {{ label }}
             </span>
-            <span class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-tighter" :class="statusConfig.badge">
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-tighter" :class="statusConfig.badge">
               {{ statusConfig.label }}
             </span>
           </div>
@@ -124,19 +126,23 @@ function formatTime(date) {
         <button
           v-if="request.status === 'requested'"
           @click="handleAcknowledge"
-          class="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-xl shadow-slate-200"
+          :disabled="loading"
+          class="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-600 active:scale-95 transition-all motion-safe:transition-all shadow-xl shadow-slate-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
         >
-          Acknowledge
-          <ArrowRight class="w-4 h-4" />
+          <Loader2 v-if="loading" class="w-4 h-4 motion-safe:animate-spin" />
+          <ArrowRight v-else class="w-4 h-4" />
+          {{ loading ? 'Acknowledging...' : 'Acknowledge' }}
         </button>
 
         <button
           v-if="request.status === 'acknowledged'"
           @click="handleComplete"
-          class="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-100"
+          :disabled="loading"
+          class="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-700 active:scale-95 transition-all motion-safe:transition-all shadow-xl shadow-emerald-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
         >
-          <CheckCircle2 class="w-4 h-4" />
-          Mark Complete
+          <Loader2 v-if="loading" class="w-4 h-4 motion-safe:animate-spin" />
+          <CheckCircle2 v-else class="w-4 h-4" />
+          {{ loading ? 'Completing...' : 'Mark Complete' }}
         </button>
 
         <div v-if="request.status === 'completed'" class="flex items-center gap-2 px-4 py-2 text-emerald-600 font-black text-xs uppercase tracking-widest">

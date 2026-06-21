@@ -60,7 +60,7 @@ const theme = computed(() => {
   <component
     :is="Wrapper"
     :href="href"
-    class="relative overflow-hidden group p-6 rounded-[2rem] bg-white border border-slate-100 shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+    class="relative overflow-hidden group p-6 rounded-2xl bg-white border border-slate-100 shadow-sm transition duration-300 hover:shadow-xl motion-safe:hover:-translate-y-1"
     :class="[theme.bg, theme.glow]"
   >
     <div class="flex items-start justify-between relative z-10">
@@ -80,7 +80,7 @@ const theme = computed(() => {
       </div>
 
       <div 
-        class="p-3 rounded-2xl transition-transform duration-500 group-hover:rotate-12"
+        class="p-3 rounded-2xl transition-transform duration-500 motion-safe:group-hover:rotate-12"
         :class="theme.iconBg"
       >
         <component :is="theme.icon" class="w-6 h-6" stroke-width="2.5" />

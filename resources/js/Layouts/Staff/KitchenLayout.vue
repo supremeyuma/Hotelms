@@ -21,14 +21,14 @@ const kitchenNavigation = [
 
 <template>
   <BaseStaffLayout>
-    <div class="flex h-screen bg-slate-50 overflow-hidden dark:bg-slate-950">
-      <aside class="hidden lg:flex w-72 flex-col bg-white border-r border-slate-200 dark:bg-slate-900 dark:border-slate-700">
+    <div class="flex h-screen bg-slate-50 overflow-hidden">
+      <aside class="hidden lg:flex w-72 flex-col bg-white border-r border-slate-200">
         <div class="p-6">
           <div class="flex items-center gap-3 px-2 mb-8">
-            <div class="p-2 bg-orange-100 text-orange-600 rounded-xl dark:bg-orange-900/30 dark:text-orange-400">
+            <div class="p-2 bg-orange-100 text-orange-600 rounded-xl">
               <ChefHat class="w-6 h-6" />
             </div>
-            <h2 class="text-xl font-bold text-slate-900 tracking-tight dark:text-slate-100">Kitchen Ops</h2>
+            <h2 class="text-xl font-bold text-slate-900 tracking-tight">Kitchen Ops</h2>
           </div>
 
           <nav class="space-y-1">
@@ -36,7 +36,7 @@ const kitchenNavigation = [
               v-for="item in kitchenNavigation" 
               :key="item.name" 
               :href="item.href"
-              class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all font-semibold dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-orange-400"
+              class="flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-all font-semibold"
             >
               <component :is="item.icon" class="w-5 h-5" />
               {{ item.name }}
@@ -45,11 +45,11 @@ const kitchenNavigation = [
         </div>
 
         <div class="mt-auto p-6">
-          <div class="bg-orange-50 rounded-2xl p-4 border border-orange-100 dark:bg-orange-900/20 dark:border-orange-800">
-            <div class="flex items-center gap-2 text-orange-700 font-bold text-sm mb-1 dark:text-orange-300">
+          <div class="bg-orange-50 rounded-2xl p-4 border border-orange-100">
+            <div class="flex items-center gap-2 text-orange-700 font-bold text-sm mb-1">
               <Bell class="w-4 h-4" /> System Alerts
             </div>
-            <p class="text-xs text-orange-600/80 leading-relaxed font-medium dark:text-orange-400/80">
+            <p class="text-xs text-orange-600/80 leading-relaxed font-medium">
               3 items are currently marked as "Out of Stock" in the main menu.
             </p>
           </div>
@@ -57,14 +57,14 @@ const kitchenNavigation = [
       </aside>
 
       <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <header class="lg:hidden flex items-center justify-between px-6 py-4 bg-white border-b border-slate-200 dark:bg-slate-900 dark:border-slate-700">
+        <header class="lg:hidden flex items-center justify-between px-6 py-4 bg-white border-b border-slate-200">
           <div class="flex items-center gap-3">
-            <ChefHat class="w-6 h-6 text-orange-600 dark:text-orange-400" />
-            <span class="font-bold text-slate-900 dark:text-slate-100">Kitchen Ops</span>
+            <ChefHat class="w-6 h-6 text-orange-600" />
+            <span class="font-bold text-slate-900">Kitchen Ops</span>
           </div>
           <button 
             @click="isMobileMenuOpen = !isMobileMenuOpen"
-            class="p-2 rounded-xl bg-slate-50 text-slate-600 border border-slate-100 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700"
+            class="p-2 rounded-xl bg-slate-50 text-slate-600 border border-slate-100"
           >
             <component :is="isMobileMenuOpen ? X : MenuIcon" class="w-6 h-6" />
           </button>
@@ -78,13 +78,13 @@ const kitchenNavigation = [
           leave-from-class="opacity-100 translate-y-0"
           leave-to-class="opacity-0 -translate-y-4"
         >
-          <nav v-if="isMobileMenuOpen" class="lg:hidden bg-white border-b border-slate-200 px-4 py-4 space-y-1 shadow-xl relative z-40 dark:bg-slate-900 dark:border-slate-700 dark:shadow-slate-900/50">
+          <nav v-if="isMobileMenuOpen" class="lg:hidden bg-white border-b border-slate-200 px-4 py-4 space-y-1 shadow-xl relative z-40">
             <a 
               v-for="item in kitchenNavigation" 
               :key="item.name" 
               :href="item.href"
               @click="isMobileMenuOpen = false"
-              class="flex items-center gap-3 px-4 py-4 rounded-xl text-slate-600 font-bold active:bg-slate-50 dark:text-slate-400 dark:active:bg-slate-800"
+              class="flex items-center gap-3 px-4 py-4 rounded-xl text-slate-600 font-bold active:bg-slate-50"
             >
               <component :is="item.icon" class="w-6 h-6" />
               {{ item.name }}
@@ -92,7 +92,7 @@ const kitchenNavigation = [
           </nav>
         </transition>
 
-        <main class="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950">
+        <main class="flex-1 overflow-y-auto bg-slate-50">
           <div class="h-full">
             <slot />
           </div>

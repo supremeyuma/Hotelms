@@ -34,19 +34,19 @@ const outstandingAmount = computed(() => {
 <template>
   <Link
     :href="href"
-    class="block p-3 rounded border hover:bg-gray-50"
+    class="block p-4 rounded-2xl transition duration-200 hover:bg-slate-50 hover:shadow-sm"
   >
-    <div class="flex justify-between">
-      <div>
-        <p class="font-semibold">
-          Booking #{{ booking.booking_code }}
+    <div class="flex items-center justify-between gap-4">
+      <div class="min-w-0">
+        <p class="font-black text-sm text-slate-900 truncate">
+          #{{ booking.booking_code }}
         </p>
-        <p class="text-sm text-gray-500">
-          Room {{ booking.room?.name ?? 'Unassigned' }}
+        <p class="text-xs font-semibold text-slate-400 mt-0.5">
+          {{ booking.room?.name ?? 'Unassigned' }}
         </p>
       </div>
 
-      <p class="font-semibold text-red-600">
+      <p class="shrink-0 font-black text-sm text-rose-600 tabular-nums">
         ₦{{ outstandingAmount.toLocaleString() }}
       </p>
     </div>

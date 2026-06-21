@@ -61,7 +61,7 @@
             <div class="dropdown-wrapper inline-block text-left">
               <button
                 @click.stop="toggleDropdown(member.id)"
-                class="rounded bg-slate-200 px-2 py-1"
+                class="rounded bg-gray-200 px-2 py-1"
                 :disabled="isBusy(member.id)"
               >
                 {{ isBusy(member.id) ? 'Working...' : 'Actions' }}
@@ -72,13 +72,13 @@
                 class="absolute right-0 z-50 mt-2 w-52 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5"
               >
                 <div class="py-1">
-                  <Link :href="route(`${routePrefix}.edit`, member.id)" class="block px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">Edit Profile</Link>
-                  <Link :href="route(`${routePrefix}.threads.index`, member.id)" class="block px-4 py-2 text-sm text-indigo-600 hover:bg-slate-100">Notes & Threads</Link>
+                  <Link :href="route(`${routePrefix}.edit`, member.id)" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Edit Profile</Link>
+                  <Link :href="route(`${routePrefix}.threads.index`, member.id)" class="block px-4 py-2 text-sm text-indigo-600 hover:bg-gray-100">Notes & Threads</Link>
                   <button
                     v-if="!isSuspended(member)"
                     @click="suspendStaff(member.id)"
                     :disabled="isBusy(member.id)"
-                    class="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-slate-100"
+                    class="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100"
                   >
                     {{ isBusy(member.id) ? 'Suspending...' : 'Suspend staff' }}
                   </button>
@@ -86,14 +86,14 @@
                     v-else
                     @click="reinstateStaff(member.id)"
                     :disabled="isBusy(member.id)"
-                    class="block w-full px-4 py-2 text-left text-sm text-emerald-600 hover:bg-slate-100"
+                    class="block w-full px-4 py-2 text-left text-sm text-emerald-600 hover:bg-gray-100"
                   >
                     {{ isBusy(member.id) ? 'Reactivating...' : 'Reactivate staff' }}
                   </button>
                   <button
                     @click="deleteStaff(member.id)"
                     :disabled="isBusy(member.id)"
-                    class="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-slate-100"
+                    class="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100"
                   >
                     {{ isBusy(member.id) ? 'Working...' : 'Archive' }}
                   </button>

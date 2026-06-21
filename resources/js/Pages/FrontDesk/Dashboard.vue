@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
-import { Head, Link } from '@inertiajs/vue3'
+import { Head, Link, router } from '@inertiajs/vue3'
 import FrontDeskLayout from '@/Layouts/Staff/FrontDeskLayout.vue'
 import KPIWidget from '@/Components/FrontDesk/KPIWidget.vue'
 import GuestRequestItem from '@/Components/FrontDesk/GuestRequestItem.vue'
@@ -24,6 +24,40 @@ const props = defineProps({
     recentRequests: Array,
     outstandingBookingList: Array,
 })
+
+const loadingRequests = ref(new Set())
+
+function handleAcknowledge(requestId) {
+  loadingRequests.value.add(requestId)
+  router.post(`/frontdesk/guest-requests/${requestId}/acknowledge`, {}, {
+    preserveScroll: true,
+    onSuccess: () => {
+      const idx = recentRequests.value.findIndex(r => r.id === requestId)
+      if (idx !== -1) {
+        recentRequests.value[idx] = { ...recentRequests.value[idx], status: 'acknowledged' }
+      }
+    },
+    onFinish: () => {
+      loadingRequests.value.delete(requestId)
+    }
+  })
+}
+
+function handleComplete(requestId) {
+  loadingRequests.value.add(requestId)
+  router.post(`/frontdesk/guest-requests/${requestId}/complete`, {}, {
+    preserveScroll: true,
+    onSuccess: () => {
+      const idx = recentRequests.value.findIndex(r => r.id === requestId)
+      if (idx !== -1) {
+        recentRequests.value[idx] = { ...recentRequests.value[idx], status: 'completed' }
+      }
+    },
+    onFinish: () => {
+      loadingRequests.value.delete(requestId)
+    }
+  })
+}
 
 const recentRequests = ref([...props.recentRequests])
 
@@ -134,20 +168,22 @@ function resolveRequestLink(request) {
                     <div class="flex items-center justify-between px-2">
                         <div class="flex items-center gap-3">
                             <h2 class="text-xl font-black text-slate-900 tracking-tight">Live Service Feed</h2>
-                            <span class="px-3 py-1 bg-rose-100 text-rose-600 text-[10px] font-black uppercase rounded-full animate-pulse">Live</span>
+                            <span class="px-3 py-1 bg-rose-100 text-rose-600 text-xs font-black uppercase rounded-full motion-safe:animate-pulse">Live</span>
                         </div>
                         <Link :href="route('frontdesk.guest-requests.index')" class="text-xs font-bold text-indigo-600 hover:underline">View All</Link>
                     </div>
 
-                    <div v-if="recentRequests.length" class="space-y-4">
+                    <TransitionGroup v-if="recentRequests.length" name="request-list" tag="div" class="space-y-4">
                         <GuestRequestItem
                             v-for="r in recentRequests"
                             :key="r.id"
                             :request="r"
                             :href="resolveRequestLink(r)"
-                            layout="compact"
+                            :loading="loadingRequests.has(r.id)"
+                            @acknowledge="handleAcknowledge"
+                            @complete="handleComplete"
                         />
-                    </div>
+                    </TransitionGroup>
                     
                     <div v-else class="bg-white rounded-xl border-2 border-dashed border-slate-100 py-20 text-center">
                         <div class="inline-flex p-5 bg-slate-50 text-slate-300 rounded-full mb-4">
@@ -187,7 +223,7 @@ function resolveRequestLink(request) {
                         </div>
 
                         <div class="p-4 bg-slate-50/80">
-                            <p class="text-[9px] text-center text-slate-400 font-bold uppercase tracking-tighter italic">
+                            <p class="text-xs text-center text-slate-400 font-bold uppercase tracking-tight italic">
                                 Settle outstanding balances before checkout
                             </p>
                         </div>
@@ -200,10 +236,27 @@ function resolveRequestLink(request) {
 </template>
 
 <style scoped>
-/* Custom animations for live feeling */
 .request-list-move,
 .request-list-enter-active,
 .request-list-leave-active {
-  transition: all 0.5s ease;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.request-list-enter-from,
+.request-list-leave-to {
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+.request-list-leave-active {
+  position: absolute;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .request-list-move,
+  .request-list-enter-active,
+  .request-list-leave-active {
+    transition: none;
+  }
 }
 </style>

@@ -15,9 +15,9 @@ const closeMobileMenu = () => {
 </script>
 
 <template>
-  <div class="flex h-screen bg-slate-50 overflow-hidden font-sans dark:bg-slate-950">
+  <div class="flex h-screen bg-slate-50 overflow-hidden font-sans">
     
-    <div class="hidden lg:flex lg:flex-shrink-0 border-r border-slate-200 dark:border-slate-700">
+    <div class="hidden lg:flex lg:flex-shrink-0 border-r border-slate-200">
       <StaffSidebar />
     </div>
 
@@ -30,7 +30,7 @@ const closeMobileMenu = () => {
         class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity"
       ></div>
 
-      <div class="relative flex w-full max-w-xs flex-1 flex-col bg-white shadow-xl animate-slide-in dark:bg-slate-900 dark:shadow-slate-900/50">
+      <div class="relative flex w-full max-w-xs flex-1 flex-col bg-white shadow-xl animate-slide-in">
         <div class="absolute right-[-50px] top-2">
           <button @click="closeMobileMenu" class="text-white p-2">
             <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -45,17 +45,17 @@ const closeMobileMenu = () => {
 
     <div class="flex flex-1 flex-col overflow-hidden">
       
-      <header class="flex items-center justify-between bg-white px-5 py-3 border-b border-slate-200 lg:hidden shadow-sm dark:bg-slate-900 dark:border-slate-700">
+      <header class="flex items-center justify-between bg-white px-5 py-3 border-b border-slate-200 lg:hidden shadow-sm">
         <div class="flex items-center gap-2">
-          <div class="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-200 dark:shadow-indigo-900/30">
+          <div class="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-200">
              <span class="text-white font-bold text-sm">H</span>
           </div>
-          <span class="font-bold text-slate-800 tracking-tight text-lg dark:text-slate-100">{{ siteName }}</span>
+          <span class="font-bold text-slate-800 tracking-tight text-lg">{{ siteName }}</span>
         </div>
         
         <button 
           @click="isMobileMenuOpen = true"
-          class="p-2.5 rounded-xl bg-slate-50 text-slate-600 border border-slate-100 active:scale-95 transition-all dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700"
+          class="p-2.5 rounded-xl bg-slate-50 text-slate-600 border border-slate-100 active:scale-95 transition-all"
         >
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
@@ -63,7 +63,7 @@ const closeMobileMenu = () => {
         </button>
       </header>
 
-      <main class="flex-1 overflow-y-auto relative bg-slate-50 dark:bg-slate-950">
+      <main class="flex-1 overflow-y-auto relative bg-slate-50">
         <div class="py-6 px-4 sm:px-8 max-w-[1600px] mx-auto">
           <slot />
         </div>

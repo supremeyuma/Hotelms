@@ -4,8 +4,8 @@ import Icon from '@/Components/Icon.vue'
 </script>
 
 <template>
-  <aside class="w-64 bg-white border-r flex flex-col dark:bg-slate-900 dark:border-slate-700">
-    <div class="h-16 flex items-center px-6 font-bold text-lg border-b dark:border-slate-700">
+  <aside class="w-64 bg-white border-r flex flex-col">
+    <div class="h-16 flex items-center px-6 font-bold text-lg border-b">
       Moorelife Resort
     </div>
 
@@ -61,6 +61,6 @@ import Icon from '@/Components/Icon.vue'
 <style scoped>
 .nav-item {
   @apply flex items-center gap-3 px-3 py-2 rounded-lg text-sm
-         text-gray-700 hover:bg-gray-100 dark:text-slate-300 dark:hover:bg-slate-800;
+         text-gray-700 hover:bg-gray-100;
 }
 </style>

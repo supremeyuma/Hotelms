@@ -44,7 +44,7 @@
       <!-- Summary Statistics -->
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div v-for="stat in summary" :key="stat.severity" class="bg-white rounded-lg shadow p-4">
-          <div class="text-slate-500 text-sm">{{ stat.severity }}</div>
+          <div class="text-gray-500 text-sm">{{ stat.severity }}</div>
           <div class="text-3xl font-bold">{{ stat.count }}</div>
         </div>
       </div>
@@ -52,7 +52,7 @@
       <!-- Exception List -->
       <div class="bg-white rounded-lg shadow overflow-hidden">
         <table class="w-full">
-          <thead class="bg-slate-50 border-b">
+          <thead class="bg-gray-50 border-b">
             <tr>
               <th class="text-left px-6 py-3 text-sm font-bold">Type</th>
               <th class="text-left px-6 py-3 text-sm font-bold">Severity</th>
@@ -66,7 +66,7 @@
             <tr
               v-for="exc in exceptions.data"
               :key="exc.id"
-              class="border-b hover:bg-slate-50 transition"
+              class="border-b hover:bg-gray-50 transition"
             >
               <td class="px-6 py-4 text-sm">
                 <span class="font-medium">{{ formatExceptionType(exc.exception_type) }}</span>
@@ -77,7 +77,7 @@
                 </span>
               </td>
               <td class="px-6 py-4 text-sm truncate">{{ exc.title }}</td>
-              <td class="px-6 py-4 text-sm text-slate-600">
+              <td class="px-6 py-4 text-sm text-gray-600">
                 {{ formatDate(exc.detected_at) }}
               </td>
               <td class="px-6 py-4 text-sm">
@@ -95,7 +95,7 @@
                 </button>
                 <button
                   @click="viewDetails(exc.id)"
-                  class="text-slate-600 hover:text-slate-800 font-medium"
+                  class="text-gray-600 hover:text-gray-800 font-medium"
                 >
                   Details
                 </button>
@@ -107,14 +107,14 @@
 
       <!-- Pagination -->
       <div class="flex justify-between items-center">
-        <div class="text-sm text-slate-600">
+        <div class="text-sm text-gray-600">
           Showing {{ exceptions.from }} to {{ exceptions.to }} of {{ exceptions.total }}
         </div>
         <div class="space-x-2">
           <Link
             v-if="exceptions.prev_page_url"
             :href="exceptions.prev_page_url"
-            class="px-4 py-2 bg-slate-200 rounded hover:bg-slate-300"
+            class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
           >
             Previous
           </Link>
