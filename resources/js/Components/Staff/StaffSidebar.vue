@@ -286,8 +286,8 @@ const nav = computed(() => {
 </script>
 
 <template>
-  <aside class="w-64 bg-white border-r flex flex-col h-screen sticky top-0">
-    <div class="h-16 flex items-center px-6 font-bold text-lg border-b shrink-0">
+  <aside class="w-64 bg-white border-r flex flex-col h-screen sticky top-0 dark:bg-slate-900 dark:border-slate-700">
+    <div class="h-16 flex items-center px-6 font-bold text-lg border-b shrink-0 dark:border-slate-700">
       Moorelife Resort
     </div>
 
@@ -299,24 +299,24 @@ const nav = computed(() => {
       />
     </nav>
 
-    <div class="border-t p-4 space-y-3 shrink-0">
+    <div class="border-t p-4 space-y-3 shrink-0 dark:border-slate-700">
       <Link
         :href="route('staff.profile.show')"
-        class="flex items-center gap-3 text-sm text-gray-700 hover:text-black"
+        class="flex items-center gap-3 text-sm text-gray-700 hover:text-black dark:text-slate-300 dark:hover:text-white"
       >
-        <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
+        <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold dark:bg-blue-900/50 dark:text-blue-300">
           {{ user.name?.charAt(0) || 'U' }}
         </div>
 
         <div class="leading-tight overflow-hidden">
           <p class="font-medium truncate w-32">{{ user.name }}</p>
-          <p class="text-xs text-gray-500">Profile</p>
+          <p class="text-xs text-gray-500 dark:text-slate-400">Profile</p>
         </div>
       </Link>
 
       <button
         @click="logout"
-        class="w-full text-left text-sm text-red-600 hover:text-red-800 transition-colors"
+        class="w-full text-left text-sm text-red-600 hover:text-red-800 transition-colors dark:text-red-400 dark:hover:text-red-300"
       >
         Sign Out
       </button>

@@ -1,12 +1,12 @@
 <!-- resources/js/Components/KpiCard.vue -->
 <template>
-  <div class="bg-white dark:bg-gray-900 p-4 rounded-2xl shadow-sm">
-    <div class="text-sm text-gray-500 dark:text-gray-400">
+  <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm">
+    <div class="text-sm text-slate-500 dark:text-slate-400">
       {{ label }}
     </div>
 
     <div class="flex items-end justify-between mt-2">
-      <div class="text-2xl font-bold text-gray-800 dark:text-gray-100">
+      <div class="text-2xl font-bold text-slate-800 dark:text-slate-100">
         {{ value }}
       </div>
 
@@ -19,7 +19,7 @@
       </div>
     </div>
 
-    <div v-if="hint" class="mt-1 text-xs text-gray-400">
+    <div v-if="hint" class="mt-1 text-xs text-slate-400">
       {{ hint }}
     </div>
   </div>

@@ -1,7 +1,7 @@
 <template>
-  <div class="min-h-screen bg-slate-50">
+  <div class="min-h-screen bg-slate-50 dark:bg-slate-950">
     <!-- Sidebar -->
-    <aside class="w-64 fixed inset-y-0 left-0 bg-white border-r p-4">
+    <aside class="w-64 fixed inset-y-0 left-0 bg-white border-r p-4 dark:bg-slate-900 dark:border-slate-700">
       <h2 class="font-bold mb-6">{{ portalTitle }}</h2>
       <nav class="space-y-2">
         <template v-for="link in sidebarLinks" :key="link.name">
@@ -12,7 +12,7 @@
 
     <!-- Main content -->
     <div class="ml-64">
-      <header class="bg-white border-b p-4 flex justify-between">
+      <header class="bg-white border-b p-4 flex justify-between dark:bg-slate-900 dark:border-slate-700">
         <div>{{ page.props.auth.user.name  }}</div>
         <div>
           <Link href="/logout" method="post" as="button" type="button">Logout</Link>
