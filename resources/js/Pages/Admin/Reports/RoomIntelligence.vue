@@ -11,19 +11,19 @@
       <!-- Room Status Overview -->
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div class="bg-white rounded-lg shadow p-6">
-          <h3 class="text-gray-500 text-sm font-medium mb-2">Status</h3>
+          <h3 class="text-slate-500 text-sm font-medium mb-2">Status</h3>
           <p class="text-2xl font-bold capitalize">{{ room.status }}</p>
         </div>
         <div class="bg-white rounded-lg shadow p-6">
-          <h3 class="text-gray-500 text-sm font-medium mb-2">Room Type</h3>
+          <h3 class="text-slate-500 text-sm font-medium mb-2">Room Type</h3>
           <p class="text-2xl font-bold">{{ room.room_type?.name }}</p>
         </div>
         <div class="bg-white rounded-lg shadow p-6">
-          <h3 class="text-gray-500 text-sm font-medium mb-2">Current Guest</h3>
+          <h3 class="text-slate-500 text-sm font-medium mb-2">Current Guest</h3>
           <p class="text-2xl font-bold">{{ room.currentGuest?.name || 'Vacant' }}</p>
         </div>
         <div class="bg-white rounded-lg shadow p-6">
-          <h3 class="text-gray-500 text-sm font-medium mb-2">Maintenance Issues</h3>
+          <h3 class="text-slate-500 text-sm font-medium mb-2">Maintenance Issues</h3>
           <p class="text-2xl font-bold text-orange-600">{{ maintenanceCount }}</p>
         </div>
       </div>
@@ -34,7 +34,7 @@
         <div class="space-y-3 max-h-96 overflow-y-auto">
           <div
             v-if="!facts.length"
-            class="text-center text-gray-500 py-8"
+            class="text-center text-slate-500 py-8"
           >
             No events recorded
           </div>
@@ -43,14 +43,14 @@
             :key="fact.id"
             class="flex items-start space-x-4 pb-4 border-b"
           >
-            <div class="text-sm text-gray-500 min-w-24">
+            <div class="text-sm text-slate-500 min-w-24">
               {{ formatDate(fact.date) }}
             </div>
             <div class="flex-1">
               <div class="font-medium">
                 {{ formatFactType(fact) }}
               </div>
-              <div class="text-sm text-gray-600 mt-1">
+              <div class="text-sm text-slate-600 mt-1">
                 <span v-if="fact.occupied" class="mr-4">
                   👥 {{ fact.guest_count }} guests
                 </span>
@@ -72,54 +72,54 @@
       <!-- Room Statistics -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="bg-white rounded-lg shadow p-6">
-          <h3 class="text-gray-500 text-sm font-medium mb-4">Financial Summary</h3>
+          <h3 class="text-slate-500 text-sm font-medium mb-4">Financial Summary</h3>
           <div class="space-y-2 text-sm">
             <div class="flex justify-between">
-              <span class="text-gray-600">Total Revenue:</span>
+              <span class="text-slate-600">Total Revenue:</span>
               <span class="font-bold">${{ totalRevenue }}</span>
             </div>
             <div class="flex justify-between">
-              <span class="text-gray-600">Charges Posted:</span>
+              <span class="text-slate-600">Charges Posted:</span>
               <span class="font-bold">${{ totalCharges }}</span>
             </div>
             <div class="flex justify-between">
-              <span class="text-gray-600">Payments Received:</span>
+              <span class="text-slate-600">Payments Received:</span>
               <span class="font-bold">${{ totalPayments }}</span>
             </div>
           </div>
         </div>
 
         <div class="bg-white rounded-lg shadow p-6">
-          <h3 class="text-gray-500 text-sm font-medium mb-4">Service Activity</h3>
+          <h3 class="text-slate-500 text-sm font-medium mb-4">Service Activity</h3>
           <div class="space-y-2 text-sm">
             <div class="flex justify-between">
-              <span class="text-gray-600">Kitchen Orders:</span>
+              <span class="text-slate-600">Kitchen Orders:</span>
               <span class="font-bold">{{ totalKitchenOrders }}</span>
             </div>
             <div class="flex justify-between">
-              <span class="text-gray-600">Laundry Requests:</span>
+              <span class="text-slate-600">Laundry Requests:</span>
               <span class="font-bold">{{ totalLaundryRequests }}</span>
             </div>
             <div class="flex justify-between">
-              <span class="text-gray-600">Complaints:</span>
+              <span class="text-slate-600">Complaints:</span>
               <span class="font-bold text-red-600">{{ totalComplaints }}</span>
             </div>
           </div>
         </div>
 
         <div class="bg-white rounded-lg shadow p-6">
-          <h3 class="text-gray-500 text-sm font-medium mb-4">Availability</h3>
+          <h3 class="text-slate-500 text-sm font-medium mb-4">Availability</h3>
           <div class="space-y-2 text-sm">
             <div class="flex justify-between">
-              <span class="text-gray-600">Occupancy Rate:</span>
+              <span class="text-slate-600">Occupancy Rate:</span>
               <span class="font-bold">{{ occupancyRate }}%</span>
             </div>
             <div class="flex justify-between">
-              <span class="text-gray-600">Days Occupied:</span>
+              <span class="text-slate-600">Days Occupied:</span>
               <span class="font-bold">{{ daysOccupied }}/30</span>
             </div>
             <div class="flex justify-between">
-              <span class="text-gray-600">Out of Service:</span>
+              <span class="text-slate-600">Out of Service:</span>
               <span class="font-bold">{{ daysOutOfService }}/30</span>
             </div>
           </div>

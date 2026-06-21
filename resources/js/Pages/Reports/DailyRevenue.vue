@@ -2,14 +2,14 @@
   <ManagerLayout>
     <div class="space-y-6">
       <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-semibold text-gray-800 dark:text-gray-100">
+        <h1 class="text-2xl font-semibold text-slate-800 dark:text-slate-100">
           Daily Revenue by Department
         </h1>
         <div class="flex items-center space-x-4">
           <input
             v-model="filters.date"
             type="date"
-            class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            class="rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
             @change="submit"
           />
           <button
@@ -21,9 +21,9 @@
         </div>
       </div>
 
-      <div class="overflow-hidden rounded-lg bg-white shadow-sm dark:bg-gray-900">
-        <div class="border-b border-gray-200 px-6 py-4 dark:border-gray-700">
-          <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100">
+      <div class="overflow-hidden rounded-lg bg-white shadow-sm dark:bg-slate-900">
+        <div class="border-b border-slate-200 px-6 py-4 dark:border-slate-700">
+          <h2 class="text-lg font-medium text-slate-900 dark:text-slate-100">
             Revenue for {{ formatDate(date) }}
           </h2>
         </div>
@@ -54,28 +54,28 @@
 
           <div class="overflow-x-auto">
             <table class="w-full">
-              <thead class="bg-gray-50 dark:bg-gray-800">
+              <thead class="bg-slate-50 dark:bg-slate-800">
                 <tr>
-                  <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Department</th>
-                  <th class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Revenue</th>
-                  <th class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">% of Total</th>
-                  <th class="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Trend</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Department</th>
+                  <th class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Revenue</th>
+                  <th class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">% of Total</th>
+                  <th class="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Trend</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
+              <tbody class="divide-y divide-slate-200 bg-white dark:divide-slate-700 dark:bg-slate-900">
                 <tr
                   v-for="(item, index) in revenue"
                   :key="item.department"
-                  :class="index % 2 === 0 ? 'bg-white dark:bg-gray-900' : 'bg-gray-50 dark:bg-gray-800'"
+                  :class="index % 2 === 0 ? 'bg-white dark:bg-slate-900' : 'bg-slate-50 dark:bg-slate-800'"
                 >
                   <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ item.department }}</div>
+                    <div class="text-sm font-medium text-slate-900 dark:text-slate-100">{{ item.department }}</div>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-right">
-                    <div class="text-sm font-semibold text-gray-900 dark:text-gray-100">₦{{ formatNumber(item.amount) }}</div>
+                    <div class="text-sm font-semibold text-slate-900 dark:text-slate-100">₦{{ formatNumber(item.amount) }}</div>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-right">
-                    <div class="text-sm text-gray-600 dark:text-gray-400">{{ percentage(item.amount, totalRevenue) }}%</div>
+                    <div class="text-sm text-slate-600 dark:text-slate-400">{{ percentage(item.amount, totalRevenue) }}%</div>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-center">
                     <span
@@ -86,7 +86,7 @@
                     </span>
                     <span
                       v-else
-                      class="inline-flex items-center rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800 dark:bg-gray-700 dark:text-gray-200"
+                      class="inline-flex items-center rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-800 dark:bg-slate-700 dark:text-slate-200"
                     >
                       No Revenue
                     </span>

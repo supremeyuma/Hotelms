@@ -2,7 +2,7 @@
   <ManagerLayout>
     <div class="space-y-6">
       <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-semibold text-gray-800 dark:text-gray-100">Accounting Periods</h1>
+        <h1 class="text-2xl font-semibold text-slate-800 dark:text-slate-100">Accounting Periods</h1>
         <div class="flex items-center space-x-4">
           <button class="rounded bg-purple-600 px-4 py-2 text-white hover:bg-purple-700" @click="initializeTaxAccounts">Initialize Tax Accounts</button>
           <button class="rounded bg-yellow-600 px-4 py-2 text-white hover:bg-yellow-700" @click="autoCloseExpired">Auto-Close Expired</button>
@@ -10,11 +10,11 @@
         </div>
       </div>
 
-      <div v-if="currentPeriod" class="rounded-lg bg-white p-6 shadow-sm dark:bg-gray-900">
+      <div v-if="currentPeriod" class="rounded-lg bg-white p-6 shadow-sm dark:bg-slate-900">
         <div class="flex items-center justify-between">
           <div>
-            <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100">Current Period</h2>
-            <p class="text-sm text-gray-600 dark:text-gray-400">{{ formatDate(currentPeriod.start_date) }} to {{ formatDate(currentPeriod.end_date) }}</p>
+            <h2 class="text-lg font-medium text-slate-900 dark:text-slate-100">Current Period</h2>
+            <p class="text-sm text-slate-600 dark:text-slate-400">{{ formatDate(currentPeriod.start_date) }} to {{ formatDate(currentPeriod.end_date) }}</p>
           </div>
           <div class="flex items-center space-x-4">
             <span class="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800 dark:bg-green-900 dark:text-green-200">
@@ -28,68 +28,68 @@
         </div>
       </div>
 
-      <div v-if="showCreateForm" class="rounded-lg bg-white p-6 shadow-sm dark:bg-gray-900">
-        <h3 class="mb-4 text-lg font-medium text-gray-900 dark:text-gray-100">Create New Accounting Period</h3>
+      <div v-if="showCreateForm" class="rounded-lg bg-white p-6 shadow-sm dark:bg-slate-900">
+        <h3 class="mb-4 text-lg font-medium text-slate-900 dark:text-slate-100">Create New Accounting Period</h3>
         <form class="space-y-4" @submit.prevent="createPeriod">
           <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Start Date</label>
-              <input v-model="form.start_date" type="date" :min="nextPeriodDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required />
+              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Start Date</label>
+              <input v-model="form.start_date" type="date" :min="nextPeriodDate" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">End Date</label>
-              <input v-model="form.end_date" type="date" :min="form.start_date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required />
+              <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">End Date</label>
+              <input v-model="form.end_date" type="date" :min="form.start_date" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" required />
             </div>
           </div>
           <div class="flex justify-end space-x-3">
-            <button type="button" class="rounded-md border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700" @click="showCreateForm = false">Cancel</button>
+            <button type="button" class="rounded-md border border-slate-300 px-4 py-2 text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700" @click="showCreateForm = false">Cancel</button>
             <button type="submit" :disabled="form.processing" class="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50">{{ form.processing ? 'Creating...' : 'Create Period' }}</button>
           </div>
         </form>
       </div>
 
-      <div class="rounded-lg bg-white p-6 shadow-sm dark:bg-gray-900">
-        <h3 class="mb-4 text-lg font-medium text-gray-900 dark:text-gray-100">Check Period Status</h3>
+      <div class="rounded-lg bg-white p-6 shadow-sm dark:bg-slate-900">
+        <h3 class="mb-4 text-lg font-medium text-slate-900 dark:text-slate-100">Check Period Status</h3>
         <div class="flex items-center space-x-4">
-          <input v-model="checkDate" type="date" class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" @change="checkPeriodStatus" />
+          <input v-model="checkDate" type="date" class="rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" @change="checkPeriodStatus" />
           <div v-if="periodStatus.status" class="flex items-center space-x-2">
             <span class="inline-flex items-center rounded-full px-3 py-1 text-sm font-medium" :class="periodStatus.is_open ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'">
               {{ periodStatus.is_open ? 'Open' : 'Closed' }}
             </span>
-            <span v-if="periodStatus.period" class="text-sm text-gray-600 dark:text-gray-400">Period: {{ formatDate(periodStatus.period.start_date) }} - {{ formatDate(periodStatus.period.end_date) }}</span>
+            <span v-if="periodStatus.period" class="text-sm text-slate-600 dark:text-slate-400">Period: {{ formatDate(periodStatus.period.start_date) }} - {{ formatDate(periodStatus.period.end_date) }}</span>
           </div>
         </div>
       </div>
 
-      <div class="overflow-hidden rounded-lg bg-white shadow-sm dark:bg-gray-900">
-        <div class="border-b border-gray-200 px-6 py-4 dark:border-gray-700">
-          <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100">All Periods</h2>
+      <div class="overflow-hidden rounded-lg bg-white shadow-sm dark:bg-slate-900">
+        <div class="border-b border-slate-200 px-6 py-4 dark:border-slate-700">
+          <h2 class="text-lg font-medium text-slate-900 dark:text-slate-100">All Periods</h2>
         </div>
         <div class="overflow-x-auto">
           <table class="w-full">
-            <thead class="bg-gray-50 dark:bg-gray-800">
+            <thead class="bg-slate-50 dark:bg-slate-800">
               <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Period</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Duration</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Status</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Notes</th>
-                <th class="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Actions</th>
+                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Period</th>
+                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Duration</th>
+                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Status</th>
+                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Notes</th>
+                <th class="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Actions</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
-              <tr v-for="period in periods" :key="period.id" class="hover:bg-gray-50 dark:hover:bg-gray-800">
+            <tbody class="divide-y divide-slate-200 bg-white dark:divide-slate-700 dark:bg-slate-900">
+              <tr v-for="period in periods" :key="period.id" class="hover:bg-slate-50 dark:hover:bg-slate-800">
                 <td class="px-6 py-4 whitespace-nowrap">
-                  <div class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ formatDate(period.start_date) }} - {{ formatDate(period.end_date) }}</div>
-                  <div class="text-sm text-gray-500 dark:text-gray-400">Created {{ formatDate(period.created_at) }}</div>
+                  <div class="text-sm font-medium text-slate-900 dark:text-slate-100">{{ formatDate(period.start_date) }} - {{ formatDate(period.end_date) }}</div>
+                  <div class="text-sm text-slate-500 dark:text-slate-400">Created {{ formatDate(period.created_at) }}</div>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{{ calculateDuration(period.start_date, period.end_date) }} days</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-slate-100">{{ calculateDuration(period.start_date, period.end_date) }} days</td>
                 <td class="px-6 py-4 whitespace-nowrap">
                   <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium" :class="period.is_closed ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'">
                     <div class="mr-2 h-2 w-2 rounded-full" :class="period.is_closed ? 'bg-red-500' : 'bg-green-500 animate-pulse'"></div>
                     {{ period.is_closed ? 'Closed' : 'Open' }}
                   </span>
                 </td>
-                <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{{ period.notes || '-' }}</td>
+                <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{{ period.notes || '-' }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-center">
                   <div class="flex justify-center space-x-2">
                     <Link :href="route(`${props.routePrefix}.accounting-periods.show`, period.id)" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
