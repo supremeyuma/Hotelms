@@ -1,0 +1,175 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-06-21T04:46:00.000Z",
+  "title": "Design System: Moorelife Resort / HotelMS",
+  "extensions": {
+    "colorMeta": {
+      "primary": { "role": "primary", "displayName": "Signal Blue", "canonical": "oklch(48% 0.178 275)", "tonalRamp": ["oklch(15% 0.06 275)", "oklch(25% 0.1 275)", "oklch(35% 0.14 275)", "oklch(48% 0.178 275)", "oklch(58% 0.15 275)", "oklch(68% 0.12 275)", "oklch(80% 0.08 275)", "oklch(92% 0.04 275)"] },
+      "primary-subtle": { "role": "primary", "displayName": "Signal Blue Soft", "canonical": "oklch(55% 0.16 275)", "tonalRamp": [] },
+      "ink": { "role": "neutral", "displayName": "Command Ink", "canonical": "oklch(12% 0.03 260)", "tonalRamp": ["oklch(5% 0.01 260)", "oklch(12% 0.03 260)", "oklch(20% 0.04 260)", "oklch(30% 0.03 260)", "oklch(42% 0.025 260)", "oklch(55% 0.02 260)", "oklch(70% 0.015 260)", "oklch(88% 0.01 260)"] },
+      "ink-muted": { "role": "neutral", "displayName": "Ink Muted", "canonical": "oklch(42% 0.02 260)", "tonalRamp": [] },
+      "ink-dim": { "role": "neutral", "displayName": "Ink Dim", "canonical": "oklch(68% 0.02 240)", "tonalRamp": [] },
+      "surface": { "role": "neutral", "displayName": "White Surface", "canonical": "oklch(100% 0 0)", "tonalRamp": [] },
+      "surface-alt": { "role": "neutral", "displayName": "Alt Surface", "canonical": "oklch(97% 0.005 260)", "tonalRamp": [] },
+      "border": { "role": "neutral", "displayName": "Border Light", "canonical": "oklch(90% 0.008 260)", "tonalRamp": [] },
+      "border-strong": { "role": "neutral", "displayName": "Border Strong", "canonical": "oklch(85% 0.01 260)", "tonalRamp": [] },
+      "success": { "role": "semantic", "displayName": "Signal Green", "canonical": "oklch(68% 0.18 170)", "tonalRamp": [] },
+      "danger": { "role": "semantic", "displayName": "Danger", "canonical": "oklch(55% 0.22 30)", "tonalRamp": [] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Hero headlines on the public site. clamp(2.5rem, 6vw, 4.5rem), weight 900, -0.03em letter-spacing." },
+      "headline": { "displayName": "Headline", "purpose": "Section headings on brand pages, page titles in admin. clamp(1.5rem, 4vw, 2.5rem), weight 800." },
+      "title": { "displayName": "Title", "purpose": "Card titles, modal headers, sidebar labels. 1.125rem, weight 700." },
+      "body": { "displayName": "Body", "purpose": "Paragraph text. 0.9375rem, weight 400, 1.65 line-height, 65-75ch max." },
+      "label": { "displayName": "Label", "purpose": "Form labels, nav links, footer headings. 10px, weight 900, uppercase, 0.2em tracking." }
+    },
+    "shadows": [
+      { "name": "surface-raised", "value": "0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06)", "purpose": "Default card elevation and stat widget separation." },
+      { "name": "dropdown", "value": "0 10px 15px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.05)", "purpose": "Dropdown menus, popovers, date pickers." },
+      { "name": "modal", "value": "0 20px 60px rgba(0,0,0,0.15)", "purpose": "Modal and elevated overlay depth." },
+      { "name": "whatsapp-glow", "value": "0 20px 50px rgba(5,150,105,0.3)", "purpose": "Exclusive to the floating WhatsApp concierge button." },
+      { "name": "button-hover", "value": "0 8px 25px rgba(0,0,0,0.12)", "purpose": "Primary button hover state elevation." }
+    ],
+    "motion": [
+      { "name": "ease-default", "value": "cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Default easing for state transitions." },
+      { "name": "ease-out-expo", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Expressive entrance and reveal animations." },
+      { "name": "duration-fast", "value": "150ms", "purpose": "Hover and focus transitions." },
+      { "name": "duration-normal", "value": "300ms", "purpose": "Modal fade, dropdown open/close." },
+      { "name": "duration-slow", "value": "500ms", "purpose": "Header background transition on scroll." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" },
+      { "name": "2xl", "value": "1536px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The primary call-to-action button. Used for submit actions, booking CTAs, and save operations.",
+      "html": "<button class=\"ds-btn-primary\">BOOK NOW</button>",
+      "css": ".ds-btn-primary { background: #0f172a; color: #fff; padding: 16px 32px; border-radius: 12px; font-family: Figtree, ui-sans-serif, system-ui, sans-serif; font-size: 10px; font-weight: 900; letter-spacing: 0.2em; text-transform: uppercase; border: none; cursor: pointer; transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease; } .ds-btn-primary:hover { background: #4f46e5; box-shadow: 0 8px 25px rgba(0,0,0,0.12); } .ds-btn-primary:active { transform: scale(0.98); } .ds-btn-primary:focus-visible { outline: 2px solid #6366f1; outline-offset: 2px; } .ds-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; background: #0f172a; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Secondary action button. Used for cancel, back, and less prominent operations.",
+      "html": "<button class=\"ds-btn-secondary\">Cancel</button>",
+      "css": ".ds-btn-secondary { background: #ffffff; color: #475569; padding: 8px 16px; border-radius: 8px; font-family: Figtree, ui-sans-serif, system-ui, sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; border: 1px solid #e2e8f0; cursor: pointer; transition: background 0.15s ease; } .ds-btn-secondary:hover { background: #f8fafc; } .ds-btn-secondary:focus-visible { outline: 2px solid #6366f1; outline-offset: 2px; } .ds-btn-secondary:disabled { opacity: 0.25; cursor: not-allowed; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input-default",
+      "description": "Standard text input with icon slot. Resting state is borderless on slate-50; focus shifts to white with indigo border.",
+      "html": "<div class=\"ds-input-wrap\"><svg class=\"ds-input-icon\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z\"/></svg><input class=\"ds-input\" type=\"email\" placeholder=\"name@example.com\"/></div>",
+      "css": ".ds-input-wrap { position: relative; display: flex; align-items: center; } .ds-input-icon { position: absolute; left: 20px; color: #94a3b8; pointer-events: none; transition: color 0.15s ease; } .ds-input-wrap:focus-within .ds-input-icon { color: #4f46e5; } .ds-input { width: 100%; padding: 16px 20px 16px 48px; background: #f8fafc; border: 2px solid #f8fafc; border-radius: 12px; font-family: Figtree, ui-sans-serif, system-ui, sans-serif; font-size: 16px; font-weight: 700; color: #0f172a; outline: none; transition: background 0.15s ease, border-color 0.15s ease; } .ds-input:focus { background: #ffffff; border-color: #4f46e5; } .ds-input::placeholder { color: #94a3b8; font-weight: 400; }"
+    },
+    {
+      "name": "Navigation Link",
+      "kind": "nav",
+      "refersTo": "nav-link",
+      "description": "Public site navigation link with underline-on-hover effect. Uppercase with wide tracking.",
+      "html": "<a class=\"ds-nav-link\" href=\"#\">Gallery</a>",
+      "css": ".ds-nav-link { position: relative; font-family: Figtree, ui-sans-serif, system-ui, sans-serif; font-size: 10px; font-weight: 900; letter-spacing: 0.2em; text-transform: uppercase; color: #475569; text-decoration: none; transition: color 0.3s ease; cursor: pointer; } .ds-nav-link:hover { color: #4f46e5; } .ds-nav-link::after { content: ''; position: absolute; bottom: -4px; left: 0; width: 0; height: 1px; background: currentColor; transition: width 0.3s ease; } .ds-nav-link:hover::after { width: 100%; }"
+    },
+    {
+      "name": "Stat Card / Summary Card",
+      "kind": "card",
+      "refersTo": "card-default",
+      "description": "Summary stat card for dashboards and KPI displays. White background with subtle shadow.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-label\">Total Revenue</div><div class=\"ds-card-value\">$45,230</div></div>",
+      "css": ".ds-card { background: #ffffff; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06); } .ds-card-label { font-family: Figtree, ui-sans-serif, system-ui, sans-serif; font-size: 10px; font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase; color: #475569; margin-bottom: 8px; } .ds-card-value { font-family: Figtree, ui-sans-serif, system-ui, sans-serif; font-size: 24px; font-weight: 800; color: #0f172a; letter-spacing: -0.02em; }"
+    },
+    {
+      "name": "Status Badge / Chip",
+      "kind": "chip",
+      "refersTo": "status-badge",
+      "description": "Status indicator pill. Hue maps to semantic state: emerald for active/confirmed, amber for pending, red for error.",
+      "html": "<span class=\"ds-badge ds-badge-success\">Confirmed</span>",
+      "css": ".ds-badge { display: inline-flex; align-items: center; padding: 4px 12px; border-radius: 9999px; font-family: Figtree, ui-sans-serif, system-ui, sans-serif; font-size: 11px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; } .ds-badge-success { background: #d1fae5; color: #065f46; } .ds-badge-pending { background: #fef3c7; color: #92400e; } .ds-badge-error { background: #fee2e2; color: #991b1b; } .ds-badge-neutral { background: #f1f5f9; color: #475569; }"
+    },
+    {
+      "name": "Modal Dialog",
+      "kind": "custom",
+      "refersTo": "modal-default",
+      "description": "Modal overlay with semi-transparent backdrop, header with title + close, and scrollable body.",
+      "html": "<div class=\"ds-modal-backdrop\"><div class=\"ds-modal\"><div class=\"ds-modal-header\"><h3 class=\"ds-modal-title\">Modal Title</h3><button class=\"ds-modal-close\">&times;</button></div><div class=\"ds-modal-body\"><p>Modal content goes here.</p></div></div></div>",
+      "css": ".ds-modal-backdrop { position: fixed; inset: 0; background: rgba(107,114,128,0.75); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 50; } .ds-modal { background: #ffffff; border-radius: 8px; box-shadow: 0 20px 60px rgba(0,0,0,0.15); width: 100%; max-width: 42rem; max-height: calc(100vh - 48px); display: flex; flex-direction: column; } .ds-modal-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #e2e8f0; flex-shrink: 0; } .ds-modal-title { font-family: Figtree, ui-sans-serif, system-ui, sans-serif; font-size: 16px; font-weight: 700; color: #0f172a; } .ds-modal-close { background: none; border: none; font-size: 24px; color: #64748b; cursor: pointer; padding: 0 4px; } .ds-modal-close:hover { color: #0f172a; } .ds-modal-body { padding: 16px; overflow-y: auto; }"
+    },
+    {
+      "name": "Sidebar Navigation Item",
+      "kind": "nav",
+      "refersTo": "sidebar-item",
+      "description": "Staff/admin sidebar navigation item with icon + label. Active state has tinted background.",
+      "html": "<div class=\"ds-sidebar-item\"><svg class=\"ds-sidebar-icon\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z\"/></svg><span>Dashboard</span></div>",
+      "css": ".ds-sidebar-item { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-radius: 8px; font-family: Figtree, ui-sans-serif, system-ui, sans-serif; font-size: 14px; font-weight: 500; color: #475569; cursor: pointer; transition: background 0.15s ease; } .ds-sidebar-item:hover { background: #f1f5f9; } .ds-sidebar-icon { flex-shrink: 0; color: #94a3b8; } .ds-sidebar-item:hover .ds-sidebar-icon { color: #475569; }"
+    },
+    {
+      "name": "Dropdown Menu",
+      "kind": "custom",
+      "refersTo": "dropdown",
+      "description": "Click-triggered dropdown menu with scale-and-fade animation. Uses fixed overlay for outside-click handling.",
+      "html": "<div class=\"ds-dropdown\"><div class=\"ds-dropdown-trigger\"><button class=\"ds-btn-secondary\" style=\"padding:8px 16px\">Menu</button></div><div class=\"ds-dropdown-menu\"><a class=\"ds-dropdown-item\" href=\"#\">Profile</a><a class=\"ds-dropdown-item\" href=\"#\">Settings</a><a class=\"ds-dropdown-item ds-dropdown-item-danger\" href=\"#\">Sign Out</a></div></div>",
+      "css": ".ds-dropdown { position: relative; display: inline-block; } .ds-dropdown-menu { position: absolute; right: 0; top: calc(100% + 8px); min-width: 12rem; background: #ffffff; border-radius: 8px; box-shadow: 0 10px 15px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.05); padding: 4px; z-index: 50; transform-origin: top right; } .ds-dropdown-item { display: block; padding: 8px 16px; border-radius: 6px; font-family: Figtree, ui-sans-serif, system-ui, sans-serif; font-size: 14px; color: #0f172a; text-decoration: none; transition: background 0.15s ease; cursor: pointer; } .ds-dropdown-item:hover { background: #f1f5f9; } .ds-dropdown-item-danger { color: #dc2626; } .ds-dropdown-item-danger:hover { background: #fef2f2; }"
+    },
+    {
+      "name": "WhatsApp Concierge",
+      "kind": "custom",
+      "refersTo": "whatsapp-float",
+      "description": "Floating WhatsApp button with pulsing glow ring and hover-reveal tooltip. Signiture component of the public site.",
+      "html": "<div class=\"ds-whatsapp\"><div class=\"ds-whatsapp-tooltip\">Chat with Concierge</div><div class=\"ds-whatsapp-ring\"></div><div class=\"ds-whatsapp-ring ds-whatsapp-ring-slow\"></div><div class=\"ds-whatsapp-btn\"><svg width=\"28\" height=\"28\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"white\" stroke-width=\"2\"><path d=\"M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z\"/></svg></div></div>",
+      "css": ".ds-whatsapp { position: fixed; bottom: 32px; right: 32px; display: flex; align-items: center; gap: 16px; z-index: 100; } .ds-whatsapp-tooltip { padding: 8px 16px; border-radius: 12px; background: rgba(15,23,42,0.8); backdrop-filter: blur(8px); color: white; font-family: Figtree, ui-sans-serif, system-ui, sans-serif; font-size: 10px; font-weight: 900; letter-spacing: 0.2em; text-transform: uppercase; border: 1px solid rgba(255,255,255,0.1); opacity: 0; transform: translateX(16px); transition: opacity 0.3s ease, transform 0.3s ease; pointer-events: none; white-space: nowrap; } .ds-whatsapp:hover .ds-whatsapp-tooltip { opacity: 1; transform: translateX(0); } .ds-whatsapp-btn { width: 64px; height: 64px; border-radius: 50%; background: #059669; display: flex; align-items: center; justify-content: center; box-shadow: 0 20px 50px rgba(5,150,105,0.3); cursor: pointer; transition: background 0.5s ease, transform 0.5s ease; position: relative; border: 1px solid rgba(52,211,153,0.2); } .ds-whatsapp:hover .ds-whatsapp-btn { background: #10b981; transform: rotate(360deg); } .ds-whatsapp-ring { position: absolute; width: 64px; height: 64px; border-radius: 50%; background: rgba(16,185,129,0.3); animation: whatsapp-ping 2s cubic-bezier(0,0,0.2,1) infinite; } .ds-whatsapp-ring-slow { background: rgba(16,185,129,0.2); animation: whatsapp-pulse 3s ease-in-out infinite; } @keyframes whatsapp-ping { 75%, 100% { transform: scale(1.5); opacity: 0; } } @keyframes whatsapp-pulse { 0%, 100% { opacity: 0.2; } 50% { opacity: 0.5; } }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Hospitality Command Center",
+    "overview": "This is a system that balances two modes: the warm, cinematic confidence of a luxury resort's public face, and the quiet precision of a mission-control dashboard where staff run operations. The public pages feel aspirational \u2014 dark headers floating over hero imagery, smooth scroll, magnetic buttons, a glowing WhatsApp concierge. The staff and admin surfaces are clear, task-focused, and efficient: sidebars with dense nav, bordered panels, scannable table rows. They share the same bones \u2014 same font, same ink color, same corner language \u2014 but the saturation and density shift depending on who is looking.",
+    "keyCharacteristics": [
+      "Modern typographic confidence: one typeface (Figtree) at extreme weight contrast \u2014 black (900) for display, light (300) for body, and a crisp uppercase label system.",
+      "Ink-driven: the primary dark is near-black slate-950, not navy or charcoal. The accent (indigo-600) is used sparingly \u2014 \u226410% of any screen \u2014 for focus rings, key CTAs, and hover transformations.",
+      "Shadow as substance: shadows are used freely to separate surfaces. They are ambient and defined (8-20px blur), never decorative ghost-cards with borders.",
+      "Two densities: brand pages breathe (loose spacing, large type, generous padding); product pages are tighter (compact nav, condensed tables, smaller inputs).",
+      "Rejects: cream/sand/beige backgrounds, gradient text, numbered section markers, tiny uppercase eyebrows on every section, glassmorphism, side-stripe borders."
+    ],
+    "rules": [
+      { "name": "The One Voice Rule", "body": "The indigo accent covers \u226410% of any screen. Its rarity is the point \u2014 when indigo appears (a focus ring, a hover shift, a link), it means 'this thing is interactive.' Overuse would dull that signal.", "section": "colors" },
+      { "name": "The Tint Rule", "body": "Gray text on colored backgrounds is prohibited. On dark surfaces (footer, login icon), text is white. On tinted surfaces, use a darker shade of the surface's own hue, not a generic gray.", "section": "colors" },
+      { "name": "The Figtree-Only Rule", "body": "No font pairing. Figtree at 300/400/700/900 covers the full range from editorial body to commanding display. A second font would compete with the weight contrast that is the system's voice.", "section": "typography" },
+      { "name": "The Label Cadence Rule", "body": "Labels are always 10px, weight 900, uppercase, 0.2em tracking. Inconsistent casing or weight in label positions is a system defect.", "section": "typography" },
+      { "name": "The Modal Rule", "body": "Modals use a gray-500/75 backdrop. The backdrop is click-to-close. Escape key closes. overflow: hidden is set on body while modal is open.", "section": "elevation" },
+      { "name": "The Dropdown Escape Rule", "body": "Dropdowns use a fixed-position overlay to intercept outside clicks. This avoids overflow: hidden clipping issues with absolutely-positioned children.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use Figtree as the single typeface across all surfaces, varying weight (300-900) for hierarchy.",
+      "Do use the label system (10px, weight 900, uppercase, 0.2em tracking) for form labels, nav links, and footer headings consistently.",
+      "Do use shadows freely to separate surfaces \u2014 cards, dropdowns, modals all get distinct shadow definitions.",
+      "Do use indigo-600 as a sparse accent (\u226410%) for interactive signals only.",
+      "Do match placeholders to slate-400 and verify \u22654.5:1 contrast against their background.",
+      "Do use text-wrap: balance on h1-h3 and text-wrap: pretty on long prose.",
+      "Do cap body text line length at 65-75ch.",
+      "Do use semantic z-index scale (dropdown \u2192 sticky \u2192 modal-backdrop \u2192 modal \u2192 toast \u2192 tooltip)."
+    ],
+    "donts": [
+      "Don't use cream/sand/beige body backgrounds \u2014 the warm-neutral AI default is prohibited.",
+      "Don't pair border: 1px solid with box-shadow blur \u226516px on the same element (ghost-card pattern).",
+      "Don't use border-radius above 16px on cards or 24px on containers.",
+      "Don't use gradient text (background-clip: text with gradient) \u2014 use a single solid color.",
+      "Don't use glassmorphism (blurs and glass cards) as a decorative default.",
+      "Don't use the hero-metric template (big number, small label, gradient accent).",
+      "Don't use tiny uppercase tracked eyebrows above every section as a default cadence.",
+      "Don't use numbered section markers (01 / 02 / 03) unless the sequence carries information.",
+      "Don't use side-stripe borders (border-left / border-right >1px as accent).",
+      "Don't use generic gray text on colored backgrounds \u2014 use a darker shade of the background's own hue.",
+      "Don't nest cards.",
+      "Don't use arbitrary z-index values (999, 9999).",
+      "Don't create hand-drawn / sketchy SVG illustrations.",
+      "Don't use repeating-linear-gradient stripe backgrounds."
+    ]
+  }
+}

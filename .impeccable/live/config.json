@@ -1,0 +1,7 @@
+{
+  "files": ["resources/views/app.blade.php"],
+  "insertBefore": "</body>",
+  "commentSyntax": "{{-- --}}",
+  "framework": "laravel-vite-inertia",
+  "cspChecked": true
+}
