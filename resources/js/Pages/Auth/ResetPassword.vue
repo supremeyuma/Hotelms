@@ -45,11 +45,11 @@ const submit = () => {
                     <p class="text-slate-500 font-medium">Please choose a strong password to secure your account.</p>
                 </div>
 
-                <div class="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/60 border border-slate-100 overflow-hidden">
+                <div class="bg-white rounded-xl shadow-xl shadow-slate-200/60 border border-slate-100 overflow-hidden">
                     <form @submit.prevent="submit" class="p-8 md:p-10 space-y-6">
                         
                         <div class="space-y-2 opacity-60">
-                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Identity</label>
+                            <label class="text-xs font-semibold text-slate-400 uppercase tracking-wide ml-1">Identity</label>
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-slate-400">
                                     <Mail class="w-5 h-5" />
@@ -67,7 +67,7 @@ const submit = () => {
                         </div>
 
                         <div class="space-y-2">
-                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">New Password</label>
+                            <label class="text-xs font-semibold text-slate-400 uppercase tracking-wide ml-1">New Password</label>
                             <div class="relative group">
                                 <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-indigo-600 transition-colors">
                                     <Lock class="w-5 h-5" />
@@ -87,7 +87,7 @@ const submit = () => {
                         </div>
 
                         <div class="space-y-2">
-                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Confirm Password</label>
+                            <label class="text-xs font-semibold text-slate-400 uppercase tracking-wide ml-1">Confirm Password</label>
                             <div class="relative group">
                                 <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-indigo-600 transition-colors">
                                     <ShieldCheck class="w-5 h-5" />
@@ -120,7 +120,7 @@ const submit = () => {
 
                     <div class="bg-slate-50 px-8 py-6 border-t border-slate-100 flex items-center justify-center gap-2">
                         <ShieldCheck class="w-4 h-4 text-emerald-500" />
-                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Enhanced Password Protection Active</span>
+                        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Enhanced Password Protection Active</span>
                     </div>
                 </div>
             </div>

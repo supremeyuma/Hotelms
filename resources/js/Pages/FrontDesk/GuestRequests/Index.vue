@@ -71,7 +71,7 @@ onMounted(() => {
                             <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
                             <span class="relative inline-flex rounded-full h-3 w-3 bg-rose-500"></span>
                         </span>
-                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Live Service Feed</span>
+                        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Live Service Feed</span>
                     </div>
                     <h1 class="text-4xl font-black text-slate-900 tracking-tight flex items-center gap-4">
                         Guest Requests
@@ -95,21 +95,21 @@ onMounted(() => {
                 <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-4">
                     <div class="p-4 bg-rose-50 text-rose-600 rounded-2xl"><Bell class="w-6 h-6" /></div>
                     <div>
-                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Pending</p>
+                        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Pending</p>
                         <p class="text-2xl font-black text-slate-900">{{ localRequests.data.filter(r => r.status === 'pending').length }}</p>
                     </div>
                 </div>
                 <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-4">
                     <div class="p-4 bg-amber-50 text-amber-600 rounded-2xl"><Clock class="w-6 h-6" /></div>
                     <div>
-                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">In Progress</p>
+                        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide">In Progress</p>
                         <p class="text-2xl font-black text-slate-900">{{ localRequests.data.filter(r => r.status === 'acknowledged').length }}</p>
                     </div>
                 </div>
                 <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-4">
                     <div class="p-4 bg-emerald-50 text-emerald-600 rounded-2xl"><CheckCircle2 class="w-6 h-6" /></div>
                     <div>
-                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Completed</p>
+                        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Completed</p>
                         <p class="text-2xl font-black text-slate-900">{{ localRequests.data.filter(r => r.status === 'completed').length }}</p>
                     </div>
                 </div>
@@ -125,7 +125,7 @@ onMounted(() => {
                 />
             </div>
 
-            <div v-else class="bg-white rounded-[3rem] border-2 border-dashed border-slate-100 py-20 text-center">
+            <div v-else class="bg-white rounded-2xl border-2 border-dashed border-slate-100 py-20 text-center">
                 <div class="inline-flex p-6 bg-slate-50 text-slate-300 rounded-full mb-6">
                     <Inbox class="w-12 h-12" />
                 </div>

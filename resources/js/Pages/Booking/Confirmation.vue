@@ -88,17 +88,17 @@ onBeforeUnmount(() => {
     <div class="min-h-screen bg-slate-50/50 py-12 md:py-20 px-4">
       <div class="max-w-3xl mx-auto">
         <div class="text-center mb-12">
-          <div class="inline-flex items-center justify-center w-24 h-24 bg-emerald-100 text-emerald-600 rounded-[2.5rem] mb-6 shadow-xl shadow-emerald-100">
+          <div class="inline-flex items-center justify-center w-24 h-24 bg-emerald-100 text-emerald-600 rounded-xl mb-6 shadow-xl shadow-emerald-100">
             <CheckCircle2 class="w-12 h-12" />
           </div>
           <h1 class="text-4xl font-black text-slate-900 tracking-tight mb-2">Booking Confirmed</h1>
           <p class="text-slate-500 font-medium">We're looking forward to your stay, {{ booking.guest_name }}.</p>
         </div>
 
-        <div class="bg-white rounded-[3rem] border border-slate-200 shadow-2xl shadow-slate-200/50 overflow-hidden mb-8">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl shadow-slate-200/50 overflow-hidden mb-8">
           <div class="bg-slate-900 px-8 py-6 flex flex-col md:flex-row items-center justify-between gap-4">
             <div class="text-center md:text-left">
-              <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Reservation Code</p>
+              <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Reservation Code</p>
               <div class="flex items-center justify-center gap-3 md:justify-start">
                 <h2 class="text-2xl font-black text-white tracking-widest uppercase">{{ booking.booking_code }}</h2>
                 <button
@@ -123,7 +123,7 @@ onBeforeUnmount(() => {
                 <Home class="w-8 h-8" />
               </div>
               <div>
-                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Accommodation</p>
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Accommodation</p>
                 <h3 class="text-xl font-black text-slate-900">
                   {{ booking.quantity }} x {{ booking.room_type?.title || 'Standard Room' }}
                 </h3>
@@ -138,13 +138,13 @@ onBeforeUnmount(() => {
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div class="space-y-1">
-                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide flex items-center gap-2">
                   <Calendar class="w-3 h-3 text-indigo-500" /> Check-in
                 </p>
                 <p class="font-bold text-slate-700">{{ formatDate(booking.check_in) }}</p>
               </div>
               <div class="space-y-1">
-                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide flex items-center gap-2">
                   <Calendar class="w-3 h-3 text-indigo-500" /> Check-out
                 </p>
                 <p class="font-bold text-slate-700">{{ formatDate(booking.check_out) }}</p>
@@ -152,7 +152,7 @@ onBeforeUnmount(() => {
             </div>
 
             <div class="rounded-[2rem] border border-slate-100 bg-slate-50 p-6">
-              <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Reserved Rooms</p>
+              <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-4">Reserved Rooms</p>
               <div class="space-y-4">
                 <div
                   v-for="room in booking.rooms"
@@ -179,7 +179,7 @@ onBeforeUnmount(() => {
               </div>
             </div>
 
-            <div class="bg-slate-50 rounded-3xl p-6 flex items-center gap-4 border border-slate-100">
+            <div class="bg-slate-50 rounded-2xl p-6 flex items-center gap-4 border border-slate-100">
               <div class="w-10 h-10 rounded-full bg-white border-2 border-slate-50 flex items-center justify-center text-indigo-600 shadow-sm">
                 <Mail class="w-4 h-4" />
               </div>
@@ -193,20 +193,20 @@ onBeforeUnmount(() => {
               class="grid gap-4 rounded-[2rem] border border-slate-100 bg-slate-50 p-6 md:grid-cols-2"
             >
               <div v-if="booking.guest_phone">
-                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Guest Phone</p>
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Guest Phone</p>
                 <p class="text-sm font-medium text-slate-700">{{ booking.guest_phone }}</p>
               </div>
               <div v-if="booking.purpose_of_stay">
-                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Purpose of Stay</p>
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Purpose of Stay</p>
                 <p class="text-sm font-medium text-slate-700">{{ booking.purpose_of_stay }}</p>
               </div>
               <div v-if="booking.emergency_contact_name || booking.emergency_contact_phone">
-                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Emergency Contact</p>
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Emergency Contact</p>
                 <p v-if="booking.emergency_contact_name" class="font-bold text-slate-900">{{ booking.emergency_contact_name }}</p>
                 <p v-if="booking.emergency_contact_phone" class="text-sm font-medium text-slate-700">{{ booking.emergency_contact_phone }}</p>
               </div>
               <div v-if="booking.special_requests" class="md:col-span-2">
-                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Special Requests</p>
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Special Requests</p>
                 <p class="text-sm font-medium text-slate-700">{{ booking.special_requests }}</p>
               </div>
             </div>
@@ -216,7 +216,7 @@ onBeforeUnmount(() => {
                 <KeyRound class="w-5 h-5" />
               </div>
               <div class="flex-1">
-                <p class="text-[10px] font-black text-emerald-700 uppercase tracking-widest mb-2">Online Pre-Check-In</p>
+                <p class="text-xs font-semibold text-emerald-700 uppercase tracking-wide mb-2">Online Pre-Check-In</p>
                 <p class="text-sm font-medium text-emerald-900 leading-relaxed">
                   Because this booking was paid online, you can complete pre-check-in before arrival. Room access will still be issued by the front desk after arrival verification.
                 </p>

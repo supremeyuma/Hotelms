@@ -32,7 +32,7 @@
         </div>
       </div>
 
-      <div v-if="orders.length === 0" class="flex flex-col items-center justify-center py-20 bg-white rounded-[2.5rem] border-2 border-dashed border-slate-200">
+      <div v-if="orders.length === 0" class="flex flex-col items-center justify-center py-20 bg-white rounded-xl border-2 border-dashed border-slate-200">
         <div class="p-4 bg-slate-50 rounded-full mb-4 text-slate-300">
           <Shirt class="w-12 h-12" />
         </div>
@@ -67,7 +67,7 @@
                     <!-- PAYMENT BADGE -->
                     <span
                       v-if="order.charge"
-                      class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border"
+                      class="px-3 py-1 rounded-full text-xs uppercase font-semibold tracking-wide border"
                       :class="
                         order.charge.status === 'paid'
                           ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
@@ -210,7 +210,7 @@ function updateStatus(order) {
 }
 
 const getStatusBadgeClass = (status) => {
-  const base = "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border "
+  const base = "px-3 py-1 rounded-full text-xs uppercase font-semibold tracking-wide border "
   switch (status) {
     case 'delivered': return base + "bg-emerald-50 text-emerald-600 border-emerald-100"
     case 'requested': return base + "bg-rose-50 text-rose-600 border-rose-100 animate-pulse"

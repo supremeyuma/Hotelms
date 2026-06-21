@@ -244,10 +244,10 @@ function invalidateQr(room) {
           <div class="flex items-start justify-between">
             <div>
               <div class="flex items-center gap-2">
-                <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">{{ card.label }}</p>
+                <p class="text-xs uppercase font-semibold tracking-wide text-slate-500">{{ card.label }}</p>
                 <span
                   v-if="isMetricCardActive(card)"
-                  class="rounded-full bg-slate-900 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.16em] text-white"
+                  class="rounded-full bg-slate-900 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-white"
                 >
                   Active
                 </span>

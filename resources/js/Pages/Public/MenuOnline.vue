@@ -148,7 +148,7 @@ function goHome() {
 
         <div class="min-w-0 flex-1 text-center">
           <h1 class="text-lg sm:text-xl font-black text-gray-900">Menu</h1>
-          <p class="text-[10px] sm:text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">
+          <p class="text-xs sm:text-xs font-semibold uppercase tracking-wide text-gray-500">
             Order Online
           </p>
         </div>

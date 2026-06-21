@@ -149,12 +149,12 @@ const roomTypeImageVisibilityEnabled = computed(() => Boolean(props.imageSetting
             </div>
             <div class="flex items-center gap-3">
               <div class="text-sm">
-                <p class="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Check-in</p>
+                <p class="text-xs font-semibold text-indigo-600 uppercase tracking-wide">Check-in</p>
                 <p class="font-bold text-slate-900">{{ formatDate(check_in) }}</p>
               </div>
               <ChevronRight class="w-4 h-4 text-slate-300" />
               <div class="text-sm">
-                <p class="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Check-out</p>
+                <p class="text-xs font-semibold text-indigo-600 uppercase tracking-wide">Check-out</p>
                 <p class="font-bold text-slate-900">{{ formatDate(check_out) }}</p>
               </div>
             </div>
@@ -186,7 +186,7 @@ const roomTypeImageVisibilityEnabled = computed(() => Boolean(props.imageSetting
           <div
             v-for="roomType in roomTypes"
             :key="roomType.id"
-            class="bg-white rounded-[2.5rem] border border-slate-200 overflow-hidden shadow-sm"
+            class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm"
           >
             <div class="grid lg:grid-cols-[1.1fr,1fr] gap-0">
               <div
@@ -207,7 +207,7 @@ const roomTypeImageVisibilityEnabled = computed(() => Boolean(props.imageSetting
                 </div>
                 <div
                   v-if="roomTypeImageVisibilityEnabled && hasImages(roomType)"
-                  class="pointer-events-none absolute left-6 top-6 z-10 inline-flex items-center gap-2 rounded-full border border-white/30 bg-slate-950/45 px-4 py-2 text-[11px] font-black uppercase tracking-[0.22em] text-white backdrop-blur"
+                  class="pointer-events-none absolute left-6 top-6 z-10 inline-flex items-center gap-2 rounded-full border border-white/30 bg-slate-950/45 px-4 py-2 text-xs uppercase font-semibold tracking-wide text-white backdrop-blur"
                 >
                   <ImageIcon class="h-4 w-4" />
                   View Photos
@@ -226,7 +226,7 @@ const roomTypeImageVisibilityEnabled = computed(() => Boolean(props.imageSetting
                     <p class="text-sm text-white/75 font-semibold mt-1">{{ roomLimitText(roomType) }}</p>
                   </div>
                   <div class="rounded-2xl bg-white/90 backdrop-blur px-4 py-3 text-right">
-                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">From</p>
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide">From</p>
                     <p class="text-2xl font-black text-slate-900">₦{{ formatCurrency(roomType.price_per_night) }}</p>
                   </div>
                 </div>
@@ -269,7 +269,7 @@ const roomTypeImageVisibilityEnabled = computed(() => Boolean(props.imageSetting
                   </p>
                 </div>
                 <div class="rounded-2xl bg-white px-4 py-3 border border-slate-200">
-                  <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Selected</p>
+                  <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Selected</p>
                   <p class="text-lg font-black text-slate-900">{{ selectedCount(roomType.id) }} room<span v-if="selectedCount(roomType.id) !== 1">s</span></p>
                 </div>
               </div>
@@ -304,7 +304,7 @@ const roomTypeImageVisibilityEnabled = computed(() => Boolean(props.imageSetting
                     </div>
                     <div
                       v-if="hasImages(room)"
-                      class="pointer-events-none absolute left-4 top-4 z-10 inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/90 px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-700 backdrop-blur"
+                      class="pointer-events-none absolute left-4 top-4 z-10 inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/90 px-3 py-2 text-[10px] font-black uppercase tracking-wide text-slate-700 backdrop-blur"
                     >
                       <ImageIcon class="h-4 w-4" />
                       View
@@ -367,7 +367,7 @@ const roomTypeImageVisibilityEnabled = computed(() => Boolean(props.imageSetting
           </div>
         </div>
 
-        <div v-if="roomTypes.length === 0" class="mt-12 text-center py-20 bg-white rounded-[3rem] border border-slate-200">
+        <div v-if="roomTypes.length === 0" class="mt-12 text-center py-20 bg-white rounded-2xl border border-slate-200">
           <div class="p-6 bg-slate-50 rounded-full inline-flex mb-6 text-slate-300">
             <Info class="w-12 h-12" />
           </div>

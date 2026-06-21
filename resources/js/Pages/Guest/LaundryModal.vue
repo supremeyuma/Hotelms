@@ -7,7 +7,7 @@
         </div>
         <div>
           <h2 class="text-xl font-black text-slate-900 tracking-tight">Laundry Service</h2>
-          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Professional Care</p>
+          <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Professional Care</p>
         </div>
       </div>
     </template>
@@ -58,7 +58,7 @@
         </div>
 
         <div class="space-y-3">
-          <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Condition Photos (Optional)</label>
+          <label class="text-xs font-semibold text-slate-400 uppercase tracking-wide ml-1">Condition Photos (Optional)</label>
           <div class="flex flex-wrap gap-3">
             <label class="w-20 h-20 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-[1.25rem] text-slate-400 hover:border-purple-400 hover:text-purple-500 cursor-pointer transition-all bg-slate-50/50">
               <Camera class="w-6 h-6 mb-1" />
@@ -78,7 +78,7 @@
         </div>
 
         <div class="space-y-2">
-          <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+          <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide">
             Payment Option
           </p>
 
@@ -103,7 +103,7 @@
 
         <div class="bg-slate-900 rounded-[2rem] p-6 text-white flex justify-between items-center shadow-xl shadow-slate-200">
           <div>
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Estimated Total</p>
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Estimated Total</p>
             <p class="text-2xl font-black">₦{{ total.toLocaleString() }}</p>
           </div>
           <button

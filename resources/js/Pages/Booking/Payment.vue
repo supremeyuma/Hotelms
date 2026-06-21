@@ -312,7 +312,7 @@ const removeDiscount = () => {
           Review Details
         </button>
 
-        <div class="bg-white rounded-[2.5rem] border border-slate-200 shadow-2xl shadow-slate-200/60 overflow-hidden relative">
+        <div class="bg-white rounded-xl border border-slate-200 shadow-2xl shadow-slate-200/60 overflow-hidden relative">
           <div class="h-2 bg-gradient-to-r from-emerald-400 to-teal-500"></div>
 
           <div class="p-8 md:p-10">
@@ -324,9 +324,9 @@ const removeDiscount = () => {
               <p class="text-slate-500 text-sm font-medium mt-1">Secure Transaction</p>
             </div>
 
-            <div class="bg-slate-50 rounded-3xl p-6 border border-slate-100 mb-8">
+            <div class="bg-slate-50 rounded-2xl p-6 border border-slate-100 mb-8">
               <div class="flex justify-between items-center mb-4">
-                <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wide flex items-center gap-1.5">
                   <Receipt class="w-3.5 h-3.5" /> Order Reference
                 </span>
                 <span class="font-bold text-slate-900">#{{ booking.id }}</span>
@@ -334,7 +334,7 @@ const removeDiscount = () => {
               
               <div class="flex justify-between items-end">
                 <div>
-                  <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Amount Due</p>
+                  <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Amount Due</p>
                   <p class="text-3xl font-black text-slate-900">₦{{ booking.total_amount.toLocaleString() }}</p>
                   <p v-if="discount" class="mt-2 text-sm font-semibold text-emerald-700">
                     {{ discount.code }} saved ₦{{ Number(discount.discount_amount || 0).toLocaleString() }}
@@ -349,15 +349,15 @@ const removeDiscount = () => {
             </div>
 
             <div class="space-y-4">
-              <div class="rounded-3xl border border-slate-200 bg-slate-50 p-5">
+              <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
                 <div class="flex items-start justify-between gap-3">
                   <div>
-                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Discount code</p>
+                    <p class="text-xs uppercase font-semibold tracking-wide text-slate-400">Discount code</p>
                     <p class="mt-2 text-sm font-medium text-slate-500">Apply a room discount before you complete payment.</p>
                   </div>
                   <span
                     v-if="discount"
-                    class="rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700"
+                    class="rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-emerald-700"
                   >
                     Applied
                   </span>
@@ -438,7 +438,7 @@ const removeDiscount = () => {
               </div>
 
               <div v-else-if="paymentMethod === 'online' && selectedProvider" class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3">
-                <p class="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-700">Payment Gateway</p>
+                <p class="text-xs uppercase font-semibold tracking-wide text-emerald-700">Payment Gateway</p>
                 <p class="mt-1 text-sm font-bold text-emerald-900">
                   {{ providerOptions.find((prov) => prov.value === selectedProvider)?.label || selectedProvider }}
                 </p>
@@ -455,11 +455,11 @@ const removeDiscount = () => {
               </button>
 
               <div class="flex items-center justify-center gap-4 py-4">
-                <div class="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                <div class="flex items-center gap-1.5 text-xs font-semibold text-slate-400 uppercase tracking-wide">
                   <ShieldCheck class="w-4 h-4 text-emerald-500" /> Protected
                 </div>
                 <div class="w-1 h-1 rounded-full bg-slate-200"></div>
-                <div class="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                <div class="flex items-center gap-1.5 text-xs font-semibold text-slate-400 uppercase tracking-wide">
                   <Lock class="w-4 h-4 text-slate-400" /> SSL Encrypted
                 </div>
               </div>

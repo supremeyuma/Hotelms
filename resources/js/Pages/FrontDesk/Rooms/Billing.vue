@@ -73,7 +73,7 @@ function formatDate(date) {
         </div>
 
         <div class="px-8 py-4 rounded-[2rem] border bg-white shadow-sm flex flex-col items-end justify-center min-w-[240px]">
-          <span class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Total Outstanding</span>
+          <span class="text-xs uppercase font-semibold tracking-wide text-slate-400 mb-1">Total Outstanding</span>
           <span 
             class="text-3xl font-black" 
             :class="billing.outstanding > 0 ? 'text-rose-600' : 'text-emerald-600'"
@@ -87,13 +87,13 @@ function formatDate(date) {
         
         <div class="lg:col-span-2 space-y-8">
           
-          <div class="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
+          <div class="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
             <div class="p-6 border-b border-slate-50 flex items-center justify-between">
               <div class="flex items-center gap-3">
                 <div class="p-2 bg-slate-100 rounded-xl text-slate-600"><FileText class="w-5 h-5" /></div>
                 <h2 class="text-lg font-black text-slate-900">Charges</h2>
               </div>
-              <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-1 rounded-full">
+              <span class="text-[10px] font-black text-slate-400 uppercase tracking-wide bg-slate-50 px-3 py-1 rounded-full">
                 {{ billing.charges.length }} Items
               </span>
             </div>
@@ -102,9 +102,9 @@ function formatDate(date) {
               <table class="w-full text-left">
                 <thead class="bg-slate-50/50">
                   <tr>
-                    <th class="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">Description</th>
-                    <th class="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Amount</th>
-                    <th class="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Date</th>
+                    <th class="px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wide">Description</th>
+                    <th class="px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wide text-right">Amount</th>
+                    <th class="px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wide text-right">Date</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-50">
@@ -127,7 +127,7 @@ function formatDate(date) {
             </div>
           </div>
 
-          <div class="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
+          <div class="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
             <div class="p-6 border-b border-slate-50 flex items-center gap-3">
               <div class="p-2 bg-emerald-50 rounded-xl text-emerald-600"><History class="w-5 h-5" /></div>
               <h2 class="text-lg font-black text-slate-900">Transaction History</h2>
@@ -136,9 +136,9 @@ function formatDate(date) {
               <table class="w-full text-left">
                 <thead class="bg-slate-50/50">
                   <tr>
-                    <th class="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">Method</th>
-                    <th class="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Amount</th>
-                    <th class="px-6 py-3 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Date</th>
+                    <th class="px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wide">Method</th>
+                    <th class="px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wide text-right">Amount</th>
+                    <th class="px-6 py-3 text-xs font-semibold text-slate-400 uppercase tracking-wide text-right">Date</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-50">
@@ -162,7 +162,7 @@ function formatDate(date) {
         </div>
 
         <div class="space-y-6">
-          <div class="bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-2xl shadow-slate-200 sticky top-8">
+          <div class="bg-slate-900 rounded-xl p-8 text-white shadow-2xl shadow-slate-200 sticky top-8">
             <div class="flex items-center gap-3 mb-8">
               <div class="p-2 bg-white/10 rounded-xl text-indigo-400"><PlusCircle class="w-5 h-5" /></div>
               <h2 class="text-xl font-black tracking-tight">Record Payment</h2>
@@ -170,7 +170,7 @@ function formatDate(date) {
 
             <form @submit.prevent="submitPayment" class="space-y-6">
               <div>
-                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Amount to Post</label>
+                <label class="text-xs font-semibold text-slate-400 uppercase tracking-wide ml-1 mb-2 block">Amount to Post</label>
                 <div class="relative">
                   <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none font-bold text-slate-500">₦</div>
                   <input 
@@ -186,7 +186,7 @@ function formatDate(date) {
               </div>
 
               <div>
-                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Payment Method</label>
+                <label class="text-xs font-semibold text-slate-400 uppercase tracking-wide ml-1 mb-2 block">Payment Method</label>
                 <select 
                   v-model="form.method" 
                   class="block w-full px-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:bg-white/10 focus:border-indigo-500 focus:ring-0 transition-all font-bold text-white appearance-none"
@@ -199,7 +199,7 @@ function formatDate(date) {
               </div>
 
               <div>
-                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Notes / Reference</label>
+                <label class="text-xs font-semibold text-slate-400 uppercase tracking-wide ml-1 mb-2 block">Notes / Reference</label>
                 <input 
                   type="text" 
                   v-model="form.notes" 

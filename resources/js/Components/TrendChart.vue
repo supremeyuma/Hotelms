@@ -110,7 +110,7 @@ watch([range, () => props.endpoint], load)
   <div class="overflow-hidden rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm">
     <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Trend view</p>
+        <p class="text-xs uppercase font-semibold tracking-wide text-slate-400">Trend view</p>
         <h3 class="mt-2 text-xl font-black tracking-tight text-slate-900">
           {{ title }}
         </h3>

@@ -3,7 +3,7 @@
     <Head title="Menu Recipes" />
 
     <div class="space-y-6">
-      <section class="overflow-hidden rounded-3xl border border-slate-200 bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 text-white shadow-sm">
+      <section class="overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 text-white shadow-sm">
         <div class="grid gap-6 px-6 py-6 lg:grid-cols-[1.5fr_1fr] lg:px-8">
           <div class="space-y-4">
             <div class="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-emerald-100">
@@ -62,7 +62,7 @@
             </div>
           </div>
 
-          <div class="rounded-3xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
+          <div class="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
             <div class="flex items-start justify-between gap-4">
               <div>
                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-300">Current focus</p>
@@ -124,7 +124,7 @@
 
       <section class="grid gap-6 xl:grid-cols-[1.15fr_1.35fr]">
         <div class="space-y-6">
-          <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div class="flex flex-col gap-2 border-b border-slate-100 pb-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <h2 class="text-lg font-semibold text-slate-900">Recipe builder</h2>
@@ -231,7 +231,7 @@
             </form>
           </div>
 
-          <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div class="flex flex-col gap-2 border-b border-slate-100 pb-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <h2 class="text-lg font-semibold text-slate-900">Selected item ingredients</h2>
@@ -323,7 +323,7 @@
         </div>
 
         <div class="space-y-6">
-          <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div class="flex flex-col gap-3 border-b border-slate-100 pb-4">
               <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                 <div>
@@ -451,7 +451,7 @@
             </div>
           </div>
 
-          <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div class="flex flex-col gap-2 border-b border-slate-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 class="text-lg font-semibold text-slate-900">Operational recipe lines</h2>

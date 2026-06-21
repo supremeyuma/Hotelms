@@ -114,7 +114,7 @@ function destroy(id) {
         <div
           v-for="item in items"
           :key="item.id"
-          class="group bg-white rounded-[2rem] border border-slate-200 p-6 flex justify-between items-center hover:shadow-xl hover:border-indigo-100 transition-all duration-300"
+          class="group bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex justify-between items-center hover:shadow-xl hover:border-indigo-100 transition-all duration-300"
         >
           <div class="flex items-center gap-4">
             <div class="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
@@ -149,7 +149,7 @@ function destroy(id) {
           </div>
         </div>
 
-        <div v-if="items.length === 0" class="col-span-full py-20 bg-slate-50 rounded-[3rem] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400">
+        <div v-if="items.length === 0" class="col-span-full py-20 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400">
            <Shirt class="w-12 h-12 mb-4 opacity-20" />
            <p class="font-bold">No items found. Click "Add New Item" to start.</p>
         </div>
@@ -169,7 +169,7 @@ function destroy(id) {
         >
           <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" @click="closeModal"></div>
           
-          <div class="relative bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg overflow-hidden transform transition-all">
+          <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all">
             <div class="px-8 pt-8 pb-4 flex justify-between items-center">
               <h2 class="text-2xl font-black text-slate-900 tracking-tight">
                 {{ editingItem ? 'Edit Item' : 'Create Item' }}

@@ -128,7 +128,7 @@ function statusClasses(row) {
       <section class="overflow-hidden rounded-[2rem] bg-slate-900 text-white shadow-2xl shadow-slate-200">
         <div class="grid gap-6 px-6 py-8 sm:px-8 xl:grid-cols-[1.25fr_0.75fr]">
           <div class="space-y-4">
-            <div class="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-[11px] font-black uppercase tracking-[0.22em] text-slate-200">
+            <div class="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-xs uppercase font-semibold tracking-wide text-slate-200">
               <Users class="h-3.5 w-3.5" />
               Workforce reporting
             </div>
@@ -158,7 +158,7 @@ function statusClasses(row) {
 
           <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
             <div class="rounded-[1.75rem] border border-white/10 bg-white/10 p-5 backdrop-blur">
-              <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-300">Active coverage</p>
+              <p class="text-xs uppercase font-semibold tracking-wide text-slate-300">Active coverage</p>
               <p class="mt-3 text-4xl font-black">{{ summary.active_staff }}</p>
               <p class="mt-2 text-sm text-slate-300">
                 {{ summary.departments }} departments represented across {{ summary.total_staff }} staff records.
@@ -166,7 +166,7 @@ function statusClasses(row) {
             </div>
 
             <div class="rounded-[1.75rem] border border-amber-300/25 bg-gradient-to-br from-amber-400/20 to-amber-300/5 p-5">
-              <p class="text-[11px] font-black uppercase tracking-[0.22em] text-amber-100">Tracked workload</p>
+              <p class="text-xs uppercase font-semibold tracking-wide text-amber-100">Tracked workload</p>
               <div class="mt-4 grid grid-cols-3 gap-3">
                 <div>
                   <p class="text-2xl font-black">{{ summary.orders }}</p>
@@ -196,7 +196,7 @@ function statusClasses(row) {
           <div class="rounded-[1.5rem] bg-gradient-to-br p-5 ring-1" :class="toneClasses(card.tone)">
             <div class="flex items-start justify-between gap-4">
               <div>
-                <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">{{ card.label }}</p>
+                <p class="text-xs uppercase font-semibold tracking-wide text-slate-500">{{ card.label }}</p>
                 <p class="mt-3 text-3xl font-black tracking-tight text-slate-950">{{ card.value }}</p>
                 <p class="mt-2 text-sm font-medium text-slate-600">{{ card.hint }}</p>
               </div>
@@ -267,7 +267,7 @@ function statusClasses(row) {
       <section class="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
         <div class="flex flex-col gap-3 border-b border-slate-100 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Staff performance table</p>
+            <p class="text-xs uppercase font-semibold tracking-wide text-slate-400">Staff performance table</p>
             <h2 class="mt-2 text-2xl font-black tracking-tight text-slate-900">Team activity breakdown</h2>
           </div>
           <p class="text-sm text-slate-500">Showing {{ rows.data.length }} staff records on this page.</p>

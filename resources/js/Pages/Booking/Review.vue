@@ -117,10 +117,10 @@ function removeDiscount() {
 
         <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
           <div class="lg:col-span-3 space-y-6">
-            <div class="bg-white rounded-[2.5rem] p-8 border border-slate-200 shadow-sm">
+            <div class="bg-white rounded-xl p-8 border border-slate-200 shadow-sm">
               <div class="flex items-start justify-between mb-8">
                 <div>
-                  <p class="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] mb-1">Accommodation</p>
+                  <p class="text-xs font-semibold text-indigo-600 uppercase tracking-wide mb-1">Accommodation</p>
                   <h2 class="text-2xl font-black text-slate-900">{{ room_type.title }}</h2>
                   <p class="mt-2 text-sm font-medium text-slate-500">
                     {{ selected_rooms.length }} selected room<span v-if="selected_rooms.length !== 1">s</span>
@@ -133,33 +133,33 @@ function removeDiscount() {
 
               <div class="grid grid-cols-2 gap-8 mb-8">
                 <div class="space-y-1">
-                  <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Check-in</p>
+                  <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Check-in</p>
                   <p class="font-bold text-slate-700 flex items-center gap-2">
                     <Calendar class="w-4 h-4 text-indigo-500" /> {{ formatDate(booking.check_in) }}
                   </p>
                 </div>
                 <div class="space-y-1">
-                  <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Check-out</p>
+                  <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Check-out</p>
                   <p class="font-bold text-slate-700 flex items-center gap-2">
                     <Calendar class="w-4 h-4 text-indigo-500" /> {{ formatDate(booking.check_out) }}
                   </p>
                 </div>
                 <div class="space-y-1">
-                  <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Guests</p>
+                  <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Guests</p>
                   <p class="font-bold text-slate-700 flex items-center gap-2">
                     <Users class="w-4 h-4 text-indigo-500" /> {{ booking.adults }} Adult<span v-if="booking.adults > 1">s</span>, {{ booking.children }} Child<span v-if="booking.children !== 1">ren</span>
                   </p>
                 </div>
                 <div class="space-y-1">
-                  <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Duration</p>
+                  <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Duration</p>
                   <p class="font-bold text-slate-700 flex items-center gap-2">
                     <Moon class="w-4 h-4 text-indigo-500" /> {{ nights }} Night<span v-if="nights > 1">s</span>
                   </p>
                 </div>
               </div>
 
-              <div class="mb-8 rounded-3xl bg-slate-50 p-5 border border-slate-100">
-                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Selected Rooms</p>
+              <div class="mb-8 rounded-2xl bg-slate-50 p-5 border border-slate-100">
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Selected Rooms</p>
                 <div class="space-y-3">
                   <div
                     v-for="room in selected_rooms"
@@ -187,7 +187,7 @@ function removeDiscount() {
               </div>
 
               <div class="pt-6 border-t border-slate-50">
-                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Guest Contact</p>
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Guest Contact</p>
                 <div class="flex items-center justify-between">
                   <p class="font-black text-slate-900 text-lg">{{ booking.guest_name }}</p>
                   <button
@@ -210,32 +210,32 @@ function removeDiscount() {
 
               <div
                 v-if="booking.emergency_contact_name || booking.emergency_contact_phone || booking.purpose_of_stay || booking.special_requests"
-                class="mt-6 grid gap-4 rounded-3xl border border-slate-200 bg-slate-50 p-5 md:grid-cols-2"
+                class="mt-6 grid gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-5 md:grid-cols-2"
               >
                 <div v-if="booking.emergency_contact_name || booking.emergency_contact_phone">
-                  <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Emergency Contact</p>
+                  <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Emergency Contact</p>
                   <p v-if="booking.emergency_contact_name" class="font-bold text-slate-800">{{ booking.emergency_contact_name }}</p>
                   <p v-if="booking.emergency_contact_phone" class="text-sm font-medium text-slate-500">{{ booking.emergency_contact_phone }}</p>
                 </div>
                 <div v-if="booking.purpose_of_stay">
-                  <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Purpose of Stay</p>
+                  <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Purpose of Stay</p>
                   <p class="text-sm font-medium text-slate-600">{{ booking.purpose_of_stay }}</p>
                 </div>
                 <div v-if="booking.special_requests" class="md:col-span-2">
-                  <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Special Requests</p>
+                  <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Special Requests</p>
                   <p class="text-sm font-medium text-slate-600">{{ booking.special_requests }}</p>
                 </div>
               </div>
 
-              <div class="mt-8 rounded-3xl border border-slate-200 bg-slate-50 p-5">
+              <div class="mt-8 rounded-2xl border border-slate-200 bg-slate-50 p-5">
                 <div class="flex items-center justify-between gap-3">
                   <div>
-                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Discount code</p>
+                    <p class="text-xs uppercase font-semibold tracking-wide text-slate-400">Discount code</p>
                     <p class="mt-2 text-sm font-medium text-slate-500">Guests can apply a room discount before payment.</p>
                   </div>
                   <span
                     v-if="discount_preview"
-                    class="rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-700"
+                    class="rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-emerald-700"
                   >
                     Applied
                   </span>
@@ -280,7 +280,7 @@ function removeDiscount() {
           </div>
 
           <div class="lg:col-span-2 space-y-6">
-            <div class="bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-xl shadow-slate-200 sticky top-24">
+            <div class="bg-slate-900 rounded-xl p-8 text-white shadow-xl shadow-slate-200 sticky top-24">
               <h3 class="text-sm font-black uppercase tracking-[0.2em] opacity-50 mb-6 flex items-center gap-2">
                 <Wallet class="w-4 h-4" /> Price Breakdown
               </h3>
@@ -308,14 +308,14 @@ function removeDiscount() {
               <button
                 @click="proceed"
                 :disabled="form.processing"
-                class="w-full group flex items-center justify-center gap-3 py-5 bg-indigo-600 text-white rounded-3xl font-black text-lg hover:bg-indigo-500 transition-all active:scale-[0.98] disabled:opacity-50"
+                class="w-full group flex items-center justify-center gap-3 py-5 bg-indigo-600 text-white rounded-2xl font-black text-lg hover:bg-indigo-500 transition-all active:scale-[0.98] disabled:opacity-50"
               >
                 <CreditCard v-if="!form.processing" class="w-5 h-5" />
                 <RefreshCw v-else class="w-5 h-5 animate-spin" />
                 {{ form.processing ? 'Processing...' : (isExistingPendingBooking() ? 'Return to Payment' : 'Complete Booking') }}
               </button>
 
-              <div class="mt-6 flex items-center gap-2 justify-center text-[10px] font-black uppercase tracking-widest opacity-40">
+              <div class="mt-6 flex items-center gap-2 justify-center text-xs uppercase font-semibold tracking-wide opacity-40">
                 <ShieldCheck class="w-4 h-4" />
                 Secure Checkout
               </div>

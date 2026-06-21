@@ -92,7 +92,7 @@ onBeforeUnmount(() => {
         <div class="flex items-center gap-6">
           <Link 
             href="/booking" 
-            class="hidden sm:block px-8 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all"
+            class="hidden sm:block px-8 py-3 rounded-full text-xs uppercase font-semibold tracking-wide transition-all"
             :class="isScrolled 
               ? 'bg-slate-950 text-white hover:bg-indigo-600 shadow-lg' 
               : 'bg-white text-slate-950 hover:bg-indigo-50'
@@ -189,7 +189,7 @@ onBeforeUnmount(() => {
       target="_blank"
       class="fixed bottom-8 right-8 z-[100] group flex items-center"
     >
-      <span class="mr-4 px-4 py-2 rounded-xl bg-slate-900/80 backdrop-blur-md text-white text-[10px] font-black uppercase tracking-[0.2em] opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-4 group-hover:translate-x-0 pointer-events-none border border-white/10">
+      <span class="mr-4 px-4 py-2 rounded-xl bg-slate-900/80 backdrop-blur-md text-white text-xs uppercase font-semibold tracking-wide opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-4 group-hover:translate-x-0 pointer-events-none border border-white/10">
         Chat with Concierge
       </span>
 
@@ -207,7 +207,7 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .nav-link {
-  @apply relative text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300;
+  @apply relative text-xs uppercase font-semibold tracking-wide transition-all duration-300;
 }
 
 .nav-link::after {

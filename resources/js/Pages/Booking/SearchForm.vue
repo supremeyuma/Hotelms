@@ -51,7 +51,7 @@ function submit() {
           <p class="text-slate-500 font-medium">Experience luxury tailored to your schedule</p>
         </div>
 
-        <div class="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/60 border border-slate-100 overflow-hidden">
+        <div class="bg-white rounded-xl shadow-xl shadow-slate-200/60 border border-slate-100 overflow-hidden">
           <form @submit.prevent="submit" class="p-8 md:p-10 space-y-8">
             
             <transition enter-active-class="animate-in fade-in slide-in-from-top-4">

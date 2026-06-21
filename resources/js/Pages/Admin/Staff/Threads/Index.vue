@@ -61,7 +61,7 @@ function reinstateStaff(id) {
       >
         <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div class="max-w-3xl">
-            <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-300">Staff Communications</p>
+            <p class="text-xs uppercase font-semibold tracking-wide text-slate-300">Staff Communications</p>
             <h1 class="mt-3 text-3xl font-black tracking-tight">{{ staff.name }}</h1>
             <p class="mt-3 text-sm text-slate-300">
               Review queries and commendations for this staff member, reply in context, or start a new conversation.

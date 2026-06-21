@@ -42,7 +42,7 @@ function capitalize(v) {
 <template>
     <div class="flex flex-wrap items-center gap-4 w-full">
         <div class="flex-grow min-w-[280px]">
-            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1 flex items-center gap-1.5">
+            <label class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2 ml-1 flex items-center gap-1.5">
                 <Search class="w-3 h-3" />
                 Find Reservation
             </label>
@@ -61,7 +61,7 @@ function capitalize(v) {
         </div>
 
         <div class="w-48">
-            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1 flex items-center gap-1.5">
+            <label class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2 ml-1 flex items-center gap-1.5">
                 <Filter class="w-3 h-3" />
                 Status
             </label>
@@ -83,7 +83,7 @@ function capitalize(v) {
         </div>
 
         <div class="w-48">
-            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1 flex items-center gap-1.5">
+            <label class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2 ml-1 flex items-center gap-1.5">
                 <Calendar class="w-3 h-3" />
                 Select Date
             </label>
@@ -101,7 +101,7 @@ function capitalize(v) {
             <button
                 @click="clear"
                 type="button"
-                class="flex items-center gap-2 px-4 py-2.5 text-rose-500 hover:text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-xl transition-all font-black text-[10px] uppercase tracking-widest"
+                class="flex items-center gap-2 px-4 py-2.5 text-rose-500 hover:text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-xl transition-all font-semibold text-xs uppercase tracking-wide"
             >
                 <RotateCcw class="w-3.5 h-3.5" />
                 Reset

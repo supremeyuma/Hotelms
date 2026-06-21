@@ -94,7 +94,7 @@ function cardToneClasses(tone) {
       <section class="overflow-hidden rounded-[2rem] bg-slate-900 text-white shadow-2xl shadow-slate-200">
         <div class="grid gap-8 px-6 py-8 sm:px-8 xl:grid-cols-[1.4fr_0.8fr]">
           <div class="space-y-5">
-            <div class="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-[11px] font-black uppercase tracking-[0.22em] text-slate-200">
+            <div class="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-xs uppercase font-semibold tracking-wide text-slate-200">
               <Sparkles class="h-3.5 w-3.5" />
               Manager Operations Console
             </div>
@@ -132,7 +132,7 @@ function cardToneClasses(tone) {
 
           <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
             <div class="rounded-[1.75rem] border border-white/10 bg-white/10 p-5 backdrop-blur">
-              <div class="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.22em] text-slate-300">
+              <div class="flex items-center gap-2 text-xs uppercase font-semibold tracking-wide text-slate-300">
                 <CalendarDays class="h-3.5 w-3.5" />
                 Today
               </div>
@@ -140,7 +140,7 @@ function cardToneClasses(tone) {
             </div>
 
             <div class="rounded-[1.75rem] border border-white/10 bg-gradient-to-br from-amber-400/20 to-rose-400/10 p-5">
-              <div class="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.22em] text-amber-200">
+              <div class="flex items-center gap-2 text-xs uppercase font-semibold tracking-wide text-amber-200">
                 <BellRing class="h-3.5 w-3.5" />
                 Pressure points
               </div>
@@ -168,7 +168,7 @@ function cardToneClasses(tone) {
         >
           <div class="flex items-start justify-between gap-4">
             <div>
-              <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">
+              <p class="text-xs uppercase font-semibold tracking-wide text-slate-400">
                 {{ metric.label }}
               </p>
               <p class="mt-4 text-3xl font-black tracking-tight text-slate-900">
@@ -191,7 +191,7 @@ function cardToneClasses(tone) {
         <div class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
           <div class="flex items-center justify-between gap-4">
             <div>
-              <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Action board</p>
+              <p class="text-xs uppercase font-semibold tracking-wide text-slate-400">Action board</p>
               <h2 class="mt-2 text-2xl font-black tracking-tight text-slate-900">Operational watchlist</h2>
             </div>
             <Link
@@ -226,7 +226,7 @@ function cardToneClasses(tone) {
                 <ClipboardList class="h-5 w-5" />
               </div>
               <div>
-                <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Quick access</p>
+                <p class="text-xs uppercase font-semibold tracking-wide text-slate-400">Quick access</p>
                 <h2 class="text-xl font-black tracking-tight text-slate-900">Manager shortcuts</h2>
               </div>
             </div>
@@ -253,7 +253,7 @@ function cardToneClasses(tone) {
                 <Wrench class="h-5 w-5" />
               </div>
               <div>
-                <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Queue summary</p>
+                <p class="text-xs uppercase font-semibold tracking-wide text-slate-400">Queue summary</p>
                 <h2 class="text-xl font-black tracking-tight text-slate-900">Live workload</h2>
               </div>
             </div>
@@ -290,7 +290,7 @@ function cardToneClasses(tone) {
       >
         <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Executive overview</p>
+            <p class="text-xs uppercase font-semibold tracking-wide text-slate-400">Executive overview</p>
             <h2 class="mt-2 text-2xl font-black tracking-tight text-slate-900">Department snapshot</h2>
           </div>
 
@@ -323,7 +323,7 @@ function cardToneClasses(tone) {
       <section class="rounded-[2rem] border border-slate-200 bg-white shadow-sm">
         <div class="flex flex-col gap-3 border-b border-slate-100 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Booking activity</p>
+            <p class="text-xs uppercase font-semibold tracking-wide text-slate-400">Booking activity</p>
             <h2 class="mt-2 text-2xl font-black tracking-tight text-slate-900">Recent bookings</h2>
           </div>
           <Link

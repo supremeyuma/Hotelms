@@ -108,7 +108,7 @@ const updateRoomStatus = (roomId, newStatus) => {
             <div class="p-1.5 bg-slate-100 text-slate-500 rounded-lg">
               <DoorOpen class="w-4 h-4" />
             </div>
-            <span class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Front Desk Inventory</span>
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Front Desk Inventory</span>
           </div>
           <h1 class="text-4xl font-black text-slate-900 tracking-tight capitalize">
             {{ currentView }} Rooms
@@ -147,12 +147,12 @@ const updateRoomStatus = (roomId, newStatus) => {
 
       <div v-if="rooms.length > 0" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         <div v-for="room in rooms" :key="room.id" 
-             class="group bg-white rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden">
+             class="group bg-white rounded-xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden">
           
           <div class="p-8">
             <div class="flex justify-between items-start mb-6">
               <div>
-                <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wide block mb-1">
                   {{ room.room_type?.title || 'Standard Unit' }}
                 </span>
                 <h2 class="text-3xl font-black text-slate-900 tracking-tight">
@@ -205,7 +205,7 @@ const updateRoomStatus = (roomId, newStatus) => {
 
             <div v-else class="space-y-4">
               <div v-if="nextBooking(room)" class="p-4 bg-indigo-50/50 border border-indigo-100 rounded-2xl">
-                <p class="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+                <p class="text-xs font-semibold text-indigo-400 uppercase tracking-wide mb-2 flex items-center gap-2">
                     <Calendar class="w-3 h-3" /> Booking Reference
                 </p>
                 <div class="flex justify-between items-center">
@@ -223,7 +223,7 @@ const updateRoomStatus = (roomId, newStatus) => {
           </div>
 
           <div class="px-8 py-4 bg-slate-50/50 border-t border-slate-50 flex justify-between items-center group-hover:bg-slate-50 transition-colors">
-            <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Floor: {{ room.floor || 'G' }}</span>
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Floor: {{ room.floor || 'G' }}</span>
             <Link v-if="room.bookings && room.bookings[0]" 
                   :href="route('frontdesk.bookings.show', room.bookings[0].id)" 
                   class="p-2 bg-white rounded-xl border border-slate-200 text-slate-400 hover:text-indigo-600 transition-all shadow-sm">
@@ -233,7 +233,7 @@ const updateRoomStatus = (roomId, newStatus) => {
         </div>
       </div>
 
-      <div v-else class="py-20 text-center bg-white rounded-[3rem] border-2 border-dashed border-slate-100">
+      <div v-else class="py-20 text-center bg-white rounded-2xl border-2 border-dashed border-slate-100">
           <div class="inline-flex p-4 bg-slate-50 rounded-full mb-4">
             <DoorOpen class="w-8 h-8 text-slate-300" />
           </div>

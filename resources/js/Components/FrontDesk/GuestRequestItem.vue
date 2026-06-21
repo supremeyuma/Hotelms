@@ -89,7 +89,7 @@ function formatTime(date) {
 
         <div>
           <div class="flex flex-wrap items-center gap-2 mb-1">
-            <span class="text-[10px] font-black uppercase tracking-widest" :class="statusConfig.textColor">
+            <span class="text-xs uppercase font-semibold tracking-wide" :class="statusConfig.textColor">
               {{ label }}
             </span>
             <span class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-tighter" :class="statusConfig.badge">

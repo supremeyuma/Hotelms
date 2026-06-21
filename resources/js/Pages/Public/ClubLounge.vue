@@ -97,7 +97,7 @@ const formatTime = (date) =>
           <div class="relative">
             <img
               src="https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&q=80"
-              class="rounded-[3rem] w-full h-[600px] object-cover shadow-2xl"
+              class="rounded-2xl w-full h-[600px] object-cover shadow-2xl"
             />
             <div class="absolute bottom-10 left-10 p-8 bg-slate-950/80 backdrop-blur-xl rounded-3xl border border-white/10">
               <GlassWater class="w-8 h-8 text-indigo-400 mb-4" />
@@ -128,7 +128,7 @@ const formatTime = (date) =>
           <div
             v-for="(event, index) in events"
             :key="event.id"
-            class="p-10 rounded-[3rem] bg-white/5 border border-white/10 hover:bg-indigo-600/10 transition"
+            class="p-10 rounded-2xl bg-white/5 border border-white/10 hover:bg-indigo-600/10 transition"
             data-aos="fade-up"
             :data-aos-delay="index * 100"
           >
@@ -159,7 +159,7 @@ const formatTime = (date) =>
 
             <Link
               :href="`/events/${event.id}`"
-              class="inline-block px-8 py-3 rounded-full border border-white/20 text-[10px] text-white font-black uppercase tracking-widest hover:bg-white hover:text-slate-950 transition"
+              class="inline-block px-8 py-3 rounded-full border border-white/20 text-[10px] text-white font-black uppercase tracking-wide hover:bg-white hover:text-slate-950 transition"
             >
               Buy Your Ticket
             </Link>

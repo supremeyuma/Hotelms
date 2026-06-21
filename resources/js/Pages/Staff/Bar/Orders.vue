@@ -122,7 +122,7 @@ function canStartPreparing(order) {
         </div>
       </div>
 
-      <div v-if="!orders.length" class="flex flex-col items-center justify-center rounded-[2.5rem] border-2 border-dashed border-slate-200 bg-white py-24">
+      <div v-if="!orders.length" class="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-white py-24">
         <div class="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-slate-50">
           <Beer class="h-10 w-10 text-slate-300" />
         </div>

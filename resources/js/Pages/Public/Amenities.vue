@@ -57,7 +57,7 @@ onMounted(() => {
               <div 
                 v-for="item in featureAmenities" 
                 :key="item.title"
-                class="p-12 rounded-[3rem] bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-2xl hover:shadow-indigo-500/5 transition-all duration-500 group"
+                class="p-12 rounded-2xl bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-2xl hover:shadow-indigo-500/5 transition-all duration-500 group"
                 data-aos="fade-up"
                 :data-aos-delay="item.delay"
               >
@@ -82,11 +82,11 @@ onMounted(() => {
                 ></div>
               </div>
 
-              <div class="p-10 rounded-[2.5rem] bg-slate-950 text-white space-y-6">
+              <div class="p-10 rounded-xl bg-slate-950 text-white space-y-6">
                 <Coffee class="w-8 h-8 text-indigo-400" />
                 <h4 class="text-xl font-black">Need something specific?</h4>
                 <p class="text-slate-400 text-sm font-light">Our concierge is available 24/7 to arrange private excursions or specific requirements.</p>
-                <a href="tel:+234000000" class="block text-center py-4 bg-white text-slate-950 rounded-full font-black text-[10px] uppercase tracking-widest hover:bg-indigo-500 hover:text-white transition-all">
+                <a href="tel:+234000000" class="block text-center py-4 bg-white text-slate-950 rounded-full font-black text-[10px] uppercase tracking-wide hover:bg-indigo-500 hover:text-white transition-all">
                   Contact Concierge
                 </a>
               </div>

@@ -49,7 +49,7 @@ const submit = () => {
       @click="$emit('close')"
     ></div>
 
-    <div class="relative bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden transform transition-all animate-in fade-in slide-in-from-bottom-8 duration-300">
+    <div class="relative bg-white w-full max-w-md rounded-xl shadow-2xl overflow-hidden transform transition-all animate-in fade-in slide-in-from-bottom-8 duration-300">
       
       <div class="px-8 pt-8 pb-4 flex justify-between items-center">
         <div class="flex items-center gap-3">

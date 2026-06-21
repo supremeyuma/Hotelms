@@ -84,7 +84,7 @@ function statusClass(code) {
       <section class="overflow-hidden rounded-[2rem] bg-slate-900 text-white shadow-2xl shadow-slate-200">
         <div class="grid gap-6 px-6 py-8 sm:px-8 xl:grid-cols-[1.2fr_0.8fr]">
           <div class="space-y-4">
-            <div class="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-[11px] font-black uppercase tracking-[0.22em] text-slate-200">
+            <div class="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-xs uppercase font-semibold tracking-wide text-slate-200">
               <Tag class="h-3.5 w-3.5" />
               Commercial Controls
             </div>
@@ -98,11 +98,11 @@ function statusClass(code) {
 
           <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-1">
             <div class="rounded-[1.75rem] border border-white/10 bg-white/10 p-5">
-              <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-300">Total codes</p>
+              <p class="text-xs uppercase font-semibold tracking-wide text-slate-300">Total codes</p>
               <p class="mt-3 text-3xl font-black">{{ codes.length }}</p>
             </div>
             <div class="rounded-[1.75rem] border border-white/10 bg-white/10 p-5">
-              <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-300">Room-booking ready</p>
+              <p class="text-xs uppercase font-semibold tracking-wide text-slate-300">Room-booking ready</p>
               <p class="mt-3 text-3xl font-black">{{ codes.filter(code => code.applies_to === 'room_rate').length }}</p>
             </div>
           </div>
@@ -116,7 +116,7 @@ function statusClass(code) {
               <Plus class="h-5 w-5" />
             </div>
             <div>
-              <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">New code</p>
+              <p class="text-xs uppercase font-semibold tracking-wide text-slate-400">New code</p>
               <h2 class="mt-1 text-2xl font-black tracking-tight text-slate-900">Create discount code</h2>
             </div>
           </div>

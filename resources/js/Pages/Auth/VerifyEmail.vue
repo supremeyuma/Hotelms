@@ -38,7 +38,7 @@ const verificationLinkSent = computed(
                     </p>
                 </div>
 
-                <div class="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/60 border border-slate-100 overflow-hidden">
+                <div class="bg-white rounded-xl shadow-xl shadow-slate-200/60 border border-slate-100 overflow-hidden">
                     
                     <Transition
                         enter-active-class="transform transition duration-500 ease-out"
@@ -87,7 +87,7 @@ const verificationLinkSent = computed(
                     </div>
                 </div>
 
-                <p class="text-center mt-8 text-slate-400 text-[10px] font-bold uppercase tracking-widest leading-relaxed px-10">
+                <p class="text-center mt-8 text-slate-400 text-xs font-semibold uppercase tracking-wide leading-relaxed px-10">
                     Can't find the email? Check your <span class="text-slate-600">spam</span> or <span class="text-slate-600">promotions</span> folder.
                 </p>
             </div>

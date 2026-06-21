@@ -15,12 +15,12 @@
           <p class="mt-3 text-slate-500 font-medium">Your spot at the event is secured. We've sent a confirmation to your email.</p>
         </div>
 
-        <div v-if="reservation" class="bg-white rounded-[2.5rem] shadow-2xl shadow-slate-200/60 border border-slate-100 overflow-hidden mb-10 text-left">
+        <div v-if="reservation" class="bg-white rounded-xl shadow-2xl shadow-slate-200/60 overflow-hidden mb-10 text-left">
           
           <div class="bg-indigo-950 p-6 md:p-8 relative overflow-hidden">
             <div class="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
             <div class="relative z-10">
-              <p class="text-indigo-400 text-[10px] font-black uppercase tracking-[0.2em] mb-1">Event Reference: #{{ reservation.id }}</p>
+              <p class="text-indigo-400 text-xs uppercase font-semibold tracking-wide mb-1">Event Reference: #{{ reservation.id }}</p>
               <h2 class="text-2xl font-black text-white tracking-tight">{{ reservation.event.title }}</h2>
               <p class="text-indigo-100/60 text-xs font-bold mt-1">Confirmed for {{ reservation.guest_name }}</p>
             </div>
@@ -29,12 +29,12 @@
           <div class="p-8 md:p-10">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-12 mb-10">
               <div v-for="(val, label) in summaryDetails" :key="label">
-                <p class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">{{ label }}</p>
+                <p class="text-xs font-semibold uppercase text-slate-400 tracking-wide mb-1">{{ label }}</p>
                 <p class="text-sm font-bold text-slate-900">{{ val }}</p>
               </div>
               
               <div>
-                <p class="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Payment Status</p>
+                <p class="text-xs font-semibold uppercase text-slate-400 tracking-wide mb-1">Payment Status</p>
                 <span :class="[
                   'inline-flex items-center px-2.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wider',
                   reservation.payment_status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
@@ -45,13 +45,13 @@
             </div>
 
             <div v-if="reservation.qr_code" class="bg-slate-50 rounded-[2rem] p-8 border border-slate-100 text-center relative">
-              <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-white px-4 py-1 rounded-full border border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-widest shadow-sm">
+              <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-white px-4 py-1 rounded-full border border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-wide shadow-sm">
                 Entry Pass
               </div>
               
-              <div class="inline-block p-4 bg-white rounded-3xl shadow-xl border border-slate-200 mb-4">
+              <div class="inline-block p-4 bg-white rounded-3xl shadow-xl mb-4">
                 <div class="w-40 h-40 bg-slate-900 rounded-xl flex flex-col items-center justify-center text-white p-4">
-                   <p class="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 mb-2">QR SCAN</p>
+                   <p class="text-xs uppercase font-semibold tracking-wide opacity-40 mb-2">QR SCAN</p>
                    <p class="text-xl font-black tracking-widest">{{ reservation.qr_code }}</p>
                 </div>
               </div>

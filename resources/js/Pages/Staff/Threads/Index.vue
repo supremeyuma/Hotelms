@@ -42,7 +42,7 @@ function preview(thread) {
       <section class="rounded-[2rem] bg-slate-900 px-6 py-7 text-white shadow-xl shadow-slate-200">
         <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div class="max-w-3xl">
-            <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-300">Communication Desk</p>
+            <p class="text-xs uppercase font-semibold tracking-wide text-slate-300">Communication Desk</p>
             <h1 class="mt-3 text-3xl font-black tracking-tight">Queries and commendations in one place.</h1>
             <p class="mt-3 text-sm text-slate-300">
               Start a conversation with leadership, follow replies, and keep your work communication in one visible thread.

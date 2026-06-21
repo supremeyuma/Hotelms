@@ -182,7 +182,7 @@ function statusClasses(status) {
       <section class="overflow-hidden rounded-[2rem] bg-slate-900 text-white shadow-2xl shadow-slate-200">
         <div class="grid gap-8 px-6 py-8 sm:px-8 xl:grid-cols-[1.25fr_0.75fr]">
           <div class="space-y-5">
-            <div class="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-[11px] font-black uppercase tracking-[0.22em] text-slate-200">
+            <div class="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-xs uppercase font-semibold tracking-wide text-slate-200">
               <CalendarRange class="h-3.5 w-3.5" />
               Unified reporting
             </div>
@@ -214,7 +214,7 @@ function statusClasses(status) {
 
           <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
             <div class="rounded-[1.75rem] border border-white/10 bg-white/10 p-5 backdrop-blur">
-              <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-300">Reporting window</p>
+              <p class="text-xs uppercase font-semibold tracking-wide text-slate-300">Reporting window</p>
               <p class="mt-3 text-2xl font-black">{{ period.label }}</p>
               <p class="mt-2 text-sm text-slate-300">
                 {{ period.mode === 'range' ? 'Date range report' : 'Single-day report' }}
@@ -222,7 +222,7 @@ function statusClasses(status) {
             </div>
 
             <div class="rounded-[1.75rem] border border-cyan-300/20 bg-gradient-to-br from-cyan-400/15 to-slate-900 p-5">
-              <p class="text-[11px] font-black uppercase tracking-[0.22em] text-cyan-100">Room focus</p>
+              <p class="text-xs uppercase font-semibold tracking-wide text-cyan-100">Room focus</p>
               <p class="mt-3 text-2xl font-black">{{ selectedRoomLabel }}</p>
               <p class="mt-2 text-sm text-slate-200">
                 {{ period.selected_room ? 'Room-specific operational report' : 'Hotel-wide report across all rooms' }}
@@ -238,7 +238,7 @@ function statusClasses(status) {
       >
         <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Filter report</p>
+            <p class="text-xs uppercase font-semibold tracking-wide text-slate-400">Filter report</p>
             <h2 class="mt-2 text-2xl font-black tracking-tight text-slate-900">Choose period and room</h2>
           </div>
           <p class="text-sm text-slate-500">
@@ -334,7 +334,7 @@ function statusClasses(status) {
           <div class="rounded-[1.5rem] bg-gradient-to-br p-5 ring-1" :class="toneClasses(card.tone)">
             <div class="flex items-start justify-between gap-4">
               <div>
-                <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">{{ card.label }}</p>
+                <p class="text-xs uppercase font-semibold tracking-wide text-slate-500">{{ card.label }}</p>
                 <p class="mt-3 text-3xl font-black tracking-tight text-slate-950">{{ card.value }}</p>
                 <p class="mt-2 text-sm font-medium text-slate-600">{{ card.note }}</p>
               </div>
@@ -353,7 +353,7 @@ function statusClasses(status) {
       >
         <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Room report</p>
+            <p class="text-xs uppercase font-semibold tracking-wide text-slate-400">Room report</p>
             <h2 class="mt-2 text-2xl font-black tracking-tight text-slate-900">{{ roomReport.label }}</h2>
           </div>
           <Link
@@ -395,7 +395,7 @@ function statusClasses(status) {
       >
         <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Department overview</p>
+            <p class="text-xs uppercase font-semibold tracking-wide text-slate-400">Department overview</p>
             <h2 class="mt-2 text-2xl font-black tracking-tight text-slate-900">Department-wide report signals</h2>
           </div>
           <p class="text-sm text-slate-500">
@@ -448,7 +448,7 @@ function statusClasses(status) {
       >
         <div class="flex flex-col gap-3 border-b border-slate-100 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Booking detail</p>
+            <p class="text-xs uppercase font-semibold tracking-wide text-slate-400">Booking detail</p>
             <h2 class="mt-2 text-2xl font-black tracking-tight text-slate-900">Stay and guest report detail</h2>
           </div>
           <Link
@@ -532,7 +532,7 @@ function statusClasses(status) {
         >
           <div class="flex items-center justify-between gap-4 border-b border-slate-100 px-6 py-5">
             <div>
-              <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Payments</p>
+              <p class="text-xs uppercase font-semibold tracking-wide text-slate-400">Payments</p>
               <h2 class="mt-2 text-2xl font-black tracking-tight text-slate-900">Collected payments</h2>
             </div>
           </div>
@@ -585,7 +585,7 @@ function statusClasses(status) {
         >
           <div class="flex items-center justify-between gap-4 border-b border-slate-100 px-6 py-5">
             <div>
-              <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Charges</p>
+              <p class="text-xs uppercase font-semibold tracking-wide text-slate-400">Charges</p>
               <h2 class="mt-2 text-2xl font-black tracking-tight text-slate-900">Posted charges</h2>
             </div>
           </div>
@@ -638,7 +638,7 @@ function statusClasses(status) {
       <section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
         <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Related reports</p>
+            <p class="text-xs uppercase font-semibold tracking-wide text-slate-400">Related reports</p>
             <h2 class="mt-2 text-2xl font-black tracking-tight text-slate-900">Open a specialist report when needed</h2>
           </div>
           <p class="text-sm text-slate-500">

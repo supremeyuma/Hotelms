@@ -138,7 +138,7 @@ function canStartPreparing(order) {
         >
           <div class="flex items-start justify-between gap-4 border-b border-slate-100 bg-slate-50/60 p-5">
             <div>
-              <div class="mb-1 flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-slate-400">
+              <div class="mb-1 flex items-center gap-1 text-xs uppercase font-semibold tracking-wide text-slate-400">
                 <Hash class="h-3 w-3" /> Order
               </div>
               <div class="text-xl font-black text-slate-900">#{{ order.id }}</div>

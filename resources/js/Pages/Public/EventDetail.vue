@@ -15,7 +15,7 @@
             <div class="flex flex-col md:flex-row md:items-end justify-between gap-8">
               <div class="max-w-3xl">
                 <div class="flex items-center space-x-3 mb-4">
-                  <span class="bg-indigo-600 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">
+                  <span class="bg-indigo-600 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wide">
                     {{ event.is_active ? 'Booking Open' : 'Private Event' }}
                   </span>
                   <div class="h-px w-8 bg-indigo-400"></div>
@@ -43,8 +43,8 @@
                 </div>
               </div>
 
-              <div class="bg-white p-6 rounded-3xl shadow-2xl border border-slate-100 hidden md:block">
-                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Event Commences In</p>
+              <div class="bg-white p-6 rounded-2xl shadow-2xl hidden md:block">
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">Event Commences In</p>
                 <EventCountdown :targetDate="event.start_datetime" class="text-slate-900" />
               </div>
             </div>
@@ -56,7 +56,7 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
           <div class="lg:col-span-2 space-y-8">
-            <div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-8 md:p-12">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 md:p-12">
               <h2 class="text-2xl font-black text-slate-900 mb-6 uppercase tracking-tight flex items-center">
                 <span class="w-8 h-8 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center mr-3 text-sm">01</span>
                 Experience Overview
@@ -67,15 +67,15 @@
               
               <div class="grid grid-cols-2 md:grid-cols-3 gap-8 mt-12 pt-12 border-t border-slate-100">
                 <div v-if="event.venue">
-                  <p class="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-1">Location</p>
+                  <p class="text-xs font-semibold text-indigo-500 uppercase tracking-wide mb-1">Location</p>
                   <p class="font-bold text-slate-900">{{ event.venue }}</p>
                 </div>
                 <div v-if="event.capacity">
-                  <p class="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-1">Availability</p>
+                  <p class="text-xs font-semibold text-indigo-500 uppercase tracking-wide mb-1">Availability</p>
                   <p class="font-bold text-slate-900">{{ event.capacity }} Capacity</p>
                 </div>
                 <div>
-                  <p class="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-1">Status</p>
+                  <p class="text-xs font-semibold text-indigo-500 uppercase tracking-wide mb-1">Status</p>
                   <p class="font-bold text-slate-900 flex items-center">
                     <span class="w-2 h-2 rounded-full mr-2" :class="event.is_active ? 'bg-green-500' : 'bg-red-500'"></span>
                     {{ event.is_active ? 'Booking Live' : 'Sold Out' }}
@@ -84,7 +84,7 @@
               </div>
             </div>
 
-            <div v-if="event.promotional_media?.length" class="bg-white rounded-3xl shadow-sm border border-slate-200 p-8 md:p-12">
+            <div v-if="event.promotional_media?.length" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 md:p-12">
               <h2 class="text-2xl font-black text-slate-900 mb-8 uppercase tracking-tight flex items-center">
                 <span class="w-8 h-8 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center mr-3 text-sm">02</span>
                 Visual Gallery
@@ -108,7 +108,7 @@
           </div>
 
           <div class="space-y-6">
-            <div class="bg-white rounded-3xl shadow-xl shadow-indigo-100/50 border border-indigo-50 p-8 sticky top-8">
+            <div class="bg-white rounded-2xl shadow-xl shadow-indigo-100/50 border border-indigo-50 p-8 sticky top-8">
               
               <div v-if="qr_code" class="flex flex-col items-center mb-8 pb-8 border-b border-slate-100">
                 <div class="relative group">
@@ -117,7 +117,7 @@
                     <img :src="qr_code" alt="QR" class="w-28 h-28">
                   </div>
                 </div>
-                <p class="text-[10px] font-bold text-slate-400 uppercase mt-4 tracking-widest">Share this experience</p>
+                <p class="text-xs font-semibold text-slate-400 uppercase mt-4 tracking-wide">Share this experience</p>
               </div>
 
               <div class="space-y-4">
@@ -137,7 +137,7 @@
               </div>
 
               <div class="md:hidden mt-8 pt-8 border-t border-slate-100">
-                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 text-center">Starts In</p>
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3 text-center">Starts In</p>
                 <EventCountdown :targetDate="event.start_datetime" class="justify-center" />
               </div>
 

@@ -82,7 +82,7 @@ function submit() {
           <p class="text-slate-500 font-medium">Please provide your contact details for the reservation.</p>
         </div>
 
-        <div class="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/50 overflow-hidden">
+        <div class="bg-white rounded-xl border border-slate-200 shadow-xl shadow-slate-200/50 overflow-hidden">
           <form @submit.prevent="submit" class="p-8 md:p-12 space-y-8">
             
             <div class="space-y-6">
@@ -214,11 +214,11 @@ function submit() {
               </button>
               
               <div class="flex items-center justify-center gap-4 mt-6 text-slate-400">
-                <div class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest">
+                <div class="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide">
                   <ShieldCheck class="w-4 h-4 text-emerald-500" /> Secure Encryption
                 </div>
                 <div class="w-1.5 h-1.5 rounded-full bg-slate-200"></div>
-                <div class="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest">
+                <div class="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide">
                   <ClipboardList class="w-4 h-4 text-indigo-400" /> Instant Confirmation
                 </div>
               </div>

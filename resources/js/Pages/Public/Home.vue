@@ -189,7 +189,7 @@ onMounted(() => {
           <div class="grid lg:grid-cols-12 gap-24 items-center">
             <div class="lg:col-span-6">
               <div 
-                class="parallax-image-wrap rounded-[3rem] overflow-hidden"
+                class="parallax-image-wrap rounded-2xl overflow-hidden"
                 @mouseenter="isHoveringImage = true"
                 @mouseleave="isHoveringImage = false"
                 data-aos="reveal-right"
@@ -214,7 +214,7 @@ onMounted(() => {
               <div class="flex gap-16 pt-10">
                 <div v-for="stat in [{v:'24/7', t:'Concierge'}, {v:'100%', t:'Private'}]" :key="stat.t">
                   <span class="block text-4xl font-black text-slate-900">{{ stat.v }}</span>
-                  <span class="text-[10px] font-black text-slate-300 uppercase tracking-widest">{{ stat.t }}</span>
+                  <span class="text-xs font-semibold text-slate-300 uppercase tracking-wide">{{ stat.t }}</span>
                 </div>
               </div>
             </div>

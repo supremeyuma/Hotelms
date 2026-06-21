@@ -7,11 +7,11 @@
         </span>
       </div>
       
-      <div v-if="outstanding === 0" class="flex items-center gap-1.5 mt-1 text-emerald-600 font-black text-[10px] uppercase tracking-widest">
+      <div v-if="outstanding === 0" class="flex items-center gap-1.5 mt-1 text-emerald-600 font-semibold text-xs uppercase tracking-wide">
         <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
         Account Settled
       </div>
-      <div v-else class="flex items-center gap-1.5 mt-1 text-rose-500 font-black text-[10px] uppercase tracking-widest">
+      <div v-else class="flex items-center gap-1.5 mt-1 text-rose-500 font-semibold text-xs uppercase tracking-wide">
         <div class="w-1.5 h-1.5 rounded-full bg-rose-500"></div>
         Balance Due
       </div>

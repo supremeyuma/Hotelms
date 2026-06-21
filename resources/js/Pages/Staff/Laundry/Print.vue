@@ -31,7 +31,7 @@ const printOrder = () => {
         </button>
       </div>
 
-      <div class="bg-white border border-slate-200 rounded-[2.5rem] shadow-sm overflow-hidden print:border-none print:shadow-none print:rounded-none">
+      <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden print:border-none print:shadow-none print:rounded-none">
         <div class="bg-slate-50/50 p-8 border-b border-slate-100 text-center relative overflow-hidden">
           <div class="relative z-10 flex flex-col items-center">
             <div class="w-16 h-16 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center mb-4">
@@ -49,7 +49,7 @@ const printOrder = () => {
         <div class="p-8">
           <table class="w-full text-left">
             <thead>
-              <tr class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-100">
+              <tr class="text-xs font-semibold text-slate-400 uppercase tracking-wide border-b border-slate-100">
                 <th class="pb-4">Item Description</th>
                 <th class="pb-4 text-center">Qty</th>
                 <th class="pb-4 text-right">Subtotal</th>

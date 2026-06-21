@@ -80,7 +80,7 @@ function resolveRequestLink(request) {
                         <div class="p-1.5 bg-indigo-100 text-indigo-600 rounded-lg">
                             <LayoutDashboard class="w-4 h-4" />
                         </div>
-                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Management Console</span>
+                        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Management Console</span>
                     </div>
                     <h1 class="text-4xl font-black text-slate-900 tracking-tight">Front Desk Dashboard</h1>
                 </div>
@@ -149,7 +149,7 @@ function resolveRequestLink(request) {
                         />
                     </div>
                     
-                    <div v-else class="bg-white rounded-[2.5rem] border-2 border-dashed border-slate-100 py-20 text-center">
+                    <div v-else class="bg-white rounded-xl border-2 border-dashed border-slate-100 py-20 text-center">
                         <div class="inline-flex p-5 bg-slate-50 text-slate-300 rounded-full mb-4">
                             <Bell class="w-8 h-8" />
                         </div>
@@ -165,9 +165,9 @@ function resolveRequestLink(request) {
                         </div>
                     </div>
 
-                    <div class="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
+                    <div class="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
                         <div class="p-6 border-b border-slate-50 bg-slate-50/50">
-                            <div class="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                            <div class="flex items-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wide">
                                 <Wallet class="w-3 h-3" /> Outstanding Balances
                             </div>
                         </div>

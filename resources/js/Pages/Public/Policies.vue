@@ -19,7 +19,7 @@ onMounted(() => {
         <div class="max-w-4xl" data-aos="fade-up">
           <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 mb-6">
             <FileText class="w-3.5 h-3.5 text-indigo-600" />
-            <span class="text-[10px] font-black uppercase tracking-widest text-indigo-600">Terms & Conditions</span>
+            <span class="text-xs uppercase font-semibold tracking-wide text-indigo-600">Terms & Conditions</span>
           </div>
           <h1 class="text-5xl md:text-7xl font-black text-slate-950 tracking-tighter mb-6">
             Our Policies.
@@ -49,7 +49,7 @@ onMounted(() => {
           <div class="lg:col-span-4" data-aos="fade-left">
             <div class="sticky top-32 space-y-8">
               
-              <div class="p-10 rounded-[2.5rem] bg-slate-50 border border-slate-100 space-y-6">
+              <div class="p-10 rounded-xl bg-slate-50 border border-slate-100 space-y-6">
                 <HelpCircle class="w-8 h-8 text-indigo-600" />
                 <h4 class="text-xl font-black text-slate-950">Questions?</h4>
                 <p class="text-slate-500 text-sm font-light leading-relaxed">
@@ -63,7 +63,7 @@ onMounted(() => {
                 </div>
               </div>
 
-              <div class="p-10 rounded-[2.5rem] bg-indigo-600 text-white space-y-4">
+              <div class="p-10 rounded-xl bg-indigo-600 text-white space-y-4">
                 <ShieldAlert class="w-8 h-8 text-indigo-300" />
                 <h4 class="text-lg font-black">Right of Admission</h4>
                 <p class="text-indigo-100 text-sm font-light leading-relaxed opacity-80">

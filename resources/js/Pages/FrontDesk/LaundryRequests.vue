@@ -105,7 +105,7 @@ const submitStatusUpdate = () => {
           </h1>
           <p class="text-slate-500 font-medium mt-1">Manage guest garment care and delivery status.</p>
         </div>
-        <div class="p-4 bg-white rounded-3xl shadow-sm border border-slate-100 flex items-center gap-3">
+        <div class="p-4 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3">
             <WashingMachine class="w-6 h-6 text-indigo-600 animate-spin-slow" />
             <span class="text-sm font-black text-slate-700 uppercase tracking-tight">System Live</span>
         </div>
@@ -113,7 +113,7 @@ const submitStatusUpdate = () => {
 
       <div class="grid grid-cols-1 gap-6">
         <div v-for="req in requests" :key="req.id" 
-             class="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden transition-all hover:shadow-md">
+             class="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden transition-all hover:shadow-md">
           
           <div class="p-8">
             <div class="flex flex-col lg:flex-row justify-between gap-8">
@@ -142,8 +142,8 @@ const submitStatusUpdate = () => {
                 </div>
               </div>
 
-              <div class="lg:w-80 bg-slate-50 rounded-3xl p-6">
-                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+              <div class="lg:w-80 bg-slate-50 rounded-2xl p-6">
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-4 flex items-center gap-2">
                   <PackageCheck class="w-3 h-3" /> Inventory List
                 </p>
                 <ul class="space-y-3">
@@ -158,7 +158,7 @@ const submitStatusUpdate = () => {
             </div>
 
             <div v-if="req.requestable.images?.length" class="mt-8 pt-8 border-t border-slate-50">
-                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-4 flex items-center gap-2">
                   <Camera class="w-3 h-3" /> Condition Verification
                 </p>
                 <div class="flex flex-wrap gap-3">
@@ -170,7 +170,7 @@ const submitStatusUpdate = () => {
             </div>
 
             <div class="mt-8 pt-4">
-                <button @click="toggleHistory(req.id)" class="flex items-center gap-2 text-slate-400 font-black text-[10px] uppercase tracking-widest hover:text-indigo-600 transition-colors">
+                <button @click="toggleHistory(req.id)" class="flex items-center gap-2 text-slate-400 font-semibold text-xs uppercase tracking-wide hover:text-indigo-600 transition-colors">
                     <History class="w-3.5 h-3.5" />
                     {{ expandedHistory[req.id] ? 'Hide' : 'View' }} Audit Trail
                     <ChevronDown class="w-3 h-3 transition-transform" :class="{'rotate-180': expandedHistory[req.id]}" />
@@ -212,7 +212,7 @@ const submitStatusUpdate = () => {
 
       <!-- Status Update Modal -->
       <div v-if="showStatusModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full">
           <div class="p-8">
             <h2 class="text-2xl font-black text-slate-900 mb-2">Update Status</h2>
             <p class="text-slate-500 font-medium mb-6">Order {{ selectedOrder?.order_code }} - Room {{ selectedOrder?.room?.name }}</p>

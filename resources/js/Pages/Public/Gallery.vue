@@ -111,7 +111,7 @@ onMounted(() => {
               :data-aos-delay="index * 100"
               @click="openLightbox(images, index)"
             >
-              <div class="overflow-hidden rounded-[2.5rem] bg-slate-100 aspect-[4/5] shadow-2xl transition-all duration-700 group-hover:shadow-indigo-500/10">
+              <div class="overflow-hidden rounded-xl bg-slate-100 aspect-[4/5] shadow-2xl transition-all duration-700 group-hover:shadow-indigo-500/10">
                 <img
                   :src="getImagePath(img.image_path)"
                   class="w-full h-full object-cover transition-transform duration-[2s] ease-out group-hover:scale-110"
@@ -124,7 +124,7 @@ onMounted(() => {
               </div>
               
               <div class="mt-6 flex justify-between items-center px-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">MooreLife Digital Archive</span>
+                <span class="text-xs uppercase font-semibold tracking-wide text-slate-400">MooreLife Digital Archive</span>
                 <span class="text-[10px] font-mono text-slate-300">#0{{ img.id }}</span>
               </div>
             </div>

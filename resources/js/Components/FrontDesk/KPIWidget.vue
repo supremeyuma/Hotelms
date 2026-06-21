@@ -65,7 +65,7 @@ const theme = computed(() => {
   >
     <div class="flex items-start justify-between relative z-10">
       <div class="space-y-1">
-        <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">
+        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide">
           {{ title }}
         </p>
         

@@ -51,7 +51,7 @@ const currentStatus = computed(() => {
             <component :is="currentStatus.icon" class="w-6 h-6" />
           </div>
           <div>
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Request #{{ order.id }}</p>
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Request #{{ order.id }}</p>
             <h3 class="text-lg font-black text-slate-900 tracking-tight capitalize">
               {{ order.service_area }} Service
             </h3>

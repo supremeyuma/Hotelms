@@ -108,7 +108,7 @@ const getStatusConfig = (status) => {
               getStatusConfig(room.latest_cleaning?.status).bg,
               getStatusConfig(room.latest_cleaning?.status).text,
               getStatusConfig(room.latest_cleaning?.status).border,
-              'mt-auto flex items-center justify-center gap-2 py-2 px-3 rounded-2xl border text-[10px] font-black uppercase tracking-widest'
+              'mt-auto flex items-center justify-center gap-2 py-2 px-3 rounded-2xl border text-xs uppercase font-semibold tracking-wide'
             ]"
           >
             <component :is="getStatusConfig(room.latest_cleaning?.status).icon" class="w-3.5 h-3.5" />

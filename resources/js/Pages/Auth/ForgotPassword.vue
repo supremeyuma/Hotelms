@@ -45,7 +45,7 @@ const submit = () => {
                     </p>
                 </div>
 
-                <div class="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/60 border border-slate-100 overflow-hidden">
+                <div class="bg-white rounded-xl shadow-xl shadow-slate-200/60 border border-slate-100 overflow-hidden">
                     
                     <Transition
                         enter-active-class="transform transition duration-500 ease-out"

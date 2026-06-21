@@ -200,7 +200,7 @@ function handleCheckOut() {
           </Link>
 
           <div class="mt-4 flex flex-wrap items-center gap-3">
-            <span class="rounded-full bg-slate-900 px-4 py-1.5 text-[11px] font-black uppercase tracking-[0.22em] text-white">
+            <span class="rounded-full bg-slate-900 px-4 py-1.5 text-xs uppercase font-semibold tracking-wide text-white">
               {{ booking.booking_code || `Booking #${booking.id}` }}
             </span>
             <span class="rounded-full bg-slate-100 px-4 py-1.5 text-xs font-bold text-slate-600">

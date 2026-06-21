@@ -129,7 +129,7 @@ function formatDateTime(value) {
       >
         <div class="grid gap-6 px-6 py-8 sm:px-8 xl:grid-cols-[1.3fr_0.7fr]">
           <div class="space-y-4">
-            <div class="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-[11px] font-black uppercase tracking-[0.22em] text-slate-200">
+            <div class="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-xs uppercase font-semibold tracking-wide text-slate-200">
               <ClipboardList class="h-3.5 w-3.5" />
               Operations reporting
             </div>
@@ -162,7 +162,7 @@ function formatDateTime(value) {
               :href="links.primary"
               class="rounded-[1.75rem] border border-white/10 bg-white/10 p-5 backdrop-blur transition hover:bg-white/15"
             >
-              <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-300">Occupancy today</p>
+              <p class="text-xs uppercase font-semibold tracking-wide text-slate-300">Occupancy today</p>
               <p class="mt-3 text-4xl font-black">{{ kpis.occupancy.occupancy }}%</p>
               <p class="mt-2 text-sm text-slate-300">
                 {{ kpis.occupancy.occupied_rooms }} occupied rooms, {{ kpis.occupancy.available_rooms }} currently available.
@@ -173,7 +173,7 @@ function formatDateTime(value) {
               :href="links.primary"
               class="rounded-[1.75rem] border border-emerald-300/25 bg-gradient-to-br from-emerald-400/20 to-emerald-300/5 p-5 transition hover:from-emerald-400/25 hover:to-emerald-300/10"
             >
-              <p class="text-[11px] font-black uppercase tracking-[0.22em] text-emerald-100">Guest flow today</p>
+              <p class="text-xs uppercase font-semibold tracking-wide text-emerald-100">Guest flow today</p>
               <div class="mt-4 grid grid-cols-2 gap-4">
                 <div>
                   <p class="text-3xl font-black">{{ kpis.occupancy.arrivals_today }}</p>
@@ -199,7 +199,7 @@ function formatDateTime(value) {
           <div class="rounded-[1.5rem] bg-gradient-to-br p-5 ring-1" :class="toneClasses(card.tone)">
             <div class="flex items-start justify-between gap-4">
               <div>
-                <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">{{ card.label }}</p>
+                <p class="text-xs uppercase font-semibold tracking-wide text-slate-500">{{ card.label }}</p>
                 <p class="mt-3 text-3xl font-black tracking-tight text-slate-950">{{ card.value }}</p>
                 <p class="mt-2 text-sm font-medium text-slate-600">{{ card.hint }}</p>
               </div>
@@ -226,7 +226,7 @@ function formatDateTime(value) {
           <div class="rounded-[1.5rem] bg-gradient-to-br p-5 ring-1" :class="toneClasses(card.tone)">
             <div class="flex items-start justify-between gap-4">
               <div>
-                <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-500">{{ card.label }}</p>
+                <p class="text-xs uppercase font-semibold tracking-wide text-slate-500">{{ card.label }}</p>
                 <p class="mt-3 text-3xl font-black tracking-tight text-slate-950">{{ card.value }}</p>
                 <p class="mt-2 text-sm font-medium text-slate-600">{{ card.hint }}</p>
               </div>
@@ -253,7 +253,7 @@ function formatDateTime(value) {
       >
         <div class="flex flex-col gap-2 border-b border-slate-100 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Recent activity</p>
+            <p class="text-xs uppercase font-semibold tracking-wide text-slate-400">Recent activity</p>
             <h2 class="mt-2 text-2xl font-black tracking-tight text-slate-900">Latest posted transactions</h2>
           </div>
           <Link

@@ -66,7 +66,7 @@ function savePayment() {
         </div>
         <div>
           <h2 class="text-xl font-black text-slate-900">Order #{{ order?.id }}</h2>
-          <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">
+          <p class="text-xs uppercase font-semibold tracking-wide text-slate-400">
             {{ order?.service_area }} · {{ roomName }}
           </p>
         </div>
@@ -109,15 +109,15 @@ function savePayment() {
         <div class="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
           <div class="grid gap-3 md:grid-cols-3">
             <div>
-              <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Room</p>
+              <p class="text-xs uppercase font-semibold tracking-wide text-slate-400">Room</p>
               <p class="mt-1 text-sm font-bold text-slate-900">{{ roomName }}</p>
             </div>
             <div>
-              <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Booking</p>
+              <p class="text-xs uppercase font-semibold tracking-wide text-slate-400">Booking</p>
               <p class="mt-1 text-sm font-bold text-slate-900">{{ order.booking?.booking_code || 'Unavailable' }}</p>
             </div>
             <div>
-              <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Guest</p>
+              <p class="text-xs uppercase font-semibold tracking-wide text-slate-400">Guest</p>
               <p class="mt-1 text-sm font-bold text-slate-900">{{ order.booking?.guest_name || 'Walk-in guest' }}</p>
             </div>
           </div>
@@ -142,12 +142,12 @@ function savePayment() {
         </div>
 
         <div v-if="order.notes" class="rounded-2xl border border-slate-200 bg-white p-4">
-          <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Room note</p>
+          <p class="text-xs uppercase font-semibold tracking-wide text-slate-400">Room note</p>
           <p class="mt-2 text-sm text-slate-700">{{ order.notes }}</p>
         </div>
 
         <div class="flex items-center justify-between border-t border-slate-200 pt-4">
-          <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">Total</span>
+          <span class="text-xs uppercase font-semibold tracking-wide text-slate-400">Total</span>
           <span class="text-2xl font-black text-slate-900">NGN {{ Number(order.total).toLocaleString() }}</span>
         </div>
 

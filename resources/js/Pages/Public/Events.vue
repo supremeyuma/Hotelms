@@ -43,7 +43,7 @@
 
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div v-for="event in featuredEvents" :key="event.id"
-                 class="group relative bg-white rounded-3xl shadow-2xl shadow-indigo-100 overflow-hidden border border-gray-100 hover:border-indigo-200 transition-all duration-500">
+                 class="group relative bg-white rounded-2xl shadow-2xl shadow-indigo-100 overflow-hidden border border-gray-100 hover:border-indigo-200 transition-all duration-500">
               
               <div class="relative h-[400px] overflow-hidden">
                 <img v-if="event.image" :src="'/storage/' + event.image"
@@ -54,7 +54,7 @@
                   <div class="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-6 text-white shadow-2xl">
                     <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
                       <div class="space-y-1">
-                        <p class="text-[10px] uppercase tracking-[0.2em] font-black text-indigo-300">Countdown to Kickoff</p>
+                        <p class="text-xs uppercase tracking-wide font-semibold text-indigo-300">Countdown to Kickoff</p>
                         <EventCountdown :targetDate="event.start_datetime" class="text-white" />
                       </div>
                       <Link :href="`/events/${event.id}`"
@@ -101,7 +101,7 @@
 
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
             <div v-for="event in allEvents" :key="event.id"
-                 class="group bg-slate-50 rounded-3xl p-4 border border-transparent hover:border-indigo-100 hover:bg-white hover:shadow-xl transition-all duration-300">
+                 class="group bg-slate-50 rounded-2xl p-4 border border-transparent hover:border-indigo-100 hover:bg-white hover:shadow-xl transition-all duration-300">
               
               <div class="relative h-56 overflow-hidden rounded-2xl mb-6">
                 <img v-if="event.image" :src="'/storage/' + event.image"
@@ -114,7 +114,7 @@
               </div>
 
               <div class="px-2 pb-2">
-                <div class="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-2">
+                <div class="text-xs uppercase font-semibold tracking-wide text-indigo-500 mb-2">
                   {{ formatEventDateTime(event).date }}
                 </div>
                 <h4 class="text-xl font-bold text-slate-900 mb-2 truncate group-hover:text-indigo-600 transition-colors">

@@ -20,11 +20,11 @@
           <div class="space-y-6 p-8">
             <div class="grid gap-4 sm:grid-cols-2">
               <div class="rounded-2xl bg-slate-50 p-4">
-                <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Order Code</p>
+                <p class="text-xs uppercase font-semibold tracking-wide text-slate-400">Order Code</p>
                 <p class="mt-2 text-sm font-bold text-slate-900">{{ order.order_code }}</p>
               </div>
               <div class="rounded-2xl bg-slate-50 p-4">
-                <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Reference</p>
+                <p class="text-xs uppercase font-semibold tracking-wide text-slate-400">Reference</p>
                 <p class="mt-2 text-sm font-bold text-slate-900">{{ reference || 'Pending' }}</p>
               </div>
             </div>

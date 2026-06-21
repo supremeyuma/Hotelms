@@ -63,7 +63,7 @@ function photoUrl(path) {
         <article
           v-for="ticket in tickets.data"
           :key="ticket.id"
-          class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
+          class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
         >
           <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div class="space-y-2">
@@ -106,7 +106,7 @@ function photoUrl(path) {
           </div>
         </article>
 
-        <div v-if="!tickets.data.length" class="rounded-3xl border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500">
+        <div v-if="!tickets.data.length" class="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500">
           No maintenance tickets are waiting right now.
         </div>
       </div>

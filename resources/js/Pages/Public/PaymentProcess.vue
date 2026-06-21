@@ -14,7 +14,7 @@
               </svg>
             </div>
             <div class="text-center md:text-left">
-              <p class="text-indigo-400 text-[10px] font-black uppercase tracking-[0.2em] mb-1">Secure Checkout</p>
+              <p class="text-indigo-400 text-xs uppercase font-semibold tracking-wide mb-1">Secure Checkout</p>
               <h1 class="text-2xl md:text-3xl font-black text-white tracking-tighter">Complete Payment</h1>
               <div class="flex flex-wrap justify-center md:justify-start gap-4 text-indigo-100/60 text-xs font-bold mt-2">
                 <span class="flex items-center capitalize">
@@ -30,7 +30,7 @@
           </div>
         </div>
 
-        <div class="bg-white rounded-b-3xl shadow-2xl shadow-slate-200/60 border-x border-b border-slate-100 overflow-hidden">
+        <div class="bg-white rounded-b-3xl shadow-2xl shadow-slate-200/60 overflow-hidden">
           <div class="p-8 md:p-12">
             
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-12">

@@ -134,7 +134,7 @@ const save = () => {
             :key="section"
             class="space-y-1"
           >
-            <h2 class="px-3 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2 mt-4">
+            <h2 class="px-3 text-xs uppercase font-semibold tracking-wide text-slate-400 mb-2 mt-4">
               {{ section }}
             </h2>
 
@@ -161,11 +161,11 @@ const save = () => {
         </div>
 
         <div class="lg:col-span-8 xl:col-span-9">
-          <div v-if="activeKey" class="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
+          <div v-if="activeKey" class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
             
             <div class="border-b border-slate-100 p-6 flex justify-between items-center bg-slate-50/50">
               <div>
-                <span class="text-[10px] font-bold text-indigo-600 uppercase tracking-widest">{{ form.type }} content</span>
+                <span class="text-xs font-semibold text-indigo-600 uppercase tracking-wide">{{ form.type }} content</span>
                 <h3 class="font-mono text-sm text-slate-500">{{ activeKey }}</h3>
               </div>
               <a href="/" target="_blank" class="text-slate-400 hover:text-indigo-600 transition">
@@ -192,7 +192,7 @@ const save = () => {
                 ></textarea>
 
                 <div v-else-if="form.type === 'image'" class="space-y-4">
-                  <div class="relative group aspect-video md:aspect-[21/9] bg-slate-100 rounded-3xl overflow-hidden border-2 border-dashed border-slate-200 flex items-center justify-center">
+                  <div class="relative group aspect-video md:aspect-[21/9] bg-slate-100 rounded-2xl overflow-hidden border-2 border-dashed border-slate-200 flex items-center justify-center">
                     <img v-if="form.value" :src="form.value" class="w-full h-full object-cover transition duration-500 group-hover:scale-105" />
                     
                     <div class="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
@@ -248,7 +248,7 @@ const save = () => {
             v-else
             class="h-full min-h-[500px] border-2 border-dashed border-slate-200 rounded-[40px] flex flex-col items-center justify-center text-center p-12 bg-slate-50/30"
           >
-            <div class="w-20 h-20 bg-white rounded-3xl shadow-sm border border-slate-100 flex items-center justify-center mb-6">
+            <div class="w-20 h-20 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center mb-6">
               <FileText class="w-8 h-8 text-slate-300" />
             </div>
             <h3 class="text-xl font-black text-slate-800 mb-2">Editor Ready</h3>

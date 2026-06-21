@@ -43,12 +43,12 @@ function formatDate(d) {
         <table class="w-full border-separate border-spacing-y-3">
             <thead>
                 <tr class="text-slate-400">
-                    <th class="px-6 py-3 text-left text-[10px] font-black uppercase tracking-[0.2em]">Booking Reference</th>
-                    <th class="px-6 py-3 text-left text-[10px] font-black uppercase tracking-[0.2em]">Primary Guest</th>
-                    <th class="px-6 py-3 text-left text-[10px] font-black uppercase tracking-[0.2em]">Stay Duration</th>
-                    <th class="px-6 py-3 text-center text-[10px] font-black uppercase tracking-[0.2em]">Inventory</th>
-                    <th class="px-6 py-3 text-left text-[10px] font-black uppercase tracking-[0.2em]">Status</th>
-                    <th class="px-6 py-3 text-right text-[10px] font-black uppercase tracking-[0.2em]">Operations</th>
+                    <th class="px-6 py-3 text-left text-xs uppercase font-semibold tracking-wide">Booking Reference</th>
+                    <th class="px-6 py-3 text-left text-xs uppercase font-semibold tracking-wide">Primary Guest</th>
+                    <th class="px-6 py-3 text-left text-xs uppercase font-semibold tracking-wide">Stay Duration</th>
+                    <th class="px-6 py-3 text-center text-xs uppercase font-semibold tracking-wide">Inventory</th>
+                    <th class="px-6 py-3 text-left text-xs uppercase font-semibold tracking-wide">Status</th>
+                    <th class="px-6 py-3 text-right text-xs uppercase font-semibold tracking-wide">Operations</th>
                 </tr>
             </thead>
 

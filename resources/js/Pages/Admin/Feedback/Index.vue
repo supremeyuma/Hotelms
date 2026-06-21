@@ -166,15 +166,15 @@ function updateFeedback(item, payload) {
 
               <div class="grid gap-4 text-sm text-slate-600 md:grid-cols-3">
                 <div>
-                  <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Submitted</p>
+                  <p class="text-xs uppercase font-semibold tracking-wide text-slate-400">Submitted</p>
                   <p class="mt-2">{{ item.created_at }}</p>
                 </div>
                 <div>
-                  <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Contact</p>
+                  <p class="text-xs uppercase font-semibold tracking-wide text-slate-400">Contact</p>
                   <p class="mt-2">{{ item.is_anonymous ? 'Not stored' : (item.contact_name || item.contact_email || item.contact_phone || 'Not provided') }}</p>
                 </div>
                 <div>
-                  <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Context</p>
+                  <p class="text-xs uppercase font-semibold tracking-wide text-slate-400">Context</p>
                   <p class="mt-2">
                     <span v-if="item.room">{{ item.room.name }}</span>
                     <span v-else-if="item.booking">{{ item.booking.booking_code }}</span>

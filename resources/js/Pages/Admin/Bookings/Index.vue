@@ -242,7 +242,7 @@ function guestBreakdown(booking) {
       <section class="overflow-hidden rounded-[2rem] bg-slate-900 text-white shadow-2xl shadow-slate-200">
         <div class="grid gap-6 px-6 py-8 sm:px-8 xl:grid-cols-[1.25fr_0.75fr]">
           <div class="space-y-4">
-            <div class="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-[11px] font-black uppercase tracking-[0.22em] text-slate-200">
+            <div class="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-xs uppercase font-semibold tracking-wide text-slate-200">
               <BriefcaseBusiness class="h-3.5 w-3.5" />
               Manager Booking Board
             </div>
@@ -254,7 +254,7 @@ function guestBreakdown(booking) {
 
           <div class="grid gap-4">
             <div class="rounded-[1.75rem] border border-white/10 bg-white/10 p-5 backdrop-blur">
-              <div class="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.22em] text-slate-300">
+              <div class="flex items-center gap-2 text-xs uppercase font-semibold tracking-wide text-slate-300">
                 <CalendarDays class="h-3.5 w-3.5" />
                 Today
               </div>
@@ -262,7 +262,7 @@ function guestBreakdown(booking) {
             </div>
 
             <div class="rounded-[1.75rem] border border-white/10 bg-gradient-to-br from-white/10 to-white/5 p-5">
-              <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-300">Active view</p>
+              <p class="text-xs uppercase font-semibold tracking-wide text-slate-300">Active view</p>
               <p class="mt-3 text-2xl font-black">{{ filterLabel() }}</p>
               <p class="mt-2 text-sm text-slate-300">
                 {{ bookings.total }} booking<span v-if="bookings.total !== 1">s</span> in this result.
@@ -282,7 +282,7 @@ function guestBreakdown(booking) {
         >
           <div class="flex items-start justify-between gap-4">
             <div>
-              <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">
+              <p class="text-xs uppercase font-semibold tracking-wide text-slate-400">
                 {{ card.label }}
               </p>
               <p class="mt-4 text-3xl font-black tracking-tight text-slate-900">
@@ -305,7 +305,7 @@ function guestBreakdown(booking) {
       <section class="rounded-[2rem] border border-slate-200 bg-white shadow-sm">
         <div class="flex flex-col gap-3 border-b border-slate-100 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Reservations</p>
+            <p class="text-xs uppercase font-semibold tracking-wide text-slate-400">Reservations</p>
             <h2 class="mt-2 text-2xl font-black tracking-tight text-slate-900">Manager booking board</h2>
           </div>
           <div class="flex items-center gap-3">
@@ -325,7 +325,7 @@ function guestBreakdown(booking) {
         <div class="border-b border-slate-100 px-6 py-5">
           <div class="flex flex-wrap items-end gap-6">
             <div class="flex-none">
-              <label class="mb-2 ml-1 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400">
+              <label class="mb-2 ml-1 flex items-center gap-2 text-xs uppercase font-semibold tracking-wide text-slate-400">
                 <CalendarDays class="h-3 w-3" />
                 Date Reference
               </label>
@@ -357,7 +357,7 @@ function guestBreakdown(booking) {
             class="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-slate-50/70"
           >
             <div class="border-b border-slate-200/80 bg-white/80 px-5 py-4 backdrop-blur">
-              <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Check-in date</p>
+              <p class="text-xs uppercase font-semibold tracking-wide text-slate-400">Check-in date</p>
               <div class="mt-2 flex flex-wrap items-center justify-between gap-3">
                 <h3 class="text-xl font-black tracking-tight text-slate-900">{{ group.label }}</h3>
                 <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold uppercase tracking-[0.18em] text-slate-500">

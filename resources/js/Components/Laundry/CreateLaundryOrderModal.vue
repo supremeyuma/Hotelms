@@ -150,7 +150,7 @@ function submit() {
           </label>
 
           <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-            <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Active Guest</p>
+            <p class="text-xs uppercase font-semibold tracking-wide text-slate-400">Active Guest</p>
             <p class="mt-2 flex items-center gap-2 text-sm font-bold text-slate-800">
               <User class="h-4 w-4 text-indigo-500" />
               {{ selectedRoom?.active_booking?.guest_name || 'Select a room to load the active booking' }}
@@ -201,7 +201,7 @@ function submit() {
         </div>
 
         <div class="space-y-3">
-          <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Condition Photos</label>
+          <label class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Condition Photos</label>
           <div class="flex flex-wrap gap-3">
             <label class="flex h-20 w-20 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 text-slate-400 transition hover:border-indigo-400 hover:text-indigo-600">
               <Camera class="mb-1 h-6 w-6" />
@@ -223,7 +223,7 @@ function submit() {
         </div>
 
         <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
-          <p class="text-[10px] font-black uppercase tracking-widest text-amber-700">Payment Option</p>
+          <p class="text-xs uppercase font-semibold tracking-wide text-amber-700">Payment Option</p>
           <p class="mt-2 text-sm font-bold text-amber-900">Pay on Delivery</p>
           <p class="mt-1 text-xs font-medium text-amber-800">Laundry charges are added to the room bill for settlement at delivery or checkout.</p>
         </div>

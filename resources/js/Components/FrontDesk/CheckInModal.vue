@@ -82,11 +82,11 @@ function submit() {
 
                     <div class="mt-6 flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/10 text-left">
                         <div>
-                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Primary Guest</p>
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Primary Guest</p>
                             <p class="text-lg font-bold">{{ booking.guest_name }}</p>
                         </div>
                         <div class="text-right">
-                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</p>
+                            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Status</p>
                             <p class="text-emerald-400 font-bold">Confirmed</p>
                         </div>
                     </div>
@@ -111,7 +111,7 @@ function submit() {
 
                     <div v-if="remaining > 0" class="space-y-6">
                         <div class="space-y-3">
-                            <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Units to Check-In</label>
+                            <label class="text-xs font-semibold text-slate-400 uppercase tracking-wide ml-1">Units to Check-In</label>
                             <div class="relative">
                                 <input
                                     type="number"

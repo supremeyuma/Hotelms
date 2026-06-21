@@ -45,9 +45,9 @@ function formatDate(dateString) {
           </p>
         </div>
 
-        <div class="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/50 overflow-hidden">
+        <div class="bg-white rounded-xl border border-slate-200 shadow-xl shadow-slate-200/50 overflow-hidden">
           <div class="border-b border-slate-100 px-8 py-6 bg-slate-50">
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] mb-1">Reservation</p>
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Reservation</p>
             <h2 class="text-2xl font-black text-slate-900">{{ booking.booking_code }}</h2>
           </div>
 

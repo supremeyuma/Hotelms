@@ -13,7 +13,7 @@
               <div v-else class="w-full h-full bg-gradient-to-br from-indigo-500 to-purple-600"></div>
             </div>
             <div class="text-center md:text-left">
-              <Link :href="`/events/${event.id}`" class="text-indigo-400 text-[10px] font-black uppercase tracking-[0.2em] hover:text-white transition-colors">
+              <Link :href="`/events/${event.id}`" class="text-indigo-400 text-xs uppercase font-semibold tracking-wide hover:text-white transition-colors">
                 &larr; Back to Event
               </Link>
               <h1 class="text-2xl md:text-3xl font-black text-white tracking-tighter mt-1 mb-2">{{ event.title }}</h1>
@@ -60,7 +60,7 @@
                     type="button"
                     @click="form.table_type_id = tableType.id"
                     :class="[
-                      'relative p-6 rounded-3xl border-2 text-left transition-all duration-300',
+                      'relative p-6 rounded-2xl border-2 text-left transition-all duration-300',
                       form.table_type_id === tableType.id 
                         ? 'border-indigo-600 bg-indigo-50/50 ring-4 ring-indigo-500/10' 
                         : 'border-slate-100 bg-slate-50 hover:border-slate-300'
@@ -71,7 +71,7 @@
                         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>
                       </div>
                     </div>
-                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Level</p>
+                    <p class="text-xs uppercase font-semibold tracking-wide text-slate-400 mb-1">Level</p>
                     <h4 class="text-xl font-black text-slate-900 leading-tight mb-4">{{ tableType.name }}</h4>
                     <div class="space-y-1">
                       <p class="text-2xl font-black text-indigo-600">₦{{ formatNumber(tableType.price) }}</p>
@@ -106,7 +106,7 @@
               </div>
 
               <div v-if="selectedTableType" class="space-y-8 pt-8 border-t border-slate-100">
-                <div class="bg-slate-900 rounded-3xl p-8 text-white relative overflow-hidden">
+                <div class="bg-slate-900 rounded-2xl p-8 text-white relative overflow-hidden">
                   <div class="absolute top-0 right-0 p-8 opacity-10">
                     <svg class="w-24 h-24" fill="currentColor" viewBox="0 0 24 24"><path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
                   </div>
@@ -135,7 +135,7 @@
                   </span>
                 </button>
                 
-                <p class="text-center text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                <p class="text-center text-xs text-slate-400 font-semibold uppercase tracking-wide">
                   Secure checkout provided by MooreLife Resort
                 </p>
               </div>

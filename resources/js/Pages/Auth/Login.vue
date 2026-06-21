@@ -42,7 +42,7 @@ const submit = () => {
                     <p class="text-slate-500 font-medium">Please enter your credentials to access your portal</p>
                 </div>
 
-                <div class="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/60 border border-slate-100 overflow-hidden">
+                <div class="bg-white rounded-xl shadow-xl shadow-slate-200/60 border border-slate-100 overflow-hidden">
                     <div v-if="status" class="p-4 bg-emerald-50 text-emerald-700 text-sm font-bold text-center border-b border-emerald-100">
                         {{ status }}
                     </div>
@@ -74,7 +74,7 @@ const submit = () => {
                                 <Link
                                     v-if="canResetPassword"
                                     :href="route('password.request')"
-                                    class="text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:text-slate-900 transition-colors"
+                                    class="text-xs font-semibold text-indigo-600 uppercase tracking-wide hover:text-slate-900 transition-colors"
                                 >
                                     Forgot?
                                 </Link>
@@ -121,7 +121,7 @@ const submit = () => {
                     
                     <div class="bg-slate-50 px-8 py-6 border-t border-slate-100 flex items-center justify-center gap-2">
                         <ShieldCheck class="w-4 h-4 text-emerald-500" />
-                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Secure Multi-factor Authentication</span>
+                        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Secure Multi-factor Authentication</span>
                     </div>
                 </div>
 

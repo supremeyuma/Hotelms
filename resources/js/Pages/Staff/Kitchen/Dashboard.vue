@@ -36,7 +36,7 @@ import {
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
         <Link 
           href="/staff/kitchen/orders" 
-          class="group relative overflow-hidden bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl hover:border-indigo-100 transition-all duration-300"
+          class="group relative overflow-hidden bg-white p-6 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300"
         >
           <div class="flex items-start justify-between">
             <div class="space-y-4">
@@ -59,7 +59,7 @@ import {
 
         <Link 
           href="/staff/kitchen/menu" 
-          class="group relative overflow-hidden bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl hover:border-orange-100 transition-all duration-300"
+          class="group relative overflow-hidden bg-white p-6 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300"
         >
           <div class="flex items-start justify-between">
             <div class="space-y-4">

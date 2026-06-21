@@ -86,11 +86,11 @@ function submit() {
 
         <div class="grid gap-4 rounded-[1.5rem] bg-slate-50 p-5 md:grid-cols-2">
           <div>
-            <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Anonymous by default</p>
+            <p class="text-xs uppercase font-semibold tracking-wide text-slate-400">Anonymous by default</p>
             <p class="mt-2 text-sm text-slate-600">When anonymity stays on, identity and stay context are not stored with the submission.</p>
           </div>
           <div v-if="config.context" class="rounded-[1.25rem] border border-slate-200 bg-white p-4">
-            <p class="text-[11px] font-black uppercase tracking-[0.22em] text-slate-400">Current context</p>
+            <p class="text-xs uppercase font-semibold tracking-wide text-slate-400">Current context</p>
             <p class="mt-2 text-sm font-semibold text-slate-900" v-if="config.context.guest_name">{{ config.context.guest_name }}</p>
             <p class="mt-1 text-sm text-slate-600" v-if="config.context.room_name">Room: {{ config.context.room_name }}</p>
           </div>

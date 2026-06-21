@@ -33,7 +33,7 @@ const submit = () => {
                     </p>
                 </div>
 
-                <div class="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/60 border border-slate-100 overflow-hidden">
+                <div class="bg-white rounded-xl shadow-xl shadow-slate-200/60 border border-slate-100 overflow-hidden">
                     <form @submit.prevent="submit" class="p-8 md:p-10 space-y-6">
                         
                         <div class="space-y-2">
@@ -70,7 +70,7 @@ const submit = () => {
 
                     <div class="bg-slate-50 px-8 py-6 border-t border-slate-100 flex items-center justify-center gap-2">
                         <ShieldCheck class="w-4 h-4 text-emerald-500" />
-                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">End-to-end Encrypted Session</span>
+                        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wide">End-to-end Encrypted Session</span>
                     </div>
                 </div>
 

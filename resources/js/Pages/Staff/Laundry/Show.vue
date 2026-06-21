@@ -92,7 +92,7 @@ function markChargePaid() {
           Back to Dashboard
         </button>
 
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
           <div class="flex items-center gap-4">
             <div class="w-16 h-16 bg-slate-900 rounded-2xl flex flex-col items-center justify-center text-white shrink-0 shadow-lg shadow-slate-200">
               <span class="text-[10px] font-black opacity-50 uppercase tracking-tighter">Room</span>
@@ -112,7 +112,7 @@ function markChargePaid() {
             class="flex items-center gap-2 mt-2"
           >
             <span
-              class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border"
+              class="px-3 py-1 rounded-full text-xs uppercase font-semibold tracking-wide border"
               :class="
                 order.charge.status === 'paid'
                   ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
@@ -198,7 +198,7 @@ function markChargePaid() {
                 "
               >
                 <div>
-                  <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-1">
+                  <p class="text-xs uppercase font-semibold tracking-wide text-slate-400 mb-1">
                     Payment Status
                   </p>
 
@@ -264,7 +264,7 @@ function markChargePaid() {
               
               <div class="flex justify-between items-center p-8 bg-slate-900 rounded-[2rem] text-white mt-8 shadow-xl shadow-slate-200">
                 <div>
-                  <p class="text-[10px] font-black uppercase tracking-[0.2em] opacity-50 mb-1">Total Amount</p>
+                  <p class="text-xs uppercase font-semibold tracking-wide opacity-50 mb-1">Total Amount</p>
                   <p class="text-3xl font-black">₦{{ order.total_amount }}</p>
                 </div>
                 <div class="p-3 bg-white/10 rounded-2xl">
@@ -276,7 +276,7 @@ function markChargePaid() {
         </div>
 
         <div class="space-y-8">
-          <section class="bg-white rounded-[2.5rem] border border-slate-200 p-6 shadow-sm">
+          <section class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
             <h2 class="flex items-center gap-2 text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-6">
               <ImageIcon class="w-4 h-4 text-indigo-500" /> Photo Evidence
             </h2>
@@ -293,14 +293,14 @@ function markChargePaid() {
               
               <label class="relative aspect-square rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center cursor-pointer hover:bg-indigo-50 hover:border-indigo-400 hover:text-indigo-600 transition-all text-slate-400 group">
                 <Camera class="w-7 h-7 mb-2 group-hover:scale-110 transition-transform" />
-                <span class="text-[10px] font-black uppercase tracking-widest">Add Photo</span>
+                <span class="text-xs uppercase font-semibold tracking-wide">Add Photo</span>
                 <input type="file" multiple class="hidden" @change="uploadImages" />
               </label>
             </div>
             <p class="text-[10px] text-slate-400 text-center font-medium italic px-4">Upload condition photos before pickup and after delivery.</p>
           </section>
 
-          <section class="bg-white rounded-[2.5rem] border border-slate-200 p-6 shadow-sm">
+          <section class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
             <h2 class="flex items-center gap-2 text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-6">
               <History class="w-4 h-4 text-indigo-500" /> Activity Log
             </h2>

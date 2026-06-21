@@ -100,7 +100,7 @@ watch(dateType, () => {
         <div class="flex flex-wrap items-end gap-6">
           
           <div class="flex-none">
-            <label class="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">
+            <label class="flex items-center gap-2 text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2 ml-1">
               <CalendarDays class="w-3 h-3" />
               Date Reference
             </label>

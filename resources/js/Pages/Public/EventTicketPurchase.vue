@@ -33,7 +33,7 @@
               <div v-else class="w-full h-full bg-gradient-to-br from-indigo-500 to-purple-600"></div>
             </div>
             <div class="text-center md:text-left">
-              <Link :href="`/events/${event.id}`" class="text-indigo-400 text-[10px] font-black uppercase tracking-[0.2em] hover:text-white transition-colors">
+              <Link :href="`/events/${event.id}`" class="text-indigo-400 text-xs uppercase font-semibold tracking-wide hover:text-white transition-colors">
                 &larr; Back to Event
               </Link>
               <h1 class="text-2xl md:text-3xl font-black text-white tracking-tighter mt-1 mb-2">{{ event.title }}</h1>
@@ -47,7 +47,7 @@
           </div>
         </div>
 
-        <div class="bg-white rounded-b-3xl shadow-2xl shadow-slate-200/60 border-x border-b border-slate-100 p-8 md:p-12">
+        <div class="bg-white rounded-b-3xl shadow-2xl shadow-slate-200/60 p-8 md:p-12">
           
           <div v-if="ticketTypes.length === 0" class="text-center py-12">
             <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-400">
@@ -90,7 +90,7 @@
 
                   <div class="flex items-center gap-4 mt-4 pt-4 border-t border-slate-200/60">
                     <span :class="[
-                      'text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded',
+                      'text-xs uppercase font-semibold tracking-wide px-2 py-1 rounded',
                       ticket.quantity_available > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                     ]">
                       {{ ticket.quantity_available > 0 ? 'Available' : 'Sold Out' }}
@@ -167,7 +167,7 @@
                 </span>
               </button>
               
-              <p class="text-center text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+              <p class="text-center text-xs text-slate-400 font-semibold uppercase tracking-wide">
                 Payment processed securely via Flutterwave
               </p>
             </div>

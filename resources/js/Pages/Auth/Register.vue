@@ -42,7 +42,7 @@ const submit = () => {
                     <p class="text-slate-500 font-medium">Create an account to manage your bookings and enjoy exclusive offers.</p>
                 </div>
 
-                <div class="bg-white rounded-[2.5rem] border border-slate-200 shadow-2xl shadow-slate-200/50 overflow-hidden">
+                <div class="bg-white rounded-xl border border-slate-200 shadow-2xl shadow-slate-200/50 overflow-hidden">
                     <form @submit.prevent="submit" class="p-8 md:p-10 space-y-6">
                         
                         <div class="space-y-2">
@@ -132,11 +132,11 @@ const submit = () => {
                     </form>
 
                     <div class="bg-slate-50 px-8 py-6 border-t border-slate-100 flex items-center justify-center gap-6">
-                        <div class="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                        <div class="flex items-center gap-1.5 text-xs font-semibold text-slate-400 uppercase tracking-wide">
                             <CheckCircle2 class="w-4 h-4 text-emerald-500" /> Fast Setup
                         </div>
                         <div class="w-1.5 h-1.5 rounded-full bg-slate-200"></div>
-                        <div class="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                        <div class="flex items-center gap-1.5 text-xs font-semibold text-slate-400 uppercase tracking-wide">
                             <ShieldCheck class="w-4 h-4 text-indigo-400" /> Secure Data
                         </div>
                     </div>
