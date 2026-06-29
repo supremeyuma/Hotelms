@@ -33,13 +33,10 @@ RUN docker-php-ext-configure gd \
     pdo_mysql \
     mbstring \
     bcmath \
-    ctype \
     exif \
-    fileinfo \
     gd \
     intl \
     pcntl \
-    tokenizer \
     xml \
     zip
 
