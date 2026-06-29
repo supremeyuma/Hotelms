@@ -1,20 +1,3 @@
-FROM composer:2 AS vendor
-WORKDIR /app
-COPY composer.json composer.lock ./
-RUN composer install \
-    --no-interaction \
-    --no-progress \
-    --no-dev \
-    --optimize-autoloader \
-    --no-scripts \
-    --prefer-dist
-COPY . .
-RUN composer dump-autoload \
-    --no-dev \
-    --optimize \
-    --no-interaction \
-    --no-scripts
-
 FROM node:22-alpine AS frontend
 WORKDIR /app
 RUN apk add --no-cache libc6-compat
@@ -63,18 +46,30 @@ RUN docker-php-ext-configure gd \
 RUN pecl install redis && docker-php-ext-enable redis
 RUN docker-php-ext-enable opcache
 
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
 RUN addgroup --system --gid 1000 app && \
     adduser --system --uid 1000 --ingroup app --shell /bin/sh --disabled-password app
 
 FROM base AS php
 
-COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
-
 WORKDIR /var/www/html
 
-COPY --from=vendor /app/vendor ./vendor
+COPY composer.json composer.lock ./
+RUN composer install \
+    --no-dev \
+    --prefer-dist \
+    --optimize-autoloader \
+    --no-interaction \
+    --no-progress \
+    --no-scripts
+
 COPY --from=frontend /app/public/build ./public/build
 COPY . .
+
+RUN composer dump-autoload \
+    --optimize \
+    --no-dev
 
 RUN mkdir -p storage/logs \
     storage/framework/cache/data \
