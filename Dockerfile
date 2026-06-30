@@ -6,7 +6,7 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-FROM php:8.2-fpm AS base
+FROM php:8.4-fpm AS base
 
 ARG APP_ENV=production
 ENV APP_ENV=${APP_ENV}
