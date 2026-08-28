@@ -3,13 +3,18 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\RoomTypePriceSchedule;
+use App\Models\Room;
 use App\Models\RoomAvailabilitySchedule;
+use App\Models\RoomType;
+use App\Models\RoomTypePriceSchedule;
+use App\Models\Property;
 use App\Services\AuditLoggerService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class RoomSchedulingController extends Controller
 {
@@ -22,31 +27,99 @@ class RoomSchedulingController extends Controller
     }
 
     /**
-     * Dashboard overview of active and upcoming schedules.
+     * Scheduling dashboard for price and availability plans.
      */
-    public function index(Request $request): JsonResponse
+    public function index(Request $request): Response
     {
         $today = Carbon::today()->toDateString();
 
         $priceSchedules = RoomTypePriceSchedule::with(['roomType', 'property'])
-            ->where('end_date', '>=', $today)
             ->latest()
-            ->get();
+            ->get()
+            ->map(fn (RoomTypePriceSchedule $schedule) => [
+                'id' => $schedule->id,
+                'room_type_id' => $schedule->room_type_id,
+                'property_id' => $schedule->property_id,
+                'start_date' => optional($schedule->start_date)->format('Y-m-d'),
+                'end_date' => optional($schedule->end_date)->format('Y-m-d'),
+                'custom_price' => (float) $schedule->custom_price,
+                'description' => $schedule->description,
+                'is_active' => (bool) $schedule->is_active,
+                'room_type_title' => $schedule->roomType?->title,
+                'base_price' => (float) ($schedule->roomType?->base_price ?? 0),
+                'is_past' => optional($schedule->end_date)?->lt($today) ?? false,
+            ])
+            ->values();
 
         $availabilitySchedules = RoomAvailabilitySchedule::with(['room', 'roomType', 'property'])
-            ->where('end_date', '>=', $today)
             ->latest()
-            ->get();
+            ->get()
+            ->map(fn (RoomAvailabilitySchedule $schedule) => [
+                'id' => $schedule->id,
+                'room_id' => $schedule->room_id,
+                'room_type_id' => $schedule->room_type_id,
+                'property_id' => $schedule->property_id,
+                'start_date' => optional($schedule->start_date)->format('Y-m-d'),
+                'end_date' => optional($schedule->end_date)->format('Y-m-d'),
+                'reason' => $schedule->reason,
+                'is_unavailable' => (bool) $schedule->is_unavailable,
+                'notes' => $schedule->notes,
+                'label' => $schedule->room
+                    ? ($schedule->room->display_name ?? $schedule->room->name ?? $schedule->room->room_number)
+                    : ($schedule->roomType?->title ? "All {$schedule->roomType->title} rooms" : 'All rooms'),
+                'is_past' => optional($schedule->end_date)?->lt($today) ?? false,
+            ])
+            ->values();
 
-        return response()->json([
-            'price_schedules' => $priceSchedules,
-            'availability_schedules' => $availabilitySchedules,
+        $roomTypes = RoomType::query()
+            ->orderBy('title')
+            ->get()
+            ->map(fn (RoomType $type) => [
+                'id' => $type->id,
+                'title' => $type->title,
+                'base_price' => (float) $type->base_price,
+                'property_id' => $type->property_id,
+            ]);
+
+        $rooms = Room::with('roomType')
+            ->orderBy('room_number')
+            ->get()
+            ->map(fn (Room $room) => [
+                'id' => $room->id,
+                'room_number' => $room->room_number,
+                'label' => $room->display_name ?? $room->name ?? $room->room_number,
+                'room_type_id' => $room->room_type_id,
+                'property_id' => $room->property_id,
+                'room_type_title' => $room->roomType?->title,
+            ]);
+
+        $properties = Property::query()
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        $defaultPropertyId = $properties->first()->id ?? null;
+
+        return Inertia::render('Admin/RoomScheduling/Index', [
+            'priceSchedules' => $priceSchedules,
+            'availabilitySchedules' => $availabilitySchedules,
+            'roomTypes' => $roomTypes,
+            'rooms' => $rooms,
+            'properties' => $properties,
+            'defaultPropertyId' => $defaultPropertyId,
+            'today' => $today,
             'summary' => [
                 'active_price_schedules' => $priceSchedules->where('is_active', true)->count(),
-                'active_unavailability' => $availabilitySchedules->where('is_unavailable', true)->count(),
-                'total_rooms_blocked' => $availabilitySchedules
+                'active_unavailability' => $availabilitySchedules
                     ->where('is_unavailable', true)
-                    ->sum(fn ($schedule) => $schedule->room_id ? 1 : 0),
+                    ->where('is_past', false)
+                    ->count(),
+                'rooms_blocked' => $availabilitySchedules
+                    ->where('is_unavailable', true)
+                    ->where('is_past', false)
+                    ->pluck('room_id')
+                    ->filter()
+                    ->unique()
+                    ->count(),
             ],
         ]);
     }

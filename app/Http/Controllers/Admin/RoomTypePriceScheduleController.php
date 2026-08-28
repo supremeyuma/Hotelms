@@ -4,13 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\RoomTypePriceSchedule;
-use App\Models\RoomType;
-use App\Models\Property;
 use App\Services\AuditLoggerService;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\DB;
-use Inertia\Inertia;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 
 class RoomTypePriceScheduleController extends Controller
 {
@@ -58,7 +55,7 @@ class RoomTypePriceScheduleController extends Controller
     /**
      * Store a newly created price schedule
      */
-    public function store(Request $request): JsonResponse
+    public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
             'room_type_id' => 'required|exists:room_types,id',
@@ -74,16 +71,13 @@ class RoomTypePriceScheduleController extends Controller
 
         $this->auditLogger->log('room_type_price_schedule_created', $schedule, $schedule->id, $data);
 
-        return response()->json([
-            'message' => 'Price schedule created successfully',
-            'schedule' => $schedule->load(['roomType', 'property']),
-        ], 201);
+        return back()->with('success', 'Price schedule created successfully.');
     }
 
     /**
      * Update the specified price schedule
      */
-    public function update(Request $request, RoomTypePriceSchedule $schedule): JsonResponse
+    public function update(Request $request, RoomTypePriceSchedule $schedule): RedirectResponse
     {
         $data = $request->validate([
             'start_date' => 'sometimes|required|date',
@@ -98,23 +92,18 @@ class RoomTypePriceScheduleController extends Controller
 
         $schedule->update($data);
 
-        return response()->json([
-            'message' => 'Price schedule updated successfully',
-            'schedule' => $schedule->load(['roomType', 'property']),
-        ]);
+        return back()->with('success', 'Price schedule updated successfully.');
     }
 
     /**
      * Remove the specified price schedule
      */
-    public function destroy(RoomTypePriceSchedule $schedule): JsonResponse
+    public function destroy(RoomTypePriceSchedule $schedule): RedirectResponse
     {
         $this->auditLogger->log('room_type_price_schedule_deleted', $schedule, $schedule->id);
 
         $schedule->delete();
 
-        return response()->json([
-            'message' => 'Price schedule deleted successfully',
-        ]);
+        return back()->with('success', 'Price schedule deleted successfully.');
     }
 }

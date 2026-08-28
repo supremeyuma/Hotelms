@@ -4,14 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\RoomAvailabilitySchedule;
-use App\Models\Room;
-use App\Models\RoomType;
-use App\Models\Property;
 use App\Services\AuditLoggerService;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\DB;
-use Inertia\Inertia;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class RoomAvailabilityScheduleController extends Controller
 {
@@ -63,7 +60,7 @@ class RoomAvailabilityScheduleController extends Controller
     /**
      * Store a newly created availability schedule
      */
-    public function store(Request $request): JsonResponse
+    public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
             'room_id' => 'nullable|exists:rooms,id',
@@ -76,27 +73,24 @@ class RoomAvailabilityScheduleController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        // Validate that either room_id or room_type_id is provided
         if (empty($data['room_id']) && empty($data['room_type_id'])) {
-            return response()->json([
-                'message' => 'Either room_id or room_type_id must be provided',
-            ], 422);
+            throw ValidationException::withMessages([
+                'room_id' => 'Select a specific room or a room type to block.',
+                'room_type_id' => 'Select a specific room or a room type to block.',
+            ]);
         }
 
         $schedule = RoomAvailabilitySchedule::create($data);
 
         $this->auditLogger->log('room_availability_schedule_created', $schedule, $schedule->id, $data);
 
-        return response()->json([
-            'message' => 'Availability schedule created successfully',
-            'schedule' => $schedule->load(['room', 'roomType', 'property']),
-        ], 201);
+        return back()->with('success', 'Availability schedule created successfully.');
     }
 
     /**
      * Update the specified availability schedule
      */
-    public function update(Request $request, RoomAvailabilitySchedule $schedule): JsonResponse
+    public function update(Request $request, RoomAvailabilitySchedule $schedule): RedirectResponse
     {
         $data = $request->validate([
             'start_date' => 'sometimes|required|date',
@@ -111,23 +105,18 @@ class RoomAvailabilityScheduleController extends Controller
 
         $schedule->update($data);
 
-        return response()->json([
-            'message' => 'Availability schedule updated successfully',
-            'schedule' => $schedule->load(['room', 'roomType', 'property']),
-        ]);
+        return back()->with('success', 'Availability schedule updated successfully.');
     }
 
     /**
      * Remove the specified availability schedule
      */
-    public function destroy(RoomAvailabilitySchedule $schedule): JsonResponse
+    public function destroy(RoomAvailabilitySchedule $schedule): RedirectResponse
     {
         $this->auditLogger->log('room_availability_schedule_deleted', $schedule, $schedule->id);
 
         $schedule->delete();
 
-        return response()->json([
-            'message' => 'Availability schedule deleted successfully',
-        ]);
+        return back()->with('success', 'Availability schedule deleted successfully.');
     }
 }
