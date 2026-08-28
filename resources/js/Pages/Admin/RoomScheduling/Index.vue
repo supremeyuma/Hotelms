@@ -2,7 +2,7 @@
 import ManagerLayout from '@/Layouts/Staff/ManagerLayout.vue'
 import InputError from '@/Components/InputError.vue'
 import { Head, useForm, router, usePage } from '@inertiajs/vue3'
-import { ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import {
   CalendarClock,
   CalendarOff,
@@ -31,21 +31,8 @@ const props = defineProps({
 })
 
 const page = usePage()
-const showFlash = ref(false)
-const flashMessage = ref('')
-
-watch(
-  () => page.props.flash,
-  (flash) => {
-    if (flash?.success) {
-      flashMessage.value = flash.success
-      showFlash.value = true
-      window.setTimeout(() => {
-        showFlash.value = false
-      }, 4000)
-    }
-  },
-)
+const showFlash = computed(() => Boolean(page.props.flash?.success))
+const flashMessage = computed(() => page.props.flash?.success || '')
 
 function formatPrice(value) {
   return `₦${Number(value || 0).toLocaleString()}`
@@ -95,7 +82,7 @@ const priceEditForm = useForm({
 function openPriceEdit(schedule) {
   editingPriceId.value = schedule.id
   priceEditForm.clearErrors()
-  priceEditForm.setDefaults({
+  priceEditForm.defaults({
     start_date: schedule.start_date,
     end_date: schedule.end_date,
     custom_price: String(schedule.custom_price),
@@ -193,7 +180,7 @@ const blockEditForm = useForm({
 function openBlockEdit(schedule) {
   editingBlockId.value = schedule.id
   blockEditForm.clearErrors()
-  blockEditForm.setDefaults({
+  blockEditForm.defaults({
     start_date: schedule.start_date,
     end_date: schedule.end_date,
     reason: schedule.reason,
