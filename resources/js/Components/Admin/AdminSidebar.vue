@@ -22,6 +22,10 @@ import Icon from '@/Components/Icon.vue'
         <Icon name="layers" /> Room Types
       </Link>
 
+      <Link :href="route('admin.room-scheduling.dashboard')" class="nav-item">
+        <Icon name="calendar-range" /> Room Scheduling
+      </Link>
+
       <Link :href="route('admin.bookings.index')" class="nav-item">
         <Icon name="calendar" /> Bookings
       </Link>

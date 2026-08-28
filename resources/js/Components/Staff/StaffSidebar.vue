@@ -35,7 +35,8 @@ import {
   Calendar as CalendarIcon,
   TrendingUp,
   Lock,
-  AlertTriangle
+  AlertTriangle,
+  CalendarRange
 } from 'lucide-vue-next'
 
 // The keys here MUST match the 'icon' strings in the nav computed property below
@@ -69,6 +70,7 @@ const ICONS = {
   'file-text': FileText,
   'calendar-icon': CalendarIcon,
   'trending-up': TrendingUp,
+  'calendar-range': CalendarRange,
   lock: Lock,
   'alert-triangle': AlertTriangle,
 }
@@ -127,6 +129,7 @@ const nav = computed(() => {
           { label: 'Discount Codes', route: 'admin.discount-codes.index', icon: 'tag', activeRoute: 'admin.discount-codes.*' },
           { label: 'Rooms', route: 'admin.rooms.index', icon: 'bed', activeRoute: 'admin.rooms.*' },
           { label: 'Room Types', route: 'admin.room-types.index', icon: 'layers', activeRoute: 'admin.room-types.*' },
+          { label: 'Room Scheduling', route: 'admin.room-scheduling.dashboard', icon: 'calendar-range', activeRoute: 'admin.room-scheduling.*' },
           { label: 'Inventory', route: 'admin.inventory.index', icon: 'boxes', activeRoute: 'admin.inventory.*' },
           { label: 'Inventory Locations', route: 'admin.inventory-locations.index', icon: 'map-pin', activeRoute: 'admin.inventory-locations.*' },
           { label: 'Cleaning Templates', route: 'admin.cleaning-templates.index', icon: 'brush-cleaning', activeRoute: 'admin.cleaning-templates.*' },
@@ -153,6 +156,7 @@ const nav = computed(() => {
           { label: 'Discount Codes', route: 'admin.discount-codes.index', icon: 'tag', activeRoute: 'admin.discount-codes.*' },
           { label: 'Rooms', route: 'admin.rooms.index', icon: 'bed', activeRoute: 'admin.rooms.*' },
           { label: 'Room Types', route: 'admin.room-types.index', icon: 'layers', activeRoute: 'admin.room-types.*' },
+          { label: 'Room Scheduling', route: 'admin.room-scheduling.dashboard', icon: 'calendar-range', activeRoute: 'admin.room-scheduling.*' },
           { label: 'Staff Management', route: 'admin.staff.index', icon: 'users', activeRoute: 'admin.staff.*' },
           { label: 'HR Management', route: 'hr.staff.index', icon: 'user-check', activeRoute: 'hr.staff.*' },
           { label: 'Finance Dashboard', route: 'finance.dashboard', icon: 'dollar-sign', activeRoute: 'finance.dashboard' },

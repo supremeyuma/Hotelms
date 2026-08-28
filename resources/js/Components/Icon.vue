@@ -19,6 +19,7 @@ import {
 
   Home,
   Calendar,
+  CalendarRange,
   Bell,
   Shirt,
   Clipboard,
@@ -47,6 +48,7 @@ const icons = {
   // Sidebar / navigation
   home: Home,
   calendar: Calendar,
+  'calendar-range': CalendarRange,
   bell: Bell,
   shirt: Shirt,
   clipboard: Clipboard,
