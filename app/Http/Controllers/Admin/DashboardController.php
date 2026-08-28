@@ -135,8 +135,8 @@ class DashboardController extends Controller
                 [
                     'label' => 'Unsettled stays',
                     'value' => $unsettledBookings,
-                    'helper' => 'Confirmed stays with payment still open',
-                    'route' => route('admin.bookings.index'),
+'helper' => 'Confirmed stays with payment still open',
+                    'route' => route('frontdesk.bookings.index'),
                     'tone' => 'violet',
                 ],
                 [
@@ -155,8 +155,8 @@ class DashboardController extends Controller
                 ],
                 [
                     'label' => 'Bookings',
-                    'description' => 'Review arrivals, departures, and stay status.',
-                    'route' => route('admin.bookings.index'),
+'description' => 'Review arrivals, departures, and stay status.',
+                    'route' => route('frontdesk.bookings.index'),
                 ],
                 [
                     'label' => 'Rooms',
