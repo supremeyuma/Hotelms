@@ -82,11 +82,10 @@ class RoomSchedulingController extends Controller
             ]);
 
         $rooms = Room::with('roomType')
-            ->orderBy('room_number')
+            ->orderBy('name')
             ->get()
             ->map(fn (Room $room) => [
                 'id' => $room->id,
-                'room_number' => $room->room_number,
                 'label' => $room->display_name ?? $room->name ?? $room->room_number,
                 'room_type_id' => $room->room_type_id,
                 'property_id' => $room->property_id,
