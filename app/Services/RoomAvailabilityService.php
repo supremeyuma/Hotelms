@@ -5,6 +5,9 @@ namespace App\Services;
 
 use App\Models\Room;
 use App\Models\Booking;
+use App\Models\RoomTypePriceSchedule;
+use App\Models\RoomAvailabilitySchedule;
+use App\Services\RoomSchedulingService;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
@@ -15,6 +18,13 @@ use Illuminate\Support\Collection;
  */
 class RoomAvailabilityService
 {
+    protected RoomSchedulingService $scheduling;
+
+    public function __construct(RoomSchedulingService $scheduling)
+    {
+        $this->scheduling = $scheduling;
+    }
+
     protected function bookableStatuses(): array
     {
         return ['available', 'dirty'];
@@ -25,7 +35,7 @@ class RoomAvailabilityService
         return ['pending_payment', 'confirmed', 'active', 'checked_in'];
     }
 
-    protected function activeReservationQuery(string $checkIn, string $checkOut, ?int $excludeBookingId = null)
+protected function activeReservationQuery(string $checkIn, string $checkOut, ?int $excludeBookingId = null)
     {
         return Booking::query()
             ->when($excludeBookingId, fn ($query) => $query->where('id', '!=', $excludeBookingId))
@@ -47,6 +57,52 @@ class RoomAvailabilityService
     }
 
     /**
+     * True when an active unavailability schedule blocks the given room
+     * (directly, or via its room type) for any night in [from, to).
+     */
+    protected function isBlockedBySchedule(int $roomId, ?int $roomTypeId, string $from, string $to): bool
+    {
+        return RoomAvailabilitySchedule::unavailable()
+            ->where('start_date', '<=', $to)
+            ->where('end_date', '>=', $from)
+            ->where(function ($query) use ($roomId, $roomTypeId) {
+                $query->where('room_id', $roomId)
+                    ->when($roomTypeId, fn ($q) => $q->orWhere('room_type_id', $roomTypeId));
+            })
+            ->exists();
+    }
+
+    /**
+     * Count rooms of a type that are blocked by unavailability schedules
+     * for any night in [from, to).
+     */
+    protected function blockedRoomsForType(int $roomTypeId, string $from, string $to): int
+    {
+        $ids = Room::where('room_type_id', $roomTypeId)->pluck('id')->all();
+
+        if ($ids === []) {
+            return 0;
+        }
+
+        $roomTypeLevel = RoomAvailabilitySchedule::unavailable()
+            ->where('start_date', '<=', $to)
+            ->where('end_date', '>=', $from)
+            ->where('room_type_id', $roomTypeId)
+            ->exists();
+
+        if ($roomTypeLevel) {
+            return count($ids);
+        }
+
+        return RoomAvailabilitySchedule::unavailable()
+            ->where('start_date', '<=', $to)
+            ->where('end_date', '>=', $from)
+            ->whereIn('room_id', $ids)
+            ->distinct()
+            ->count('room_id');
+    }
+
+    /**
      * Inventory-based availability check (quantity driven)
      */
     public function checkAvailability(
@@ -59,18 +115,20 @@ class RoomAvailabilityService
             ->whereIn('status', $this->bookableStatuses())
             ->count();
 
-        $reservedRooms = $this->activeReservationQuery($checkIn, $checkOut)
+$reservedRooms = $this->activeReservationQuery($checkIn, $checkOut)
             ->where('room_type_id', $roomTypeId)
             ->sum('quantity');
 
-        return ($totalRooms - $reservedRooms) >= $quantity;
+        $blockedRooms = $this->blockedRoomsForType($roomTypeId, $checkIn, $checkOut);
+
+        return ($totalRooms - $reservedRooms - $blockedRooms) >= $quantity;
     }
 
     /**
      * Lock and fetch physical rooms for CHECK-IN
      * Rooms are assigned ONLY here
      */
-    public function lockRoomsForCheckIn(
+public function lockRoomsForCheckIn(
         int $roomTypeId,
         string $checkIn,
         string $checkOut,
@@ -87,7 +145,8 @@ class RoomAvailabilityService
             })
             ->lockForUpdate()
             ->limit($limit)
-            ->get();
+            ->get()
+            ->reject(fn ($room) => $this->isBlockedBySchedule($room->id, $room->room_type_id, $checkIn, $checkOut));
     }
 
     /**
@@ -124,11 +183,12 @@ class RoomAvailabilityService
             })
             ->lockForUpdate();
 
-        if ($limit) {
+if ($limit) {
             $query->limit($limit);
         }
 
-        return $query->get();
+        return $query->get()
+            ->reject(fn ($room) => $this->isBlockedBySchedule($room->id, $room->room_type_id, $checkIn, $checkOut));
     }
 
     public function areRoomsAvailable(array $roomIds, string $checkIn, string $checkOut, ?int $excludeBookingId = null): bool
@@ -139,11 +199,23 @@ class RoomAvailabilityService
             return false;
         }
 
-        $conflicts = $this->activeReservationQuery($checkIn, $checkOut, $excludeBookingId)
+$conflicts = $this->activeReservationQuery($checkIn, $checkOut, $excludeBookingId)
             ->whereHas('rooms', fn ($query) => $query->whereIn('rooms.id', $roomIds))
             ->count();
 
-        return $conflicts === 0;
+        if ($conflicts !== 0) {
+            return false;
+        }
+
+        $roomTypeMap = Room::whereIn('id', $roomIds)->pluck('room_type_id', 'id');
+
+        foreach ($roomIds as $roomId) {
+            if ($this->isBlockedBySchedule($roomId, $roomTypeMap[$roomId] ?? null, $checkIn, $checkOut)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public function getAvailableRoomsByIds(array $roomIds, string $checkIn, string $checkOut, ?int $excludeBookingId = null): Collection
@@ -218,7 +290,11 @@ class RoomAvailabilityService
             ? array_unique([...$this->bookableStatuses(), 'reserved', 'occupied'])
             : $this->bookableStatuses();
 
-        if (! in_array($room->status, $allowedStatuses, true)) {
+if (! in_array($room->status, $allowedStatuses, true)) {
+            return false;
+        }
+
+        if ($this->isBlockedBySchedule($room->id, $room->room_type_id, $from, $to)) {
             return false;
         }
 

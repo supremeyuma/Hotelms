@@ -42,20 +42,8 @@ Route::middleware(['auth', 'role:manager|md|superuser'])->prefix('admin')->as('a
         Route::get('rooms/{room}/qr/download', [RoomQrController::class, 'download'])->name('rooms.qr.download');
         Route::resource('room-types', RoomTypeController::class);
 
-        Route::get('bookings', [BookingAdminController::class, 'index'])->name('bookings.index');
-        Route::get('bookings/{booking}/edit', [BookingAdminController::class, 'edit'])->name('bookings.edit');
-        Route::put('bookings/{booking}', [BookingAdminController::class, 'update'])->name('bookings.update');
-        Route::post('bookings/{booking}/check-in', [BookingAdminController::class, 'checkIn'])->name('bookings.check-in');
-        Route::post('bookings/{booking}/check-out', [BookingAdminController::class, 'checkOut'])->name('bookings.check-out');
-        Route::post('bookings/{booking}/approve-price-override', [BookingAdminController::class, 'approvePriceOverride'])->name('bookings.price-override.approve');
-        Route::post('bookings/{booking}/reject-price-override', [BookingAdminController::class, 'rejectPriceOverride'])->name('bookings.price-override.reject');
-        Route::post('bookings/{booking}/charges', [BookingAdminController::class, 'addCharge'])->name('bookings.charges.store');
-        Route::post('bookings/{booking}/payments', [BookingAdminController::class, 'addPayment'])->name('bookings.payments.store');
-        Route::get('discount-codes', [DiscountCodeController::class, 'index'])->name('discount-codes.index');
-        Route::post('discount-codes', [DiscountCodeController::class, 'store'])->name('discount-codes.store');
-        Route::patch('discount-codes/{discountCode}/toggle', [DiscountCodeController::class, 'toggle'])->name('discount-codes.toggle');
-        Route::patch('discount-codes/{discountCode}/extend', [DiscountCodeController::class, 'extend'])->name('discount-codes.extend');
-        Route::delete('discount-codes/{discountCode}', [DiscountCodeController::class, 'destroy'])->name('discount-codes.destroy');
+        // ROOM SCHEDULING ROUTES
+        require __DIR__ . '/admin/room-scheduling.php';
 
         Route::prefix('staff')->name('staff.')->group(function () {
             Route::get('/', [StaffController::class, 'index'])->name('index');

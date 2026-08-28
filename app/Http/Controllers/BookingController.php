@@ -19,6 +19,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Services\RoomAvailabilityService;
 use App\Models\RoomType;
+use App\Models\RoomTypePriceSchedule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\URL;
@@ -56,7 +57,27 @@ class BookingController extends Controller
         $this->pricingService = $pricingService;
         $this->paymentManager = $paymentManager;
         $this->discountCodeService = $discountCodeService;
-        $this->paymentRecords = $paymentRecords;
+$this->paymentRecords = $paymentRecords;
+    }
+
+    /**
+     * Nightly rate honouring active room-type price schedules.
+     * A price schedule applies when it covers the entire stay window;
+     * otherwise the room type's base rate is used.
+     */
+    protected function effectiveNightlyRate(RoomType $roomType, string $checkIn, string $checkOut): float
+    {
+        $nights = max(1, (int) Carbon::parse($checkIn)->startOfDay()->diffInDays(Carbon::parse($checkOut)->startOfDay()));
+
+        $schedule = RoomTypePriceSchedule::active()
+            ->where('room_type_id', $roomType->id)
+            ->where('property_id', $roomType->property_id)
+            ->where('start_date', '<=', Carbon::parse($checkIn)->toDateString())
+            ->where('end_date', '>=', Carbon::parse($checkIn)->copy()->addDays($nights - 1)->toDateString())
+            ->latest('id')
+            ->first();
+
+        return $schedule ? (float) $schedule->custom_price : (float) $roomType->base_price;
     }
 
 
@@ -97,7 +118,7 @@ class BookingController extends Controller
                 'id' => $roomType->id,
                 'name' => $roomType->title,
                 'description' => $roomType->description,
-                'price_per_night' => $roomType->base_price,
+                'price_per_night' => $this->effectiveNightlyRate($roomType, $checkIn, $checkOut),
                 'available_quantity' => $availableRooms->count(),
                 'max_adults' => $roomType->max_occupancy,
                 //'max_children' => $roomType->max_children,
@@ -251,7 +272,8 @@ class BookingController extends Controller
         $nights = $checkIn->diffInDays($checkOut);
         $nights = $nights > 0 ? (int)$nights : 1;
 
-        $totalPrice = $booking['total_amount'] ?? ($roomType->base_price * $nights * $booking['quantity']);
+        $totalPrice = $booking['total_amount'] ?? ($this->effectiveNightlyRate($roomType, $booking['check_in'], $booking['check_out'])
+            * $nights * $booking['quantity']);
 
         return Inertia::render('Booking/Review', [
             'booking' => $booking,
@@ -279,7 +301,9 @@ class BookingController extends Controller
         $nights = \Carbon\Carbon::parse($bookingData['check_in'])
             ->diffInDays(\Carbon\Carbon::parse($bookingData['check_out']));
 
-        $basePrice = $roomType->base_price * $nights * $bookingData['quantity'];
+$rate = $this->effectiveNightlyRate($roomType, $bookingData['check_in'], $bookingData['check_out']);
+
+        $basePrice = $rate * $nights * $bookingData['quantity'];
         $discountPreview = null;
 
         if (! empty($bookingData['discount_code'])) {
@@ -308,7 +332,7 @@ class BookingController extends Controller
                     'selected_room_ids' => $bookingData['selected_room_ids'] ?? [],
                     'total_amount' => $totalPrice,
                     'guest_name' => $bookingData['guest_name'],
-                    'nightly_rate' => $roomType->base_price,
+'nightly_rate' => $rate,
                     'status' => 'pending_payment',
                     'details' => $discountPreview ? [
                         'discount' => [

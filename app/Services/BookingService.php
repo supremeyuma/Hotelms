@@ -2,10 +2,8 @@
 
 namespace App\Services;
 
-use App\Mail\BookingConfirmationMail;
-use App\Models\Booking;
-use App\Models\User;
-use App\Services\Billing\NightlyRoomChargeService;
+use App\Models\Room;
+use App\Services\RoomSchedulingService;
 use App\Services\RoomAvailabilityService;
 use App\Services\AuditLoggerService;
 use App\Services\RoomCheckoutService;
@@ -16,7 +14,9 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Support\Collection;
 use Exception;
-use App\Models\Room;
+use App\Mail\BookingConfirmationMail;
+use App\Models\Booking;
+use App\Models\User;
 
 /**
  * BookingService
