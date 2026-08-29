@@ -679,24 +679,6 @@ public function payment(Booking $booking)
     /**
      * Confirm booking (view confirmation)
      */
-    public function confirmBooking(Booking $booking)
-    {
-        $booking->load(['room.roomType','user']);
-        return Inertia::render('Public/BookingConfirmation', [
-            'booking' => $booking
-        ]);
-    }
-
-    /**
-     * View booking (for guest or staff)
-     */
-    public function viewBooking(Booking $booking)
-    {
-        $this->authorize('view', $booking);
-        $booking->load(['room','payments','orders','user']);
-        return Inertia::render('Bookings/View', compact('booking'));
-    }
-
     /**
      * Cancel booking (soft delete or status)
      */

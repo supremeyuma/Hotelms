@@ -6,7 +6,6 @@ use App\Http\Controllers\Public\PublicEventController;
 use App\Http\Controllers\Public\PublicMenuOnlineController;
 use App\Http\Controllers\Public\PublicMenuViewOnlyController;
 use App\Http\Controllers\Public\PublicOrderController;
-use App\Http\Controllers\RoomServiceController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\BookingDiscountController;
 use App\Http\Controllers\GuestLaundryController;

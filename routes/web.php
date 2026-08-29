@@ -5,7 +5,6 @@ use App\Http\Controllers\PublicController;
 use App\Http\Controllers\Public\PublicEventController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\OrderController;
-use App\Http\Controllers\RoomServiceController;
 use App\Http\Controllers\PaymentController;
 
 /*
