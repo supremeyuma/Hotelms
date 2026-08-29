@@ -12,7 +12,7 @@ const totalOpen = computed(() => props.dockets.length)
 </script>
 
 <template>
-  <div class="flex items-center gap-2 px-4 py-2 bg-slate-850 border-t border-slate-700 overflow-x-auto shrink-0 min-h-[56px]" style="-webkit-overflow-scrolling: touch">
+  <div class="flex items-center gap-2 px-4 py-2 bg-slate-800 border-t border-slate-700 overflow-x-auto shrink-0 min-h-[56px]" style="-webkit-overflow-scrolling: touch">
     <button @click="$emit('create')"
       class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition-all active:scale-95 whitespace-nowrap min-h-[40px]">
       <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">

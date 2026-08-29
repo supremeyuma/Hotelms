@@ -157,7 +157,7 @@ watch(showPinModal, (val) => {
             @add-item="handleAddItem" />
         </div>
 
-        <div class="w-[380px] shrink-0 border-l border-slate-700 bg-slate-850 p-4 flex flex-col overflow-hidden">
+        <div class="w-[380px] shrink-0 border-l border-slate-700 bg-slate-800 p-4 flex flex-col overflow-hidden">
           <PaymentModal
             v-if="showPayment && activeDocket"
             :docket="activeDocket"

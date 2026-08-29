@@ -55,5 +55,16 @@ export default {
         },
     },
 
-    plugins: [forms],
+    plugins: [
+        forms,
+        function ({ addUtilities }) {
+            addUtilities({
+                '.scrollbar-none': {
+                    'scrollbar-width': 'none',
+                    '-ms-overflow-style': 'none',
+                    '&::-webkit-scrollbar': { display: 'none' },
+                },
+            });
+        },
+    ],
 };
