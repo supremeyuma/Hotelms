@@ -66,7 +66,7 @@ const methodColors = {
 </script>
 
 <template>
-  <div class="flex flex-col h-full">
+  <div role="dialog" aria-modal="true" aria-label="Payment" class="flex flex-col h-full">
     <div class="flex items-center justify-between mb-4 shrink-0">
       <h3 class="text-xl font-bold text-white">Payment</h3>
       <p class="text-lg font-bold text-emerald-400 tabular-nums">Ksh {{ Number(docket.total).toLocaleString() }}</p>
@@ -84,7 +84,7 @@ const methodColors = {
             <option value="mobile_money">Mobile Money</option>
             <option value="voucher">Voucher</option>
           </select>
-          <button v-if="payments.length > 1" @click="removePayment(i)"
+          <button v-if="payments.length > 1" @click="removePayment(i)" aria-label="Remove payment"
             class="text-slate-500 hover:text-red-400 p-1 transition-colors">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -93,20 +93,20 @@ const methodColors = {
         </div>
 
         <div>
-          <label class="text-xs text-slate-400 mb-1 block">Amount</label>
-          <input v-model="payment.amount" type="number" step="0.01" min="0" placeholder="0.00"
+          <label :for="`pmt-amount-${i}`" class="text-xs text-slate-400 mb-1 block">Amount</label>
+          <input :id="`pmt-amount-${i}`" v-model="payment.amount" type="number" step="0.01" min="0" placeholder="0.00"
             class="w-full bg-slate-700 text-white rounded-lg px-3 py-2.5 text-lg font-bold border border-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[44px]" />
         </div>
 
         <div v-if="payment.method === 'cash'">
-          <label class="text-xs text-slate-400 mb-1 block">Change Given</label>
-          <input v-model="payment.change_given" type="number" step="0.01" min="0" placeholder="0.00"
+          <label :for="`pmt-change-${i}`" class="text-xs text-slate-400 mb-1 block">Change Given</label>
+          <input :id="`pmt-change-${i}`" v-model="payment.change_given" type="number" step="0.01" min="0" placeholder="0.00"
             class="w-full bg-slate-700 text-white rounded-lg px-3 py-2.5 text-sm border border-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[44px]" />
         </div>
 
         <div v-if="payment.method === 'room_charge' || payment.method === 'card' || payment.method === 'mobile_money'">
-          <label class="text-xs text-slate-400 mb-1 block">Reference</label>
-          <input v-model="payment.reference" type="text" placeholder="Reference number"
+          <label :for="`pmt-ref-${i}`" class="text-xs text-slate-400 mb-1 block">Reference</label>
+          <input :id="`pmt-ref-${i}`" v-model="payment.reference" type="text" placeholder="Reference number"
             class="w-full bg-slate-700 text-white rounded-lg px-3 py-2.5 text-sm border border-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[44px]" />
         </div>
       </div>

@@ -64,19 +64,22 @@ defineExpose({ reset })
 
     <div class="grid grid-cols-3 gap-3 w-64">
       <template v-for="row in rows" :key="row.join('')">
-        <button v-for="key in row" :key="key"
-          @click="press(key)"
-          :disabled="loading"
-          class="h-14 rounded-xl text-lg font-bold transition-all active:scale-90 disabled:opacity-50"
-          :class="key === 'del'
-            ? 'bg-slate-700 text-slate-300 hover:bg-slate-600 col-span-1'
-            : key === ''
-              ? 'bg-transparent pointer-events-none'
+        <template v-for="key in row" :key="key">
+          <div v-if="key === ''"></div>
+          <button
+            v-else
+            @click="press(key)"
+            :disabled="loading"
+            class="h-14 rounded-xl text-lg font-bold transition-all active:scale-90 disabled:opacity-50"
+            :class="key === 'del'
+              ? 'bg-slate-700 text-slate-300 hover:bg-slate-600'
               : 'bg-slate-700 text-white hover:bg-slate-600'
-          ">
-          <span v-if="key === 'del'" class="text-sm">DEL</span>
-          <span v-else>{{ key }}</span>
-        </button>
+            "
+          >
+            <span v-if="key === 'del'" class="text-sm">DEL</span>
+            <span v-else>{{ key }}</span>
+          </button>
+        </template>
       </template>
     </div>
 

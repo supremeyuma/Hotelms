@@ -31,6 +31,7 @@ const dockets = ref(props.openDockets)
 const activeDocketId = ref(null)
 const showPayment = ref(false)
 const creatingDocket = ref(false)
+const staffPinRef = ref(null)
 
 const activeDocket = computed(() => {
   if (!activeDocketId.value) return null
@@ -47,11 +48,13 @@ async function handlePinConfirm(pin) {
     const data = await res.json()
     if (!res.ok) {
       alert(data.error || 'Invalid PIN')
+      staffPinRef.value?.reset()
       return
     }
     window.location.href = route('club.pos.dashboard')
   } catch (e) {
     alert('Failed to verify PIN')
+    staffPinRef.value?.reset()
   }
 }
 
@@ -179,8 +182,12 @@ watch(showPinModal, (val) => {
     <Teleport to="body">
       <div v-if="showPinModal"
         class="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="w-full max-w-sm rounded-2xl bg-slate-800 border border-slate-700 shadow-2xl">
-          <StaffPinModal @confirm="handlePinConfirm" @cancel="showPinModal = false" />
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Staff login"
+          class="w-full max-w-sm rounded-2xl bg-slate-800 border border-slate-700 shadow-2xl">
+          <StaffPinModal ref="staffPinRef" @confirm="handlePinConfirm" @cancel="showPinModal = false" />
         </div>
       </div>
     </Teleport>
