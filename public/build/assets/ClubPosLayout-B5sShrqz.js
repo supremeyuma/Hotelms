@@ -1,1 +1,0 @@
-import{e as o,D as t,o as s}from"./app-DsQqDekT.js";const n={class:"h-screen w-screen flex flex-col bg-slate-900 text-white overflow-hidden select-none touch-none"},a={__name:"ClubPosLayout",setup(c){return(e,l)=>(s(),o("div",n,[t(e.$slots,"default")]))}};export{a as _};
