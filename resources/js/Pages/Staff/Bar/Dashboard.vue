@@ -4,7 +4,6 @@ import BarLayout from '@/Layouts/Staff/BarLayout.vue'
 import { 
   GlassWater, 
   ClipboardList, 
-  Settings2, 
   Beer,
   ArrowRight
 } from 'lucide-vue-next'
@@ -76,10 +75,6 @@ import {
           <div class="absolute -bottom-10 -right-10 w-40 h-40 bg-cyan-50/50 rounded-full group-hover:scale-150 transition-transform duration-500"></div>
         </Link>
       </div>
-
-      <button class="fixed bottom-8 right-8 md:hidden w-16 h-16 bg-slate-900 text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50">
-        <Settings2 class="w-7 h-7" />
-      </button>
     </div>
   </BarLayout>
 </template>

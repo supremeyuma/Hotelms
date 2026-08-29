@@ -11,6 +11,8 @@ const props = defineProps({
   area: String
 })
 
+const categoriesLocal = ref(JSON.parse(JSON.stringify(props.categories ?? [])))
+
 /* =========================
    UI STATE
 ========================= */
@@ -24,8 +26,6 @@ const editingItem = ref(null)
 
 const expandedCategories = ref([]) 
 const expandedSubcategories = ref([])
-const search = ref('')
-const showUnavailable = ref(true)
 
 /* =========================
    FORMS (Original Fields Preserved)
@@ -56,26 +56,10 @@ const itemForm = reactive({
 /* =========================
    COMPUTED
 ========================= */
-const filteredCategories = computed(() => {
-  return props.categories.map(c => ({
-    ...c,
-    items: c.items.filter(filterItem),
-    subcategories: c.subcategories.map(s => ({
-      ...s,
-      items: s.items.filter(filterItem)
-    }))
-  }))
-})
-
 const filteredSubcategories = computed(() => {
   const c = props.categories.find(c => c.id === itemForm.menu_category_id)
   return c ? c.subcategories : []
 })
-
-function filterItem(item) {
-  if (!showUnavailable.value && !item.is_available) return false
-  return item.name.toLowerCase().includes(search.value.toLowerCase())
-}
 
 /* =========================
    HELPERS
@@ -228,7 +212,7 @@ function toggle(url) {
 ========================= */
 function saveCategoryOrder() {
   router.post('/staff/menu/reorder', {
-    categories: props.categories.map((c, i) => ({ id: c.id, sort_order: i }))
+    categories: categoriesLocal.value.map((c, i) => ({ id: c.id, sort_order: i }))
   }, { showProgress: false })
 }
 
@@ -242,6 +226,13 @@ function saveItemOrder(category) {
 watch(() => itemForm.menu_category_id, () => {
   itemForm.menu_subcategory_id = null
 })
+
+watch(
+  () => props.categories,
+  (value) => {
+    categoriesLocal.value = JSON.parse(JSON.stringify(value ?? []))
+  }
+)
 </script>
 
 <template>
@@ -252,14 +243,6 @@ watch(() => itemForm.menu_category_id, () => {
       <h1 class="text-2xl font-bold uppercase tracking-tight">
         {{ area === 'kitchen' ? 'Kitchen' : 'Bar' }} Menu
       </h1>
-
-      <div class="flex gap-3">
-        <input v-model="search" placeholder="Search items..." class="border rounded-lg px-3 py-1 text-sm focus:ring-1 focus:ring-black outline-none" />
-        <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
-          <input type="checkbox" v-model="showUnavailable" class="rounded" />
-          Show unavailable
-        </label>
-      </div>
     </div>
 
     <div class="flex gap-4">
@@ -373,7 +356,7 @@ watch(() => itemForm.menu_category_id, () => {
     </div>
 
     <draggable
-      v-model="props.categories"
+      v-model="categoriesLocal"
       item-key="id"
       class="space-y-4"
       @end="saveCategoryOrder"

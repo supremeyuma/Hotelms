@@ -4,7 +4,6 @@ import KitchenLayout from '@/Layouts/Staff/KitchenLayout.vue'
 import { 
   UtensilsCrossed, 
   ClipboardList, 
-  Settings2, 
   ChefHat 
 } from 'lucide-vue-next'
 </script>
@@ -80,10 +79,6 @@ import {
           <div class="absolute -bottom-6 -right-6 w-24 h-24 bg-orange-50/50 rounded-full group-hover:scale-150 transition-transform duration-500"></div>
         </Link>
       </div>
-
-      <button class="fixed bottom-6 right-6 md:hidden w-14 h-14 bg-slate-900 text-white rounded-full shadow-2xl flex items-center justify-center active:scale-90 transition-transform">
-        <Settings2 class="w-6 h-6" />
-      </button>
     </div>
   </KitchenLayout>
 </template>

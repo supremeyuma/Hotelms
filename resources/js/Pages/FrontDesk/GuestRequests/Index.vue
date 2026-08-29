@@ -9,8 +9,7 @@ import {
   Clock, 
   CheckCircle2, 
   Zap, 
-  Inbox, 
-  Filter
+  Inbox
 } from 'lucide-vue-next';
 
 const props = defineProps({
@@ -82,9 +81,6 @@ onMounted(() => {
                 </div>
 
                 <div class="flex gap-3">
-                    <button class="flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-100 rounded-xl text-xs font-black text-slate-600 hover:bg-slate-50 transition-all">
-                        <Filter class="w-4 h-4" /> Filter Feed
-                    </button>
                     <button @click="fetchRequests(1)" class="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-black hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition-all">
                         <Zap class="w-4 h-4" /> Refresh
                     </button>

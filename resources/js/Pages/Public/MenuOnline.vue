@@ -259,7 +259,7 @@ function goHome() {
               <div
                 v-for="item in items"
                 :key="item.id"
-                class="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition group cursor-pointer"
+                class="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition group"
               >
                 <div class="relative overflow-hidden bg-gray-100 h-28 sm:h-32">
                   <img
@@ -282,7 +282,7 @@ function goHome() {
                   </div>
 
                   <div class="flex items-center justify-between pt-1.5 border-t border-gray-100">
-                    <span class="font-bold text-sm sm:text-base text-gray-900">â‚¦{{ item.price }}</span>
+                    <span class="font-bold text-sm sm:text-base text-gray-900">₦{{ item.price }}</span>
 
                     <div class="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
                       <button
