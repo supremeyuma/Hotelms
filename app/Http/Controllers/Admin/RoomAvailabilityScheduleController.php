@@ -108,6 +108,40 @@ class RoomAvailabilityScheduleController extends Controller
 
         unset($data['block_all']);
 
+        if (! $isAllRooms) {
+            $existing = RoomAvailabilitySchedule::withTrashed()
+                ->where('property_id', $data['property_id'])
+                ->where('start_date', $data['start_date'])
+                ->where('end_date', $data['end_date'])
+                ->when(! empty($data['room_id']), fn ($query) => $query->where('room_id', $data['room_id']))
+                ->when(! empty($data['room_type_id']), fn ($query) => $query->where('room_type_id', $data['room_type_id']))
+                ->first();
+
+            if ($existing) {
+                $wasTrashed = $existing->trashed();
+                $before = $existing->toArray();
+
+                if ($wasTrashed) {
+                    $existing->restore();
+                }
+
+                $existing->forceFill([
+                    'reason' => $data['reason'],
+                    'notes' => $data['notes'] ?? $existing->notes,
+                    'is_unavailable' => $data['is_unavailable'] ?? true,
+                ])->save();
+
+                $this->auditLogger->logChange(
+                    $wasTrashed ? 'room_availability_schedule_restored' : 'room_availability_schedule_recreated',
+                    $existing,
+                    ['before' => $before],
+                    ['after' => $data]
+                );
+
+                return back()->with('success', 'Availability schedule created successfully.');
+            }
+        }
+
         $schedule = RoomAvailabilitySchedule::create($data);
 
         $this->auditLogger->log('room_availability_schedule_created', $schedule, $schedule->id, $data);
