@@ -15,6 +15,7 @@ import {
   Eye,
   EyeOff,
   BedDouble,
+  Building2,
   Layers,
   Receipt,
 } from 'lucide-vue-next'
@@ -50,6 +51,11 @@ function blockStatus(schedule) {
   if (schedule.is_past) return { label: 'Ended', cls: 'bg-slate-100 text-slate-500' }
   if (schedule.start_date > props.today) return { label: 'Upcoming', cls: 'bg-amber-100 text-amber-700' }
   return { label: 'Blocking', cls: 'bg-rose-100 text-rose-700' }
+}
+
+function blockAffectsLabel(schedule) {
+  if (schedule.room_id || schedule.room_type_id) return schedule.label
+  return schedule.property_name ? `All rooms in ${schedule.property_name}` : 'All rooms in this property'
 }
 
 /* ---------------- Price schedule form ---------------- */
@@ -143,6 +149,9 @@ blockForm.transform((data) => {
     notes: data.notes || null,
     is_unavailable: data.is_unavailable,
   }
+  if (data.scope === 'property') {
+    payload.block_all = true
+  }
   if (data.scope === 'room' && data.room_id) {
     payload.room_id = data.room_id
   }
@@ -155,6 +164,10 @@ blockForm.transform((data) => {
 const scopeSwitcher = {
   room() { blockForm.room_type_id = '' },
   room_type() { blockForm.room_id = '' },
+  property() {
+    blockForm.room_id = ''
+    blockForm.room_type_id = ''
+  },
 }
 
 function changeScope() {
@@ -476,7 +489,7 @@ async function destroyBlock(schedule) {
           </div>
           <div>
             <h2 class="text-2xl font-black tracking-tight text-slate-900">Availability blocks</h2>
-            <p class="text-sm text-slate-500">Take a specific room or an entire room type out of the booking flow for a window.</p>
+            <p class="text-sm text-slate-500">Take a specific room, an entire room type, or all rooms in a property out of the booking flow for a window.</p>
           </div>
         </div>
 
@@ -485,7 +498,7 @@ async function destroyBlock(schedule) {
             <div class="grid gap-5">
               <label class="block">
                 <span class="text-sm font-bold text-slate-700">Block scope</span>
-                <div class="mt-2 grid grid-cols-2 gap-3">
+                <div class="mt-2 grid grid-cols-3 gap-3">
                   <label
                     class="flex cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3 transition"
                     :class="blockForm.scope === 'room' ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'"
@@ -502,6 +515,14 @@ async function destroyBlock(schedule) {
                     <Layers class="h-4 w-4" />
                     <span class="text-sm font-bold">A whole room type</span>
                   </label>
+                  <label
+                    class="flex cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3 transition"
+                    :class="blockForm.scope === 'property' ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'"
+                  >
+                    <input v-model="blockForm.scope" type="radio" value="property" class="sr-only" @change="changeScope" />
+                    <Building2 class="h-4 w-4" />
+                    <span class="text-sm font-bold">All rooms</span>
+                  </label>
                 </div>
               </label>
 
@@ -516,7 +537,7 @@ async function destroyBlock(schedule) {
                 <InputError :message="blockForm.errors.room_id" class="mt-2" />
               </label>
 
-              <label v-else class="block">
+              <label v-else-if="blockForm.scope === 'room_type'" class="block">
                 <span class="text-sm font-bold text-slate-700">Room type</span>
                 <select v-model="blockForm.room_type_id" class="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-slate-400">
                   <option value="" disabled>Select a room type</option>
@@ -524,6 +545,10 @@ async function destroyBlock(schedule) {
                 </select>
                 <InputError :message="blockForm.errors.room_type_id" class="mt-2" />
               </label>
+
+              <div v-else class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                Every room in the selected property is taken out of the booking flow for this window.
+              </div>
 
               <label v-if="properties.length > 1" class="block">
                 <span class="text-sm font-bold text-slate-700">Property</span>
@@ -611,7 +636,7 @@ async function destroyBlock(schedule) {
                   <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Affects</p>
                   <p class="mt-3 flex items-center gap-2 text-base font-black text-slate-900">
                     <BedDouble class="h-4 w-4 text-slate-400" />
-                    {{ schedule.room_id ? schedule.label : schedule.label }}
+                    {{ blockAffectsLabel(schedule) }}
                   </p>
                 </div>
               </div>

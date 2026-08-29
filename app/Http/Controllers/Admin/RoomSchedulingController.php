@@ -67,6 +67,7 @@ class RoomSchedulingController extends Controller
                 'label' => $schedule->room
                     ? ($schedule->room->display_name ?? $schedule->room->name ?? $schedule->room->room_number)
                     : ($schedule->roomType?->title ? "All {$schedule->roomType->title} rooms" : 'All rooms'),
+                'property_name' => $schedule->property?->name,
                 'is_past' => optional($schedule->end_date)?->lt($today) ?? false,
             ])
             ->values();
@@ -112,13 +113,31 @@ class RoomSchedulingController extends Controller
                     ->where('is_unavailable', true)
                     ->where('is_past', false)
                     ->count(),
-                'rooms_blocked' => $availabilitySchedules
-                    ->where('is_unavailable', true)
-                    ->where('is_past', false)
-                    ->pluck('room_id')
-                    ->filter()
-                    ->unique()
-                    ->count(),
+                'rooms_blocked' => (function () use ($availabilitySchedules, $rooms) {
+                    $active = $availabilitySchedules
+                        ->where('is_unavailable', true)
+                        ->where('is_past', false);
+
+                    $blocked = $active->pluck('room_id')->filter()->unique()->count();
+
+                    foreach ($active as $schedule) {
+                        if ($schedule['room_id']) {
+                            continue;
+                        }
+                        if ($schedule['room_type_id']) {
+                            $blocked += $rooms
+                                ->where('room_type_id', $schedule['room_type_id'])
+                                ->where('property_id', $schedule['property_id'])
+                                ->count();
+                        } elseif ($schedule['property_id']) {
+                            $blocked += $rooms
+                                ->where('property_id', $schedule['property_id'])
+                                ->count();
+                        }
+                    }
+
+                    return $blocked;
+                })(),
             ],
         ]);
     }
