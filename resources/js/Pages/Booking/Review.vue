@@ -296,7 +296,7 @@ function removeDiscount() {
                 </div>
                 <div v-if="discount_preview" class="flex justify-between text-sm text-emerald-300">
                   <span>{{ discount_preview.code }}</span>
-                  <span class="font-bold">-â‚¦{{ formatCurrency(discount_preview.discount_amount) }}</span>
+                  <span class="font-bold">-₦{{ formatCurrency(discount_preview.discount_amount) }}</span>
                 </div>
                 <div class="w-full h-px bg-white/10 my-4"></div>
                 <div class="flex justify-between items-end">

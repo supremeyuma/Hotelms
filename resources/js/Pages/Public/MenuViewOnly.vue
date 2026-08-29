@@ -158,7 +158,7 @@ function closeDetails() {
                   {{ item.description }}
                 </p>
                 <div class="flex items-center justify-between pt-1.5 border-t border-gray-100">
-                  <span class="font-black text-sm sm:text-base text-gray-900">â‚¦{{ item.price }}</span>
+                  <span class="font-black text-sm sm:text-base text-gray-900">₦{{ item.price }}</span>
                   <div class="flex gap-1 items-center">
                     <Star class="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
                     <span class="text-[10px] sm:text-xs font-semibold text-gray-700">Popular</span>
@@ -208,7 +208,7 @@ function closeDetails() {
           <div class="bg-gray-50 p-4 rounded-xl space-y-3">
             <div class="flex justify-between items-center">
               <span class="text-gray-600 font-semibold">Price</span>
-              <span class="text-2xl font-black text-gray-900">â‚¦{{ selectedItem.price }}</span>
+              <span class="text-2xl font-black text-gray-900">₦{{ selectedItem.price }}</span>
             </div>
 
             <div v-if="selectedItem.prep_time_minutes" class="flex justify-between items-center text-sm">

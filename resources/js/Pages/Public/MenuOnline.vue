@@ -334,7 +334,7 @@ function goHome() {
                     <div class="flex-1">
                       <p class="font-semibold text-sm text-gray-900">{{ item.name }}</p>
                       <p class="text-xs text-gray-500">
-                        {{ item.quantity }} Ã— â‚¦{{ item.price }}
+                        {{ item.quantity }} × ₦{{ item.price }}
                       </p>
                     </div>
                     <button
@@ -345,7 +345,7 @@ function goHome() {
                     </button>
                   </div>
                   <p class="font-bold text-sm text-right text-gray-900">
-                    â‚¦{{ item.price * item.quantity }}
+                    ₦{{ item.price * item.quantity }}
                   </p>
                 </div>
               </div>
@@ -353,12 +353,12 @@ function goHome() {
               <div v-if="cart.length" class="border-t border-gray-200 pt-4 space-y-2">
                 <div class="flex justify-between text-sm">
                   <span class="text-gray-600">Subtotal</span>
-                  <span class="font-semibold text-gray-900">â‚¦{{ total }}</span>
+                  <span class="font-semibold text-gray-900">₦{{ total }}</span>
                 </div>
                 <div class="bg-gray-50 p-3 rounded-lg">
                   <div class="flex justify-between items-center">
                     <span class="font-bold text-gray-900">Total</span>
-                    <span class="font-black text-lg text-gray-900">â‚¦{{ total }}</span>
+                    <span class="font-black text-lg text-gray-900">₦{{ total }}</span>
                   </div>
                 </div>
               </div>
@@ -401,17 +401,17 @@ function goHome() {
             <div class="flex-1">
               <p class="font-semibold text-gray-900">{{ item.name }}</p>
               <p class="text-xs text-gray-500">
-                {{ item.quantity }} Ã— â‚¦{{ item.price }}
+                {{ item.quantity }} × ₦{{ item.price }}
               </p>
             </div>
-            <p class="font-bold text-gray-900">â‚¦{{ item.price * item.quantity }}</p>
+            <p class="font-bold text-gray-900">₦{{ item.price * item.quantity }}</p>
           </div>
         </div>
 
         <div class="bg-gray-50 p-4 rounded-lg">
           <div class="flex justify-between items-center">
             <span class="font-bold text-gray-900">Order Total</span>
-            <span class="font-black text-xl text-gray-900">â‚¦{{ total }}</span>
+            <span class="font-black text-xl text-gray-900">₦{{ total }}</span>
           </div>
         </div>
 
