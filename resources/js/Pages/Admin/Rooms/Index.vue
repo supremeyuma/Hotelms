@@ -2,7 +2,7 @@
 import Pagination from '@/Components/Pagination.vue'
 import ManagerLayout from '@/Layouts/Staff/ManagerLayout.vue'
 import { Head, Link, router } from '@inertiajs/vue3'
-import { computed, reactive, watch } from 'vue'
+import { computed, onBeforeUnmount, reactive, watch } from 'vue'
 import {
   BedDouble,
   CircleDot,
@@ -31,16 +31,33 @@ const filters = reactive({
   status: props.filters?.status ?? 'all',
 })
 
+let searchTimer = null
+
+const applyFilters = (search, status) => {
+  router.get(route('admin.rooms.index'), { search, status }, {
+    preserveState: true,
+    preserveScroll: true,
+    replace: true,
+  })
+}
+
 watch(
-  () => [filters.search, filters.status],
-  ([search, status]) => {
-    router.get(route('admin.rooms.index'), { search, status }, {
-      preserveState: true,
-      preserveScroll: true,
-      replace: true,
-    })
+  () => filters.search,
+  (search) => {
+    clearTimeout(searchTimer)
+    searchTimer = setTimeout(() => applyFilters(search, filters.status), 350)
   }
 )
+
+watch(
+  () => filters.status,
+  (status) => {
+    clearTimeout(searchTimer)
+    applyFilters(filters.search, status)
+  }
+)
+
+onBeforeUnmount(() => clearTimeout(searchTimer))
 
 const metricCards = computed(() => [
   {

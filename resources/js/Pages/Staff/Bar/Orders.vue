@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { router } from '@inertiajs/vue3'
 import BarLayout from '@/Layouts/Staff/BarLayout.vue'
 import OrderDetailsModal from '@/Components/Orders/OrderDetailsModal.vue'
@@ -33,6 +33,10 @@ onMounted(() => {
 
       orders.value[index] = event.order
     })
+})
+
+onBeforeUnmount(() => {
+  if (window.Echo) window.Echo.leave('orders.bar')
 })
 
 watch(
