@@ -99,6 +99,7 @@ onUnmounted(() => {
 
         <button
           type="button"
+          aria-label="Close image viewer"
           @click="close"
           class="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white transition hover:bg-white/10"
         >

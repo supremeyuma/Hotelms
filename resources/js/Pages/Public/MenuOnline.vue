@@ -286,6 +286,7 @@ function goHome() {
 
                     <div class="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
                       <button
+                        aria-label="Decrease quantity"
                         @click="remove(item)"
                         class="p-1 hover:bg-gray-200 rounded transition"
                       >
@@ -295,6 +296,7 @@ function goHome() {
                         {{ cart.find(i => i.id === item.id)?.quantity || 0 }}
                       </span>
                       <button
+                        aria-label="Increase quantity"
                         @click="add(item)"
                         class="p-1 hover:bg-gray-200 rounded transition"
                       >
@@ -338,6 +340,7 @@ function goHome() {
                       </p>
                     </div>
                     <button
+                      aria-label="Remove from cart"
                       @click="removeFromCart(item.id)"
                       class="text-gray-400 hover:text-red-600 transition"
                     >
@@ -391,7 +394,7 @@ function goHome() {
       <div class="bg-white rounded-2xl p-8 w-full max-w-md space-y-6">
         <div class="flex justify-between items-center">
           <h2 class="font-black text-xl text-gray-900">Confirm Order</h2>
-          <button @click="showPreview = false" class="text-gray-400 hover:text-gray-600">
+          <button @click="showPreview = false" aria-label="Close" class="text-gray-400 hover:text-gray-600">
             <X class="w-6 h-6" />
           </button>
         </div>

@@ -112,7 +112,7 @@ onBeforeUnmount(() => {
                 </button>
               </div>
             </div>
-            <button @click="printPage" class="p-3 bg-white/10 hover:bg-white/20 rounded-2xl text-white transition-colors">
+            <button @click="printPage" aria-label="Print receipt" class="p-3 bg-white/10 hover:bg-white/20 rounded-2xl text-white transition-colors">
               <Printer class="w-5 h-5" />
             </button>
           </div>

@@ -138,7 +138,7 @@ onMounted(() => {
       <div v-if="selectedImage" class="fixed inset-0 z-[100] bg-slate-950/95 backdrop-blur-2xl flex flex-col">
         <div class="p-8 flex justify-between items-center text-white">
           <span class="font-black uppercase tracking-[0.5em] text-[10px]">Gallery Viewer / {{ currentIndex + 1 }} of {{ selectedCategoryImages.length }}</span>
-          <button @click="closeLightbox" class="p-4 hover:rotate-90 transition-transform duration-500">
+          <button @click="closeLightbox" aria-label="Close viewer" class="p-4 hover:rotate-90 transition-transform duration-500">
             <X class="w-8 h-8" />
           </button>
         </div>

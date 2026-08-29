@@ -62,6 +62,7 @@ function submit() {
                 <div class="bg-slate-900 p-8 text-white relative">
                     <button 
                         type="button"
+                        aria-label="Close"
                         @click="$emit('close')" 
                         class="absolute top-6 right-6 p-2 hover:bg-white/10 rounded-full transition-colors"
                     >

@@ -97,7 +97,7 @@
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-center">
                   <div class="flex justify-center space-x-2">
-                    <button class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300" @click="viewDetails(item)">
+                    <button aria-label="View details" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300" @click="viewDetails(item)">
                       <Eye class="h-4 w-4" />
                     </button>
                     <Link v-if="filters.view === 'booking'" :href="route('admin.bookings.edit', item.booking_id)" class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-300">

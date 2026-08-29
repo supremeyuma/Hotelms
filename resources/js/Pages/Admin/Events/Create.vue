@@ -369,8 +369,9 @@ watch(mainImageIndex, (newIndex) => {
 
                 <button 
                   type="button"
+                  aria-label="Remove image"
                   @click="removeMedia(index)"
-                  class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 transition-opacity"
                 >
                   ×
                 </button>

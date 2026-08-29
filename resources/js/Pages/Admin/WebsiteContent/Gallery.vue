@@ -186,6 +186,7 @@ const saveOrder = (items) => {
 
                   <div class="flex items-center gap-2">
                     <button
+                      aria-label="Toggle visibility"
                       @click.stop="toggleActive(element)"
                       class="p-1 rounded hover:bg-slate-100"
                     >

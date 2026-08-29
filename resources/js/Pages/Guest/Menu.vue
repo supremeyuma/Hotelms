@@ -330,6 +330,7 @@ function openHistory() {
                     <!-- QUANTITY SELECTOR -->
                     <div class="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
                       <button
+                        aria-label="Decrease quantity"
                         @click="remove(item)"
                         class="p-1 hover:bg-gray-200 rounded transition"
                       >
@@ -339,6 +340,7 @@ function openHistory() {
                         {{ cart.find(i => i.id === item.id)?.quantity || 0 }}
                       </span>
                       <button
+                        aria-label="Increase quantity"
                         @click="add(item)"
                         class="p-1 hover:bg-gray-200 rounded transition"
                       >

@@ -181,6 +181,7 @@ function submit() {
             <div class="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-2 py-1">
               <button
                 type="button"
+                aria-label="Decrease quantity"
                 class="flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-100"
                 @click="setQuantity(item, selectedQuantity(item.id) - 1)"
               >
@@ -191,6 +192,7 @@ function submit() {
               </span>
               <button
                 type="button"
+                aria-label="Increase quantity"
                 class="flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-100"
                 @click="setQuantity(item, selectedQuantity(item.id) + 1)"
               >
@@ -213,7 +215,8 @@ function submit() {
               <img :src="preview" class="h-20 w-20 rounded-2xl border border-slate-200 object-cover shadow-sm" />
               <button
                 type="button"
-                class="absolute inset-0 hidden items-center justify-center rounded-2xl bg-black/40 text-white group-hover:flex"
+                aria-label="Remove photo"
+                class="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/40 text-white opacity-0 group-focus-within:opacity-100 group-hover:opacity-100"
                 @click="removeFile(index)"
               >
                 <X class="h-4 w-4" />

@@ -48,6 +48,7 @@
               />
               <button
                 type="button"
+                aria-label="Increase quantity"
                 @click="quantities[item.id]++"
                 class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-purple-600 transition-colors"
               >
@@ -68,8 +69,8 @@
 
             <div v-for="(file, idx) in filePreviews" :key="idx" class="relative group">
               <img :src="file" class="h-20 w-20 object-cover rounded-[1.25rem] border border-slate-100 shadow-sm" />
-              <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 rounded-[1.25rem] transition-opacity flex items-center justify-center">
-                <button @click="removeFile(idx)" type="button" class="text-white">
+              <div class="absolute inset-0 bg-black/40 opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 rounded-[1.25rem] transition-opacity flex items-center justify-center">
+                <button @click="removeFile(idx)" type="button" aria-label="Remove photo" class="text-white">
                   <X class="w-4 h-4" />
                 </button>
               </div>
