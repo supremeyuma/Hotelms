@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import KitchenLayout from '@/Layouts/Staff/KitchenLayout.vue'
 import OrderDetailsModal from '@/Components/Orders/OrderDetailsModal.vue'
+import Pagination from '@/Components/Pagination.vue'
 import { Clock, Hash } from 'lucide-vue-next'
 
 const props = defineProps({
@@ -76,18 +77,7 @@ function openOrder(order) {
 
       <!-- PAGINATION -->
       <div v-if="props.orders.links.length > 3" class="mt-10 flex justify-center">
-        <div class="flex gap-2">
-          <a
-            v-for="link in props.orders.links"
-            :key="link.label"
-            v-html="link.label"
-            :href="link.url || '#'"
-            class="px-4 py-2 rounded-xl text-sm font-bold"
-            :class="link.active
-              ? 'bg-indigo-600 text-white'
-              : 'bg-white border border-slate-200 text-slate-600'"
-          />
-        </div>
+        <Pagination :links="props.orders.links" />
       </div>
 
       <!-- ORDER DETAILS MODAL -->
