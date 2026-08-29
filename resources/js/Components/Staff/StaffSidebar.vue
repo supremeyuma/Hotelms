@@ -306,7 +306,7 @@ const nav = computed(() => {
     <div class="border-t p-4 space-y-3 shrink-0">
       <Link
         :href="route('staff.profile.show')"
-        class="flex items-center gap-3 text-sm text-gray-700 hover:text-black"
+        class="flex items-center gap-3 text-sm text-slate-700 hover:text-black"
       >
         <div class="w-9 h-9 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
           {{ user.name?.charAt(0) || 'U' }}
@@ -314,7 +314,7 @@ const nav = computed(() => {
 
         <div class="leading-tight overflow-hidden">
           <p class="font-medium truncate w-32">{{ user.name }}</p>
-          <p class="text-xs text-gray-500">Profile</p>
+          <p class="text-xs text-slate-500">Profile</p>
         </div>
       </Link>
 

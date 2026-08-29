@@ -7,7 +7,7 @@ const siteName = page.props.settings?.site_name || 'HotelMS';
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="min-h-screen bg-slate-50">
     <header class="bg-white shadow">
       <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
         <h1 class="text-xl font-semibold">{{ siteName }}</h1>
@@ -24,7 +24,7 @@ const siteName = page.props.settings?.site_name || 'HotelMS';
       <slot />
     </main>
 
-    <footer class="text-center p-6 text-sm text-gray-500">© {{ new Date().getFullYear() }} {{ siteName }}</footer>
+    <footer class="text-center p-6 text-sm text-slate-500">© {{ new Date().getFullYear() }} {{ siteName }}</footer>
   </div>
 </template>
 

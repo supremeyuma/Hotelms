@@ -65,6 +65,6 @@ import Icon from '@/Components/Icon.vue'
 <style scoped>
 .nav-item {
   @apply flex items-center gap-3 px-3 py-2 rounded-lg text-sm
-         text-gray-700 hover:bg-gray-100;
+         text-slate-700 hover:bg-slate-100;
 }
 </style>

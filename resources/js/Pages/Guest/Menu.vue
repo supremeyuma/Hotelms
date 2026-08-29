@@ -158,25 +158,25 @@ function openHistory() {
     <Head :title="`${type} Menu`" />
 
     <!-- HEADER -->
-    <div class="sticky top-0 z-30 bg-white border-b border-gray-200">
+    <div class="sticky top-0 z-30 bg-white border-b border-slate-200">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
         <button
           @click="goBack"
-          class="flex items-center gap-2 text-sm font-bold text-gray-600 hover:text-gray-900 transition"
+          class="flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-slate-900 transition"
         >
           <ArrowLeft class="w-4 h-4" />
           Back
         </button>
 
         <div class="text-center">
-          <h1 class="text-2xl font-black text-gray-900">{{ type }} Menu</h1>
+          <h1 class="text-2xl font-black text-slate-900">{{ type }} Menu</h1>
           <div class="flex items-center justify-center gap-2 mt-2">
             <button
               @click="router.visit(route('guest.room.dashboard', props.accessToken) + '/menu/kitchen')"
               class="px-4 py-1.5 rounded-full text-xs font-bold transition"
               :class="type === 'kitchen' 
                 ? 'bg-black text-white' 
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'"
+                : 'bg-slate-200 text-slate-700 hover:bg-slate-300'"
             >
               🍽️ Kitchen
             </button>
@@ -185,7 +185,7 @@ function openHistory() {
               class="px-4 py-1.5 rounded-full text-xs font-bold transition"
               :class="type === 'bar' 
                 ? 'bg-black text-white' 
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'"
+                : 'bg-slate-200 text-slate-700 hover:bg-slate-300'"
             >
               🍹 Bar
             </button>
@@ -194,7 +194,7 @@ function openHistory() {
 
         <button
           @click="openHistory"
-          class="flex items-center gap-2 text-sm font-bold text-gray-600 hover:text-gray-900 transition"
+          class="flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-slate-900 transition"
         >
           <ClipboardList class="w-4 h-4" />
           <span class="hidden sm:inline">Orders</span>
@@ -230,21 +230,21 @@ function openHistory() {
           </svg>
         </div>
         <div>
-          <h2 class="font-black text-xl text-gray-900">Order Confirmed!</h2>
-          <p class="text-gray-600 text-sm mt-2">
+          <h2 class="font-black text-xl text-slate-900">Order Confirmed!</h2>
+          <p class="text-slate-600 text-sm mt-2">
             Your order has been sent to the {{ type }}. Check the status in Orders.
           </p>
         </div>
         <button
           @click="openHistory"
-          class="w-full bg-black text-white py-3 rounded-lg font-semibold uppercase text-sm transition hover:bg-gray-800 flex items-center justify-center gap-2"
+          class="w-full bg-black text-white py-3 rounded-lg font-semibold uppercase text-sm transition hover:bg-slate-800 flex items-center justify-center gap-2"
         >
           <ClipboardList class="w-4 h-4" />
           View Orders
         </button>
         <button
           @click="goBack"
-          class="w-full bg-gray-100 text-gray-900 py-3 rounded-lg font-semibold uppercase text-sm transition hover:bg-gray-200"
+          class="w-full bg-slate-100 text-slate-900 py-3 rounded-lg font-semibold uppercase text-sm transition hover:bg-slate-200"
         >
           Back to Room
         </button>
@@ -252,7 +252,7 @@ function openHistory() {
     </div>
 
     <!-- MAIN CONTENT -->
-    <div class="bg-gray-50 min-h-[calc(100vh-200px)]">
+    <div class="bg-slate-50 min-h-[calc(100vh-200px)]">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- CATEGORIES TABS -->
         <div class="mb-8">
@@ -265,7 +265,7 @@ function openHistory() {
               :class="
                 activeCategory?.id === c.id
                   ? 'bg-black text-white shadow-lg'
-                  : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+                  : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
               "
             >
               {{ c.name }}
@@ -283,8 +283,8 @@ function openHistory() {
               class="px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition"
               :class="
                 activeSubcategory?.id === sub.id
-                  ? 'bg-gray-300 text-gray-900 font-semibold'
-                  : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+                  ? 'bg-slate-300 text-slate-900 font-semibold'
+                  : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
               "
             >
               {{ sub.name }}
@@ -303,14 +303,14 @@ function openHistory() {
                 class="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition group"
               >
                 <!-- IMAGE -->
-                <div class="relative overflow-hidden bg-gray-100 h-40">
+                <div class="relative overflow-hidden bg-slate-100 h-40">
                   <img
                     v-if="item.images?.length"
                     :src="`/storage/${item.images[0].path}`"
                     :alt="item.name"
                     class="h-full w-full object-cover group-hover:scale-110 transition"
                   />
-                  <div v-else class="h-full flex items-center justify-center text-gray-400">
+                  <div v-else class="h-full flex items-center justify-center text-slate-400">
                     <span class="text-xs">No image</span>
                   </div>
                 </div>
@@ -318,23 +318,23 @@ function openHistory() {
                 <!-- CONTENT -->
                 <div class="p-4 space-y-3">
                   <div>
-                    <h3 class="font-bold text-sm text-gray-900">{{ item.name }}</h3>
-                    <p v-if="item.description" class="text-xs text-gray-500 mt-1 line-clamp-2">
+                    <h3 class="font-bold text-sm text-slate-900">{{ item.name }}</h3>
+                    <p v-if="item.description" class="text-xs text-slate-500 mt-1 line-clamp-2">
                       {{ item.description }}
                     </p>
                   </div>
 
-                  <div class="flex items-center justify-between pt-2 border-t border-gray-100">
-                    <span class="font-bold text-base text-gray-900">₦{{ item.price }}</span>
+                  <div class="flex items-center justify-between pt-2 border-t border-slate-100">
+                    <span class="font-bold text-base text-slate-900">₦{{ item.price }}</span>
 
                     <!-- QUANTITY SELECTOR -->
-                    <div class="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+                    <div class="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
                       <button
                         aria-label="Decrease quantity"
                         @click="remove(item)"
-                        class="p-1 hover:bg-gray-200 rounded transition"
+                        class="p-1 hover:bg-slate-200 rounded transition"
                       >
-                        <Minus class="w-4 h-4 text-gray-600" />
+                        <Minus class="w-4 h-4 text-slate-600" />
                       </button>
                       <span class="w-6 text-center text-sm font-semibold">
                         {{ cart.find(i => i.id === item.id)?.quantity || 0 }}
@@ -342,9 +342,9 @@ function openHistory() {
                       <button
                         aria-label="Increase quantity"
                         @click="add(item)"
-                        class="p-1 hover:bg-gray-200 rounded transition"
+                        class="p-1 hover:bg-slate-200 rounded transition"
                       >
-                        <Plus class="w-4 h-4 text-gray-600" />
+                        <Plus class="w-4 h-4 text-slate-600" />
                       </button>
                     </div>
                   </div>
@@ -356,13 +356,13 @@ function openHistory() {
           <!-- CART SIDEBAR -->
           <div class="lg:col-span-1">
             <div
-              class="sticky top-24 bg-white rounded-xl shadow-lg p-6 space-y-4 border border-gray-100"
+              class="sticky top-24 bg-white rounded-xl shadow-lg p-6 space-y-4 border border-slate-100"
             >
-              <h2 class="font-black text-lg text-gray-900">Your Cart</h2>
+              <h2 class="font-black text-lg text-slate-900">Your Cart</h2>
 
               <div
                 v-if="!cart.length"
-                class="text-center py-8 text-gray-500"
+                class="text-center py-8 text-slate-500"
               >
                 <Plus class="w-12 h-12 mx-auto opacity-20 mb-3" />
                 <p class="text-sm">No items yet</p>
@@ -373,38 +373,38 @@ function openHistory() {
                 <div
                   v-for="item in cart"
                   :key="item.id"
-                  class="border border-gray-200 rounded-lg p-3 space-y-2"
+                  class="border border-slate-200 rounded-lg p-3 space-y-2"
                 >
                   <div class="flex justify-between items-start gap-2">
                     <div class="flex-1">
-                      <p class="font-semibold text-sm text-gray-900">{{ item.name }}</p>
-                      <p class="text-xs text-gray-500">
+                      <p class="font-semibold text-sm text-slate-900">{{ item.name }}</p>
+                      <p class="text-xs text-slate-500">
                         {{ item.quantity }} × ₦{{ item.price }}
                       </p>
                     </div>
                     <button
                       @click="cart = cart.filter(i => i.id !== item.id)"
-                      class="text-gray-400 hover:text-red-600 transition"
+                      class="text-slate-400 hover:text-red-600 transition"
                     >
                       <X class="w-4 h-4" />
                     </button>
                   </div>
-                  <p class="font-bold text-sm text-right text-gray-900">
+                  <p class="font-bold text-sm text-right text-slate-900">
                     ₦{{ item.price * item.quantity }}
                   </p>
                 </div>
               </div>
 
               <!-- TOTALS -->
-              <div v-if="cart.length" class="border-t border-gray-200 pt-4 space-y-2">
+              <div v-if="cart.length" class="border-t border-slate-200 pt-4 space-y-2">
                 <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">Subtotal</span>
-                  <span class="font-semibold text-gray-900">₦{{ total }}</span>
+                  <span class="text-slate-600">Subtotal</span>
+                  <span class="font-semibold text-slate-900">₦{{ total }}</span>
                 </div>
-                <div class="bg-gray-50 p-3 rounded-lg">
+                <div class="bg-slate-50 p-3 rounded-lg">
                   <div class="flex justify-between items-center">
-                    <span class="font-bold text-gray-900">Total</span>
-                    <span class="font-black text-lg text-gray-900">₦{{ total }}</span>
+                    <span class="font-bold text-slate-900">Total</span>
+                    <span class="font-black text-lg text-slate-900">₦{{ total }}</span>
                   </div>
                 </div>
               </div>
@@ -413,14 +413,14 @@ function openHistory() {
               <button
                 v-if="cart.length"
                 @click="openPreview"
-                class="w-full bg-black text-white py-3 rounded-lg font-bold uppercase text-sm transition hover:bg-gray-800"
+                class="w-full bg-black text-white py-3 rounded-lg font-bold uppercase text-sm transition hover:bg-slate-800"
               >
                 Review Order
               </button>
               <button
                 v-else
                 disabled
-                class="w-full bg-gray-300 text-gray-500 py-3 rounded-lg font-bold uppercase text-sm cursor-not-allowed"
+                class="w-full bg-slate-300 text-slate-500 py-3 rounded-lg font-bold uppercase text-sm cursor-not-allowed"
               >
                 Add items to start
               </button>
@@ -442,8 +442,8 @@ function openHistory() {
         class="bg-white rounded-2xl p-8 w-full max-w-md space-y-6"
       >
         <div class="flex justify-between items-center">
-          <h2 class="font-black text-xl text-gray-900">Confirm Order</h2>
-          <button @click="showPreview = false" aria-label="Close" class="text-gray-400 hover:text-gray-600">
+          <h2 class="font-black text-xl text-slate-900">Confirm Order</h2>
+          <button @click="showPreview = false" aria-label="Close" class="text-slate-400 hover:text-slate-600">
             <X class="w-6 h-6" />
           </button>
         </div>
@@ -452,37 +452,37 @@ function openHistory() {
         <div class="space-y-3 max-h-64 overflow-y-auto">
           <div v-for="item in cart" :key="item.id" class="flex justify-between text-sm">
             <div class="flex-1">
-              <p class="font-semibold text-gray-900">{{ item.name }}</p>
-              <p class="text-xs text-gray-500">
+              <p class="font-semibold text-slate-900">{{ item.name }}</p>
+              <p class="text-xs text-slate-500">
                 {{ item.quantity }} × ₦{{ item.price }}
               </p>
               <input
                 v-model="item.note"
                 placeholder="Item note (optional)"
-                class="w-full border border-gray-300 rounded p-2 text-xs mt-2 focus:outline-none focus:ring-2 focus:ring-black"
+                class="w-full border border-slate-300 rounded p-2 text-xs mt-2 focus:outline-none focus:ring-2 focus:ring-black"
               />
             </div>
-            <p class="font-bold text-gray-900">₦{{ item.price * item.quantity }}</p>
+            <p class="font-bold text-slate-900">₦{{ item.price * item.quantity }}</p>
           </div>
         </div>
 
         <!-- TOTAL -->
-        <div class="bg-gray-50 p-4 rounded-lg">
+        <div class="bg-slate-50 p-4 rounded-lg">
           <div class="flex justify-between items-center">
-            <span class="font-bold text-gray-900">Order Total</span>
-            <span class="font-black text-xl text-gray-900">₦{{ total }}</span>
+            <span class="font-bold text-slate-900">Order Total</span>
+            <span class="font-black text-xl text-slate-900">₦{{ total }}</span>
           </div>
         </div>
 
         <!-- PAYMENT METHOD SELECTION -->
-        <div class="space-y-3 border-t border-gray-200 pt-4">
-          <p class="font-bold text-sm text-gray-900">Payment Method</p>
+        <div class="space-y-3 border-t border-slate-200 pt-4">
+          <p class="font-bold text-sm text-slate-900">Payment Method</p>
           <label class="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition"
-            :class="paymentMode === 'pay_on_delivery' ? 'border-black bg-black/5' : 'border-gray-200 hover:border-gray-300'">
+            :class="paymentMode === 'pay_on_delivery' ? 'border-black bg-black/5' : 'border-slate-200 hover:border-slate-300'">
             <input type="radio" value="pay_on_delivery" v-model="paymentMode" class="w-4 h-4" />
             <div>
-              <p class="font-semibold text-sm text-gray-900">Pay on Delivery</p>
-              <p class="text-xs text-gray-500">Added to your room bill</p>
+              <p class="font-semibold text-sm text-slate-900">Pay on Delivery</p>
+              <p class="text-xs text-slate-500">Added to your room bill</p>
             </div>
           </label>
           <div class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-medium text-amber-800">
@@ -494,14 +494,14 @@ function openHistory() {
         <div class="flex gap-3 pt-4">
           <button
             @click="showPreview = false"
-            class="flex-1 py-3 bg-gray-100 text-gray-900 rounded-lg font-bold text-sm uppercase transition hover:bg-gray-200"
+            class="flex-1 py-3 bg-slate-100 text-slate-900 rounded-lg font-bold text-sm uppercase transition hover:bg-slate-200"
           >
             Cancel
           </button>
           <button
             @click="confirmOrder"
             :disabled="submitting"
-            class="flex-1 py-3 bg-black text-white rounded-lg font-bold text-sm uppercase transition hover:bg-gray-800 disabled:opacity-50"
+            class="flex-1 py-3 bg-black text-white rounded-lg font-bold text-sm uppercase transition hover:bg-slate-800 disabled:opacity-50"
           >
             {{ submitting ? 'Processing...' : 'Confirm' }}
           </button>
