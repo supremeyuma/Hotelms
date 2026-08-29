@@ -9,7 +9,7 @@
         </p>
       </div>
 
-      <form @submit.prevent="submit" class="space-y-4 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+      <form @submit.prevent="submit" class="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <TextInput v-model="form.name" placeholder="Name" />
         <InputError :message="form.errors.name" />
 

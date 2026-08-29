@@ -42,7 +42,7 @@ const currentStatus = computed(() => {
 </script>
 
 <template>
-  <div class="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden transition-all hover:shadow-md">
+  <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden transition-all hover:shadow-md">
     <div class="p-6 space-y-6">
       
       <div class="flex justify-between items-start">

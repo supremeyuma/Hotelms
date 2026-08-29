@@ -43,7 +43,7 @@
         <div
           v-for="order in orders"
           :key="order.id"
-          class="group relative bg-white rounded-[2rem] border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden"
+          class="group relative bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden"
           @click="router.visit(route('staff.laundry.show', order.id))"
         >
           <div class="p-5 md:p-8">

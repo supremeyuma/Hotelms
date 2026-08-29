@@ -35,7 +35,7 @@ const submit = () => {
         <div class="min-h-[80vh] flex items-center justify-center px-4 py-12 bg-slate-50/50">
             <div class="w-full max-w-md">
                 <div class="text-center mb-10">
-                    <div class="inline-flex p-4 bg-slate-900 rounded-[2rem] text-white shadow-xl mb-6">
+                    <div class="inline-flex p-4 bg-slate-900 rounded-2xl text-white shadow-xl mb-6">
                         <UserCircle class="w-10 h-10" />
                     </div>
                     <h1 class="text-3xl font-black text-slate-900 tracking-tight mb-2">Welcome Back</h1>
@@ -111,7 +111,7 @@ const submit = () => {
                             <button
                                 type="submit"
                                 :disabled="form.processing"
-                                class="w-full group flex items-center justify-center gap-3 py-5 bg-slate-900 text-white rounded-3xl font-black text-lg hover:bg-indigo-600 transition-all shadow-xl shadow-slate-200 active:scale-[0.98] disabled:opacity-50"
+                                class="w-full group flex items-center justify-center gap-3 py-5 bg-slate-900 text-white rounded-2xl font-black text-lg hover:bg-indigo-600 transition-all shadow-xl shadow-slate-200 active:scale-[0.98] disabled:opacity-50"
                             >
                                 Sign In
                                 <ArrowRight class="w-5 h-5 group-hover:translate-x-1 transition-transform" />

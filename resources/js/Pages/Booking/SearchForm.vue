@@ -131,7 +131,7 @@ function submit() {
             <button 
               type="submit" 
               :disabled="form.processing"
-              class="w-full group flex items-center justify-center gap-3 py-5 bg-slate-900 text-white rounded-[2rem] font-black text-lg hover:bg-indigo-600 transition-all shadow-xl shadow-slate-200 disabled:opacity-50 active:scale-[0.98]"
+              class="w-full group flex items-center justify-center gap-3 py-5 bg-slate-900 text-white rounded-2xl font-black text-lg hover:bg-indigo-600 transition-all shadow-xl shadow-slate-200 disabled:opacity-50 active:scale-[0.98]"
             >
               <Search v-if="!form.processing" class="w-5 h-5" />
               <RefreshCw v-else class="w-5 h-5 animate-spin" />

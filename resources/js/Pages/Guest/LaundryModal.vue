@@ -25,7 +25,7 @@
           <div
             v-for="item in items"
             :key="item.id"
-            class="group flex items-center justify-between p-4 rounded-[1.5rem] border border-slate-100 bg-slate-50/50 hover:bg-white hover:border-purple-200 hover:shadow-md transition-all duration-300"
+            class="group flex items-center justify-between p-4 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-white hover:border-purple-200 hover:shadow-md transition-all duration-300"
           >
             <div class="flex-1">
               <p class="font-bold text-slate-800">{{ item.name }}</p>
@@ -61,15 +61,15 @@
         <div class="space-y-3">
           <label class="text-xs font-semibold text-slate-400 uppercase tracking-wide ml-1">Condition Photos (Optional)</label>
           <div class="flex flex-wrap gap-3">
-            <label class="w-20 h-20 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-[1.25rem] text-slate-400 hover:border-purple-400 hover:text-purple-500 cursor-pointer transition-all bg-slate-50/50">
+            <label class="w-20 h-20 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 hover:border-purple-400 hover:text-purple-500 cursor-pointer transition-all bg-slate-50/50">
               <Camera class="w-6 h-6 mb-1" />
               <span class="text-[8px] font-black uppercase">Add</span>
               <input type="file" multiple @change="handleFiles" accept="image/*" class="hidden" />
             </label>
 
             <div v-for="(file, idx) in filePreviews" :key="idx" class="relative group">
-              <img :src="file" class="h-20 w-20 object-cover rounded-[1.25rem] border border-slate-100 shadow-sm" />
-              <div class="absolute inset-0 bg-black/40 opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 rounded-[1.25rem] transition-opacity flex items-center justify-center">
+              <img :src="file" class="h-20 w-20 object-cover rounded-2xl border border-slate-100 shadow-sm" />
+              <div class="absolute inset-0 bg-black/40 opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 rounded-2xl transition-opacity flex items-center justify-center">
                 <button @click="removeFile(idx)" type="button" aria-label="Remove photo" class="text-white">
                   <X class="w-4 h-4" />
                 </button>
@@ -102,7 +102,7 @@
           </div>
         </div>
 
-        <div class="bg-slate-900 rounded-[2rem] p-6 text-white flex justify-between items-center shadow-xl shadow-slate-200">
+        <div class="bg-slate-900 rounded-2xl p-6 text-white flex justify-between items-center shadow-xl shadow-slate-200">
           <div>
             <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Estimated Total</p>
             <p class="text-2xl font-black">₦{{ total.toLocaleString() }}</p>

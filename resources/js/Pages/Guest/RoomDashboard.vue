@@ -226,7 +226,7 @@ function formatDate(date) {
         </div>
       </div>
 
-      <div class="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-100 flex items-center justify-between">
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center justify-between">
         <div class="space-y-1">
           <p class="text-xs font-semibold text-slate-600 uppercase tracking-wide">Outstanding Bill</p>
           <OutstandingBill :accessToken="accessToken" />
@@ -240,14 +240,14 @@ function formatDate(date) {
       </div>
 
       <div class="grid grid-cols-2 gap-4">
-        <button @click="openMenu('kitchen')" class="group flex flex-col items-center justify-center p-6 bg-amber-50 rounded-[2rem] border border-amber-100 transition-all active:scale-95">
+        <button @click="openMenu('kitchen')" class="group flex flex-col items-center justify-center p-6 bg-amber-50 rounded-2xl border border-amber-100 transition-all active:scale-95">
           <div class="p-3 bg-white rounded-2xl text-amber-600 shadow-sm mb-3 group-hover:scale-110 transition-transform">
             <Utensils class="w-6 h-6" />
           </div>
           <span class="text-xs font-black uppercase tracking-widest text-amber-700">Kitchen</span>
         </button>
 
-        <button @click="openMenu('bar')" class="group flex flex-col items-center justify-center p-6 bg-indigo-50 rounded-[2rem] border border-indigo-100 transition-all active:scale-95">
+        <button @click="openMenu('bar')" class="group flex flex-col items-center justify-center p-6 bg-indigo-50 rounded-2xl border border-indigo-100 transition-all active:scale-95">
           <div class="p-3 bg-white rounded-2xl text-indigo-600 shadow-sm mb-3 group-hover:scale-110 transition-transform">
             <Wine class="w-6 h-6" />
           </div>
@@ -257,7 +257,7 @@ function formatDate(date) {
         <button
           @click="requestService('cleaning')"
           :disabled="cleaningRequested"
-          class="group flex flex-col items-center justify-center p-6 rounded-[2rem] border transition-all active:scale-95"
+          class="group flex flex-col items-center justify-center p-6 rounded-2xl border transition-all active:scale-95"
           :class="cleaningRequested ? 'bg-slate-100 border-slate-200 cursor-not-allowed' : 'bg-emerald-50 border-emerald-100 hover:bg-emerald-100'"
         >
           <div class="p-3 bg-white rounded-2xl shadow-sm mb-3 transition-transform" :class="cleaningRequested ? 'text-slate-400' : 'text-emerald-600 group-hover:scale-110'">
@@ -268,7 +268,7 @@ function formatDate(date) {
           </span>
         </button>
 
-        <button @click="showLaundryModal = true" class="group flex flex-col items-center justify-center p-6 bg-purple-50 rounded-[2rem] border border-purple-100 transition-all active:scale-95">
+        <button @click="showLaundryModal = true" class="group flex flex-col items-center justify-center p-6 bg-purple-50 rounded-2xl border border-purple-100 transition-all active:scale-95">
           <div class="p-3 bg-white rounded-2xl text-purple-600 shadow-sm mb-3 group-hover:scale-110 transition-transform">
             <WashingMachine class="w-6 h-6" />
           </div>
@@ -358,7 +358,7 @@ function formatDate(date) {
               <div 
                 v-for="order in orders" 
                 :key="order.id" 
-                class="bg-slate-50 border border-slate-100 rounded-[2rem] overflow-hidden transition-all hover:bg-white hover:shadow-md group"
+                class="bg-slate-50 border border-slate-100 rounded-2xl overflow-hidden transition-all hover:bg-white hover:shadow-md group"
               >
                 <div class="px-5 py-4 flex justify-between items-center border-b border-white/50">
                   <div>

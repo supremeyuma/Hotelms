@@ -125,7 +125,7 @@ function canStartPreparing(order) {
         </button>
       </div>
 
-      <div v-if="!orders.length" class="flex flex-col items-center justify-center rounded-3xl border-2 border-dashed border-slate-200 bg-white py-20">
+      <div v-if="!orders.length" class="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-white py-20">
         <div class="mb-4 rounded-full bg-slate-50 p-4">
           <ChefHat class="h-12 w-12 text-slate-300" />
         </div>
@@ -139,7 +139,7 @@ function canStartPreparing(order) {
           :key="order.id"
           role="button"
           tabindex="0"
-          class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition-all hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+          class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
           @click="openOrder(order)"
           @keydown.enter="openOrder(order)"
           @keydown.space.prevent="openOrder(order)"

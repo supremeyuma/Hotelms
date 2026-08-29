@@ -190,7 +190,7 @@ onBeforeUnmount(() => {
     <Head title="System Settings" />
 
     <div class="mx-auto max-w-7xl space-y-8 px-4 py-6 md:px-6 lg:px-8">
-      <section class="overflow-hidden rounded-[2rem] border border-slate-200 bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 text-white shadow-[0_35px_90px_rgba(15,23,42,0.18)]">
+      <section class="overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 text-white shadow-[0_35px_90px_rgba(15,23,42,0.18)]">
         <div class="grid gap-8 p-6 md:grid-cols-[1.4fr,1fr] md:p-8">
           <div class="space-y-5">
             <div class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-emerald-200">
@@ -217,7 +217,7 @@ onBeforeUnmount(() => {
             </div>
           </div>
 
-          <div class="rounded-[1.75rem] border border-white/10 bg-white/10 p-5 backdrop-blur-sm">
+          <div class="rounded-2xl border border-white/10 bg-white/10 p-5 backdrop-blur-sm">
             <div class="flex items-start justify-between gap-4">
               <div>
                 <p class="text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-200">Public preview</p>
@@ -281,7 +281,7 @@ onBeforeUnmount(() => {
 
       <form @submit.prevent="submit" class="grid gap-8 lg:grid-cols-[1.45fr,0.95fr]">
         <div class="space-y-8">
-          <section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div class="flex items-start gap-4">
               <div class="rounded-2xl bg-slate-100 p-3 text-slate-700">
                 <Building2 class="h-5 w-5" />
@@ -330,7 +330,7 @@ onBeforeUnmount(() => {
             </div>
           </section>
 
-          <section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div class="flex items-start gap-4">
               <div class="rounded-2xl bg-emerald-50 p-3 text-emerald-700">
                 <Phone class="h-5 w-5" />
@@ -430,7 +430,7 @@ onBeforeUnmount(() => {
             </div>
           </section>
 
-          <section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div class="flex items-start gap-4">
               <div class="rounded-2xl bg-indigo-50 p-3 text-indigo-700">
                 <CreditCard class="h-5 w-5" />
@@ -500,7 +500,7 @@ onBeforeUnmount(() => {
             </div>
           </section>
 
-          <section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div class="flex items-start gap-4">
               <div class="rounded-2xl bg-sky-50 p-3 text-sky-700">
                 <CheckCircle2 class="h-5 w-5" />
@@ -590,7 +590,7 @@ onBeforeUnmount(() => {
             </div>
           </section>
 
-          <section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div class="flex items-start gap-4">
               <div class="rounded-2xl bg-amber-50 p-3 text-amber-700">
                 <ImageUp class="h-5 w-5" />
@@ -643,7 +643,7 @@ onBeforeUnmount(() => {
             </div>
           </section>
 
-          <section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div class="flex items-start gap-4">
               <div class="rounded-2xl bg-rose-50 p-3 text-rose-700">
                 <CreditCard class="h-5 w-5" />
@@ -702,7 +702,7 @@ onBeforeUnmount(() => {
         </div>
 
         <aside class="space-y-8">
-          <section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">Mail Check</p>
             <h2 class="mt-2 text-xl font-black text-slate-900">Send a test email</h2>
             <p class="mt-2 text-sm leading-6 text-slate-500">
@@ -744,7 +744,7 @@ onBeforeUnmount(() => {
             </div>
           </section>
 
-          <section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">Readiness</p>
             <h2 class="mt-2 text-xl font-black text-slate-900">Guest-facing details</h2>
 
@@ -780,7 +780,7 @@ onBeforeUnmount(() => {
             </div>
           </section>
 
-          <section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">Quick checks</p>
             <div class="mt-5 space-y-4">
               <div class="rounded-2xl bg-slate-50 p-4">
@@ -848,7 +848,7 @@ onBeforeUnmount(() => {
             </div>
           </section>
 
-          <section class="rounded-[2rem] border border-slate-200 bg-slate-950 p-6 text-white shadow-sm">
+          <section class="rounded-2xl border border-slate-200 bg-slate-950 p-6 text-white shadow-sm">
             <p class="text-[11px] font-bold uppercase tracking-[0.24em] text-emerald-300">Publish</p>
             <h2 class="mt-2 text-xl font-black">Save manager settings</h2>
 

@@ -125,7 +125,7 @@ function formatDateTime(value) {
     <div class="space-y-8">
       <section
         v-if="mode === 'operations'"
-        class="overflow-hidden rounded-[2rem] bg-slate-900 text-white shadow-2xl shadow-slate-200"
+        class="overflow-hidden rounded-2xl bg-slate-900 text-white shadow-2xl shadow-slate-200"
       >
         <div class="grid gap-6 px-6 py-8 sm:px-8 xl:grid-cols-[1.3fr_0.7fr]">
           <div class="space-y-4">
@@ -160,7 +160,7 @@ function formatDateTime(value) {
           <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
             <Link
               :href="links.primary"
-              class="rounded-[1.75rem] border border-white/10 bg-white/10 p-5 backdrop-blur transition hover:bg-white/15"
+              class="rounded-2xl border border-white/10 bg-white/10 p-5 backdrop-blur transition hover:bg-white/15"
             >
               <p class="text-xs uppercase font-semibold tracking-wide text-slate-300">Occupancy today</p>
               <p class="mt-3 text-4xl font-black">{{ kpis.occupancy.occupancy }}%</p>
@@ -171,7 +171,7 @@ function formatDateTime(value) {
 
             <Link
               :href="links.primary"
-              class="rounded-[1.75rem] border border-emerald-300/25 bg-gradient-to-br from-emerald-400/20 to-emerald-300/5 p-5 transition hover:from-emerald-400/25 hover:to-emerald-300/10"
+              class="rounded-2xl border border-emerald-300/25 bg-gradient-to-br from-emerald-400/20 to-emerald-300/5 p-5 transition hover:from-emerald-400/25 hover:to-emerald-300/10"
             >
               <p class="text-xs uppercase font-semibold tracking-wide text-emerald-100">Guest flow today</p>
               <div class="mt-4 grid grid-cols-2 gap-4">
@@ -194,9 +194,9 @@ function formatDateTime(value) {
           v-for="card in operationsCards"
           :key="card.label"
           :href="card.href"
-          class="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+          class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
         >
-          <div class="rounded-[1.5rem] bg-gradient-to-br p-5 ring-1" :class="toneClasses(card.tone)">
+          <div class="rounded-2xl bg-gradient-to-br p-5 ring-1" :class="toneClasses(card.tone)">
             <div class="flex items-start justify-between gap-4">
               <div>
                 <p class="text-xs uppercase font-semibold tracking-wide text-slate-500">{{ card.label }}</p>
@@ -221,9 +221,9 @@ function formatDateTime(value) {
           v-for="card in financeCards"
           :key="card.label"
           :href="card.href"
-          class="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+          class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
         >
-          <div class="rounded-[1.5rem] bg-gradient-to-br p-5 ring-1" :class="toneClasses(card.tone)">
+          <div class="rounded-2xl bg-gradient-to-br p-5 ring-1" :class="toneClasses(card.tone)">
             <div class="flex items-start justify-between gap-4">
               <div>
                 <p class="text-xs uppercase font-semibold tracking-wide text-slate-500">{{ card.label }}</p>
@@ -249,7 +249,7 @@ function formatDateTime(value) {
 
       <section
         v-if="mode === 'finance'"
-        class="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm"
+        class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
       >
         <div class="flex flex-col gap-2 border-b border-slate-100 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
           <div>

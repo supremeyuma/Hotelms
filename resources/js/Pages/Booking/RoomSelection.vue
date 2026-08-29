@@ -282,7 +282,7 @@ const roomTypeImageVisibilityEnabled = computed(() => Boolean(props.imageSetting
                   tabindex="0"
                   @click="toggleRoom(roomType.id, room.id)"
                   @keydown="handleRoomCardKeydown($event, roomType.id, room.id)"
-                  class="group overflow-hidden rounded-[2rem] border text-left transition-all"
+                  class="group overflow-hidden rounded-2xl border text-left transition-all"
                   :class="isSelected(roomType.id, room.id)
                     ? 'border-indigo-500 bg-white shadow-xl shadow-indigo-100'
                     : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-lg'"
@@ -357,7 +357,7 @@ const roomTypeImageVisibilityEnabled = computed(() => Boolean(props.imageSetting
                   type="button"
                   :disabled="selectedCount(roomType.id) === 0"
                   @click="submitSelection(roomType)"
-                  class="inline-flex items-center justify-center gap-3 rounded-[1.5rem] bg-slate-900 px-8 py-4 text-sm font-black uppercase tracking-widest text-white transition hover:bg-indigo-600 disabled:cursor-not-allowed disabled:opacity-40"
+                  class="inline-flex items-center justify-center gap-3 rounded-2xl bg-slate-900 px-8 py-4 text-sm font-black uppercase tracking-widest text-white transition hover:bg-indigo-600 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   Continue with Selected Room
                   <ChevronRight class="w-4 h-4" />

@@ -140,7 +140,7 @@ function canStartPreparing(order) {
           :key="order.id"
           role="button"
           tabindex="0"
-          class="group flex flex-col overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+          class="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
           @click="openOrder(order)"
           @keydown.enter="openOrder(order)"
           @keydown.space.prevent="openOrder(order)"

@@ -30,7 +30,7 @@
       <div class="grid gap-4 md:grid-cols-3">
         <Link
           :href="route('admin.inventory.index')"
-          class="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+          class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
         >
           <p class="text-xs font-black uppercase tracking-[0.22em] text-slate-400">Items tracked</p>
           <p class="mt-3 text-3xl font-semibold text-slate-900">{{ filteredItems.length }}</p>
@@ -39,7 +39,7 @@
 
         <Link
           :href="route('admin.inventory.index')"
-          class="rounded-[1.75rem] border border-amber-200 bg-amber-50 p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+          class="rounded-2xl border border-amber-200 bg-amber-50 p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
         >
           <p class="text-xs font-black uppercase tracking-[0.22em] text-amber-700">Low stock</p>
           <p class="mt-3 text-3xl font-semibold text-amber-900">{{ lowStockCount }}</p>
@@ -48,7 +48,7 @@
 
         <Link
           :href="route('admin.inventory-locations.index')"
-          class="rounded-[1.75rem] border border-emerald-200 bg-emerald-50 p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+          class="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
         >
           <p class="text-xs font-black uppercase tracking-[0.22em] text-emerald-700">Locations</p>
           <p class="mt-3 text-3xl font-semibold text-emerald-900">{{ locations.length }}</p>
@@ -56,7 +56,7 @@
         </Link>
       </div>
 
-      <div class="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
+      <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div class="overflow-x-auto">
           <table class="min-w-full text-sm">
             <thead class="bg-slate-50 text-slate-500">

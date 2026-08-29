@@ -18,7 +18,7 @@
         </Link>
       </div>
 
-      <div class="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
+      <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div class="overflow-x-auto">
           <table class="min-w-full text-sm">
             <thead class="bg-slate-50 text-slate-500">

@@ -104,26 +104,26 @@ const exportQuery = computed(() => {
       </div>
 
       <div class="grid gap-4 md:grid-cols-3">
-        <div class="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm">
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <p class="text-xs font-black uppercase tracking-[0.22em] text-slate-400">Rows shown</p>
           <p class="mt-3 text-3xl font-semibold text-slate-900">{{ rows.data.length }}</p>
           <p class="mt-2 text-sm text-slate-500">Filtered movement entries on this page.</p>
         </div>
 
-        <div class="rounded-[1.75rem] border border-emerald-200 bg-emerald-50 p-5 shadow-sm">
+        <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm">
           <p class="text-xs font-black uppercase tracking-[0.22em] text-emerald-700">Page quantity</p>
           <p class="mt-3 text-3xl font-semibold text-emerald-900">{{ formatQuantity(totalMovement) }}</p>
           <p class="mt-2 text-sm text-emerald-800/80">Combined quantity across visible rows.</p>
         </div>
 
-        <div class="rounded-[1.75rem] border border-indigo-200 bg-indigo-50 p-5 shadow-sm">
+        <div class="rounded-2xl border border-indigo-200 bg-indigo-50 p-5 shadow-sm">
           <p class="text-xs font-black uppercase tracking-[0.22em] text-indigo-700">Chart points</p>
           <p class="mt-3 text-3xl font-semibold text-indigo-900">{{ chart?.labels?.length ?? 0 }}</p>
           <p class="mt-2 text-sm text-indigo-800/80">Daily movement totals available for trend views.</p>
         </div>
       </div>
 
-      <form class="grid gap-3 rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm lg:grid-cols-6" @submit.prevent="applyFilters">
+      <form class="grid gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:grid-cols-6" @submit.prevent="applyFilters">
         <input
           name="search"
           :value="filterForm.search"
@@ -178,7 +178,7 @@ const exportQuery = computed(() => {
         </div>
       </form>
 
-      <div class="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
+      <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div class="overflow-x-auto">
           <table class="min-w-full text-sm">
             <thead class="bg-slate-50 text-slate-500">

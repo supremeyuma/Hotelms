@@ -151,7 +151,7 @@ onBeforeUnmount(() => {
               </div>
             </div>
 
-            <div class="rounded-[2rem] border border-slate-100 bg-slate-50 p-6">
+            <div class="rounded-2xl border border-slate-100 bg-slate-50 p-6">
               <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-4">Reserved Rooms</p>
               <div class="space-y-4">
                 <div
@@ -190,7 +190,7 @@ onBeforeUnmount(() => {
 
             <div
               v-if="booking.guest_phone || booking.emergency_contact_name || booking.emergency_contact_phone || booking.purpose_of_stay || booking.special_requests"
-              class="grid gap-4 rounded-[2rem] border border-slate-100 bg-slate-50 p-6 md:grid-cols-2"
+              class="grid gap-4 rounded-2xl border border-slate-100 bg-slate-50 p-6 md:grid-cols-2"
             >
               <div v-if="booking.guest_phone">
                 <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">Guest Phone</p>
@@ -211,7 +211,7 @@ onBeforeUnmount(() => {
               </div>
             </div>
 
-            <div v-if="pre_check_in_url" class="rounded-[2rem] border border-emerald-100 bg-emerald-50 p-6 flex items-start gap-4">
+            <div v-if="pre_check_in_url" class="rounded-2xl border border-emerald-100 bg-emerald-50 p-6 flex items-start gap-4">
               <div class="mt-1 flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-emerald-600 shadow-sm">
                 <KeyRound class="w-5 h-5" />
               </div>
@@ -234,7 +234,7 @@ onBeforeUnmount(() => {
         <div class="flex flex-col sm:flex-row items-center gap-4">
           <button
             @click="router.visit('/')"
-            class="w-full py-5 bg-slate-900 text-white rounded-[2rem] font-black text-sm uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-xl shadow-slate-200"
+            class="w-full py-5 bg-slate-900 text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-xl shadow-slate-200"
           >
             Return Home
           </button>

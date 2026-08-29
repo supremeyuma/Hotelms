@@ -108,7 +108,7 @@ function formatQuantity(value) {
       </div>
 
       <form
-        class="grid gap-3 rounded-[2rem] bg-white p-4 shadow-sm md:grid-cols-4"
+        class="grid gap-3 rounded-2xl bg-white p-4 shadow-sm md:grid-cols-4"
         @submit.prevent="submit"
       >
         <select v-model="form.room_type_id" required class="rounded-xl border border-slate-200 p-2">
@@ -139,7 +139,7 @@ function formatQuantity(value) {
         </PrimaryButton>
       </form>
 
-      <div class="flex flex-col gap-3 rounded-[2rem] bg-white p-4 shadow-sm md:flex-row">
+      <div class="flex flex-col gap-3 rounded-2xl bg-white p-4 shadow-sm md:flex-row">
         <select v-model="cloneForm.from_room_type_id" class="rounded-xl border border-slate-200 p-2">
           <option disabled value="">Clone from</option>
           <option v-for="roomType in roomTypes" :key="roomType.id" :value="roomType.id">
@@ -159,7 +159,7 @@ function formatQuantity(value) {
         </PrimaryButton>
       </div>
 
-      <div v-for="(group, room) in grouped" :key="room" class="overflow-hidden rounded-[2rem] bg-white shadow-sm">
+      <div v-for="(group, room) in grouped" :key="room" class="overflow-hidden rounded-2xl bg-white shadow-sm">
         <div class="flex justify-between border-b border-slate-100 p-4 font-semibold">
           <span>{{ room }}</span>
           <span class="text-sm text-slate-500">Total items: {{ formatQuantity(roomTotals(group)) }}</span>

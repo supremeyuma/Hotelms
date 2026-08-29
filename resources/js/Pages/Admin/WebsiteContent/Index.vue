@@ -246,7 +246,7 @@ const save = () => {
 
           <div
             v-else
-            class="h-full min-h-[500px] border-2 border-dashed border-slate-200 rounded-[40px] flex flex-col items-center justify-center text-center p-12 bg-slate-50/30"
+            class="h-full min-h-[500px] border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center text-center p-12 bg-slate-50/30"
           >
             <div class="w-20 h-20 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center mb-6">
               <FileText class="w-8 h-8 text-slate-300" />

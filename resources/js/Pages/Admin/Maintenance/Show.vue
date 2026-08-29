@@ -30,7 +30,7 @@ function submit() {
       </div>
 
       <div class="grid gap-6 md:grid-cols-[2fr_1fr]">
-        <section class="rounded-3xl bg-white p-6 shadow-sm">
+        <section class="rounded-2xl bg-white p-6 shadow-sm">
           <h2 class="text-lg font-semibold text-slate-900">Issue Details</h2>
           <dl class="mt-4 space-y-4 text-sm text-slate-600">
             <div>
@@ -60,7 +60,7 @@ function submit() {
           </dl>
         </section>
 
-        <section class="rounded-3xl bg-white p-6 shadow-sm">
+        <section class="rounded-2xl bg-white p-6 shadow-sm">
           <h2 class="text-lg font-semibold text-slate-900">Manager Action</h2>
           <form class="mt-4 space-y-4" @submit.prevent="submit">
             <div>

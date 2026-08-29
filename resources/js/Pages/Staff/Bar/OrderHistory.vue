@@ -30,7 +30,7 @@ function openOrder(order) {
         </p>
       </div>
 
-      <div v-if="orders.length === 0" class="py-20 text-center bg-white rounded-3xl border border-slate-200">
+      <div v-if="orders.length === 0" class="py-20 text-center bg-white rounded-2xl border border-slate-200">
         <p class="font-bold text-slate-500">No completed orders yet.</p>
       </div>
 
@@ -39,7 +39,7 @@ function openOrder(order) {
           v-for="order in orders"
           :key="order.id"
           @click="openOrder(order)"
-          class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden text-left hover:shadow-md transition-all"
+          class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden text-left hover:shadow-md transition-all"
         >
           <!-- HEADER -->
           <div class="p-5 bg-slate-50 border-b border-slate-100 flex justify-between items-center">

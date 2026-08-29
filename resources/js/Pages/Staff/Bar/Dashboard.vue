@@ -39,7 +39,7 @@ import {
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
         <Link 
           href="/staff/bar/orders" 
-          class="group relative overflow-hidden bg-white p-8 rounded-3xl border border-slate-200 shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-300"
+          class="group relative overflow-hidden bg-white p-8 rounded-2xl border border-slate-200 shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-300"
         >
           <div class="relative z-10 flex flex-col h-full">
             <div class="mb-6 inline-flex p-4 bg-blue-50 text-blue-600 rounded-2xl group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300">
@@ -58,7 +58,7 @@ import {
 
         <Link 
           href="/staff/bar/menu" 
-          class="group relative overflow-hidden bg-white p-8 rounded-3xl border border-slate-200 shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-300"
+          class="group relative overflow-hidden bg-white p-8 rounded-2xl border border-slate-200 shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-300"
         >
           <div class="relative z-10 flex flex-col h-full">
             <div class="mb-6 inline-flex p-4 bg-cyan-50 text-cyan-600 rounded-2xl group-hover:bg-cyan-600 group-hover:text-white transition-colors duration-300">

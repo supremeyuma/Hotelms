@@ -447,7 +447,7 @@ const removeDiscount = () => {
               <button
                 @click="processPayment"
                 :disabled="processing || (paymentMethod === 'online' && !selectedProvider && hasOnlineProvider)"
-                class="w-full group flex items-center justify-center gap-3 py-5 bg-emerald-600 text-white rounded-[2rem] font-black text-lg hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-100 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                class="w-full group flex items-center justify-center gap-3 py-5 bg-emerald-600 text-white rounded-2xl font-black text-lg hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-100 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span v-if="processing">Processing...</span>
                 <span v-else>Proceed to Payment</span>

@@ -145,7 +145,7 @@ function markChargePaid() {
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         <div class="lg:col-span-2 space-y-8">
-          <section class="bg-white rounded-[2rem] border border-slate-200 p-8 shadow-sm relative overflow-hidden">
+          <section class="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm relative overflow-hidden">
             <h2 class="flex items-center gap-2 text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-6">
               <ArrowUpCircle class="w-4 h-4 text-indigo-500" /> Management Actions
             </h2>
@@ -190,7 +190,7 @@ function markChargePaid() {
               <!-- CHARGE STATUS -->
               <div
                 v-if="order.charge"
-                class="mt-6 p-6 rounded-[2rem] border flex items-center justify-between"
+                class="mt-6 p-6 rounded-2xl border flex items-center justify-between"
                 :class="
                   order.charge.status === 'paid'
                     ? 'bg-emerald-50 border-emerald-200'
@@ -242,7 +242,7 @@ function markChargePaid() {
             </div>
           </section>
 
-          <section class="bg-white rounded-[2rem] border border-slate-200 p-8 shadow-sm">
+          <section class="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
             <h2 class="flex items-center gap-2 text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-6">
               <ListChecks class="w-4 h-4 text-indigo-500" /> Order Details
             </h2>
@@ -262,7 +262,7 @@ function markChargePaid() {
                 <span class="font-black text-slate-900 text-lg">₦{{ item.subtotal }}</span>
               </div>
               
-              <div class="flex justify-between items-center p-8 bg-slate-900 rounded-[2rem] text-white mt-8 shadow-xl shadow-slate-200">
+              <div class="flex justify-between items-center p-8 bg-slate-900 rounded-2xl text-white mt-8 shadow-xl shadow-slate-200">
                 <div>
                   <p class="text-xs uppercase font-semibold tracking-wide opacity-50 mb-1">Total Amount</p>
                   <p class="text-3xl font-black">₦{{ order.total_amount }}</p>
@@ -321,7 +321,7 @@ function markChargePaid() {
         role="dialog"
         aria-modal="true"
         aria-label="Confirm payment"
-        class="bg-white rounded-[2rem] p-8 w-full max-w-sm shadow-xl"
+        class="bg-white rounded-2xl p-8 w-full max-w-sm shadow-xl"
       >
         <h3 class="text-lg font-black mb-4">Confirm Payment</h3>
 

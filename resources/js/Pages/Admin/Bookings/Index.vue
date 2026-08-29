@@ -239,7 +239,7 @@ function guestBreakdown(booking) {
     <Head title="Bookings" />
 
     <div class="space-y-8">
-      <section class="overflow-hidden rounded-[2rem] bg-slate-900 text-white shadow-2xl shadow-slate-200">
+      <section class="overflow-hidden rounded-2xl bg-slate-900 text-white shadow-2xl shadow-slate-200">
         <div class="grid gap-6 px-6 py-8 sm:px-8 xl:grid-cols-[1.25fr_0.75fr]">
           <div class="space-y-4">
             <div class="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-xs uppercase font-semibold tracking-wide text-slate-200">
@@ -253,7 +253,7 @@ function guestBreakdown(booking) {
           </div>
 
           <div class="grid gap-4">
-            <div class="rounded-[1.75rem] border border-white/10 bg-white/10 p-5 backdrop-blur">
+            <div class="rounded-2xl border border-white/10 bg-white/10 p-5 backdrop-blur">
               <div class="flex items-center gap-2 text-xs uppercase font-semibold tracking-wide text-slate-300">
                 <CalendarDays class="h-3.5 w-3.5" />
                 Today
@@ -261,7 +261,7 @@ function guestBreakdown(booking) {
               <p class="mt-3 text-2xl font-black">{{ todayLabel }}</p>
             </div>
 
-            <div class="rounded-[1.75rem] border border-white/10 bg-gradient-to-br from-white/10 to-white/5 p-5">
+            <div class="rounded-2xl border border-white/10 bg-gradient-to-br from-white/10 to-white/5 p-5">
               <p class="text-xs uppercase font-semibold tracking-wide text-slate-300">Active view</p>
               <p class="mt-3 text-2xl font-black">{{ filterLabel() }}</p>
               <p class="mt-2 text-sm text-slate-300">
@@ -277,7 +277,7 @@ function guestBreakdown(booking) {
           v-for="card in summaryCards"
           :key="card.key"
           :href="filterHref(card.key)"
-          class="rounded-[1.75rem] border p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+          class="rounded-2xl border p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
           :class="cardToneClasses(card.tone, filters.active === card.key)"
         >
           <div class="flex items-start justify-between gap-4">
@@ -302,7 +302,7 @@ function guestBreakdown(booking) {
         </Link>
       </section>
 
-      <section class="rounded-[2rem] border border-slate-200 bg-white shadow-sm">
+      <section class="rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div class="flex flex-col gap-3 border-b border-slate-100 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p class="text-xs uppercase font-semibold tracking-wide text-slate-400">Reservations</p>
@@ -354,7 +354,7 @@ function guestBreakdown(booking) {
           <section
             v-for="group in groupedBookings"
             :key="group.key"
-            class="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-slate-50/70"
+            class="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/70"
           >
             <div class="border-b border-slate-200/80 bg-white/80 px-5 py-4 backdrop-blur">
               <p class="text-xs uppercase font-semibold tracking-wide text-slate-400">Check-in date</p>
@@ -416,7 +416,7 @@ function guestBreakdown(booking) {
                     </div>
 
                     <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                      <div class="rounded-[1.5rem] bg-slate-50 p-4">
+                      <div class="rounded-2xl bg-slate-50 p-4">
                         <div class="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
                           <UserRound class="h-3.5 w-3.5" />
                           Guest
@@ -425,7 +425,7 @@ function guestBreakdown(booking) {
                         <p class="mt-1 text-sm text-slate-500">{{ guestBreakdown(booking) }}</p>
                       </div>
 
-                      <div class="rounded-[1.5rem] bg-slate-50 p-4">
+                      <div class="rounded-2xl bg-slate-50 p-4">
                         <div class="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
                           <CalendarDays class="h-3.5 w-3.5" />
                           Stay
@@ -436,7 +436,7 @@ function guestBreakdown(booking) {
                         </p>
                       </div>
 
-                      <div class="rounded-[1.5rem] bg-slate-50 p-4">
+                      <div class="rounded-2xl bg-slate-50 p-4">
                         <div class="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
                           <BedDouble class="h-3.5 w-3.5" />
                           Rooming
@@ -448,7 +448,7 @@ function guestBreakdown(booking) {
                         </p>
                       </div>
 
-                      <div class="rounded-[1.5rem] bg-slate-50 p-4">
+                      <div class="rounded-2xl bg-slate-50 p-4">
                         <div class="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
                           <CreditCard class="h-3.5 w-3.5" />
                           Payment
@@ -463,7 +463,7 @@ function guestBreakdown(booking) {
                     </div>
 
                     <div class="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-                      <div class="rounded-[1.5rem] border border-slate-200 p-4">
+                      <div class="rounded-2xl border border-slate-200 p-4">
                         <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Assigned rooms</p>
                         <div class="mt-3 flex flex-wrap gap-2">
                           <span
@@ -476,7 +476,7 @@ function guestBreakdown(booking) {
                         </div>
                       </div>
 
-                      <div class="rounded-[1.5rem] border border-slate-200 p-4">
+                      <div class="rounded-2xl border border-slate-200 p-4">
                         <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Guest contact</p>
                         <div class="mt-3 space-y-2 text-sm text-slate-600">
                           <div class="flex items-center gap-2">
@@ -493,7 +493,7 @@ function guestBreakdown(booking) {
 
                     <div
                       v-if="booking.special_requests"
-                      class="rounded-[1.5rem] border border-amber-200 bg-amber-50 px-4 py-4"
+                      class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4"
                     >
                       <div class="flex items-start gap-3">
                         <Clock3 class="mt-0.5 h-4 w-4 text-amber-600" />
@@ -511,7 +511,7 @@ function guestBreakdown(booking) {
         </div>
 
         <div v-else class="px-6 py-20 text-center">
-          <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-slate-100 text-slate-500">
+          <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 text-slate-500">
             <Search class="h-7 w-7" />
           </div>
           <h3 class="mt-6 text-2xl font-black tracking-tight text-slate-900">No bookings available</h3>

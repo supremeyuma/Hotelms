@@ -91,7 +91,7 @@ const getStatusConfig = (status) => {
         :key="room.id"
         type="button"
         @click="openModal(room)"
-        class="group relative bg-white p-5 rounded-[2rem] border border-slate-200 shadow-sm text-left cursor-pointer hover:shadow-xl hover:border-indigo-200 hover:-translate-y-1 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+        class="group relative bg-white p-5 rounded-2xl border border-slate-200 shadow-sm text-left cursor-pointer hover:shadow-xl hover:border-indigo-200 hover:-translate-y-1 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
       >
         <div class="flex flex-col h-full">
           <div class="flex items-start justify-between mb-4">

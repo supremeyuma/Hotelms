@@ -215,15 +215,15 @@ function handleCheckOut() {
         </div>
 
         <div class="grid gap-3 sm:grid-cols-3">
-          <div class="rounded-[1.5rem] border border-slate-200 bg-white px-4 py-4 shadow-sm">
+          <div class="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
             <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Guest</p>
             <p class="mt-2 text-sm font-black text-slate-900">{{ booking.guest_name }}</p>
           </div>
-          <div class="rounded-[1.5rem] border border-slate-200 bg-white px-4 py-4 shadow-sm">
+          <div class="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
             <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Current room</p>
             <p class="mt-2 text-sm font-black text-slate-900">{{ booking.room_label }}</p>
           </div>
-          <div class="rounded-[1.5rem] border border-slate-200 bg-white px-4 py-4 shadow-sm">
+          <div class="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
             <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Booking value</p>
             <p class="mt-2 text-sm font-black text-slate-900">{{ formatCurrency(booking.total_amount) }}</p>
           </div>
@@ -231,7 +231,7 @@ function handleCheckOut() {
       </div>
 
       <!-- Action Buttons -->
-      <div v-if="['confirmed', 'checked_in'].includes(booking.status)" class="rounded-[2rem] border border-emerald-200 bg-gradient-to-br from-emerald-50 to-emerald-50/50 p-6 shadow-sm">
+      <div v-if="['confirmed', 'checked_in'].includes(booking.status)" class="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-emerald-50/50 p-6 shadow-sm">
         <p class="text-sm font-bold text-emerald-700">Guest check-in</p>
         <p class="mt-1 text-sm text-emerald-600">Mark rooms as occupied and record check-in timestamps for the reporting system.</p>
         <div class="mt-4 flex gap-3">
@@ -246,7 +246,7 @@ function handleCheckOut() {
         </div>
       </div>
 
-      <div v-if="['checked_in', 'checked_out'].includes(booking.status)" class="rounded-[2rem] border border-rose-200 bg-gradient-to-br from-rose-50 to-rose-50/50 p-6 shadow-sm">
+      <div v-if="['checked_in', 'checked_out'].includes(booking.status)" class="rounded-2xl border border-rose-200 bg-gradient-to-br from-rose-50 to-rose-50/50 p-6 shadow-sm">
         <p class="text-sm font-bold text-rose-700">Guest check-out</p>
         <p class="mt-1 text-sm text-rose-600">Mark rooms as checked out and ready for cleaning. Finalizes all room charges.</p>
         <div class="mt-4 flex gap-3">
@@ -265,7 +265,7 @@ function handleCheckOut() {
         <div class="space-y-8">
           <section
             v-if="booking.has_price_override"
-            class="rounded-[2rem] border p-6 shadow-sm"
+            class="rounded-2xl border p-6 shadow-sm"
             :class="booking.has_pending_price_override_approval
               ? 'border-rose-200 bg-rose-50'
               : (booking.price_override?.approval_status === 'rejected' ? 'border-amber-200 bg-amber-50' : 'border-emerald-200 bg-emerald-50')"
@@ -323,7 +323,7 @@ function handleCheckOut() {
             </div>
           </section>
 
-          <section class="space-y-6 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <section class="space-y-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div class="grid gap-6 md:grid-cols-2">
               <label class="space-y-2">
                 <span class="text-sm font-bold text-slate-700">Assigned room</span>
@@ -420,14 +420,14 @@ function handleCheckOut() {
 
             <div
               v-if="invalidStay"
-              class="rounded-[1.5rem] border border-rose-200 bg-rose-50 px-4 py-4 text-sm font-medium text-rose-700"
+              class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-4 text-sm font-medium text-rose-700"
             >
               Check-out must be after check-in.
             </div>
           </section>
 
           <section class="grid gap-6 xl:grid-cols-2">
-            <div class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <div class="flex items-center gap-3">
                 <div class="rounded-2xl bg-indigo-50 p-2 text-indigo-600"><CreditCard class="h-5 w-5" /></div>
                 <h2 class="text-xl font-black text-slate-900">Add charge</h2>
@@ -463,7 +463,7 @@ function handleCheckOut() {
               </form>
             </div>
 
-            <div class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <div class="flex items-center gap-3">
                 <div class="rounded-2xl bg-emerald-50 p-2 text-emerald-600"><CreditCard class="h-5 w-5" /></div>
                 <h2 class="text-xl font-black text-slate-900">Record payment</h2>
@@ -519,13 +519,13 @@ function handleCheckOut() {
         </div>
 
         <aside class="space-y-6">
-          <section class="rounded-[2rem] bg-[linear-gradient(145deg,_#0f172a,_#1e293b)] p-6 text-white shadow-sm">
+          <section class="rounded-2xl bg-[linear-gradient(145deg,_#0f172a,_#1e293b)] p-6 text-white shadow-sm">
             <p class="text-[11px] font-black uppercase tracking-[0.24em] text-slate-300">Live summary</p>
             <h2 class="mt-3 text-2xl font-black tracking-tight">{{ form.guest_name }}</h2>
             <p class="mt-2 text-sm text-slate-300">{{ statusLabel }}</p>
 
             <div class="mt-6 space-y-4">
-              <div class="flex items-start gap-3 rounded-[1.5rem] bg-white/10 px-4 py-4">
+              <div class="flex items-start gap-3 rounded-2xl bg-white/10 px-4 py-4">
                 <CalendarDays class="mt-0.5 h-4 w-4 text-slate-200" />
                 <div>
                   <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-300">Stay</p>
@@ -536,7 +536,7 @@ function handleCheckOut() {
                 </div>
               </div>
 
-              <div class="flex items-start gap-3 rounded-[1.5rem] bg-white/10 px-4 py-4">
+              <div class="flex items-start gap-3 rounded-2xl bg-white/10 px-4 py-4">
                 <UserRound class="mt-0.5 h-4 w-4 text-slate-200" />
                 <div>
                   <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-300">Guest contact</p>
@@ -545,7 +545,7 @@ function handleCheckOut() {
                 </div>
               </div>
 
-              <div class="flex items-start gap-3 rounded-[1.5rem] bg-white/10 px-4 py-4">
+              <div class="flex items-start gap-3 rounded-2xl bg-white/10 px-4 py-4">
                 <CreditCard class="mt-0.5 h-4 w-4 text-slate-200" />
                 <div>
                   <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-300">Payment</p>
@@ -558,7 +558,7 @@ function handleCheckOut() {
 
           <section
             v-if="preCheckIn"
-            class="rounded-[2rem] border border-emerald-200 bg-emerald-50 p-6 shadow-sm"
+            class="rounded-2xl border border-emerald-200 bg-emerald-50 p-6 shadow-sm"
           >
             <p class="text-[11px] font-black uppercase tracking-[0.18em] text-emerald-700">Online pre-check-in</p>
             <div class="mt-4 space-y-2 text-sm text-emerald-900">
@@ -568,10 +568,10 @@ function handleCheckOut() {
             </div>
           </section>
 
-          <section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Recent charges</p>
             <div class="mt-4 space-y-3">
-              <div v-for="charge in booking.charges" :key="charge.id" class="rounded-[1.25rem] border border-slate-100 px-4 py-3">
+              <div v-for="charge in booking.charges" :key="charge.id" class="rounded-2xl border border-slate-100 px-4 py-3">
                 <p class="text-sm font-bold text-slate-900">{{ charge.description }}</p>
                 <p class="mt-1 text-xs uppercase tracking-[0.18em] text-slate-400">{{ roomLabel(charge.room_id) }}</p>
                 <p class="mt-2 text-sm font-black text-slate-900">{{ formatCurrency(charge.amount) }}</p>
@@ -580,10 +580,10 @@ function handleCheckOut() {
             </div>
           </section>
 
-          <section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Recent payments</p>
             <div class="mt-4 space-y-3">
-              <div v-for="payment in booking.payments" :key="payment.id" class="rounded-[1.25rem] border border-slate-100 px-4 py-3">
+              <div v-for="payment in booking.payments" :key="payment.id" class="rounded-2xl border border-slate-100 px-4 py-3">
                 <p class="text-sm font-bold text-slate-900">{{ payment.method }}</p>
                 <p class="mt-1 text-xs uppercase tracking-[0.18em] text-slate-400">{{ roomLabel(payment.room_id) }}</p>
                 <p class="mt-1 text-sm text-slate-500">{{ payment.notes || 'Payment recorded' }}</p>
@@ -593,7 +593,7 @@ function handleCheckOut() {
             </div>
           </section>
 
-          <section class="rounded-[1.5rem] border border-slate-200 bg-slate-50 px-5 py-5">
+          <section class="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-5">
             <div class="flex items-start gap-3">
               <ShieldCheck class="mt-0.5 h-5 w-5 text-slate-500" />
               <div class="space-y-2 text-sm text-slate-600">

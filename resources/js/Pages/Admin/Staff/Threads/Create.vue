@@ -60,9 +60,9 @@ function submit() {
         </Link>
       </div>
 
-      <section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+      <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div class="grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
-          <div class="space-y-4 rounded-[1.5rem] bg-slate-50 p-5">
+          <div class="space-y-4 rounded-2xl bg-slate-50 p-5">
             <p class="text-sm font-bold text-slate-900">Thread type</p>
             <div
               v-for="option in typeOptions"

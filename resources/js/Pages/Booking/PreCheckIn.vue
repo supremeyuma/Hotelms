@@ -36,7 +36,7 @@ function formatDate(dateString) {
     <div class="min-h-screen bg-slate-50/50 py-12 px-4">
       <div class="max-w-3xl mx-auto">
         <div class="text-center mb-10">
-          <div class="inline-flex items-center justify-center h-20 w-20 rounded-[2rem] bg-emerald-100 text-emerald-600 shadow-xl shadow-emerald-100 mb-5">
+          <div class="inline-flex items-center justify-center h-20 w-20 rounded-2xl bg-emerald-100 text-emerald-600 shadow-xl shadow-emerald-100 mb-5">
             <CheckCircle2 class="w-10 h-10" />
           </div>
           <h1 class="text-3xl font-black text-slate-900 tracking-tight mb-2">Complete Pre-Check-In</h1>
@@ -52,7 +52,7 @@ function formatDate(dateString) {
           </div>
 
           <div class="p-8 md:p-10">
-            <div v-if="pre_check_in?.completed_at" class="mb-8 rounded-[2rem] border border-emerald-100 bg-emerald-50 p-5">
+            <div v-if="pre_check_in?.completed_at" class="mb-8 rounded-2xl border border-emerald-100 bg-emerald-50 p-5">
               <p class="text-sm font-bold text-emerald-800">
                 Pre-check-in already completed.
               </p>
@@ -106,16 +106,16 @@ function formatDate(dateString) {
                 </div>
               </div>
 
-              <div class="rounded-[2rem] border border-slate-100 bg-slate-50 p-5 text-sm font-medium text-slate-600">
+              <div class="rounded-2xl border border-slate-100 bg-slate-50 p-5 text-sm font-medium text-slate-600">
                 This step prepares your arrival only. Identity checks, any remaining hotel verification, and room access are still completed at the front desk.
               </div>
 
-              <button type="submit" :disabled="form.processing" class="w-full rounded-[2rem] bg-slate-900 py-5 text-sm font-black uppercase tracking-widest text-white transition hover:bg-indigo-600 disabled:opacity-50">
+              <button type="submit" :disabled="form.processing" class="w-full rounded-2xl bg-slate-900 py-5 text-sm font-black uppercase tracking-widest text-white transition hover:bg-indigo-600 disabled:opacity-50">
                 {{ form.processing ? 'Saving...' : 'Complete Pre-Check-In' }}
               </button>
             </form>
 
-            <div v-else class="rounded-[2rem] border border-slate-100 bg-slate-50 p-6 text-sm font-medium text-slate-600">
+            <div v-else class="rounded-2xl border border-slate-100 bg-slate-50 p-6 text-sm font-medium text-slate-600">
               This booking can no longer be updated through pre-check-in.
             </div>
           </div>

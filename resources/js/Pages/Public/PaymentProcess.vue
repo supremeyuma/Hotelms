@@ -55,7 +55,7 @@
                   Payment Gateway
                 </h3>
 
-                <div class="bg-slate-900 rounded-3xl p-8 text-white relative overflow-hidden mb-6">
+                <div class="bg-slate-900 rounded-2xl p-8 text-white relative overflow-hidden mb-6">
                   <div class="relative z-10 text-center">
                     <p class="text-xs font-bold text-white/40 uppercase tracking-[0.2em] mb-2">Amount Payable</p>
                     <p class="text-5xl font-black tracking-tighter mb-2">₦{{ formatNumber(amount) }}</p>

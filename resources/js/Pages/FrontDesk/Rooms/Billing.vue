@@ -80,7 +80,7 @@ function formatDate(date) {
           </div>
         </div>
 
-        <div class="px-8 py-4 rounded-[2rem] border bg-white shadow-sm flex flex-col items-end justify-center min-w-[240px]">
+        <div class="px-8 py-4 rounded-2xl border bg-white shadow-sm flex flex-col items-end justify-center min-w-[240px]">
           <span class="text-xs uppercase font-semibold tracking-wide text-slate-400 mb-1">Total Outstanding</span>
           <span 
             class="text-3xl font-black" 
@@ -227,7 +227,7 @@ function formatDate(date) {
             </form>
           </div>
 
-          <div class="p-6 bg-slate-50 border border-slate-100 rounded-[2rem] flex items-start gap-4">
+          <div class="p-6 bg-slate-50 border border-slate-100 rounded-2xl flex items-start gap-4">
             <Receipt class="w-5 h-5 text-slate-400 shrink-0 mt-0.5" />
             <p class="text-xs font-bold text-slate-500 leading-relaxed italic">
               Posting a payment updates the room balance immediately via real-time sync.

@@ -96,7 +96,7 @@ watch(dateType, () => {
         </button>
       </div>
 
-      <div class="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm">
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
         <div class="flex flex-wrap items-end gap-6">
           
           <div class="flex-none">
@@ -126,7 +126,7 @@ watch(dateType, () => {
         </div>
       </div>
 
-      <div class="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden">
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div class="overflow-x-auto">
           <BookingTable
             :bookings="bookings.data"

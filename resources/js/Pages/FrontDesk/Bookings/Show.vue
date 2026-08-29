@@ -141,7 +141,7 @@ function roomLabel(roomId) {
         <div class="space-y-8">
           <section
             v-if="booking.has_price_override"
-            class="rounded-[2rem] border p-6 shadow-sm"
+            class="rounded-2xl border p-6 shadow-sm"
             :class="booking.has_pending_price_override_approval
               ? 'border-rose-200 bg-rose-50'
               : (booking.price_override?.approval_status === 'rejected' ? 'border-amber-200 bg-amber-50' : 'border-emerald-200 bg-emerald-50')"
@@ -170,7 +170,7 @@ function roomLabel(roomId) {
             </div>
           </section>
 
-          <section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div class="flex items-center gap-3">
               <div class="rounded-2xl bg-indigo-50 p-2 text-indigo-600"><User class="h-5 w-5" /></div>
               <h2 class="text-xl font-black text-slate-900">Guest details</h2>
@@ -204,7 +204,7 @@ function roomLabel(roomId) {
 
           <section
             v-if="preCheckIn"
-            class="rounded-[2rem] border border-emerald-200 bg-emerald-50 p-6 shadow-sm"
+            class="rounded-2xl border border-emerald-200 bg-emerald-50 p-6 shadow-sm"
           >
             <h2 class="text-xl font-black text-emerald-900">Online pre-check-in</h2>
             <div class="mt-4 grid gap-4 md:grid-cols-3">
@@ -223,29 +223,29 @@ function roomLabel(roomId) {
             </div>
           </section>
 
-          <section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div class="flex items-center gap-3">
               <div class="rounded-2xl bg-amber-50 p-2 text-amber-600"><Calendar class="h-5 w-5" /></div>
               <h2 class="text-xl font-black text-slate-900">Stay timeline</h2>
             </div>
 
             <div class="mt-6 grid gap-4 md:grid-cols-3">
-              <div class="rounded-[1.5rem] bg-slate-50 p-4">
+              <div class="rounded-2xl bg-slate-50 p-4">
                 <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Check-in</p>
                 <p class="mt-2 text-lg font-black text-slate-900">{{ booking.check_in }}</p>
               </div>
-              <div class="rounded-[1.5rem] bg-slate-50 p-4">
+              <div class="rounded-2xl bg-slate-50 p-4">
                 <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Check-out</p>
                 <p class="mt-2 text-lg font-black text-slate-900">{{ booking.check_out }}</p>
               </div>
-              <div class="rounded-[1.5rem] bg-slate-900 p-4 text-white">
+              <div class="rounded-2xl bg-slate-900 p-4 text-white">
                 <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-300">Occupancy</p>
                 <p class="mt-2 text-lg font-black">{{ booking.checked_in_rooms_count }} room<span v-if="booking.checked_in_rooms_count !== 1">s</span> checked in</p>
               </div>
             </div>
           </section>
 
-          <section class="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
+          <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div class="border-b border-slate-100 px-6 py-5">
               <div class="flex items-center gap-3">
                 <div class="rounded-2xl bg-emerald-50 p-2 text-emerald-600"><BedDouble class="h-5 w-5" /></div>
@@ -277,7 +277,7 @@ function roomLabel(roomId) {
         </div>
 
         <div class="space-y-8">
-          <section class="rounded-[2rem] bg-[linear-gradient(145deg,_#0f172a,_#1e293b)] p-6 text-white shadow-sm">
+          <section class="rounded-2xl bg-[linear-gradient(145deg,_#0f172a,_#1e293b)] p-6 text-white shadow-sm">
             <div class="flex items-center gap-3">
               <Receipt class="h-5 w-5 text-indigo-300" />
               <h2 class="text-xl font-black">Financial folio</h2>
@@ -303,14 +303,14 @@ function roomLabel(roomId) {
 
             <div
               v-if="balanceDue > 0"
-              class="mt-6 flex items-start gap-3 rounded-[1.5rem] border border-rose-400/20 bg-rose-500/10 px-4 py-4 text-sm text-rose-100"
+              class="mt-6 flex items-start gap-3 rounded-2xl border border-rose-400/20 bg-rose-500/10 px-4 py-4 text-sm text-rose-100"
             >
               <AlertCircle class="mt-0.5 h-4 w-4 shrink-0" />
               <p>Outstanding balance must be settled before checkout is finalized.</p>
             </div>
           </section>
 
-          <section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div class="flex items-center justify-between">
               <h3 class="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Charges</h3>
               <Link
@@ -325,7 +325,7 @@ function roomLabel(roomId) {
               <div
                 v-for="charge in booking.charges"
                 :key="charge.id"
-                class="rounded-[1.25rem] border border-slate-100 px-4 py-3"
+                class="rounded-2xl border border-slate-100 px-4 py-3"
               >
                 <div class="flex items-center justify-between gap-4">
                   <div>
@@ -339,7 +339,7 @@ function roomLabel(roomId) {
             </div>
           </section>
 
-          <section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div class="flex items-center justify-between">
               <h3 class="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Payments</h3>
               <Link
@@ -354,7 +354,7 @@ function roomLabel(roomId) {
               <div
                 v-for="payment in booking.payments"
                 :key="payment.id"
-                class="rounded-[1.25rem] border border-slate-100 px-4 py-3"
+                class="rounded-2xl border border-slate-100 px-4 py-3"
               >
                 <div class="flex items-center justify-between gap-4">
                   <div>

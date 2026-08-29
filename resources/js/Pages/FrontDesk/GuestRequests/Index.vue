@@ -88,21 +88,21 @@ onMounted(() => {
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-4">
+                <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
                     <div class="p-4 bg-rose-50 text-rose-600 rounded-2xl"><Bell class="w-6 h-6" /></div>
                     <div>
                         <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Pending</p>
                         <p class="text-2xl font-black text-slate-900">{{ localRequests.data.filter(r => r.status === 'pending').length }}</p>
                     </div>
                 </div>
-                <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-4">
+                <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
                     <div class="p-4 bg-amber-50 text-amber-600 rounded-2xl"><Clock class="w-6 h-6" /></div>
                     <div>
                         <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide">In Progress</p>
                         <p class="text-2xl font-black text-slate-900">{{ localRequests.data.filter(r => r.status === 'acknowledged').length }}</p>
                     </div>
                 </div>
-                <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-4">
+                <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
                     <div class="p-4 bg-emerald-50 text-emerald-600 rounded-2xl"><CheckCircle2 class="w-6 h-6" /></div>
                     <div>
                         <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Completed</p>

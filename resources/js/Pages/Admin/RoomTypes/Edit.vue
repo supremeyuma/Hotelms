@@ -90,7 +90,7 @@ function submit() {
       </div>
 
       <form @submit.prevent="submit" class="grid gap-8 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <section class="space-y-6 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+        <section class="space-y-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div class="grid gap-5 md:grid-cols-2">
             <label class="space-y-2 md:col-span-2">
               <span class="text-sm font-bold text-slate-700">Property</span>
@@ -121,14 +121,14 @@ function submit() {
 
           <label class="space-y-2">
             <span class="text-sm font-bold text-slate-700">Features</span>
-            <textarea v-model="featuresText" rows="7" class="w-full rounded-3xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100" />
+            <textarea v-model="featuresText" rows="7" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100" />
             <p class="text-xs text-slate-500">Keep one feature per line so the record stays easy to review and maintain.</p>
             <InputError :message="form.errors.features" />
           </label>
         </section>
 
         <aside class="space-y-6">
-          <section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div class="flex items-center gap-2 text-slate-900">
               <ImagePlus class="h-5 w-5" />
               <h2 class="text-lg font-black">Room type images</h2>
@@ -136,7 +136,7 @@ function submit() {
             <p class="mt-2 text-sm text-slate-600">Manage the images shown to guests when this room type appears in booking.</p>
 
             <div v-if="existingImages.length" class="mt-5 space-y-3">
-              <article v-for="image in existingImages" :key="image.id" class="overflow-hidden rounded-[1.5rem] border border-slate-200">
+              <article v-for="image in existingImages" :key="image.id" class="overflow-hidden rounded-2xl border border-slate-200">
                 <img :src="image.url" :alt="type.title" class="h-36 w-full object-cover" />
                 <div class="flex items-center justify-between gap-3 p-3">
                   <button
@@ -161,14 +161,14 @@ function submit() {
               </article>
             </div>
 
-            <label class="mt-5 block cursor-pointer rounded-[1.5rem] border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center transition hover:border-slate-400 hover:bg-slate-100">
+            <label class="mt-5 block cursor-pointer rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center transition hover:border-slate-400 hover:bg-slate-100">
               <input type="file" multiple accept="image/*" class="hidden" @change="handleFiles" />
               <span class="text-sm font-bold text-slate-700">Add more images</span>
               <span class="mt-1 block text-xs text-slate-500">You can mark one of the new uploads as the primary booking image before saving.</span>
             </label>
 
             <div v-if="uploadPreviews.length" class="mt-5 space-y-3">
-              <article v-for="preview in uploadPreviews" :key="preview.index" class="overflow-hidden rounded-[1.5rem] border border-slate-200">
+              <article v-for="preview in uploadPreviews" :key="preview.index" class="overflow-hidden rounded-2xl border border-slate-200">
                 <img :src="preview.url" :alt="preview.name" class="h-36 w-full object-cover" />
                 <div class="flex items-center justify-between gap-3 p-3">
                   <div class="min-w-0">
@@ -195,7 +195,7 @@ function submit() {
             <InputError :message="form.errors.images" />
           </section>
 
-          <section class="rounded-[2rem] border border-slate-200 bg-[linear-gradient(145deg,_#0f172a,_#1e293b)] p-6 text-white shadow-sm">
+          <section class="rounded-2xl border border-slate-200 bg-[linear-gradient(145deg,_#0f172a,_#1e293b)] p-6 text-white shadow-sm">
             <p class="text-[11px] font-black uppercase tracking-[0.24em] text-slate-300">Live summary</p>
             <h2 class="mt-3 text-2xl font-black tracking-tight">{{ form.title || type.title }}</h2>
             <p class="mt-2 inline-flex items-center gap-2 text-sm text-slate-300">

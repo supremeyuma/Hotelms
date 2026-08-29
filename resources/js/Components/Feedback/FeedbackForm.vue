@@ -72,7 +72,7 @@ function submit() {
 
 <template>
   <section class="mx-auto max-w-4xl">
-    <div class="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
+    <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div class="border-b border-slate-100 bg-slate-900 px-6 py-7 text-white sm:px-8">
         <p class="text-[11px] font-black uppercase tracking-[0.24em] text-slate-300">{{ config.audience }} feedback</p>
         <h1 class="mt-3 text-3xl font-black tracking-tight">{{ title }}</h1>
@@ -84,12 +84,12 @@ function submit() {
           {{ flashSuccess }}
         </div>
 
-        <div class="grid gap-4 rounded-[1.5rem] bg-slate-50 p-5 md:grid-cols-2">
+        <div class="grid gap-4 rounded-2xl bg-slate-50 p-5 md:grid-cols-2">
           <div>
             <p class="text-xs uppercase font-semibold tracking-wide text-slate-400">Anonymous by default</p>
             <p class="mt-2 text-sm text-slate-600">When anonymity stays on, identity and stay context are not stored with the submission.</p>
           </div>
-          <div v-if="config.context" class="rounded-[1.25rem] border border-slate-200 bg-white p-4">
+          <div v-if="config.context" class="rounded-2xl border border-slate-200 bg-white p-4">
             <p class="text-xs uppercase font-semibold tracking-wide text-slate-400">Current context</p>
             <p class="mt-2 text-sm font-semibold text-slate-900" v-if="config.context.guest_name">{{ config.context.guest_name }}</p>
             <p class="mt-1 text-sm text-slate-600" v-if="config.context.room_name">Room: {{ config.context.room_name }}</p>
@@ -134,7 +134,7 @@ function submit() {
             <InputError class="mt-2" :message="form.errors.message" />
           </div>
 
-          <div class="grid gap-4 rounded-[1.5rem] border border-slate-200 p-5 md:grid-cols-2">
+          <div class="grid gap-4 rounded-2xl border border-slate-200 p-5 md:grid-cols-2">
             <label class="flex items-start gap-3 rounded-2xl bg-slate-50 p-4">
               <Checkbox v-model:checked="form.is_anonymous" :checked="form.is_anonymous" />
               <span>

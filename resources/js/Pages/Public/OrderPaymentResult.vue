@@ -4,7 +4,7 @@
 
     <div class="min-h-screen bg-slate-50 py-10">
       <div class="mx-auto max-w-3xl px-4">
-        <div class="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-xl shadow-slate-200/60">
+        <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl shadow-slate-200/60">
           <div :class="status === 'success' ? 'bg-emerald-600' : 'bg-amber-500'" class="p-8 text-white">
             <p class="text-xs font-black uppercase tracking-[0.22em]">
               Public Order Payment

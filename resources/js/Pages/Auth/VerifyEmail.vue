@@ -29,7 +29,7 @@ const verificationLinkSent = computed(
             <div class="w-full max-w-md">
                 
                 <div class="text-center mb-10">
-                    <div class="inline-flex p-4 bg-white rounded-[2rem] text-indigo-600 shadow-xl shadow-slate-200/50 mb-6">
+                    <div class="inline-flex p-4 bg-white rounded-2xl text-indigo-600 shadow-xl shadow-slate-200/50 mb-6">
                         <MailOpen class="w-10 h-10" />
                     </div>
                     <h1 class="text-3xl font-black text-slate-900 tracking-tight mb-2">Check Your Inbox</h1>
@@ -66,7 +66,7 @@ const verificationLinkSent = computed(
                             <button
                                 type="submit"
                                 :disabled="form.processing"
-                                class="w-full group flex items-center justify-center gap-3 py-5 bg-slate-900 text-white rounded-3xl font-black text-lg hover:bg-indigo-600 transition-all shadow-xl shadow-slate-200 active:scale-[0.98] disabled:opacity-50"
+                                class="w-full group flex items-center justify-center gap-3 py-5 bg-slate-900 text-white rounded-2xl font-black text-lg hover:bg-indigo-600 transition-all shadow-xl shadow-slate-200 active:scale-[0.98] disabled:opacity-50"
                             >
                                 <Send class="w-5 h-5 group-hover:-translate-y-1 group-hover:translate-x-1 transition-transform" />
                                 Resend Email

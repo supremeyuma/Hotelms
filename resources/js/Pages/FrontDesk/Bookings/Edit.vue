@@ -152,7 +152,7 @@ function formatPreCheckInDate(value) {
       </div>
 
       <form @submit.prevent="submit" class="grid gap-8 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <section class="space-y-6 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+        <section class="space-y-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div class="grid gap-6 md:grid-cols-2">
             <label class="space-y-2 md:col-span-2">
               <div class="flex items-center justify-between gap-3">
@@ -169,7 +169,7 @@ function formatPreCheckInDate(value) {
                   type="button"
                   :disabled="isDisabled(room)"
                   @click="toggleRoom(room.id)"
-                  class="rounded-[1.5rem] border px-4 py-4 text-left transition disabled:cursor-not-allowed disabled:opacity-45"
+                  class="rounded-2xl border px-4 py-4 text-left transition disabled:cursor-not-allowed disabled:opacity-45"
                   :class="isSelected(room.id)
                     ? 'border-emerald-400 bg-emerald-50 shadow-sm'
                     : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white'"
@@ -216,7 +216,7 @@ function formatPreCheckInDate(value) {
               <InputError :message="form.errors.status" />
             </label>
 
-            <div class="rounded-[1.5rem] border border-slate-200 bg-slate-50 px-4 py-4">
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
               <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">Current room estimate</p>
               <p class="mt-2 text-lg font-black text-slate-900">NGN {{ estimatedTotal.toLocaleString() }}</p>
               <p class="mt-1 text-sm text-slate-500">
@@ -340,19 +340,19 @@ function formatPreCheckInDate(value) {
 
           <div
             v-if="invalidStay"
-            class="rounded-[1.5rem] border border-rose-200 bg-rose-50 px-4 py-4 text-sm font-medium text-rose-700"
+            class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-4 text-sm font-medium text-rose-700"
           >
             Check-out must be after check-in.
           </div>
         </section>
 
         <aside class="space-y-6">
-          <section class="rounded-[2rem] bg-[linear-gradient(145deg,_#0f172a,_#1e293b)] p-6 text-white shadow-sm">
+          <section class="rounded-2xl bg-[linear-gradient(145deg,_#0f172a,_#1e293b)] p-6 text-white shadow-sm">
             <p class="text-[11px] font-black uppercase tracking-[0.24em] text-slate-300">Reservation summary</p>
             <h2 class="mt-3 text-2xl font-black tracking-tight">{{ form.guest_name || 'Guest details' }}</h2>
 
             <div class="mt-6 space-y-4">
-              <div class="flex items-start gap-3 rounded-[1.5rem] bg-white/10 px-4 py-4">
+              <div class="flex items-start gap-3 rounded-2xl bg-white/10 px-4 py-4">
                 <CalendarDays class="mt-0.5 h-4 w-4 text-slate-200" />
                 <div>
                   <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-300">Stay</p>
@@ -363,7 +363,7 @@ function formatPreCheckInDate(value) {
                 </div>
               </div>
 
-              <div class="flex items-start gap-3 rounded-[1.5rem] bg-white/10 px-4 py-4">
+              <div class="flex items-start gap-3 rounded-2xl bg-white/10 px-4 py-4">
                 <DoorOpen class="mt-0.5 h-4 w-4 text-slate-200" />
                 <div>
                   <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-300">Rooms</p>
@@ -380,7 +380,7 @@ function formatPreCheckInDate(value) {
                 </div>
               </div>
 
-              <div class="flex items-start gap-3 rounded-[1.5rem] bg-white/10 px-4 py-4">
+              <div class="flex items-start gap-3 rounded-2xl bg-white/10 px-4 py-4">
                 <UserRound class="mt-0.5 h-4 w-4 text-slate-200" />
                 <div>
                   <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-300">Occupancy</p>
@@ -395,7 +395,7 @@ function formatPreCheckInDate(value) {
 
           <section
             v-if="preCheckIn"
-            class="rounded-[2rem] border border-emerald-200 bg-emerald-50 p-6 shadow-sm"
+            class="rounded-2xl border border-emerald-200 bg-emerald-50 p-6 shadow-sm"
           >
             <p class="text-[11px] font-black uppercase tracking-[0.18em] text-emerald-700">Online pre-check-in</p>
             <div class="mt-4 space-y-2 text-sm text-emerald-900">
@@ -405,7 +405,7 @@ function formatPreCheckInDate(value) {
             </div>
           </section>
 
-          <section class="rounded-[1.5rem] border border-slate-200 bg-slate-50 px-5 py-5">
+          <section class="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-5">
             <div class="flex items-start gap-3">
               <ShieldCheck class="mt-0.5 h-5 w-5 text-slate-500" />
               <div class="space-y-2 text-sm text-slate-600">

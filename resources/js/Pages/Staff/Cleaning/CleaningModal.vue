@@ -88,7 +88,7 @@ const submit = () => {
             @click="action = 'cleaning'"
             type="button"
             :class="[
-              'flex flex-col items-center gap-2 p-4 rounded-3xl border-2 transition-all',
+              'flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all',
               action === 'cleaning' 
                 ? 'border-indigo-600 bg-indigo-50 text-indigo-700' 
                 : 'border-slate-100 bg-slate-50 text-slate-500 hover:border-slate-200'
@@ -102,7 +102,7 @@ const submit = () => {
             @click="action = 'clean'"
             type="button"
             :class="[
-              'flex flex-col items-center gap-2 p-4 rounded-3xl border-2 transition-all',
+              'flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all',
               action === 'clean' 
                 ? 'border-emerald-600 bg-emerald-50 text-emerald-700' 
                 : 'border-slate-100 bg-slate-50 text-slate-500 hover:border-slate-200'

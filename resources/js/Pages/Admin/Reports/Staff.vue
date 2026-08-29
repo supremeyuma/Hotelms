@@ -125,7 +125,7 @@ function statusClasses(row) {
     <Head title="Staff Report" />
 
     <div class="space-y-8">
-      <section class="overflow-hidden rounded-[2rem] bg-slate-900 text-white shadow-2xl shadow-slate-200">
+      <section class="overflow-hidden rounded-2xl bg-slate-900 text-white shadow-2xl shadow-slate-200">
         <div class="grid gap-6 px-6 py-8 sm:px-8 xl:grid-cols-[1.25fr_0.75fr]">
           <div class="space-y-4">
             <div class="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-xs uppercase font-semibold tracking-wide text-slate-200">
@@ -157,7 +157,7 @@ function statusClasses(row) {
           </div>
 
           <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
-            <div class="rounded-[1.75rem] border border-white/10 bg-white/10 p-5 backdrop-blur">
+            <div class="rounded-2xl border border-white/10 bg-white/10 p-5 backdrop-blur">
               <p class="text-xs uppercase font-semibold tracking-wide text-slate-300">Active coverage</p>
               <p class="mt-3 text-4xl font-black">{{ summary.active_staff }}</p>
               <p class="mt-2 text-sm text-slate-300">
@@ -165,7 +165,7 @@ function statusClasses(row) {
               </p>
             </div>
 
-            <div class="rounded-[1.75rem] border border-amber-300/25 bg-gradient-to-br from-amber-400/20 to-amber-300/5 p-5">
+            <div class="rounded-2xl border border-amber-300/25 bg-gradient-to-br from-amber-400/20 to-amber-300/5 p-5">
               <p class="text-xs uppercase font-semibold tracking-wide text-amber-100">Tracked workload</p>
               <div class="mt-4 grid grid-cols-3 gap-3">
                 <div>
@@ -191,9 +191,9 @@ function statusClasses(row) {
           v-for="card in cards"
           :key="card.label"
           :href="card.href"
-          class="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+          class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
         >
-          <div class="rounded-[1.5rem] bg-gradient-to-br p-5 ring-1" :class="toneClasses(card.tone)">
+          <div class="rounded-2xl bg-gradient-to-br p-5 ring-1" :class="toneClasses(card.tone)">
             <div class="flex items-start justify-between gap-4">
               <div>
                 <p class="text-xs uppercase font-semibold tracking-wide text-slate-500">{{ card.label }}</p>
@@ -208,7 +208,7 @@ function statusClasses(row) {
         </Link>
       </section>
 
-      <form class="grid gap-3 rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm md:grid-cols-2 xl:grid-cols-5" @submit.prevent="applyFilters">
+      <form class="grid gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:grid-cols-2 xl:grid-cols-5" @submit.prevent="applyFilters">
         <input
           name="search"
           :value="filters.search ?? ''"
@@ -264,7 +264,7 @@ function statusClasses(row) {
         </div>
       </form>
 
-      <section class="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
+      <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div class="flex flex-col gap-3 border-b border-slate-100 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p class="text-xs uppercase font-semibold tracking-wide text-slate-400">Staff performance table</p>

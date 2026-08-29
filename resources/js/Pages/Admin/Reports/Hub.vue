@@ -179,7 +179,7 @@ function statusClasses(status) {
     <Head title="Reports" />
 
     <div class="space-y-8">
-      <section class="overflow-hidden rounded-[2rem] bg-slate-900 text-white shadow-2xl shadow-slate-200">
+      <section class="overflow-hidden rounded-2xl bg-slate-900 text-white shadow-2xl shadow-slate-200">
         <div class="grid gap-8 px-6 py-8 sm:px-8 xl:grid-cols-[1.25fr_0.75fr]">
           <div class="space-y-5">
             <div class="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-xs uppercase font-semibold tracking-wide text-slate-200">
@@ -213,7 +213,7 @@ function statusClasses(status) {
           </div>
 
           <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
-            <div class="rounded-[1.75rem] border border-white/10 bg-white/10 p-5 backdrop-blur">
+            <div class="rounded-2xl border border-white/10 bg-white/10 p-5 backdrop-blur">
               <p class="text-xs uppercase font-semibold tracking-wide text-slate-300">Reporting window</p>
               <p class="mt-3 text-2xl font-black">{{ period.label }}</p>
               <p class="mt-2 text-sm text-slate-300">
@@ -221,7 +221,7 @@ function statusClasses(status) {
               </p>
             </div>
 
-            <div class="rounded-[1.75rem] border border-cyan-300/20 bg-gradient-to-br from-cyan-400/15 to-slate-900 p-5">
+            <div class="rounded-2xl border border-cyan-300/20 bg-gradient-to-br from-cyan-400/15 to-slate-900 p-5">
               <p class="text-xs uppercase font-semibold tracking-wide text-cyan-100">Room focus</p>
               <p class="mt-3 text-2xl font-black">{{ selectedRoomLabel }}</p>
               <p class="mt-2 text-sm text-slate-200">
@@ -234,7 +234,7 @@ function statusClasses(status) {
 
       <section
         id="filters-section"
-        class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm"
+        class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
       >
         <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -329,9 +329,9 @@ function statusClasses(status) {
           v-for="card in summaryCards"
           :key="card.label"
           :href="card.href"
-          class="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+          class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
         >
-          <div class="rounded-[1.5rem] bg-gradient-to-br p-5 ring-1" :class="toneClasses(card.tone)">
+          <div class="rounded-2xl bg-gradient-to-br p-5 ring-1" :class="toneClasses(card.tone)">
             <div class="flex items-start justify-between gap-4">
               <div>
                 <p class="text-xs uppercase font-semibold tracking-wide text-slate-500">{{ card.label }}</p>
@@ -349,7 +349,7 @@ function statusClasses(status) {
       <section
         v-if="roomReport"
         id="room-report"
-        class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm"
+        class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
       >
         <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
@@ -366,22 +366,22 @@ function statusClasses(status) {
         </div>
 
         <div class="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <div class="rounded-[1.5rem] bg-slate-50 p-5">
+          <div class="rounded-2xl bg-slate-50 p-5">
             <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Bookings</p>
             <p class="mt-3 text-3xl font-black text-slate-900">{{ roomReport.bookings }}</p>
             <p class="mt-2 text-sm text-slate-500">{{ roomReport.guest_volume }} guests</p>
           </div>
-          <div class="rounded-[1.5rem] bg-slate-50 p-5">
+          <div class="rounded-2xl bg-slate-50 p-5">
             <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Cash in</p>
             <p class="mt-3 text-3xl font-black text-slate-900">{{ formatCurrency(roomReport.payments_received) }}</p>
             <p class="mt-2 text-sm text-slate-500">Payments recorded for the selected room</p>
           </div>
-          <div class="rounded-[1.5rem] bg-slate-50 p-5">
+          <div class="rounded-2xl bg-slate-50 p-5">
             <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Charges</p>
             <p class="mt-3 text-3xl font-black text-slate-900">{{ formatCurrency(roomReport.charges_posted) }}</p>
             <p class="mt-2 text-sm text-slate-500">Posted room-related charges</p>
           </div>
-          <div class="rounded-[1.5rem] bg-slate-50 p-5">
+          <div class="rounded-2xl bg-slate-50 p-5">
             <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Operational load</p>
             <p class="mt-3 text-3xl font-black text-slate-900">{{ roomReport.service_orders + roomReport.laundry_orders + roomReport.maintenance_tickets }}</p>
             <p class="mt-2 text-sm text-slate-500">Orders, laundry, and maintenance items</p>
@@ -391,7 +391,7 @@ function statusClasses(status) {
 
       <section
         id="departments-section"
-        class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm"
+        class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
       >
         <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
@@ -407,7 +407,7 @@ function statusClasses(status) {
           <article
             v-for="department in departmentReports"
             :key="department.name"
-            class="rounded-[1.5rem] border border-slate-200 p-5"
+            class="rounded-2xl border border-slate-200 p-5"
           >
             <div class="flex items-start justify-between gap-4">
               <div>
@@ -444,7 +444,7 @@ function statusClasses(status) {
 
       <section
         id="bookings-section"
-        class="rounded-[2rem] border border-slate-200 bg-white shadow-sm"
+        class="rounded-2xl border border-slate-200 bg-white shadow-sm"
       >
         <div class="flex flex-col gap-3 border-b border-slate-100 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -528,7 +528,7 @@ function statusClasses(status) {
       <section class="grid gap-6 xl:grid-cols-2">
         <div
           id="payments-section"
-          class="rounded-[2rem] border border-slate-200 bg-white shadow-sm"
+          class="rounded-2xl border border-slate-200 bg-white shadow-sm"
         >
           <div class="flex items-center justify-between gap-4 border-b border-slate-100 px-6 py-5">
             <div>
@@ -581,7 +581,7 @@ function statusClasses(status) {
 
         <div
           id="charges-section"
-          class="rounded-[2rem] border border-slate-200 bg-white shadow-sm"
+          class="rounded-2xl border border-slate-200 bg-white shadow-sm"
         >
           <div class="flex items-center justify-between gap-4 border-b border-slate-100 px-6 py-5">
             <div>
@@ -635,7 +635,7 @@ function statusClasses(status) {
         </div>
       </section>
 
-      <section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+      <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p class="text-xs uppercase font-semibold tracking-wide text-slate-400">Related reports</p>
@@ -651,7 +651,7 @@ function statusClasses(status) {
             v-for="link in reportLinks"
             :key="link.label"
             :href="link.href"
-            class="rounded-[1.5rem] border border-slate-200 p-5 transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+            class="rounded-2xl border border-slate-200 p-5 transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
           >
             <p class="text-sm font-bold text-slate-900">{{ link.label }}</p>
             <p class="mt-2 text-sm leading-6 text-slate-500">{{ link.description }}</p>

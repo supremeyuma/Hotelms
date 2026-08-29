@@ -44,12 +44,12 @@
               </div>
             </div>
 
-            <div v-if="reservation.qr_code" class="bg-slate-50 rounded-[2rem] p-8 border border-slate-100 text-center relative">
+            <div v-if="reservation.qr_code" class="bg-slate-50 rounded-2xl p-8 border border-slate-100 text-center relative">
               <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-white px-4 py-1 rounded-full border border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-wide shadow-sm">
                 Entry Pass
               </div>
               
-              <div class="inline-block p-4 bg-white rounded-3xl shadow-xl mb-4">
+              <div class="inline-block p-4 bg-white rounded-2xl shadow-xl mb-4">
                 <div class="w-40 h-40 bg-slate-900 rounded-xl flex flex-col items-center justify-center text-white p-4">
                    <p class="text-xs uppercase font-semibold tracking-wide opacity-40 mb-2">QR SCAN</p>
                    <p class="text-xl font-black tracking-widest">{{ reservation.qr_code }}</p>

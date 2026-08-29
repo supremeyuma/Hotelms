@@ -126,7 +126,7 @@ const updateRoomStatus = (roomId, newStatus) => {
             />
           </div>
 
-          <div class="flex bg-slate-200/50 p-1.5 rounded-[1.25rem] border border-slate-200">
+          <div class="flex bg-slate-200/50 p-1.5 rounded-2xl border border-slate-200">
             <button 
               @click="currentView = 'occupied'"
               :class="['px-6 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all duration-200', 

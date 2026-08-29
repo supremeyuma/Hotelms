@@ -122,7 +122,7 @@ onUnmounted(() => {
           :src="currentImage.url"
           :alt="currentImage.caption || title"
           @click.stop
-          class="max-h-full max-w-full rounded-[2rem] object-contain shadow-[0_35px_120px_rgba(15,23,42,0.55)]"
+          class="max-h-full max-w-full rounded-2xl object-contain shadow-[0_35px_120px_rgba(15,23,42,0.55)]"
         />
 
         <button

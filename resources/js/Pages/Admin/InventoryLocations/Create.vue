@@ -9,7 +9,7 @@
         </p>
       </div>
 
-      <form class="space-y-5 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm" @submit.prevent="submit">
+      <form class="space-y-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm" @submit.prevent="submit">
         <div class="space-y-2">
           <label class="text-sm font-semibold text-slate-700">Location name</label>
           <TextInput v-model="form.name" placeholder="Kitchen Storefront" />

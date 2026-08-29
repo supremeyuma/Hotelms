@@ -53,7 +53,7 @@ function formatDate(value) {
     <Head :title="thread.title || 'Conversation'" />
 
     <div class="mx-auto max-w-5xl space-y-6">
-      <section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+      <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <div class="flex flex-wrap items-center gap-3">
@@ -90,7 +90,7 @@ function formatDate(value) {
         <article
           v-for="message in thread.messages"
           :key="message.id"
-          class="rounded-[1.5rem] border border-slate-200 p-5 shadow-sm"
+          class="rounded-2xl border border-slate-200 p-5 shadow-sm"
           :class="message.sender_id === $page.props.auth.user.id ? 'bg-slate-900 text-white' : 'bg-white'"
         >
           <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -138,7 +138,7 @@ function formatDate(value) {
         </article>
       </section>
 
-      <section class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+      <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 class="text-xl font-black tracking-tight text-slate-900">Reply in this thread</h2>
         <p class="mt-2 text-sm text-slate-500">Keep the discussion in one place so leadership can follow the full context.</p>
 

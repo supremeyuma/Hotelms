@@ -56,7 +56,7 @@ function reinstateStaff(id) {
 
     <div class="space-y-8">
       <section
-        class="rounded-[2rem] px-6 py-7 text-white shadow-xl shadow-slate-200"
+        class="rounded-2xl px-6 py-7 text-white shadow-xl shadow-slate-200"
         :class="isSuspended(staff) ? 'bg-gradient-to-br from-rose-900 via-rose-800 to-slate-900' : 'bg-slate-900'"
       >
         <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
@@ -89,7 +89,7 @@ function reinstateStaff(id) {
         <div
           v-for="item in summary"
           :key="item.label"
-          class="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm"
+          class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
         >
           <p class="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">{{ item.label }}</p>
           <p class="mt-4 text-3xl font-black text-slate-900">{{ item.value }}</p>
@@ -97,7 +97,7 @@ function reinstateStaff(id) {
         </div>
       </section>
 
-      <section class="rounded-[2rem] border border-slate-200 bg-white shadow-sm">
+      <section class="rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div class="flex flex-col gap-3 border-b border-slate-100 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p class="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Conversation Log</p>

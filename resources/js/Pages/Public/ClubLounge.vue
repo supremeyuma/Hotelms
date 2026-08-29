@@ -99,7 +99,7 @@ const formatTime = (date) =>
               src="https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&q=80"
               class="rounded-2xl w-full h-[600px] object-cover shadow-2xl"
             />
-            <div class="absolute bottom-10 left-10 p-8 bg-slate-950/80 backdrop-blur-xl rounded-3xl border border-white/10">
+            <div class="absolute bottom-10 left-10 p-8 bg-slate-950/80 backdrop-blur-xl rounded-2xl border border-white/10">
               <GlassWater class="w-8 h-8 text-indigo-400 mb-4" />
               <p class="text-lg font-black italic">
                 "Signature cocktails, globally inspired."

@@ -206,7 +206,7 @@ function submit() {
               <button
                 type="submit"
                 :disabled="form.processing"
-                class="w-full group flex items-center justify-center gap-3 py-5 bg-slate-900 text-white rounded-3xl font-black text-lg hover:bg-indigo-600 transition-all shadow-xl shadow-slate-200 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+                class="w-full group flex items-center justify-center gap-3 py-5 bg-slate-900 text-white rounded-2xl font-black text-lg hover:bg-indigo-600 transition-all shadow-xl shadow-slate-200 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <RefreshCw v-if="form.processing" class="w-5 h-5 animate-spin" />
                 <ArrowRight v-else class="w-5 h-5 group-hover:translate-x-1 transition-transform" />

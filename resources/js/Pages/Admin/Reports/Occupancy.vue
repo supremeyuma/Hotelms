@@ -118,7 +118,7 @@ function toneClasses(tone) {
     <Head title="Occupancy Report" />
 
     <div class="space-y-8">
-      <section class="overflow-hidden rounded-[2rem] bg-slate-900 text-white shadow-2xl shadow-slate-200">
+      <section class="overflow-hidden rounded-2xl bg-slate-900 text-white shadow-2xl shadow-slate-200">
         <div class="grid gap-6 px-6 py-8 sm:px-8 xl:grid-cols-[1.25fr_0.75fr]">
           <div class="space-y-4">
             <div class="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-xs uppercase font-semibold tracking-wide text-slate-200">
@@ -150,7 +150,7 @@ function toneClasses(tone) {
           </div>
 
           <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
-            <div class="rounded-[1.75rem] border border-white/10 bg-white/10 p-5 backdrop-blur">
+            <div class="rounded-2xl border border-white/10 bg-white/10 p-5 backdrop-blur">
               <p class="text-xs uppercase font-semibold tracking-wide text-slate-300">Current occupancy</p>
               <p class="mt-3 text-4xl font-black">{{ summary.occupancy }}%</p>
               <p class="mt-2 text-sm text-slate-300">
@@ -158,7 +158,7 @@ function toneClasses(tone) {
               </p>
             </div>
 
-            <div class="rounded-[1.75rem] border border-emerald-300/25 bg-gradient-to-br from-emerald-400/20 to-emerald-300/5 p-5">
+            <div class="rounded-2xl border border-emerald-300/25 bg-gradient-to-br from-emerald-400/20 to-emerald-300/5 p-5">
               <p class="text-xs uppercase font-semibold tracking-wide text-emerald-100">Guest flow today</p>
               <div class="mt-4 grid grid-cols-2 gap-4">
                 <div>
@@ -180,9 +180,9 @@ function toneClasses(tone) {
           v-for="card in quickLinks"
           :key="card.label"
           :href="card.href"
-          class="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+          class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
         >
-          <div class="rounded-[1.5rem] bg-gradient-to-br p-5 ring-1" :class="toneClasses(card.tone)">
+          <div class="rounded-2xl bg-gradient-to-br p-5 ring-1" :class="toneClasses(card.tone)">
             <div class="flex items-start justify-between gap-4">
               <div>
                 <p class="text-xs uppercase font-semibold tracking-wide text-slate-500">{{ card.label }}</p>
@@ -197,7 +197,7 @@ function toneClasses(tone) {
         </Link>
       </section>
 
-      <form class="grid gap-3 rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm lg:grid-cols-4" @submit.prevent="applyFilters">
+      <form class="grid gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:grid-cols-4" @submit.prevent="applyFilters">
         <div>
           <label class="text-xs font-black uppercase tracking-[0.2em] text-slate-400">From</label>
           <input
@@ -239,7 +239,7 @@ function toneClasses(tone) {
 
       <TrendChart title="Occupancy Trend" endpoint="/admin/reports/charts/occupancy" />
 
-      <section class="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
+      <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div class="flex flex-col gap-3 border-b border-slate-100 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p class="text-xs uppercase font-semibold tracking-wide text-slate-400">Daily room position</p>

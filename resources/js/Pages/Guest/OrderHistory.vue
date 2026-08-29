@@ -36,7 +36,7 @@ function statusClass(status) {
         <p class="text-slate-500 text-sm mt-1">All the room-service and laundry requests you have made during your stay.</p>
       </div>
 
-      <div v-if="orderList.length === 0" class="py-20 text-center bg-white rounded-3xl border border-slate-200">
+      <div v-if="orderList.length === 0" class="py-20 text-center bg-white rounded-2xl border border-slate-200">
         <p class="font-bold text-slate-500">You have no orders yet.</p>
         <p class="mt-2 text-sm text-slate-500">Use the room dashboard to place your first order.</p>
       </div>
@@ -45,7 +45,7 @@ function statusClass(status) {
         <div
           v-for="order in orderList"
           :key="order.id"
-          class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden"
+          class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden"
         >
           <div class="p-5 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
             <div>

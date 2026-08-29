@@ -75,7 +75,7 @@ function getStatusClass(status) {
         </p>
       </div>
 
-      <div v-if="!orders?.data?.length" class="flex flex-col items-center justify-center rounded-3xl border-2 border-dashed border-slate-200 bg-white py-20">
+      <div v-if="!orders?.data?.length" class="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-white py-20">
         <div class="mb-4 rounded-full bg-slate-50 p-4">
           <Inbox class="h-12 w-12 text-slate-300" />
         </div>
@@ -87,7 +87,7 @@ function getStatusClass(status) {
         <div
           v-for="order in orders.data"
           :key="order.id"
-          class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition-all hover:shadow-md"
+          class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all hover:shadow-md"
         >
           <button
             type="button"

@@ -30,7 +30,7 @@ function deleteType(type) {
     <Head title="Room Types" />
 
     <div class="mx-auto max-w-7xl space-y-8 px-4 py-8 sm:px-6 lg:px-8">
-      <section class="overflow-hidden rounded-[2rem] border border-slate-200 bg-[radial-gradient(circle_at_top_left,_rgba(15,23,42,0.06),_transparent_32%),linear-gradient(135deg,_#ffffff,_#f8fafc_50%,_#eef2ff)] p-8 shadow-sm">
+      <section class="overflow-hidden rounded-2xl border border-slate-200 bg-[radial-gradient(circle_at_top_left,_rgba(15,23,42,0.06),_transparent_32%),linear-gradient(135deg,_#ffffff,_#f8fafc_50%,_#eef2ff)] p-8 shadow-sm">
         <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div class="max-w-3xl">
             <div class="mb-3 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-[11px] font-black uppercase tracking-[0.24em] text-slate-500">
@@ -57,7 +57,7 @@ function deleteType(type) {
         <article
           v-for="type in types.data"
           :key="type.id"
-          class="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
+          class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
         >
           <div class="grid gap-0 md:grid-cols-[220px_minmax(0,1fr)]">
             <div class="relative min-h-[220px] bg-slate-100">
@@ -153,7 +153,7 @@ function deleteType(type) {
         </article>
       </section>
 
-      <section v-else class="rounded-[2rem] border border-dashed border-slate-300 bg-white px-6 py-16 text-center shadow-sm">
+      <section v-else class="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center shadow-sm">
         <BedDouble class="mx-auto h-12 w-12 text-slate-300" />
         <h2 class="mt-4 text-xl font-black text-slate-900">No room types available</h2>
         <p class="mt-2 text-sm text-slate-500">Create the first room category so rooms can be grouped correctly in operations and booking flow.</p>

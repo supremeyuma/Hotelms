@@ -236,11 +236,11 @@ async function destroyBlock(schedule) {
     <Head title="Room Scheduling" />
 
     <div class="space-y-8">
-      <div v-if="showFlash" class="rounded-[2rem] border border-emerald-200 bg-emerald-50 px-6 py-4 text-sm font-semibold text-emerald-800">
+      <div v-if="showFlash" class="rounded-2xl border border-emerald-200 bg-emerald-50 px-6 py-4 text-sm font-semibold text-emerald-800">
         {{ flashMessage }}
       </div>
 
-      <section class="overflow-hidden rounded-[2rem] bg-slate-900 text-white shadow-2xl shadow-slate-200">
+      <section class="overflow-hidden rounded-2xl bg-slate-900 text-white shadow-2xl shadow-slate-200">
         <div class="grid gap-6 px-6 py-8 sm:px-8 xl:grid-cols-[1.2fr_0.8fr]">
           <div class="space-y-4">
             <div class="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-xs uppercase font-semibold tracking-wide text-slate-200">
@@ -256,15 +256,15 @@ async function destroyBlock(schedule) {
           </div>
 
           <div class="grid gap-4 md:grid-cols-3 xl:grid-cols-1">
-            <a href="#price-schedules" class="rounded-[1.75rem] border border-white/10 bg-white/10 p-5 transition hover:bg-white/15">
+            <a href="#price-schedules" class="rounded-2xl border border-white/10 bg-white/10 p-5 transition hover:bg-white/15">
               <p class="text-xs uppercase font-semibold tracking-wide text-slate-300">Active price plans</p>
               <p class="mt-3 text-3xl font-black">{{ summary.active_price_schedules }}</p>
             </a>
-            <a href="#availability-blocks" class="rounded-[1.75rem] border border-white/10 bg-white/10 p-5 transition hover:bg-white/15">
+            <a href="#availability-blocks" class="rounded-2xl border border-white/10 bg-white/10 p-5 transition hover:bg-white/15">
               <p class="text-xs uppercase font-semibold tracking-wide text-slate-300">Active blocks</p>
               <p class="mt-3 text-3xl font-black">{{ summary.active_unavailability }}</p>
             </a>
-            <a href="#availability-blocks" class="rounded-[1.75rem] border border-white/10 bg-white/10 p-5 transition hover:bg-white/15">
+            <a href="#availability-blocks" class="rounded-2xl border border-white/10 bg-white/10 p-5 transition hover:bg-white/15">
               <p class="text-xs uppercase font-semibold tracking-wide text-slate-300">Rooms blocked</p>
               <p class="mt-3 text-3xl font-black">{{ summary.rooms_blocked }}</p>
             </a>
@@ -272,7 +272,7 @@ async function destroyBlock(schedule) {
         </div>
       </section>
 
-      <div class="rounded-[2rem] border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-800">
+      <div class="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-800">
         <div class="flex items-start gap-3">
           <Info class="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
           <p>
@@ -295,7 +295,7 @@ async function destroyBlock(schedule) {
         </div>
 
         <div class="grid gap-8 xl:grid-cols-[0.95fr_1.05fr]">
-          <form @submit.prevent="submitPrice" class="h-fit rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <form @submit.prevent="submitPrice" class="h-fit rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div class="grid gap-5">
               <label class="block">
                 <span class="text-sm font-bold text-slate-700">Room type</span>
@@ -361,7 +361,7 @@ async function destroyBlock(schedule) {
             <article
               v-for="schedule in priceSchedules"
               :key="schedule.id"
-              class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm"
+              class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
             >
               <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div class="space-y-2">
@@ -394,21 +394,21 @@ async function destroyBlock(schedule) {
               </div>
 
               <div class="mt-5 grid gap-4 sm:grid-cols-2">
-                <div class="rounded-[1.5rem] bg-slate-50 p-4">
+                <div class="rounded-2xl bg-slate-50 p-4">
                   <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Window</p>
                   <p class="mt-3 flex items-center gap-2 text-base font-black text-slate-900">
                     <CalendarRange class="h-4 w-4 text-slate-400" />
                     {{ schedule.start_date }} → {{ schedule.end_date }}
                   </p>
                 </div>
-                <div class="rounded-[1.5rem] bg-slate-50 p-4">
+                <div class="rounded-2xl bg-slate-50 p-4">
                   <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Applied to stays</p>
                   <p class="mt-3 text-base font-black text-slate-900">{{ schedule.room_type_title }}</p>
                   <p class="mt-1 text-sm text-slate-500">Whole-stay rule applies</p>
                 </div>
               </div>
 
-              <div v-if="editingPriceId === schedule.id" class="mt-5 rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
+              <div v-if="editingPriceId === schedule.id" class="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
                 <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Edit schedule</p>
                 <div class="mt-3 grid gap-4 sm:grid-cols-2">
                   <label class="block">
@@ -473,7 +473,7 @@ async function destroyBlock(schedule) {
               </div>
             </article>
 
-            <div v-if="!priceSchedules.length" class="rounded-[2rem] border border-dashed border-slate-300 bg-white px-6 py-16 text-center shadow-sm">
+            <div v-if="!priceSchedules.length" class="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center shadow-sm">
               <Receipt class="mx-auto h-12 w-12 text-slate-300" />
               <h3 class="mt-4 text-xl font-black text-slate-900">No price schedules yet</h3>
               <p class="mt-2 text-sm text-slate-500">Add a price plan to override the base rate for a room type during a future window.</p>
@@ -494,7 +494,7 @@ async function destroyBlock(schedule) {
         </div>
 
         <div class="grid gap-8 xl:grid-cols-[0.95fr_1.05fr]">
-          <form @submit.prevent="submitBlock" class="h-fit rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <form @submit.prevent="submitBlock" class="h-fit rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div class="grid gap-5">
               <label class="block">
                 <span class="text-sm font-bold text-slate-700">Block scope</span>
@@ -598,7 +598,7 @@ async function destroyBlock(schedule) {
             <article
               v-for="schedule in availabilitySchedules"
               :key="schedule.id"
-              class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm"
+              class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
             >
               <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div class="space-y-2">
@@ -625,14 +625,14 @@ async function destroyBlock(schedule) {
               <div v-if="schedule.notes" class="mt-4 text-sm leading-6 text-slate-500">{{ schedule.notes }}</div>
 
               <div class="mt-5 grid gap-4 sm:grid-cols-2">
-                <div class="rounded-[1.5rem] bg-slate-50 p-4">
+                <div class="rounded-2xl bg-slate-50 p-4">
                   <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Blocked window</p>
                   <p class="mt-3 flex items-center gap-2 text-base font-black text-slate-900">
                     <CalendarOff class="h-4 w-4 text-slate-400" />
                     {{ schedule.start_date }} → {{ schedule.end_date }}
                   </p>
                 </div>
-                <div class="rounded-[1.5rem] bg-slate-50 p-4">
+                <div class="rounded-2xl bg-slate-50 p-4">
                   <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Affects</p>
                   <p class="mt-3 flex items-center gap-2 text-base font-black text-slate-900">
                     <BedDouble class="h-4 w-4 text-slate-400" />
@@ -641,7 +641,7 @@ async function destroyBlock(schedule) {
                 </div>
               </div>
 
-              <div v-if="editingBlockId === schedule.id" class="mt-5 rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4">
+              <div v-if="editingBlockId === schedule.id" class="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
                 <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Edit block</p>
                 <div class="mt-3 grid gap-4 sm:grid-cols-2">
                   <label class="block">
@@ -706,7 +706,7 @@ async function destroyBlock(schedule) {
               </div>
             </article>
 
-            <div v-if="!availabilitySchedules.length" class="rounded-[2rem] border border-dashed border-slate-300 bg-white px-6 py-16 text-center shadow-sm">
+            <div v-if="!availabilitySchedules.length" class="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center shadow-sm">
               <CalendarClock class="mx-auto h-12 w-12 text-slate-300" />
               <h3 class="mt-4 text-xl font-black text-slate-900">No availability blocks yet</h3>
               <p class="mt-2 text-sm text-slate-500">Block a room or a whole room type for dates when it must not be booked.</p>

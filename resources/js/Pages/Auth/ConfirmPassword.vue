@@ -24,7 +24,7 @@ const submit = () => {
             <div class="w-full max-w-md">
                 
                 <div class="text-center mb-10">
-                    <div class="inline-flex p-4 bg-indigo-50 text-indigo-600 rounded-[2rem] mb-6 shadow-sm">
+                    <div class="inline-flex p-4 bg-indigo-50 text-indigo-600 rounded-2xl mb-6 shadow-sm">
                         <ShieldAlert class="w-10 h-10" />
                     </div>
                     <h1 class="text-3xl font-black text-slate-900 tracking-tight mb-2">Secure Area</h1>
@@ -60,7 +60,7 @@ const submit = () => {
                             <button
                                 type="submit"
                                 :disabled="form.processing"
-                                class="w-full group flex items-center justify-center gap-3 py-5 bg-slate-900 text-white rounded-3xl font-black text-lg hover:bg-indigo-600 transition-all shadow-xl shadow-slate-200 active:scale-[0.98] disabled:opacity-50"
+                                class="w-full group flex items-center justify-center gap-3 py-5 bg-slate-900 text-white rounded-2xl font-black text-lg hover:bg-indigo-600 transition-all shadow-xl shadow-slate-200 active:scale-[0.98] disabled:opacity-50"
                             >
                                 Confirm Access
                                 <ArrowRight class="w-5 h-5 group-hover:translate-x-1 transition-transform" />

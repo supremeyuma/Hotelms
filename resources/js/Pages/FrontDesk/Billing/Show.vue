@@ -84,7 +84,7 @@ function formatDate(value) {
         </div>
 
         <div
-          class="rounded-[2rem] border px-6 py-4"
+          class="rounded-2xl border px-6 py-4"
           :class="billing.outstanding > 0 ? 'border-rose-100 bg-rose-50' : 'border-emerald-100 bg-emerald-50'"
         >
           <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Outstanding</p>
@@ -96,7 +96,7 @@ function formatDate(value) {
 
       <div class="grid gap-8 xl:grid-cols-[minmax(0,1fr)_380px]">
         <div class="space-y-8">
-          <section class="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
+          <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div class="border-b border-slate-100 px-6 py-5">
               <div class="flex items-center gap-3">
                 <div class="rounded-2xl bg-slate-100 p-2 text-slate-600"><FileText class="h-5 w-5" /></div>
@@ -123,7 +123,7 @@ function formatDate(value) {
             </div>
           </section>
 
-          <section class="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
+          <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div class="border-b border-slate-100 px-6 py-5">
               <div class="flex items-center gap-3">
                 <div class="rounded-2xl bg-emerald-50 p-2 text-emerald-600"><CheckCircle2 class="h-5 w-5" /></div>
@@ -153,7 +153,7 @@ function formatDate(value) {
         </div>
 
         <div class="space-y-6">
-          <section id="charge-form" class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <section id="charge-form" class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <div class="flex items-center gap-3">
               <div class="rounded-2xl bg-indigo-50 p-2 text-indigo-600"><PlusCircle class="h-5 w-5" /></div>
               <h2 class="text-xl font-black text-slate-900">Add charge</h2>
@@ -233,7 +233,7 @@ function formatDate(value) {
             </form>
           </section>
 
-          <section id="payment-form" class="rounded-[2rem] bg-[linear-gradient(145deg,_#0f172a,_#1e293b)] p-6 text-white shadow-sm">
+          <section id="payment-form" class="rounded-2xl bg-[linear-gradient(145deg,_#0f172a,_#1e293b)] p-6 text-white shadow-sm">
             <div class="flex items-center gap-3">
               <CreditCard class="h-5 w-5 text-indigo-300" />
               <h2 class="text-xl font-black">Record payment</h2>
@@ -310,7 +310,7 @@ function formatDate(value) {
             </form>
           </section>
 
-          <section class="rounded-[1.5rem] border border-amber-200 bg-amber-50 px-5 py-5 text-sm text-amber-900">
+          <section class="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-5 text-sm text-amber-900">
             <div class="flex items-start gap-3">
               <AlertCircle class="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
               <p>Charges and payments are now posted against both the booking and the specific room to keep shared bookings unambiguous.</p>

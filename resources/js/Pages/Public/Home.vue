@@ -266,7 +266,7 @@ onMounted(() => {
             <div 
               v-for="event in featuredEvents" 
               :key="event.id"
-              class="group bg-white rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden hover:-translate-y-2"
+              class="group bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden hover:-translate-y-2"
               data-aos="fade-up"
             >
               <!-- Event Image -->

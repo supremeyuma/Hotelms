@@ -74,7 +74,7 @@ function formatTime(date) {
 
 <template>
   <div 
-    class="relative group overflow-hidden rounded-[2rem] border-2 transition-all duration-300"
+    class="relative group overflow-hidden rounded-2xl border-2 transition-all duration-300"
     :class="[statusConfig.bg, request.status === 'requested' ? 'shadow-lg shadow-rose-100/50' : 'shadow-sm']"
   >
     <div class="p-6 flex flex-col md:flex-row md:items-center justify-between gap-6">

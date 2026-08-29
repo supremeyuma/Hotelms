@@ -107,7 +107,7 @@ watch([range, () => props.endpoint], load)
 </script>
 
 <template>
-  <div class="overflow-hidden rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm">
+  <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
     <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div>
         <p class="text-xs uppercase font-semibold tracking-wide text-slate-400">Trend view</p>
@@ -132,7 +132,7 @@ watch([range, () => props.endpoint], load)
     <div class="relative h-72">
       <div
         v-if="isLoading"
-        class="absolute inset-0 z-10 flex items-center justify-center rounded-[1.5rem] bg-white/75 backdrop-blur-sm"
+        class="absolute inset-0 z-10 flex items-center justify-center rounded-2xl bg-white/75 backdrop-blur-sm"
       >
         <div class="space-y-2 text-center">
           <div class="mx-auto h-9 w-9 animate-spin rounded-full border-2 border-slate-200 border-t-indigo-600" />
@@ -142,14 +142,14 @@ watch([range, () => props.endpoint], load)
 
       <div
         v-else-if="error"
-        class="absolute inset-0 z-10 flex items-center justify-center rounded-[1.5rem] border border-rose-200 bg-rose-50 px-6 text-center"
+        class="absolute inset-0 z-10 flex items-center justify-center rounded-2xl border border-rose-200 bg-rose-50 px-6 text-center"
       >
         <p class="max-w-sm text-sm font-medium text-rose-700">{{ error }}</p>
       </div>
 
       <div
         v-else-if="!hasData"
-        class="absolute inset-0 z-10 flex items-center justify-center rounded-[1.5rem] border border-dashed border-slate-200 bg-slate-50 px-6 text-center"
+        class="absolute inset-0 z-10 flex items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-6 text-center"
       >
         <p class="max-w-sm text-sm font-medium text-slate-500">No chart activity is available for this range yet.</p>
       </div>

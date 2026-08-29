@@ -110,7 +110,7 @@ function updateFeedback(item, payload) {
         </Link>
       </div>
 
-      <div class="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm">
+      <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div class="grid gap-4 lg:grid-cols-[1fr_220px_220px_auto]">
           <input
             v-model="filterForm.search"
@@ -147,7 +147,7 @@ function updateFeedback(item, payload) {
         <article
           v-for="item in feedback.data"
           :key="item.id"
-          class="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm"
+          class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
         >
           <div class="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
             <div class="space-y-4 xl:max-w-3xl">
@@ -214,7 +214,7 @@ function updateFeedback(item, payload) {
           </div>
         </article>
 
-        <div v-if="!feedback.data.length" class="rounded-[1.75rem] border border-dashed border-slate-300 bg-white px-6 py-12 text-center text-slate-500">
+        <div v-if="!feedback.data.length" class="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center text-slate-500">
           No feedback matches the current filters.
         </div>
       </div>

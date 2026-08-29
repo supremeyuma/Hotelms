@@ -71,7 +71,7 @@
                   @click="selectTicket(ticket)"
                   :disabled="ticket.quantity_available <= 0"
                   :class="[
-                    'relative p-6 rounded-3xl border-2 text-left transition-all duration-300 group',
+                    'relative p-6 rounded-2xl border-2 text-left transition-all duration-300 group',
                     selectedTicket?.id === ticket.id 
                       ? 'border-indigo-600 bg-indigo-50/50 ring-4 ring-indigo-500/10' 
                       : 'border-slate-100 bg-slate-50 hover:border-slate-300',
@@ -137,7 +137,7 @@
             </div>
 
             <div v-if="selectedTicket" class="space-y-8 pt-8 border-t border-slate-100">
-              <div class="bg-slate-900 rounded-3xl p-8 text-white relative overflow-hidden">
+              <div class="bg-slate-900 rounded-2xl p-8 text-white relative overflow-hidden">
                 <div class="absolute top-0 right-0 p-8 opacity-10">
                   <svg class="w-24 h-24" fill="currentColor" viewBox="0 0 24 24"><path d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"/></svg>
                 </div>

@@ -19,25 +19,25 @@
       </div>
 
       <div class="grid gap-4 md:grid-cols-4">
-        <div class="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm">
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <p class="text-xs font-black uppercase tracking-[0.22em] text-slate-400">SKU</p>
           <p class="mt-3 text-xl font-semibold text-slate-900">{{ item.sku }}</p>
         </div>
-        <div class="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm">
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <p class="text-xs font-black uppercase tracking-[0.22em] text-slate-400">Total stock</p>
           <p class="mt-3 text-xl font-semibold text-slate-900">{{ formatQuantity(item.total_stock) }}</p>
         </div>
-        <div class="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm">
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <p class="text-xs font-black uppercase tracking-[0.22em] text-slate-400">Unit</p>
           <p class="mt-3 text-xl font-semibold text-slate-900">{{ item.unit ?? 'Not set' }}</p>
         </div>
-        <div class="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm">
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <p class="text-xs font-black uppercase tracking-[0.22em] text-slate-400">Threshold</p>
           <p class="mt-3 text-xl font-semibold text-slate-900">{{ formatQuantity(item.low_stock_threshold) }}</p>
         </div>
       </div>
 
-      <div class="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm">
+      <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <h2 class="text-lg font-semibold text-slate-900">Stock by location</h2>
 
         <div
@@ -50,7 +50,7 @@
         </div>
       </div>
 
-      <div class="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
+      <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div class="overflow-x-auto">
           <table class="min-w-full text-sm">
             <thead class="bg-slate-50 text-slate-500">

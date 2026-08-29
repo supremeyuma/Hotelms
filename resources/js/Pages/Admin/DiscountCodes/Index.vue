@@ -81,7 +81,7 @@ function statusClass(code) {
     <Head title="Discount Codes" />
 
     <div class="space-y-8">
-      <section class="overflow-hidden rounded-[2rem] bg-slate-900 text-white shadow-2xl shadow-slate-200">
+      <section class="overflow-hidden rounded-2xl bg-slate-900 text-white shadow-2xl shadow-slate-200">
         <div class="grid gap-6 px-6 py-8 sm:px-8 xl:grid-cols-[1.2fr_0.8fr]">
           <div class="space-y-4">
             <div class="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-xs uppercase font-semibold tracking-wide text-slate-200">
@@ -97,11 +97,11 @@ function statusClass(code) {
           </div>
 
           <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-1">
-            <div class="rounded-[1.75rem] border border-white/10 bg-white/10 p-5">
+            <div class="rounded-2xl border border-white/10 bg-white/10 p-5">
               <p class="text-xs uppercase font-semibold tracking-wide text-slate-300">Total codes</p>
               <p class="mt-3 text-3xl font-black">{{ codes.length }}</p>
             </div>
-            <div class="rounded-[1.75rem] border border-white/10 bg-white/10 p-5">
+            <div class="rounded-2xl border border-white/10 bg-white/10 p-5">
               <p class="text-xs uppercase font-semibold tracking-wide text-slate-300">Room-booking ready</p>
               <p class="mt-3 text-3xl font-black">{{ codes.filter(code => code.applies_to === 'room_rate').length }}</p>
             </div>
@@ -110,7 +110,7 @@ function statusClass(code) {
       </section>
 
       <section class="grid gap-8 xl:grid-cols-[0.95fr_1.05fr]">
-        <form @submit.prevent="submit" class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+        <form @submit.prevent="submit" class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div class="flex items-center gap-3">
             <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
               <Plus class="h-5 w-5" />
@@ -208,7 +208,7 @@ function statusClass(code) {
           <article
             v-for="code in codes"
             :key="code.id"
-            class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm"
+            class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
           >
             <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div class="space-y-3">
@@ -235,19 +235,19 @@ function statusClass(code) {
             </div>
 
             <div class="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <div class="rounded-[1.5rem] bg-slate-50 p-4">
+              <div class="rounded-2xl bg-slate-50 p-4">
                 <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Offer</p>
                 <p class="mt-3 text-base font-black text-slate-900">{{ formatValue(code) }}</p>
                 <p class="mt-1 text-sm text-slate-500">{{ code.discount_type_label }}</p>
               </div>
 
-              <div class="rounded-[1.5rem] bg-slate-50 p-4">
+              <div class="rounded-2xl bg-slate-50 p-4">
                 <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Usage target</p>
                 <p class="mt-3 text-base font-black text-slate-900">{{ code.applies_to_label }}</p>
                 <p class="mt-1 text-sm text-slate-500">Selected by manager</p>
               </div>
 
-              <div class="rounded-[1.5rem] bg-slate-50 p-4">
+              <div class="rounded-2xl bg-slate-50 p-4">
                 <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Room capacity</p>
                 <p class="mt-3 text-base font-black text-slate-900">
                   {{ code.max_rooms === null ? 'Unlimited' : `${code.remaining_rooms} left` }}
@@ -257,7 +257,7 @@ function statusClass(code) {
                 </p>
               </div>
 
-              <div class="rounded-[1.5rem] bg-slate-50 p-4">
+              <div class="rounded-2xl bg-slate-50 p-4">
                 <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Window</p>
                 <p class="mt-3 text-base font-black text-slate-900">{{ code.valid_from ? 'Scheduled' : 'Immediate' }}</p>
                 <p class="mt-1 text-sm text-slate-500">{{ code.valid_until ? 'Ends automatically' : 'No expiry set' }}</p>
@@ -265,7 +265,7 @@ function statusClass(code) {
             </div>
 
             <div class="mt-5 grid gap-4 md:grid-cols-2">
-              <div class="rounded-[1.5rem] border border-slate-200 p-4">
+              <div class="rounded-2xl border border-slate-200 p-4">
                 <div class="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
                   <CalendarClock class="h-3.5 w-3.5" />
                   Active dates
@@ -278,7 +278,7 @@ function statusClass(code) {
                 </p>
               </div>
 
-              <div class="rounded-[1.5rem] border border-slate-200 p-4">
+              <div class="rounded-2xl border border-slate-200 p-4">
                 <div class="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">
                   <Percent class="h-3.5 w-3.5" />
                   Tracking
@@ -293,7 +293,7 @@ function statusClass(code) {
             </div>
 
             <div class="mt-5 grid gap-4 xl:grid-cols-[1fr_auto]">
-              <form @submit.prevent="extendExpiry(code)" class="rounded-[1.5rem] border border-slate-200 p-4">
+              <form @submit.prevent="extendExpiry(code)" class="rounded-2xl border border-slate-200 p-4">
                 <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Extend expiry</p>
                 <div class="mt-3 flex flex-col gap-3 md:flex-row md:items-start">
                   <div class="flex-1">
@@ -315,7 +315,7 @@ function statusClass(code) {
                 </div>
               </form>
 
-              <div class="rounded-[1.5rem] border border-rose-200 bg-rose-50 p-4">
+              <div class="rounded-2xl border border-rose-200 bg-rose-50 p-4">
                 <p class="text-[11px] font-black uppercase tracking-[0.18em] text-rose-500">Delete code</p>
                 <p class="mt-3 text-sm leading-6 text-rose-700">
                   Unused codes can be removed permanently. Codes with redemption history stay protected for audit safety.
@@ -333,7 +333,7 @@ function statusClass(code) {
             </div>
           </article>
 
-          <div v-if="!codes.length" class="rounded-[2rem] border border-dashed border-slate-300 bg-white px-6 py-16 text-center shadow-sm">
+          <div v-if="!codes.length" class="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center shadow-sm">
             <TicketSlash class="mx-auto h-12 w-12 text-slate-300" />
             <h2 class="mt-4 text-xl font-black text-slate-900">No discount codes yet</h2>
             <p class="mt-2 text-sm text-slate-500">Create the first code so managers can control booking and outlet promotions from one place.</p>

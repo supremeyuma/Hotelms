@@ -205,7 +205,7 @@ const saveOrder = (items) => {
         <div class="lg:col-span-2">
           <div
             v-if="activeItem"
-            class="bg-white border rounded-3xl p-6 space-y-6"
+            class="bg-white border rounded-2xl p-6 space-y-6"
           >
             <img
               :src="`/storage/${activeItem.image_path.replace('public/', '')}`"
@@ -253,7 +253,7 @@ const saveOrder = (items) => {
           <!-- CREATE -->
           <div
             v-else
-            class="border-2 border-dashed rounded-3xl p-12 space-y-6"
+            class="border-2 border-dashed rounded-2xl p-12 space-y-6"
           >
             <h3 class="text-xl font-black">
               Upload New Gallery Image
