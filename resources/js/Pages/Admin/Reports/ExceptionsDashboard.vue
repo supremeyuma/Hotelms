@@ -187,11 +187,9 @@ const applyFilters = () => {
 
 const acknowledgeException = (id) => {
   // Would implement PATCH request to acknowledge exception
-  console.log('Acknowledge exception:', id)
 }
 
 const viewDetails = (id) => {
   // Would navigate to exception detail page
-  console.log('View exception details:', id)
 }
 </script>

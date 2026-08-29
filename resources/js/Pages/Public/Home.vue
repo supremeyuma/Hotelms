@@ -26,7 +26,6 @@ const gallery = page.props.gallery ?? {
   experience: [],
   club: [],
 }
-console.log(gallery);
 
 const amenities = [
   { icon: Waves, label: 'Private Beach', desc: 'Pristine white sands', delay: 100 },

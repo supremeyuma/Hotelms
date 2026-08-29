@@ -173,17 +173,10 @@ const removeTableType = (index) => {
 }
 
 const submit = () => {
-  console.log('Submit function called')
-  console.log('Form image:', form.image)
-  console.log('Image type:', typeof form.image)
-  console.log('Is File?', form.image instanceof File)
-  
   // Only include image if a new file was actually selected
   if (form.image && form.image instanceof File) {
-    console.log('Keeping new image in form')
     // Keep the image file in form for upload
   } else {
-    console.log('Removing image from form data')
     // Remove image from form data if no new file was selected
     delete form.image
   }
@@ -196,9 +189,6 @@ const submit = () => {
     description: m.description,
     is_main_image: m.is_main_image
   }))
-
-  console.log('Media files being sent:', form.media.length)
-  console.log('Existing media being sent:', form.existing_media?.length || 0)
 
   // Provide existing media meta and removed ids for backend processing
   form.existing_media = existingMedia.value.map(m => ({

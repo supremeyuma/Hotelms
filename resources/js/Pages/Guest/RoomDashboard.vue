@@ -42,8 +42,6 @@ const isSubmittingMaintenance = ref(false)
 const isSubmittingExtend = ref(false)
 //const orders = ref([])
 
-//console.log(props.orders);
-
 const maintenance = reactive({ type: 'plumbing', description: '', file: null })
 const cleaningRequested = computed(() => currentCleaningStatus.value === 'cleaner_requested')
 

@@ -24,7 +24,6 @@ const label = computed(() =>
     ? props.request.type.replace('_', ' ').toUpperCase()
     : 'GENERAL REQUEST'
 )
-console.log(props.request);
 const roomNumber = computed(() =>
   props.request.room?.name ?? props.request.name ?? '—'
 )

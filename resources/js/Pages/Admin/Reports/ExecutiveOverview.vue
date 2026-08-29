@@ -159,6 +159,5 @@ const navigateToExceptions = () => {
 
 const navigateToException = (id) => {
   // Would navigate to exception detail page
-  console.log('Navigate to exception:', id)
 }
 </script>

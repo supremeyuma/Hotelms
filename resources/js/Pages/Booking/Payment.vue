@@ -17,7 +17,6 @@ const props = defineProps({
   expires_at: String,
   discount: Object,
 })
-console.log(props.booking)
 
 const paymentMethod = ref('offline')
 const processing = ref(false)

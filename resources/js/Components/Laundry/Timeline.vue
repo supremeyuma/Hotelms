@@ -2,7 +2,6 @@
 const props = defineProps({
   history: Array,
 });
-console.log(props.history);
 </script>
 
 <template>

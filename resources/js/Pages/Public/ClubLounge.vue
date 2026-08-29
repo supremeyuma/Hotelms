@@ -7,7 +7,6 @@ import { Music, Calendar, Clock, Sparkles, GlassWater } from 'lucide-vue-next'
 
 const props = defineProps({ events: Array })
 
-console.log(props.events);
 onMounted(() => {
   AOS.init({ duration: 1000, once: true })
 })

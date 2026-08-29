@@ -33,7 +33,6 @@ function submit() {
   form.get(route('booking.rooms'), {
     preserveState: true,
     onError: (errors) => {
-      console.log("Validation Failed:", errors);
     }
   });
 }

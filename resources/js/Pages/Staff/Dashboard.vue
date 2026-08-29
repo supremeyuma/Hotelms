@@ -44,6 +44,4 @@ defineProps({
 const props = usePage().props;
 const user = props.auth.user;
 const stats = props.stats ?? { open_orders: 0, pending_bookings: 0, low_stock: 0 };
-
-console.log(user);
 </script>

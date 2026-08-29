@@ -24,5 +24,4 @@ import { computed } from 'vue';
 const page = usePage();
 const room = computed(() => page.props.room);
 
-console.log(room);
 </script>

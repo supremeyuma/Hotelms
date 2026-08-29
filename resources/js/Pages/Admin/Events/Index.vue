@@ -4,7 +4,6 @@ import { Link } from '@inertiajs/vue3'
 import { ref } from 'vue'
 
 const props = defineProps({ events: Array })
-console.log(props.events);
 
 const searchQuery = ref('')
 const filterStatus = ref('all')

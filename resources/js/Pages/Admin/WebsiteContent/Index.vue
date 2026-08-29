@@ -174,8 +174,6 @@ const save = () => {
             </div>
 
             <div class="p-8 space-y-8">
-              <pre class="text-[10px] bg-black text-green-500 p-2">Editing: {{ activeKey }} | Form Value Length: {{ form.value?.length }}</pre>
-              
               <div class="space-y-2">
                 <label class="block text-sm font-bold text-slate-700">Content Value</label>
                 
