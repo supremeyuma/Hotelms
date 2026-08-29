@@ -1,7 +1,8 @@
 <script setup>
 import { ref } from 'vue'
-import KitchenLayout from '@/Layouts/Staff/KitchenLayout.vue'
+import BarLayout from '@/Layouts/Staff/BarLayout.vue'
 import OrderDetailsModal from '@/Components/Orders/OrderDetailsModal.vue'
+import Pagination from '@/Components/Pagination.vue'
 import { Clock, Hash } from 'lucide-vue-next'
 
 const props = defineProps({
@@ -19,13 +20,13 @@ function openOrder(order) {
 </script>
 
 <template>
-  <KitchenLayout>
+  <BarLayout>
     <div class="max-w-6xl mx-auto px-4 py-6">
 
       <div class="mb-8">
         <h1 class="text-3xl font-black text-slate-900">Order History</h1>
         <p class="text-slate-500 text-sm mt-1">
-          Completed and cancelled kitchen orders
+          Completed and cancelled bar orders
         </p>
       </div>
 
@@ -76,18 +77,7 @@ function openOrder(order) {
 
       <!-- PAGINATION -->
       <div v-if="props.orders.links.length > 3" class="mt-10 flex justify-center">
-        <div class="flex gap-2">
-          <a
-            v-for="link in props.orders.links"
-            :key="link.label"
-            v-html="link.label"
-            :href="link.url || '#'"
-            class="px-4 py-2 rounded-xl text-sm font-bold"
-            :class="link.active
-              ? 'bg-indigo-600 text-white'
-              : 'bg-white border border-slate-200 text-slate-600'"
-          />
-        </div>
+        <Pagination :links="props.orders.links" />
       </div>
 
       <!-- ORDER DETAILS MODAL -->
@@ -98,5 +88,5 @@ function openOrder(order) {
       />
 
     </div>
-  </KitchenLayout>
+  </BarLayout>
 </template>
