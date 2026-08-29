@@ -134,8 +134,12 @@ function canStartPreparing(order) {
         <div
           v-for="order in orders"
           :key="order.id"
-          class="group flex flex-col overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-xl"
+          role="button"
+          tabindex="0"
+          class="group flex flex-col overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
           @click="openOrder(order)"
+          @keydown.enter="openOrder(order)"
+          @keydown.space.prevent="openOrder(order)"
         >
           <div class="flex items-start justify-between gap-4 border-b border-slate-50 p-6">
             <div class="flex items-center gap-3">

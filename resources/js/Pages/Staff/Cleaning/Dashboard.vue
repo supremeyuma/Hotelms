@@ -86,11 +86,12 @@ const getStatusConfig = (status) => {
     </div>
 
     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
-      <div
+      <button
         v-for="room in rooms"
         :key="room.id"
+        type="button"
         @click="openModal(room)"
-        class="group relative bg-white p-5 rounded-[2rem] border border-slate-200 shadow-sm cursor-pointer hover:shadow-xl hover:border-indigo-200 hover:-translate-y-1 transition-all duration-300"
+        class="group relative bg-white p-5 rounded-[2rem] border border-slate-200 shadow-sm text-left cursor-pointer hover:shadow-xl hover:border-indigo-200 hover:-translate-y-1 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
       >
         <div class="flex flex-col h-full">
           <div class="flex items-start justify-between mb-4">
@@ -117,7 +118,7 @@ const getStatusConfig = (status) => {
         </div>
 
         <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-indigo-400 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-t-full"></div>
-      </div>
+      </button>
     </div>
 
     <CleaningModal

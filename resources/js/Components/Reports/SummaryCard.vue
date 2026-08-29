@@ -1,9 +1,13 @@
 <template>
   <div
+    role="button"
+    tabindex="0"
     @click="$emit('click')"
+    @keydown.enter="$emit('click')"
+    @keydown.space.prevent="$emit('click')"
     :class="[
       'bg-white rounded-lg shadow p-6 transition hover:shadow-lg',
-      { 'cursor-pointer hover:bg-gray-50': clickable }
+      { 'cursor-pointer hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500': clickable }
     ]"
   >
     <div class="flex items-center justify-between">

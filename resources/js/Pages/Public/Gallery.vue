@@ -99,10 +99,11 @@ onMounted(() => {
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-            <div 
-              v-for="(img, index) in images" 
+            <button
+              v-for="(img, index) in images"
               :key="img.id"
-              class="group relative cursor-none"
+              type="button"
+              class="group relative cursor-none text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
               :class="[
                 index % 3 === 1 ? 'lg:-translate-y-16' : '',
                 index % 3 === 2 ? 'lg:translate-y-16' : ''
@@ -127,7 +128,7 @@ onMounted(() => {
                 <span class="text-xs uppercase font-semibold tracking-wide text-slate-400">MooreLife Digital Archive</span>
                 <span class="text-[10px] font-mono text-slate-300">#0{{ img.id }}</span>
               </div>
-            </div>
+            </button>
           </div>
         </div>
       </div>
