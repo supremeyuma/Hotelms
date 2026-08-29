@@ -32,11 +32,18 @@ class RoomSchedulingService
      */
     public function isRoomAvailable(int $roomId, Carbon $date, ?int $excludeBookingId = null): bool
     {
-        // Check room-specific unavailability schedules
+        // Check room-specific and property-wide unavailability schedules
         $roomUnavailable = RoomAvailabilitySchedule::unavailable()
-            ->where('room_id', $roomId)
             ->where('start_date', '<=', $date->format('Y-m-d'))
             ->where('end_date', '>=', $date->format('Y-m-d'))
+            ->where(function ($query) use ($roomId) {
+                $query->where('room_id', $roomId)
+                    ->orWhere(function ($q) use ($roomId) {
+                        $q->whereNull('room_id')
+                            ->whereNull('room_type_id')
+                            ->where('property_id', Room::where('id', $roomId)->value('property_id'));
+                    });
+            })
             ->exists();
 
         if ($roomUnavailable) {
@@ -65,10 +72,15 @@ class RoomSchedulingService
     public function getUnavailableDatesForRoomType(int $roomTypeId, int $propertyId, Carbon $startDate, Carbon $endDate): array
     {
         $schedules = RoomAvailabilitySchedule::unavailable()
-            ->where('room_type_id', $roomTypeId)
             ->where('property_id', $propertyId)
             ->where('start_date', '<=', $endDate->format('Y-m-d'))
             ->where('end_date', '>=', $startDate->format('Y-m-d'))
+            ->where(function ($query) use ($roomTypeId) {
+                $query->where('room_type_id', $roomTypeId)
+                    ->orWhere(function ($q) {
+                        $q->whereNull('room_id')->whereNull('room_type_id');
+                    });
+            })
             ->get();
 
         $unavailableDates = [];

@@ -62,12 +62,22 @@ protected function activeReservationQuery(string $checkIn, string $checkOut, ?in
      */
     protected function isBlockedBySchedule(int $roomId, ?int $roomTypeId, string $from, string $to): bool
     {
+        $propertyId = Room::where('id', $roomId)->value('property_id');
+
         return RoomAvailabilitySchedule::unavailable()
             ->where('start_date', '<=', $to)
             ->where('end_date', '>=', $from)
-            ->where(function ($query) use ($roomId, $roomTypeId) {
+            ->where(function ($query) use ($roomId, $roomTypeId, $propertyId) {
                 $query->where('room_id', $roomId)
                     ->when($roomTypeId, fn ($q) => $q->orWhere('room_type_id', $roomTypeId));
+
+                if ($propertyId) {
+                    $query->orWhere(function ($q) use ($propertyId) {
+                        $q->whereNull('room_id')
+                            ->whereNull('room_type_id')
+                            ->where('property_id', $propertyId);
+                    });
+                }
             })
             ->exists();
     }
@@ -78,11 +88,14 @@ protected function activeReservationQuery(string $checkIn, string $checkOut, ?in
      */
     protected function blockedRoomsForType(int $roomTypeId, string $from, string $to): int
     {
-        $ids = Room::where('room_type_id', $roomTypeId)->pluck('id')->all();
+        $rooms = Room::where('room_type_id', $roomTypeId)->get(['id', 'property_id']);
 
-        if ($ids === []) {
+        if ($rooms->isEmpty()) {
             return 0;
         }
+
+        $ids = $rooms->pluck('id')->all();
+        $propertyId = $rooms->first()->property_id;
 
         $roomTypeLevel = RoomAvailabilitySchedule::unavailable()
             ->where('start_date', '<=', $to)
@@ -91,6 +104,20 @@ protected function activeReservationQuery(string $checkIn, string $checkOut, ?in
             ->exists();
 
         if ($roomTypeLevel) {
+            return count($ids);
+        }
+
+        $propertyLevel = $propertyId
+            ? RoomAvailabilitySchedule::unavailable()
+                ->where('start_date', '<=', $to)
+                ->where('end_date', '>=', $from)
+                ->where('property_id', $propertyId)
+                ->whereNull('room_id')
+                ->whereNull('room_type_id')
+                ->exists()
+            : false;
+
+        if ($propertyLevel) {
             return count($ids);
         }
 

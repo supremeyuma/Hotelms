@@ -71,14 +71,42 @@ class RoomAvailabilityScheduleController extends Controller
             'reason' => 'required|string|max:255',
             'is_unavailable' => 'boolean',
             'notes' => 'nullable|string',
+            'block_all' => 'sometimes|boolean',
         ]);
 
-        if (empty($data['room_id']) && empty($data['room_type_id'])) {
+        $isAllRooms = $request->boolean('block_all');
+
+        if ($isAllRooms) {
+            if (! empty($data['room_id']) || ! empty($data['room_type_id'])) {
+                throw ValidationException::withMessages([
+                    'room_id' => 'An "all rooms" block cannot also target a specific room or room type.',
+                    'room_type_id' => 'An "all rooms" block cannot also target a specific room or room type.',
+                ]);
+            }
+        } elseif (empty($data['room_id']) && empty($data['room_type_id'])) {
             throw ValidationException::withMessages([
-                'room_id' => 'Select a specific room or a room type to block.',
-                'room_type_id' => 'Select a specific room or a room type to block.',
+                'room_id' => 'Select a specific room, a room type, or all rooms to block.',
+                'room_type_id' => 'Select a specific room, a room type, or all rooms to block.',
             ]);
         }
+
+        if ($isAllRooms) {
+            $overlap = RoomAvailabilitySchedule::query()
+                ->where('property_id', $data['property_id'])
+                ->whereNull('room_id')
+                ->whereNull('room_type_id')
+                ->where('start_date', '<=', $data['end_date'])
+                ->where('end_date', '>=', $data['start_date'])
+                ->exists();
+
+            if ($overlap) {
+                throw ValidationException::withMessages([
+                    'start_date' => 'Every room in this property is already blocked during this window.',
+                ]);
+            }
+        }
+
+        unset($data['block_all']);
 
         $schedule = RoomAvailabilitySchedule::create($data);
 
