@@ -1,1 +1,0 @@
-import{a as t}from"./BaseStaffLayout-D0ROiu8c.js";import{c as o,w as e,D as r,o as s}from"./app-CH1e_XX2.js";const u={__name:"BarLayout",setup(_){return(a,c)=>(s(),o(t,null,{default:e(()=>[r(a.$slots,"default")]),_:3}))}};export{u as _};
