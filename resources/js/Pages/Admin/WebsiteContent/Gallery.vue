@@ -277,9 +277,11 @@ const saveOrder = (items) => {
 
             <button
               @click="create"
-              class="px-8 py-3 rounded-xl bg-indigo-600 text-white font-black"
+              :disabled="form.processing"
+              class="px-8 py-3 rounded-xl bg-indigo-600 text-white font-black inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Upload
+              <Loader2 v-if="form.processing" class="w-4 h-4 animate-spin" />
+              {{ form.processing ? 'Uploading...' : 'Upload' }}
             </button>
           </div>
         </div>

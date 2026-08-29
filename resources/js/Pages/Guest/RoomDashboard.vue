@@ -39,6 +39,7 @@ const billHistory = ref([])
 const showOrdersHistory = ref(false)
 const currentCleaningStatus = ref(props.cleaningStatus)
 const isSubmittingMaintenance = ref(false)
+const isSubmittingExtend = ref(false)
 //const orders = ref([])
 
 //console.log(props.orders);
@@ -149,9 +150,11 @@ function closeExtendStayModal() {
   extensionDate.value = ''
 }
 function submitExtendStay() {
+  if (isSubmittingExtend.value) return
+  isSubmittingExtend.value = true
   router.post(`/guest/room/${props.accessToken}/extend-stay`, 
     { new_checkout: extensionDate.value }, 
-    { onSuccess: closeExtendStayModal }
+    { onSuccess: closeExtendStayModal, onFinish: () => { isSubmittingExtend.value = false } }
   )
 }
 
@@ -466,7 +469,9 @@ function formatDate(date) {
             </div>
             <div class="flex gap-3">
               <button type="button" @click="closeExtendStayModal" class="flex-1 py-3 bg-slate-100 text-slate-500 rounded-xl font-black text-[10px] uppercase">Cancel</button>
-              <button type="submit" class="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-black text-[10px] uppercase">Confirm</button>
+              <button type="submit" :disabled="isSubmittingExtend" class="flex-1 py-3 bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-black text-[10px] uppercase">
+                {{ isSubmittingExtend ? 'Confirming...' : 'Confirm' }}
+              </button>
             </div>
           </form>
         </template>

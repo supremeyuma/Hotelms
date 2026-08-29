@@ -10,7 +10,8 @@ import {
   PlusCircle, 
   Banknote,
   FileText,
-  Clock
+  Clock,
+  Loader2
 } from 'lucide-vue-next';
 
 const props = defineProps({
@@ -25,6 +26,8 @@ const form = ref({
   notes: ''
 });
 
+const submitting = ref(false);
+
 onMounted(() => {
   if (window.Echo) {
     window.Echo.channel(`room.${props.room.id}.billing`)
@@ -35,14 +38,19 @@ onMounted(() => {
 })
 
 function submitPayment() {
+  if (submitting.value) return
+  submitting.value = true
   router.post(
     `/frontdesk/rooms/${props.room.id}/billing/pay`,
     form.value,
-    { 
+    {
       preserveScroll: true,
       onSuccess: () => {
         form.value.amount = '';
         form.value.notes = '';
+      },
+      onFinish: () => {
+        submitting.value = false
       }
     }
   );
@@ -210,9 +218,11 @@ function formatDate(date) {
 
               <button 
                 type="submit" 
-                class="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black text-sm transition-all shadow-lg shadow-indigo-900/40 flex items-center justify-center gap-2"
+                :disabled="submitting"
+                class="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black text-sm transition-all shadow-lg shadow-indigo-900/40 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Banknote class="w-4 h-4" /> Finalize Payment
+                <Loader2 v-if="submitting" class="w-4 h-4 animate-spin" />
+                <Banknote v-else class="w-4 h-4" /> {{ submitting ? 'Posting...' : 'Finalize Payment' }}
               </button>
             </form>
           </div>

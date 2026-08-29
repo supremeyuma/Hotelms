@@ -7,7 +7,8 @@ import {
   PlayCircle, 
   CheckCircle, 
   DoorOpen,
-  AlertCircle 
+  AlertCircle,
+  Loader2
 } from 'lucide-vue-next'
 
 const props = defineProps({
@@ -19,11 +20,14 @@ const emit = defineEmits(['close'])
 const action = ref('cleaning')
 const actionCode = ref('')
 const error = ref(null)
+const submitting = ref(false)
 
 const cleaningId = computed(() => props.room.latest_cleaning?.id)
 
 const submit = () => {
+  if (submitting.value) return
   error.value = null
+  submitting.value = true
   router.patch(
     `/clean/${cleaningId.value ?? 'create'}`,
     {
@@ -35,6 +39,7 @@ const submit = () => {
       preserveScroll: true,
       onError: (e) => {
         error.value = Object.values(e)[0] || 'Verification failed'
+        submitting.value = false
       },
       onSuccess: () => emit('close')
     }
@@ -136,9 +141,11 @@ const submit = () => {
       <div class="p-8 pt-4 flex flex-col gap-3">
         <button 
           @click="submit" 
-          class="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold text-lg hover:bg-indigo-600 shadow-xl shadow-slate-200 active:scale-[0.98] transition-all"
+          :disabled="submitting"
+          class="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold text-lg hover:bg-indigo-600 shadow-xl shadow-slate-200 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
         >
-          Confirm Update
+          <Loader2 v-if="submitting" class="w-5 h-5 animate-spin" />
+          {{ submitting ? 'Updating...' : 'Confirm Update' }}
         </button>
         <button 
           @click="$emit('close')" 
