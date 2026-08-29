@@ -16,7 +16,6 @@ use App\Services\PaymentAccountingService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
 
 class OrderController extends Controller
 {
@@ -139,98 +138,6 @@ class OrderController extends Controller
                 'order' => $order->refresh()->load('items', 'room'),
             ]);
         });
-    }
-
-
-    /**
-     * Kitchen queue
-     */
-    public function kitchenQueue()
-    {
-        $this->authorize('viewKitchenQueue', Order::class);
-
-        $orders = Order::with(['items', 'room'])
-            ->where('department', 'kitchen')
-            ->whereIn('status', [
-                OrderStatus::PENDING,
-                OrderStatus::PROCESSING,
-                OrderStatus::READY
-            ])
-            ->latest()
-            ->paginate(20);
-
-        return Inertia::render('Orders/KitchenQueue', [
-            'orders' => $orders,
-        ]);
-    }
-
-
-    /**
-     * Laundry queue
-     */
-    public function laundryQueue()
-    {
-        $this->authorize('viewLaundryQueue', Order::class);
-
-        $orders = Order::with(['items', 'room'])
-            ->where('department', 'laundry')
-            ->whereIn('status', [
-                OrderStatus::PENDING,
-                OrderStatus::PROCESSING,
-                OrderStatus::READY
-            ])
-            ->latest()
-            ->paginate(20);
-
-        return Inertia::render('Orders/LaundryQueue', [
-            'orders' => $orders,
-        ]);
-    }
-
-
-    /**
-     * Housekeeping queue
-     */
-    public function housekeepingQueue()
-    {
-        $this->authorize('viewHousekeepingQueue', Order::class);
-
-        $orders = Order::with(['items', 'room'])
-            ->where('department', 'housekeeping')
-            ->whereIn('status', [
-                OrderStatus::PENDING,
-                OrderStatus::PROCESSING,
-                OrderStatus::READY
-            ])
-            ->latest()
-            ->paginate(20);
-
-        return Inertia::render('Orders/HousekeepingQueue', [
-            'orders' => $orders,
-        ]);
-    }
-
-
-    /**
-     * Maintenance queue
-     */
-    public function maintenanceQueue()
-    {
-        $this->authorize('viewMaintenanceQueue', Order::class);
-
-        $orders = Order::with(['items', 'room'])
-            ->where('department', 'maintenance')
-            ->whereIn('status', [
-                OrderStatus::PENDING,
-                OrderStatus::PROCESSING,
-                OrderStatus::READY
-            ])
-            ->latest()
-            ->paginate(20);
-
-        return Inertia::render('Orders/MaintenanceQueue', [
-            'orders' => $orders,
-        ]);
     }
 
     /**

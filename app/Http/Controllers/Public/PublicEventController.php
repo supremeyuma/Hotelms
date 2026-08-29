@@ -240,34 +240,4 @@ class PublicEventController extends Controller
         return redirect()->route('events.payment.process', ['reference' => $reference])
             ->with('error', 'Payment was not confirmed. Please try again or contact support.');
     }
-
-    /* ===================== CHECK-IN ===================== */
-
-    public function checkIn(Request $request)
-    {
-        $qr = $request->get('qr');
-
-        $ticket = EventTicket::where('qr_code', $qr)->first();
-        if ($ticket) {
-            return Inertia::render('Public/CheckIn', [
-                'type'    => 'ticket',
-                'item'    => $this->eventService->checkInTicket($qr),
-                'success' => true,
-            ]);
-        }
-
-        $reservation = EventTableReservation::where('qr_code', $qr)->first();
-        if ($reservation) {
-            return Inertia::render('Public/CheckIn', [
-                'type'    => 'table',
-                'item'    => $this->eventService->checkInTableReservation($qr),
-                'success' => true,
-            ]);
-        }
-
-        return Inertia::render('Public/CheckIn', [
-            'error'   => 'Invalid QR code',
-            'qr_code' => $qr,
-        ]);
-    }
 }

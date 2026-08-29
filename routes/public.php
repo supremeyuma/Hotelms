@@ -46,7 +46,6 @@ Route::get('/events/reservation/success', [PublicEventController::class, 'reserv
 Route::get('/events/payment/process', [PublicEventController::class, 'paymentProcess'])->name('events.payment.process');
 Route::get('/events/payment/callback', [PublicEventController::class, 'paymentCallback'])->name('events.payment.callback');
 Route::get('/events/payment/failed', [PublicEventController::class, 'paymentFailed'])->name('events.payment.failed');
-Route::get('/events/checkin', [PublicEventController::class, 'checkIn'])->name('events.checkin');
 
 Route::prefix('booking')->name('booking.')->group(function () {
     Route::get('/', [BookingController::class, 'searchForm'])->name('search');

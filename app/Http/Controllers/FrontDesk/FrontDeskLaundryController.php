@@ -28,18 +28,6 @@ class FrontDeskLaundryController extends Controller
     }
 
     /**
-     * Show individual request details
-     */
-    public function show(GuestRequest $guestRequest)
-    {
-        $this->authorize('view', $guestRequest);
-
-        return Inertia::render('FrontDesk/LaundryRequestDetail', [
-            'request' => $guestRequest->load(['requestable.room', 'requestable.items.item', 'requestable.images', 'requestable.statusHistories.changer']),
-        ]);
-    }
-
-    /**
      * Update laundry order status from frontdesk
      */
     public function updateStatus(
