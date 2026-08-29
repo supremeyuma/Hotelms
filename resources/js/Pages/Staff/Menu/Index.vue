@@ -298,7 +298,7 @@ watch(() => itemForm.menu_category_id, () => {
       </form>
     </div>
 
-    <div v-if="showItem" class="modal">
+    <div v-if="showItem" class="modal" role="dialog" aria-modal="true" aria-label="Edit or add menu item">
       <div class="modal-card">
         <h2 class="font-bold mb-3 text-lg uppercase tracking-wide">
           {{ editingItem ? 'Edit Item' : 'Add Item' }}

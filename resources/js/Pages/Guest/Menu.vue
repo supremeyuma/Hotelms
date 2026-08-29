@@ -218,7 +218,12 @@ function openHistory() {
       v-if="showConfirm"
       class="fixed inset-0 bg-black/40 z-40 flex items-center justify-center p-4"
     >
-      <div class="bg-white rounded-2xl p-8 max-w-sm w-full text-center space-y-6">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Order confirmed"
+        class="bg-white rounded-2xl p-8 max-w-sm w-full text-center space-y-6"
+      >
         <div class="flex justify-center">
           <svg class="w-16 h-16 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -428,10 +433,15 @@ function openHistory() {
       v-if="showPreview"
       class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
     >
-      <div class="bg-white rounded-2xl p-8 w-full max-w-md space-y-6">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Confirm order"
+        class="bg-white rounded-2xl p-8 w-full max-w-md space-y-6"
+      >
         <div class="flex justify-between items-center">
           <h2 class="font-black text-xl text-gray-900">Confirm Order</h2>
-          <button @click="showPreview = false" class="text-gray-400 hover:text-gray-600">
+          <button @click="showPreview = false" aria-label="Close" class="text-gray-400 hover:text-gray-600">
             <X class="w-6 h-6" />
           </button>
         </div>

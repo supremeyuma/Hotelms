@@ -49,7 +49,12 @@ const submit = () => {
       @click="$emit('close')"
     ></div>
 
-    <div class="relative bg-white w-full max-w-md rounded-xl shadow-2xl overflow-hidden transform transition-all animate-in fade-in slide-in-from-bottom-8 duration-300">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Update cleaning status"
+      class="relative bg-white w-full max-w-md rounded-xl shadow-2xl overflow-hidden transform transition-all animate-in fade-in slide-in-from-bottom-8 duration-300"
+    >
       
       <div class="px-8 pt-8 pb-4 flex justify-between items-center">
         <div class="flex items-center gap-3">
@@ -63,8 +68,9 @@ const submit = () => {
             <p class="text-sm text-slate-500 font-medium mt-1">Update cleaning status</p>
           </div>
         </div>
-        <button 
-          @click="$emit('close')" 
+        <button
+          @click="$emit('close')"
+          aria-label="Close"
           class="p-2 rounded-full hover:bg-slate-100 text-slate-400 transition-colors"
         >
           <X class="w-6 h-6" />
@@ -103,12 +109,13 @@ const submit = () => {
         </div>
 
         <div class="space-y-2">
-          <label class="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Staff Access Code</label>
+          <label for="cleaning-action-code" class="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Staff Access Code</label>
           <div class="relative group">
             <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-indigo-600 transition-colors">
               <KeyRound class="w-5 h-5" />
             </div>
             <input
+              id="cleaning-action-code"
               v-model="actionCode"
               type="password"
               inputmode="numeric"

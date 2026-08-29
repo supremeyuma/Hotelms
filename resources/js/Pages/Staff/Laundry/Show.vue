@@ -317,7 +317,12 @@ function markChargePaid() {
       v-if="openPayModal"
       class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center"
     >
-      <div class="bg-white rounded-[2rem] p-8 w-full max-w-sm shadow-xl">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Confirm payment"
+        class="bg-white rounded-[2rem] p-8 w-full max-w-sm shadow-xl"
+      >
         <h3 class="text-lg font-black mb-4">Confirm Payment</h3>
 
         <p class="text-sm text-slate-500 mb-6">

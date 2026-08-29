@@ -169,12 +169,17 @@ function destroy(id) {
         >
           <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" @click="closeModal"></div>
           
-          <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Edit or create item"
+            class="relative bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all"
+          >
             <div class="px-8 pt-8 pb-4 flex justify-between items-center">
               <h2 class="text-2xl font-black text-slate-900 tracking-tight">
                 {{ editingItem ? 'Edit Item' : 'Create Item' }}
               </h2>
-              <button @click="closeModal" class="p-2 hover:bg-slate-100 rounded-full text-slate-400 transition-colors">
+              <button @click="closeModal" aria-label="Close" class="p-2 hover:bg-slate-100 rounded-full text-slate-400 transition-colors">
                 <X class="w-6 h-6" />
               </button>
             </div>
