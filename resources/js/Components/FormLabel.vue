@@ -1,5 +1,5 @@
 <template>
-  <label :for="for" class="block text-sm font-medium text-gray-700 mb-1">
+  <label :for="for" class="block text-sm font-medium text-slate-700 mb-1">
     <slot></slot>
   </label>
 </template>

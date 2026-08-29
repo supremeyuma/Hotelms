@@ -3,7 +3,7 @@
     <Head title="Event Check-In | MooreLife Resort" />
     <div class="space-y-6">
       <div class="bg-white rounded-lg shadow-md p-6">
-        <h1 class="text-2xl font-bold text-gray-900">Event Check-In</h1>
+        <h1 class="text-2xl font-bold text-slate-900">Event Check-In</h1>
       </div>
 
       <!-- Search Form -->
@@ -13,7 +13,7 @@
                  type="text" 
                  v-model="qr_code"
                  placeholder="Enter QR code to check in"
-                 class="flex-1 px-4 py-3 border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500"
+                 class="flex-1 px-4 py-3 border-slate-300 rounded-md focus:outline-none focus:ring-indigo-500"
                  required>
           </div>
         </form>
@@ -29,13 +29,13 @@
           <h2 class="text-xl font-bold text-green-800">Check-In Successful!</h2>
           
           <div v-if="checkResult.ticket" class="mt-4 bg-white rounded-lg shadow-md p-6">
-            <div class="text-sm text-gray-600 mb-2">Ticket Details</div>
-            <div class="text-lg font-bold text-gray-900">{{ checkResult.ticket.title }}</div>
-            <div class="text-sm text-gray-600">{{ checkResult.guest_name }}</div>
-            <div class="text-sm text-gray-600">{{ checkResult.guest_email }}</div>
-            <div class="text-sm text-gray-600 mb-2">Quantity:</div>
-            <span class="text-xl font-bold text-gray-900">{{ checkResult.quantity }}</span>
-            <div class="text-sm text-gray-600">{{ checkResult.formatted_date }}</div>
+            <div class="text-sm text-slate-600 mb-2">Ticket Details</div>
+            <div class="text-lg font-bold text-slate-900">{{ checkResult.ticket.title }}</div>
+            <div class="text-sm text-slate-600">{{ checkResult.guest_name }}</div>
+            <div class="text-sm text-slate-600">{{ checkResult.guest_email }}</div>
+            <div class="text-sm text-slate-600 mb-2">Quantity:</div>
+            <span class="text-xl font-bold text-slate-900">{{ checkResult.quantity }}</span>
+            <div class="text-sm text-slate-600">{{ checkResult.formatted_date }}</div>
           </div>
         </div>
 

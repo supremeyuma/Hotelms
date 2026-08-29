@@ -14,7 +14,7 @@ const label = computed(() =>
 );
 
 const colors = {
-  requested: 'bg-gray-200 text-gray-800',
+  requested: 'bg-slate-200 text-slate-800',
   pickup_scheduled: 'bg-blue-100 text-blue-800',
   picked_up: 'bg-indigo-100 text-indigo-800',
   washing: 'bg-yellow-100 text-yellow-800',
@@ -27,7 +27,7 @@ const colors = {
 <template>
   <span
     class="px-3 py-1 rounded-full text-sm font-semibold inline-block capitalize"
-    :class="colors[status] || 'bg-gray-100 text-gray-800'"
+    :class="colors[status] || 'bg-slate-100 text-slate-800'"
   >
     {{ label }}
   </span>

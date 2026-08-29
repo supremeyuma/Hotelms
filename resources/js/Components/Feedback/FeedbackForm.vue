@@ -100,7 +100,7 @@ function submit() {
           <div class="grid gap-6 md:grid-cols-2">
             <div>
               <label class="mb-2 block text-sm font-semibold text-slate-700">Category</label>
-              <select v-model="form.category" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+              <select v-model="form.category" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                 <option v-for="option in config.category_options" :key="option.value" :value="option.value">
                   {{ option.label }}
                 </option>
@@ -110,7 +110,7 @@ function submit() {
 
             <div>
               <label class="mb-2 block text-sm font-semibold text-slate-700">Rating</label>
-              <select v-model="form.rating" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+              <select v-model="form.rating" class="block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                 <option value="">No rating</option>
                 <option value="5">5 - Excellent</option>
                 <option value="4">4 - Good</option>

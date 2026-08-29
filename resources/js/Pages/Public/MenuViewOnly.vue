@@ -41,14 +41,14 @@ function closeDetails() {
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-0 sm:py-2 flex items-center justify-between gap-3">
         <button
           @click="goHome"
-          class="shrink-0 flex items-center gap-1.5 sm:gap-2 text-sm font-bold text-gray-600 hover:text-gray-900 transition"
+          class="shrink-0 flex items-center gap-1.5 sm:gap-2 text-sm font-bold text-slate-600 hover:text-slate-900 transition"
         >
           <ArrowLeft class="w-4 h-4" />
           Back
         </button>
 
         <div class="min-w-0 flex-1 text-center">
-          <h1 class="text-lg sm:text-xl font-black text-gray-900">Menu</h1>
+          <h1 class="text-lg sm:text-xl font-black text-slate-900">Menu</h1>
         </div>
 
         <div class="w-10 sm:w-8 shrink-0"></div>
@@ -63,7 +63,7 @@ function closeDetails() {
             class="px-3 py-1 sm:px-4 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-bold transition"
             :class="type === 'kitchen'
               ? 'bg-black text-white'
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'"
+              : 'bg-slate-200 text-slate-700 hover:bg-slate-300'"
           >
             Kitchen
           </button>
@@ -72,7 +72,7 @@ function closeDetails() {
             class="px-3 py-1 sm:px-4 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-bold transition"
             :class="type === 'bar'
               ? 'bg-black text-white'
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'"
+              : 'bg-slate-200 text-slate-700 hover:bg-slate-300'"
           >
             Bar
           </button>
@@ -92,7 +92,7 @@ function closeDetails() {
               :class="
                 activeCategory?.id === c.id
                   ? 'bg-black text-white shadow-lg'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
               "
             >
               {{ c.name }}
@@ -101,12 +101,12 @@ function closeDetails() {
         </div>
 
         <div v-if="activeCategory?.subcategories?.length" class="mb-8">
-          <p class="text-xs font-semibold text-gray-500 uppercase mb-3">Collections</p>
+          <p class="text-xs font-semibold text-slate-500 uppercase mb-3">Collections</p>
           <div class="flex gap-2 overflow-x-auto">
             <button
               @click="activeSubcategory = null"
-              :class="!activeSubcategory ? 'ring-2 ring-black' : 'hover:bg-gray-50'"
-              class="px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition bg-gray-50 border border-gray-200"
+              :class="!activeSubcategory ? 'ring-2 ring-black' : 'hover:bg-slate-50'"
+              class="px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition bg-slate-50 border border-slate-200"
             >
               All Items
             </button>
@@ -114,11 +114,11 @@ function closeDetails() {
               v-for="sub in activeCategory.subcategories"
               :key="sub.id"
               @click="activeSubcategory = sub"
-              class="px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition bg-gray-50 border border-gray-200"
+              class="px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition bg-slate-50 border border-slate-200"
               :class="
                 activeSubcategory?.id === sub.id
-                  ? 'ring-2 ring-black text-gray-900'
-                  : 'text-gray-600 hover:bg-gray-100'
+                  ? 'ring-2 ring-black text-slate-900'
+                  : 'text-slate-600 hover:bg-slate-100'
               "
             >
               {{ sub.name }}
@@ -128,7 +128,7 @@ function closeDetails() {
 
         <div>
           <div v-if="!items.length" class="text-center py-12">
-            <p class="text-gray-500 text-lg">No items available in this category</p>
+            <p class="text-slate-500 text-lg">No items available in this category</p>
           </div>
 
           <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -136,32 +136,32 @@ function closeDetails() {
               v-for="item in items"
               :key="item.id"
               @click="openDetails(item)"
-              class="group cursor-pointer bg-white rounded-2xl overflow-hidden border border-gray-200 hover:border-black hover:shadow-xl transition-all duration-300"
+              class="group cursor-pointer bg-white rounded-2xl overflow-hidden border border-slate-200 hover:border-black hover:shadow-xl transition-all duration-300"
             >
-              <div class="relative overflow-hidden bg-gray-100 h-32 sm:h-36">
+              <div class="relative overflow-hidden bg-slate-100 h-32 sm:h-36">
                 <img
                   v-if="item.images?.length"
                   :src="`/storage/${item.images[0].path}`"
                   :alt="item.name"
                   class="h-full w-full object-cover group-hover:scale-125 transition-transform duration-300"
                 />
-                <div v-else class="h-full flex items-center justify-center text-gray-400">
+                <div v-else class="h-full flex items-center justify-center text-slate-400">
                   <span class="text-xs">No image</span>
                 </div>
               </div>
 
               <div class="p-3 space-y-1.5">
-                <h3 class="font-bold text-xs sm:text-sm text-gray-900 line-clamp-2 leading-snug">
+                <h3 class="font-bold text-xs sm:text-sm text-slate-900 line-clamp-2 leading-snug">
                   {{ item.name }}
                 </h3>
-                <p v-if="item.description" class="text-[11px] sm:text-xs text-gray-500 line-clamp-2 leading-snug">
+                <p v-if="item.description" class="text-[11px] sm:text-xs text-slate-500 line-clamp-2 leading-snug">
                   {{ item.description }}
                 </p>
-                <div class="flex items-center justify-between pt-1.5 border-t border-gray-100">
-                  <span class="font-black text-sm sm:text-base text-gray-900">₦{{ item.price }}</span>
+                <div class="flex items-center justify-between pt-1.5 border-t border-slate-100">
+                  <span class="font-black text-sm sm:text-base text-slate-900">₦{{ item.price }}</span>
                   <div class="flex gap-1 items-center">
                     <Star class="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-                    <span class="text-[10px] sm:text-xs font-semibold text-gray-700">Popular</span>
+                    <span class="text-[10px] sm:text-xs font-semibold text-slate-700">Popular</span>
                   </div>
                 </div>
               </div>
@@ -176,20 +176,20 @@ function closeDetails() {
       class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
     >
       <div class="bg-white rounded-2xl overflow-hidden w-full max-w-md max-h-[90vh] overflow-y-auto">
-        <div class="relative bg-gray-100 h-64 overflow-hidden">
+        <div class="relative bg-slate-100 h-64 overflow-hidden">
           <img
             v-if="selectedItem.images?.length"
             :src="`/storage/${selectedItem.images[0].path}`"
             :alt="selectedItem.name"
             class="h-full w-full object-cover"
           />
-          <div v-else class="h-full flex items-center justify-center text-gray-400">
+          <div v-else class="h-full flex items-center justify-center text-slate-400">
             <span>No image</span>
           </div>
 
           <button
             @click="closeDetails"
-            class="absolute top-4 right-4 bg-white rounded-full p-2 shadow-lg hover:bg-gray-100 transition"
+            class="absolute top-4 right-4 bg-white rounded-full p-2 shadow-lg hover:bg-slate-100 transition"
           >
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -199,21 +199,21 @@ function closeDetails() {
 
         <div class="p-6 space-y-4">
           <div>
-            <h2 class="text-2xl font-black text-gray-900">{{ selectedItem.name }}</h2>
-            <p class="text-gray-600 text-sm mt-2 leading-relaxed">
+            <h2 class="text-2xl font-black text-slate-900">{{ selectedItem.name }}</h2>
+            <p class="text-slate-600 text-sm mt-2 leading-relaxed">
               {{ selectedItem.description || 'A delicious item from our menu.' }}
             </p>
           </div>
 
-          <div class="bg-gray-50 p-4 rounded-xl space-y-3">
+          <div class="bg-slate-50 p-4 rounded-xl space-y-3">
             <div class="flex justify-between items-center">
-              <span class="text-gray-600 font-semibold">Price</span>
-              <span class="text-2xl font-black text-gray-900">₦{{ selectedItem.price }}</span>
+              <span class="text-slate-600 font-semibold">Price</span>
+              <span class="text-2xl font-black text-slate-900">₦{{ selectedItem.price }}</span>
             </div>
 
             <div v-if="selectedItem.prep_time_minutes" class="flex justify-between items-center text-sm">
-              <span class="text-gray-600 font-semibold">Prep Time</span>
-              <span class="text-gray-900 font-semibold">
+              <span class="text-slate-600 font-semibold">Prep Time</span>
+              <span class="text-slate-900 font-semibold">
                 {{ selectedItem.prep_time_minutes }} min
               </span>
             </div>
@@ -222,13 +222,13 @@ function closeDetails() {
           <div class="flex gap-3 pt-4">
             <button
               @click="closeDetails"
-              class="flex-1 py-3 bg-gray-100 text-gray-900 rounded-lg font-bold text-sm uppercase transition hover:bg-gray-200"
+              class="flex-1 py-3 bg-slate-100 text-slate-900 rounded-lg font-bold text-sm uppercase transition hover:bg-slate-200"
             >
               Close
             </button>
             <a
               href="#"
-              class="flex-1 py-3 bg-black text-white rounded-lg font-bold text-sm uppercase transition hover:bg-gray-800 text-center"
+              class="flex-1 py-3 bg-black text-white rounded-lg font-bold text-sm uppercase transition hover:bg-slate-800 text-center"
             >
               Place Order
             </a>

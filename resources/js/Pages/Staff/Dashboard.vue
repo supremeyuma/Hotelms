@@ -4,15 +4,15 @@
       <h2 class="text-2xl mb-4">Welcome, {{ user?.name }}</h2>
 
       <div class="bg-white  rounded-2xl p-6 shadow-sm">
-        <div class="text-sm text-gray-500">Department</div>
-        <div class="text-xl font-bold text-gray-800 ">
+        <div class="text-sm text-slate-500">Department</div>
+        <div class="text-xl font-bold text-slate-800 ">
           {{ department || 'N/A' }}
         </div>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="bg-white  p-4 rounded-xl shadow-sm">
-          <div class="text-sm text-gray-500">Department Tasks</div>
+          <div class="text-sm text-slate-500">Department Tasks</div>
           <div class="text-lg font-semibold">Coming soon</div>
         </div>
 
@@ -22,7 +22,7 @@
         </div>
 
         <div class="bg-white p-4 rounded shadow">
-          <div class="text-sm text-gray-500">Notifications</div>
+          <div class="text-sm text-slate-500">Notifications</div>
           <div class="text-lg font-semibold">Coming soon</div>
         </div>
       </div>

@@ -11,11 +11,11 @@
         class="hidden"
       />
       <div
-        class="border-2 border-dashed border-gray-200 rounded p-6 text-center cursor-pointer"
+        class="border-2 border-dashed border-slate-200 rounded p-6 text-center cursor-pointer"
         @click="trigger"
       >
-        <div class="text-sm text-gray-600">Drag & drop files here or click to browse</div>
-        <div class="text-xs text-gray-400 mt-2">Max size: 5MB per file</div>
+        <div class="text-sm text-slate-600">Drag & drop files here or click to browse</div>
+        <div class="text-xs text-slate-400 mt-2">Max size: 5MB per file</div>
       </div>
     </div>
 

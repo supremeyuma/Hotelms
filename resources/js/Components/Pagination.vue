@@ -7,7 +7,7 @@
       :disabled="!link.url"
       @click.prevent="visit(link.url)"
        :class="{
-            'px-3 py-1 border rounded hover:bg-gray-100 disabled:opacity-50': true,
+            'px-3 py-1 border rounded hover:bg-slate-100 disabled:opacity-50': true,
             'bg-indigo-600 text-white': link.active
         }"
     ></button>

@@ -7,14 +7,14 @@
     @keydown.space.prevent="$emit('click')"
     :class="[
       'bg-white rounded-lg shadow p-6 transition hover:shadow-lg',
-      { 'cursor-pointer hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500': clickable }
+      { 'cursor-pointer hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500': clickable }
     ]"
   >
     <div class="flex items-center justify-between">
       <div>
-        <p class="text-gray-500 text-sm font-medium">{{ title }}</p>
+        <p class="text-slate-500 text-sm font-medium">{{ title }}</p>
         <p class="text-3xl font-bold mt-2">{{ value }}</p>
-        <p class="text-gray-500 text-sm mt-2">{{ subtext }}</p>
+        <p class="text-slate-500 text-sm mt-2">{{ subtext }}</p>
       </div>
       <div :class="['p-3 rounded-lg', colorClasses]">
         <component :is="icon" :size="32" :stroke-width="1.5" />

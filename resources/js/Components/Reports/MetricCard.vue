@@ -2,7 +2,7 @@
   <div class="bg-white rounded-lg shadow p-4 border-l-4" :class="borderColorClass">
     <div class="flex items-start justify-between">
       <div>
-        <p class="text-gray-500 text-sm font-medium">{{ title }}</p>
+        <p class="text-slate-500 text-sm font-medium">{{ title }}</p>
         <p class="text-2xl font-bold mt-1">{{ value }}</p>
       </div>
       <div :class="['px-2 py-1 rounded text-xs font-bold', trendClass]">

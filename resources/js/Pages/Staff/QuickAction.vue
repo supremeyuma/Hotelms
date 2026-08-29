@@ -6,8 +6,8 @@
       <form @submit.prevent="submit">
         <div class="mb-3">
           <label class="text-sm">Staff ID</label>
-          <input v-model="form.staff_id" readonly class="w-full border p-2 rounded bg-gray-100" />
-          <p class="text-xs text-gray-500">Prefilled from auth session (editable if allowed)</p>
+          <input v-model="form.staff_id" readonly class="w-full border p-2 rounded bg-slate-100" />
+          <p class="text-xs text-slate-500">Prefilled from auth session (editable if allowed)</p>
         </div>
 
         <div class="mb-3">

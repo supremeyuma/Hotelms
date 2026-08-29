@@ -304,7 +304,7 @@ watch(
 
           <textarea v-model="itemForm.description" class="input col-span-2" placeholder="Description" rows="2" />
 
-          <label class="col-span-2 flex justify-between items-center bg-gray-50 p-2 rounded border border-dashed">
+          <label class="col-span-2 flex justify-between items-center bg-slate-50 p-2 rounded border border-dashed">
             <span class="text-sm font-medium">Available</span>
             <label class="switch small">
                 <input type="checkbox" v-model="itemForm.is_available" />
@@ -312,10 +312,10 @@ watch(
             </label>
           </label>
 
-          <div class="col-span-2 space-y-3 rounded-lg border border-gray-200 p-3">
+          <div class="col-span-2 space-y-3 rounded-lg border border-slate-200 p-3">
             <div>
-              <p class="text-sm font-semibold text-gray-900">Images</p>
-              <p class="text-xs text-gray-500">Upload files, paste image URLs, or use both.</p>
+              <p class="text-sm font-semibold text-slate-900">Images</p>
+              <p class="text-xs text-slate-500">Upload files, paste image URLs, or use both.</p>
             </div>
 
             <input type="file" multiple accept="image/*" @change="handleImages" class="text-xs" />
@@ -365,9 +365,9 @@ watch(
       <template #item="{ element: category }">
         <div class="border rounded-xl bg-white overflow-hidden shadow-sm">
           
-          <div class="flex justify-between items-center p-4 bg-gray-50">
+          <div class="flex justify-between items-center p-4 bg-slate-50">
             <div class="flex items-center gap-4">
-                <span class="drag-cat cursor-grab text-gray-300">☰</span>
+                <span class="drag-cat cursor-grab text-slate-300">☰</span>
                 <button @click="toggleCategory(category.id)" class="flex items-center gap-2 font-bold uppercase text-sm">
                     <span class="transform transition-transform text-[10px]" :class="{'rotate-180': expandedCategories.includes(category.id)}">▼</span>
                     {{ category.name }}
@@ -387,12 +387,12 @@ watch(
           <div v-show="expandedCategories.includes(category.id)" class="p-4 border-t">
               
               <div v-for="sub in category.subcategories" :key="sub.id" class="mb-2 last:mb-0">
-                  <div class="flex justify-between items-center py-2 px-3 bg-gray-100 rounded-lg">
+                  <div class="flex justify-between items-center py-2 px-3 bg-slate-100 rounded-lg">
                       <div class="flex items-center gap-2">
-                          <button @click="toggleSubcategory(sub.id)" class="text-gray-400 hover:text-black">
+                          <button @click="toggleSubcategory(sub.id)" class="text-slate-400 hover:text-black">
                               <span class="text-[8px] transform inline-block transition-transform" :class="{'rotate-180': expandedSubcategories.includes(sub.id)}">▼</span>
                           </button>
-                          <span class="text-xs font-black text-gray-700 uppercase tracking-widest">{{ sub.name }}</span>
+                          <span class="text-xs font-black text-slate-700 uppercase tracking-widest">{{ sub.name }}</span>
                       </div>
                       <div class="flex items-center gap-4">
                           <button @click="editSubcategory(sub)" class="text-[10px] font-bold text-blue-600 uppercase">Edit</button>
@@ -408,7 +408,7 @@ watch(
                       <div v-for="item in sub.items" :key="item.id" class="row shadow-sm" :class="{'opacity-50': !item.is_available}">
                         <div>
                             <p class="font-bold text-sm">{{ item.name }}</p>
-                            <p class="text-[10px] text-gray-400">₦{{ item.price }}</p>
+                            <p class="text-[10px] text-slate-400">₦{{ item.price }}</p>
                         </div>
                         <div class="flex items-center gap-3">
                             <button @click="editItem(item)" class="text-xs font-bold text-indigo-600 uppercase">Edit</button>
@@ -422,13 +422,13 @@ watch(
               </div>
 
               <div v-if="category.items.length" class="mt-4 pt-4 border-t border-dashed">
-                  <p class="text-[10px] font-bold text-gray-400 uppercase mb-2 px-2">General Items</p>
+                  <p class="text-[10px] font-bold text-slate-400 uppercase mb-2 px-2">General Items</p>
                   <draggable v-model="category.items" item-key="id" @end="saveItemOrder(category)" class="grid grid-cols-1 md:grid-cols-2 gap-2">
                     <template #item="{ element: item }">
                         <div class="row shadow-sm" :class="{'opacity-50': !item.is_available}">
                             <div>
                                 <p class="font-bold text-sm">{{ item.name }}</p>
-                                <p class="text-[10px] text-gray-400">₦{{ item.price }}</p>
+                                <p class="text-[10px] text-slate-400">₦{{ item.price }}</p>
                             </div>
                             <div class="flex items-center gap-3">
                                 <button @click="editItem(item)" class="text-xs font-bold text-indigo-600 uppercase">Edit</button>
@@ -450,11 +450,11 @@ watch(
 </template>
 
 <style scoped>
-.btn { @apply px-4 py-2 border border-gray-300 rounded-lg text-xs font-bold uppercase hover:bg-gray-50 transition bg-white }
-.btn-primary { @apply px-4 py-2 bg-black text-white rounded-lg text-xs font-bold uppercase hover:bg-gray-800 transition shadow-sm }
-.input { @apply border border-gray-200 rounded-lg p-2 w-full text-sm focus:ring-1 focus:ring-black outline-none transition-all }
-.panel { @apply border rounded-xl p-4 bg-white max-w-md border-gray-200 }
-.row { @apply flex justify-between items-center border border-gray-100 rounded-lg p-3 bg-white }
+.btn { @apply px-4 py-2 border border-slate-300 rounded-lg text-xs font-bold uppercase hover:bg-slate-50 transition bg-white }
+.btn-primary { @apply px-4 py-2 bg-black text-white rounded-lg text-xs font-bold uppercase hover:bg-slate-800 transition shadow-sm }
+.input { @apply border border-slate-200 rounded-lg p-2 w-full text-sm focus:ring-1 focus:ring-black outline-none transition-all }
+.panel { @apply border rounded-xl p-4 bg-white max-w-md border-slate-200 }
+.row { @apply flex justify-between items-center border border-slate-100 rounded-lg p-3 bg-white }
 .modal { @apply fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-[1px] }
 .modal-card { @apply bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl }
 

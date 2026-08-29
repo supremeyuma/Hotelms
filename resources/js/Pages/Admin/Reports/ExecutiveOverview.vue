@@ -4,7 +4,7 @@
       <!-- Header -->
       <div class="flex justify-between items-center">
         <h1 class="text-3xl font-bold">Executive Dashboard</h1>
-        <div class="text-sm text-gray-500">
+        <div class="text-sm text-slate-500">
           Last updated: {{ now.toLocaleString() }}
         </div>
       </div>
@@ -68,7 +68,7 @@
             <span class="text-yellow-700 font-bold">{{ alert.backlog }} open items</span>
           </div>
         </div>
-        <div v-else class="text-gray-500 text-center py-8">
+        <div v-else class="text-slate-500 text-center py-8">
           All departments have manageable backlogs
         </div>
       </div>
@@ -90,7 +90,7 @@
             <tr
               v-for="exc in recentExceptions"
               :key="exc.id"
-              class="border-b hover:bg-gray-50 cursor-pointer"
+              class="border-b hover:bg-slate-50 cursor-pointer"
               @click="navigateToException(exc.id)"
             >
               <td class="py-3">{{ exc.exception_type }}</td>
@@ -100,7 +100,7 @@
                 </span>
               </td>
               <td class="py-3 truncate">{{ exc.title }}</td>
-              <td class="py-3 text-gray-500">{{ formatDate(exc.detected_at) }}</td>
+              <td class="py-3 text-slate-500">{{ formatDate(exc.detected_at) }}</td>
               <td class="py-3">
                 <span :class="getStatusBadge(exc.status)">
                   {{ exc.status }}

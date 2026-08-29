@@ -6,7 +6,7 @@ console.log(props.history);
 </script>
 
 <template>
-  <div class="space-y-4 border-l-2 border-gray-200 pl-4">
+  <div class="space-y-4 border-l-2 border-slate-200 pl-4">
     <div
       v-for="event in history"
       :key="event.id"
@@ -20,7 +20,7 @@ console.log(props.history);
           →
           {{ event.to_status }}
         </p>
-        <p class="text-gray-500">
+        <p class="text-slate-500">
           {{ new Date(event.created_at).toLocaleString() }}
           · {{ event.changer?.name || 'Guest' }}
         </p>

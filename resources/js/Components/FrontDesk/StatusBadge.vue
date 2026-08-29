@@ -34,8 +34,8 @@ const badgeClass = computed(() => {
     confirmed: 'bg-blue-100 text-blue-800',
     checked_in: 'bg-green-100 text-green-800',
     active: 'bg-green-100 text-green-800',
-    checked_out: 'bg-gray-200 text-gray-700',
+    checked_out: 'bg-slate-200 text-slate-700',
     cancelled: 'bg-red-100 text-red-800',
-  }[props.status] ?? 'bg-gray-100 text-gray-700';
+  }[props.status] ?? 'bg-slate-100 text-slate-700';
 });
 </script>

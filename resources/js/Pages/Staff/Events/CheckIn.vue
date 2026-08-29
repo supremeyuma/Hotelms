@@ -136,14 +136,14 @@ const formatCurrency = a =>
   <ManagerLayout>
     <Head title="Event Check-In" />
 
-    <div class="min-h-screen bg-gray-50 py-8">
+    <div class="min-h-screen bg-slate-50 py-8">
       <div class="max-w-5xl mx-auto px-4">
 
         <!-- HEADER -->
         <div class="bg-white rounded-2xl border p-6 mb-8 flex justify-between items-center">
           <div>
-            <h1 class="text-3xl font-bold text-gray-900">Event Check-In</h1>
-            <p class="text-gray-500">Tickets & table reservations</p>
+            <h1 class="text-3xl font-bold text-slate-900">Event Check-In</h1>
+            <p class="text-slate-500">Tickets & table reservations</p>
           </div>
 
           <button
@@ -192,11 +192,11 @@ const formatCurrency = a =>
               <div
                 v-for="event in activeEvents"
                 :key="event.id"
-                class="flex justify-between items-center p-4 bg-gray-50 rounded-xl"
+                class="flex justify-between items-center p-4 bg-slate-50 rounded-xl"
               >
                 <div>
                   <p class="font-semibold">{{ event.title }}</p>
-                  <p class="text-sm text-gray-600">
+                  <p class="text-sm text-slate-600">
                     {{ event.venue }} • {{ formatDateTime(event.start_datetime) }}
                   </p>
                 </div>
@@ -207,7 +207,7 @@ const formatCurrency = a =>
               </div>
             </div>
 
-            <p v-else class="text-gray-500 text-center py-6">
+            <p v-else class="text-slate-500 text-center py-6">
               No active events
             </p>
           </div>
@@ -244,7 +244,7 @@ const formatCurrency = a =>
             <div v-else-if="scanResult.type === 'ready'" class="flex justify-between items-center">
               <div>
                 <p class="font-bold">{{ scanResult.data.event_title }}</p>
-                <p class="text-sm text-gray-500">{{ scanResult.data.guest_name }}</p>
+                <p class="text-sm text-slate-500">{{ scanResult.data.guest_name }}</p>
               </div>
               <button
                 @click="confirmCheckIn"
@@ -275,8 +275,8 @@ export default {
         <div class="bg-white rounded-xl p-4 border">
           <div class="flex justify-between items-center">
             <div>
-              <p class="text-sm text-gray-500">{{ title }}</p>
-              <p :class="['text-2xl font-bold', warning ? 'text-orange-600' : 'text-gray-900']">
+              <p class="text-sm text-slate-500">{{ title }}</p>
+              <p :class="['text-2xl font-bold', warning ? 'text-orange-600' : 'text-slate-900']">
                 {{ value }}
               </p>
             </div>

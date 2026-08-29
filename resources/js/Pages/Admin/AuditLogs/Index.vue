@@ -1,41 +1,41 @@
 <template>
   <ManagerLayout>
     <div class="space-y-6">
-      <h1 class="text-2xl font-semibold text-gray-800 dark:text-gray-100">Audit Logs</h1>
+      <h1 class="text-2xl font-semibold text-slate-800 dark:text-slate-100">Audit Logs</h1>
 
-      <div class="grid grid-cols-1 gap-4 rounded-lg bg-white p-4 shadow-sm md:grid-cols-4 dark:bg-gray-900">
-        <input v-model="form.user_id" type="text" placeholder="User ID" class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
-        <input v-model="form.model" type="text" placeholder="Model" class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
-        <input v-model="form.date_from" type="date" class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
-        <input v-model="form.date_to" type="date" class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
+      <div class="grid grid-cols-1 gap-4 rounded-lg bg-white p-4 shadow-sm md:grid-cols-4 dark:bg-slate-900">
+        <input v-model="form.user_id" type="text" placeholder="User ID" class="rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
+        <input v-model="form.model" type="text" placeholder="Model" class="rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
+        <input v-model="form.date_from" type="date" class="rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
+        <input v-model="form.date_to" type="date" class="rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
       </div>
 
       <div class="flex justify-end">
         <button class="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700" @click="submit">Apply Filters</button>
       </div>
 
-      <div class="overflow-hidden rounded-lg bg-white shadow-sm dark:bg-gray-900">
+      <div class="overflow-hidden rounded-lg bg-white shadow-sm dark:bg-slate-900">
         <div class="overflow-x-auto">
           <table class="w-full">
-            <thead class="bg-gray-50 dark:bg-gray-800">
+            <thead class="bg-slate-50 dark:bg-slate-800">
               <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">When</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">User</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Action</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Model</th>
-                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Details</th>
+                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">When</th>
+                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">User</th>
+                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Action</th>
+                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Model</th>
+                <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">Details</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
+            <tbody class="divide-y divide-slate-200 bg-white dark:divide-slate-700 dark:bg-slate-900">
               <tr v-for="log in logs.data" :key="log.id">
-                <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{{ formatDate(log.created_at) }}</td>
-                <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{{ log.user_id || '-' }}</td>
-                <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{{ log.action || '-' }}</td>
-                <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{{ log.model || '-' }}</td>
-                <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{{ stringify(log.context ?? log.metadata ?? {}) }}</td>
+                <td class="px-6 py-4 text-sm text-slate-900 dark:text-slate-100">{{ formatDate(log.created_at) }}</td>
+                <td class="px-6 py-4 text-sm text-slate-900 dark:text-slate-100">{{ log.user_id || '-' }}</td>
+                <td class="px-6 py-4 text-sm text-slate-900 dark:text-slate-100">{{ log.action || '-' }}</td>
+                <td class="px-6 py-4 text-sm text-slate-900 dark:text-slate-100">{{ log.model || '-' }}</td>
+                <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{{ stringify(log.context ?? log.metadata ?? {}) }}</td>
               </tr>
               <tr v-if="logs.data.length === 0">
-                <td colspan="5" class="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">No audit logs matched these filters.</td>
+                <td colspan="5" class="px-6 py-8 text-center text-sm text-slate-500 dark:text-slate-400">No audit logs matched these filters.</td>
               </tr>
             </tbody>
           </table>

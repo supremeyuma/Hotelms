@@ -36,14 +36,14 @@
 
       <section v-if="featuredEvents.length" class="py-24 -mt-16 relative z-20">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="flex items-center justify-between mb-10 text-white md:text-gray-900">
+          <div class="flex items-center justify-between mb-10 text-white md:text-slate-900">
             <h2 class="text-3xl font-black tracking-tight uppercase">Hot This Month</h2>
-            <div class="hidden md:block h-px flex-1 mx-8 bg-gray-200"></div>
+            <div class="hidden md:block h-px flex-1 mx-8 bg-slate-200"></div>
           </div>
 
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div v-for="event in featuredEvents" :key="event.id"
-                 class="group relative bg-white rounded-2xl shadow-2xl shadow-indigo-100 overflow-hidden border border-gray-100 hover:border-indigo-200 transition-all duration-500">
+                 class="group relative bg-white rounded-2xl shadow-2xl shadow-indigo-100 overflow-hidden border border-slate-100 hover:border-indigo-200 transition-all duration-500">
               
               <div class="relative h-[400px] overflow-hidden">
                 <img v-if="event.image" :src="'/storage/' + event.image"
@@ -78,7 +78,7 @@
                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                     {{ formatEventDateTime(event).date }}
                   </span>
-                  <span class="text-gray-300">|</span>
+                  <span class="text-slate-300">|</span>
                   <span class="flex items-center">
                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     {{ formatEventDateTime(event).time }}

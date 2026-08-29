@@ -95,7 +95,7 @@ onUnmounted(() => {
   <transition name="modal-fade">
     <div v-if="isVisible" class="fixed inset-0 z-50 overflow-y-auto" role="presentation">
       <!-- Backdrop -->
-      <div class="absolute inset-0 bg-gray-500 bg-opacity-75" @click="close"></div>
+      <div class="absolute inset-0 bg-slate-500 bg-opacity-75" @click="close"></div>
 
       <div class="relative flex min-h-full items-start justify-center p-4 sm:items-center sm:p-6">
         <!-- Modal Content -->
@@ -116,7 +116,7 @@ onUnmounted(() => {
               type="button"
               @click="close"
               :aria-label="ariaLabel + ' close'"
-              class="text-gray-500 hover:text-gray-700"
+              class="text-slate-500 hover:text-slate-700"
             >&times;</button>
           </header>
           <div class="min-h-0 overflow-y-auto p-4">
