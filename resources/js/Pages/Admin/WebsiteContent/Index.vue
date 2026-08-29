@@ -83,7 +83,7 @@ const handleImageUpload = (e) => {
   })
 
   isUploading.value = true
-  imageForm.post('/admin/website/content/image'), {
+  imageForm.post('/admin/website/content/image', {
     preserveScroll: true,
     onSuccess: () => {
       if (props.contents[activeKey.value]) {
@@ -92,7 +92,7 @@ const handleImageUpload = (e) => {
       isUploading.value = false
     },
     onError: () => isUploading.value = false
-  }
+  })
 }
 
 const save = () => {
