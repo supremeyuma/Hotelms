@@ -26,7 +26,7 @@ Route::get('/amenities', [PublicController::class,'amenities']);
 Route::get('/club-lounge', [PublicController::class,'club']);
 Route::get('/policies', [PublicController::class,'policies']);
 
-Route::get('/contact', [PublicController::class, 'staticPage'])->defaults('pageKey','contact')->name('public.contact');
+Route::get('/contact', [PublicController::class, 'contact'])->name('public.contact');
 Route::post('/contact', [PublicController::class, 'submitContactForm'])->name('public.contact.submit');
 Route::get('/feedback', [FeedbackController::class, 'createPublic'])->name('feedback.create');
 Route::post('/feedback', [FeedbackController::class, 'storePublic'])->name('feedback.store');

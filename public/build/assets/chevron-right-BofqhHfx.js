@@ -1,1 +1,0 @@
-import{c as t}from"./createLucideIcon-9G4BaMJ4.js";const h=t("chevron-right",[["path",{d:"m9 18 6-6-6-6",key:"mthhwq"}]]);export{h as C};
