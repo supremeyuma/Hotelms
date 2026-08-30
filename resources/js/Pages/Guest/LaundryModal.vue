@@ -68,7 +68,7 @@
             </label>
 
             <div v-for="(file, idx) in filePreviews" :key="idx" class="relative group">
-              <img :src="file" class="h-20 w-20 object-cover rounded-2xl border border-slate-100 shadow-sm" />
+              <img loading="lazy" :src="file" class="h-20 w-20 object-cover rounded-2xl border border-slate-100 shadow-sm" />
               <div class="absolute inset-0 bg-black/40 opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 rounded-2xl transition-opacity flex items-center justify-center">
                 <button @click="removeFile(idx)" type="button" aria-label="Remove photo" class="text-white">
                   <X class="w-4 h-4" />

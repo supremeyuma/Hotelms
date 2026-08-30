@@ -118,7 +118,7 @@ onUnmounted(() => {
           <ChevronLeft class="h-5 w-5" />
         </button>
 
-        <img
+        <img loading="lazy"
           :src="currentImage.url"
           :alt="currentImage.caption || title"
           @click.stop
@@ -149,7 +149,7 @@ onUnmounted(() => {
           class="shrink-0 overflow-hidden rounded-2xl border-2 transition"
           :class="index === currentIndex ? 'border-white' : 'border-transparent opacity-70 hover:opacity-100'"
         >
-          <img
+          <img loading="lazy"
             :src="image.thumb_url || image.url"
             :alt="image.caption || `${title} ${index + 1}`"
             class="h-20 w-24 object-cover"

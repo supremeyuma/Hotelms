@@ -193,7 +193,7 @@ onMounted(() => {
                 @mouseleave="isHoveringImage = false"
                 data-aos="reveal-right"
               >
-                <img
+                <img loading="lazy"
                   :src="gallery.hero[0]?.image_url ?? content('home.hero.image')"
                   class="w-full aspect-[4/5] object-cover scale-110 hover:scale-100 transition-transform duration-[2s]"
                 />
@@ -270,7 +270,7 @@ onMounted(() => {
             >
               <!-- Event Image -->
               <div class="relative h-64 overflow-hidden">
-                <img 
+                <img loading="lazy" 
                   :src="event.promotional_media?.[0]?.image_url ?? '/images/default-event.jpg'"
                   :alt="event.title"
                   class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
@@ -363,7 +363,7 @@ onMounted(() => {
               @mouseleave="isHoveringImage = false"
               class="h-[700px] overflow-hidden"
             >
-              <img
+              <img loading="lazy"
                 v-if="gallery.club?.[0]"
                 :src="gallery.club[0].image_url"
                 class="w-full h-full object-cover transition-transform duration-[5s] group-hover:scale-110"

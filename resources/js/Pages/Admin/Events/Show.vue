@@ -150,7 +150,7 @@ const getMainImage = () => {
 
       <!-- Main Image -->
       <div class="relative h-96 rounded-xl overflow-hidden">
-        <img 
+        <img loading="lazy" 
           :src="getMainImage()" 
           :alt="event.title"
           class="w-full h-full object-cover"
@@ -263,7 +263,7 @@ const getMainImage = () => {
               >
                 <div class="aspect-square rounded-lg overflow-hidden border-2 transition-colors"
                      :class="media.is_main_image ? 'border-blue-500' : 'border-slate-200'">
-                  <img 
+                  <img loading="lazy" 
                     v-if="media.media_type === 'image'" 
                     :src="`/storage/${media.media_url}`" 
                     :alt="media.title || 'Event media'"

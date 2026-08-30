@@ -319,7 +319,7 @@ watch(mainImageIndex, (newIndex) => {
             </div>
 
             <div v-if="imagePreview" class="mt-4">
-              <img 
+              <img loading="lazy" 
                 :src="imagePreview" 
                 alt="Event image preview" 
                 class="h-48 w-full object-cover rounded-lg border border-slate-200"
@@ -353,7 +353,7 @@ watch(mainImageIndex, (newIndex) => {
               >
                 <div class="aspect-square rounded-lg overflow-hidden border-2 transition-colors"
                      :class="media.is_main_image ? 'border-blue-500' : 'border-slate-200'">
-                  <img 
+                  <img loading="lazy" 
                     v-if="media.media_type === 'image'" 
                     :src="media.preview" 
                     :alt="`Media ${index + 1}`"

@@ -61,7 +61,7 @@ function deleteType(type) {
         >
           <div class="grid gap-0 md:grid-cols-[220px_minmax(0,1fr)]">
             <div class="relative min-h-[220px] bg-slate-100">
-              <img
+              <img loading="lazy"
                 v-if="type.primary_image_url"
                 :src="type.primary_image_url"
                 :alt="type.title"

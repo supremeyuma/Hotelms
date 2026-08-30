@@ -21,7 +21,7 @@
 
     <div v-if="previews.length" class="grid grid-cols-3 gap-3">
       <div v-for="(p, idx) in previews" :key="idx" class="relative border rounded overflow-hidden">
-        <img :src="p.url" class="object-cover w-full h-32" />
+        <img loading="lazy" :src="p.url" class="object-cover w-full h-32" />
         <div class="p-2 flex justify-between items-center">
           <input v-model="p.caption" placeholder="Caption" class="text-xs border p-1 rounded w-2/3" />
           <div class="flex space-x-1">
@@ -36,7 +36,7 @@
       <h4 class="text-sm font-medium mb-2">Existing Images</h4>
       <div class="grid grid-cols-4 gap-3">
         <div v-for="img in serverImages" :key="img.id" class="relative border rounded overflow-hidden">
-          <img :src="img.url" class="object-cover w-full h-28" />
+          <img loading="lazy" :src="img.url" class="object-cover w-full h-28" />
           <div class="p-2 flex justify-between items-center">
             <button @click="setPrimary(img)" :disabled="img.is_primary" class="text-xs text-indigo-600">
               {{ img.is_primary ? 'Primary' : 'Set primary' }}

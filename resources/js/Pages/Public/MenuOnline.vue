@@ -262,7 +262,7 @@ function goHome() {
                 class="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition group"
               >
                 <div class="relative overflow-hidden bg-slate-100 h-28 sm:h-32">
-                  <img
+                  <img loading="lazy"
                     v-if="item.images?.length"
                     :src="`/storage/${item.images[0].path}`"
                     :alt="item.name"

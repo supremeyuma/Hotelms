@@ -139,7 +139,7 @@ const filteredEvents = () => {
         >
           <!-- Event Image -->
           <div class="relative h-48">
-            <img 
+            <img loading="lazy" 
               :src="getMainImage(event)" 
               :alt="event.title"
               class="w-full h-full object-cover"

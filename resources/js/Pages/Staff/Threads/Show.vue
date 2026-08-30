@@ -119,7 +119,7 @@ function formatDate(value) {
               class="rounded-xl border p-3"
               :class="message.sender_id === $page.props.auth.user.id ? 'border-white/15 bg-white/5' : 'border-slate-200 bg-slate-50'"
             >
-              <img
+              <img loading="lazy"
                 v-if="isImage(attachment)"
                 :src="`/storage/${attachment}`"
                 :alt="filename(attachment)"

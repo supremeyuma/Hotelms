@@ -93,6 +93,7 @@
                 <div v-for="media in event.promotional_media" :key="media.id" class="group relative">
                   <div class="aspect-video rounded-2xl overflow-hidden bg-slate-100 border border-slate-100 shadow-inner">
                     <img v-if="media.media_type === 'image' || isImageFile(media.media_url)" 
+                         loading="lazy"
                          :src="'/storage/' + media.media_url" 
                          class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                     <video v-else-if="media.media_type === 'video' || isVideoFile(media.media_url)" 
@@ -114,7 +115,7 @@
                 <div class="relative group">
                   <div class="absolute -inset-2 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-2xl opacity-10 blur-xl group-hover:opacity-20 transition-opacity"></div>
                   <div class="relative bg-white p-3 rounded-2xl border border-slate-100 shadow-sm">
-                    <img :src="qr_code" alt="QR" class="w-28 h-28">
+                    <img :src="qr_code" alt="QR" loading="lazy" class="w-28 h-28">
                   </div>
                 </div>
                 <p class="text-xs font-semibold text-slate-400 uppercase mt-4 tracking-wide">Share this experience</p>

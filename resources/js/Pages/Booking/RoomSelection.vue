@@ -196,7 +196,7 @@ const roomTypeImageVisibilityEnabled = computed(() => Boolean(props.imageSetting
                   : 'bg-slate-950'"
                 @click="roomTypeImageVisibilityEnabled && hasImages(roomType) ? openGallery(roomType.images, `${roomType.name} photos`) : null"
               >
-                <img
+                <img loading="lazy"
                   v-if="roomTypeImageVisibilityEnabled && primaryImage(roomType)"
                   :src="primaryImage(roomType)"
                   :alt="roomType.name"
@@ -293,7 +293,7 @@ const roomTypeImageVisibilityEnabled = computed(() => Boolean(props.imageSetting
                     :class="hasImages(room) ? 'cursor-zoom-in' : ''"
                     @click.stop="hasImages(room) ? openGallery(room.images, `${room.name} photos`) : null"
                   >
-                    <img
+                    <img loading="lazy"
                       v-if="primaryImage(room)"
                       :src="primaryImage(room)"
                       :alt="room.name"

@@ -95,6 +95,7 @@ const formatTime = (date) =>
         <div class="lg:col-span-5 lg:col-start-8" data-aos="fade-left">
           <div class="relative">
             <img
+              loading="lazy"
               src="https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&q=80"
               class="rounded-2xl w-full h-[600px] object-cover shadow-2xl"
             />

@@ -29,7 +29,7 @@
           <div class="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
           <div class="relative z-10 p-6 md:p-8 flex flex-col md:flex-row gap-6 items-center">
             <div class="w-20 h-20 md:w-24 md:h-24 shrink-0 rounded-xl overflow-hidden shadow-xl border border-white/10">
-              <img v-if="event.image" :src="'/storage/' + event.image" :alt="event.title" class="w-full h-full object-cover">
+              <img loading="lazy" v-if="event.image" :src="'/storage/' + event.image" :alt="event.title" class="w-full h-full object-cover">
               <div v-else class="w-full h-full bg-gradient-to-br from-indigo-500 to-purple-600"></div>
             </div>
             <div class="text-center md:text-left">

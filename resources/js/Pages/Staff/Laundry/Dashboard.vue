@@ -147,7 +147,7 @@
                     :key="img.id"
                     class="relative aspect-square w-20 rounded-xl overflow-hidden border border-slate-200 shadow-sm"
                   >
-                    <img :src="`/storage/${img.path}`" alt="Laundry" class="h-full w-full object-cover" />
+                    <img loading="lazy" :src="`/storage/${img.path}`" alt="Laundry" class="h-full w-full object-cover" />
                   </div>
                 </div>
               </div>

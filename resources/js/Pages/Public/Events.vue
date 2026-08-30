@@ -105,6 +105,7 @@
               
               <div class="relative h-56 overflow-hidden rounded-2xl mb-6">
                 <img v-if="event.image" :src="'/storage/' + event.image"
+                     loading="lazy"
                      class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 <div class="absolute top-3 right-3">
                   <div class="bg-white/90 backdrop-blur-sm px-3 py-2 rounded-xl shadow-sm">

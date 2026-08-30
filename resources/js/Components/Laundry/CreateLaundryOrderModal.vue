@@ -212,7 +212,7 @@ function submit() {
             </label>
 
             <div v-for="(preview, index) in filePreviews" :key="preview" class="group relative">
-              <img :src="preview" class="h-20 w-20 rounded-2xl border border-slate-200 object-cover shadow-sm" />
+              <img loading="lazy" :src="preview" class="h-20 w-20 rounded-2xl border border-slate-200 object-cover shadow-sm" />
               <button
                 type="button"
                 aria-label="Remove photo"

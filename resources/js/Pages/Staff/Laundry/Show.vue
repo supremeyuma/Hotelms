@@ -287,7 +287,7 @@ function markChargePaid() {
                 :key="img.id"
                 class="relative aspect-square rounded-2xl overflow-hidden border border-slate-100 group shadow-sm bg-slate-50"
               >
-                <img :src="`/storage/${img.path}`" class="h-full w-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                <img loading="lazy" :src="`/storage/${img.path}`" class="h-full w-full object-cover group-hover:scale-110 transition-transform duration-700" />
                 <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
               </div>
               

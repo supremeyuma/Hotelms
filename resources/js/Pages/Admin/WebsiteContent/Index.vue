@@ -191,7 +191,7 @@ const save = () => {
 
                 <div v-else-if="form.type === 'image'" class="space-y-4">
                   <div class="relative group aspect-video md:aspect-[21/9] bg-slate-100 rounded-2xl overflow-hidden border-2 border-dashed border-slate-200 flex items-center justify-center">
-                    <img v-if="form.value" :src="form.value" class="w-full h-full object-cover transition duration-500 group-hover:scale-105" />
+                    <img loading="lazy" v-if="form.value" :src="form.value" class="w-full h-full object-cover transition duration-500 group-hover:scale-105" />
                     
                     <div class="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
                       <label class="cursor-pointer bg-white text-slate-900 px-6 py-3 rounded-full font-bold flex items-center gap-2 shadow-xl hover:bg-indigo-50 transition-colors">

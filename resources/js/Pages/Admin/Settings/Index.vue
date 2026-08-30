@@ -230,7 +230,7 @@ onBeforeUnmount(() => {
             <div class="mt-5 space-y-4">
               <div class="overflow-hidden rounded-2xl border border-white/10 bg-slate-950/40">
                 <div v-if="bannerPreview" class="h-40">
-                  <img :src="bannerPreview" alt="Banner preview" class="h-full w-full object-cover" />
+                  <img loading="lazy" :src="bannerPreview" alt="Banner preview" class="h-full w-full object-cover" />
                 </div>
                 <div v-else class="flex h-40 items-center justify-center bg-white/5 text-sm text-slate-300">
                   No banner
@@ -239,7 +239,7 @@ onBeforeUnmount(() => {
 
               <div class="flex items-center gap-4 rounded-2xl border border-white/10 bg-black/20 p-4">
                 <div class="flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-white/10">
-                  <img v-if="logoPreview" :src="logoPreview" alt="Logo preview" class="h-full w-full object-cover" />
+                  <img loading="lazy" v-if="logoPreview" :src="logoPreview" alt="Logo preview" class="h-full w-full object-cover" />
                   <Building2 v-else class="h-7 w-7 text-slate-300" />
                 </div>
                 <div class="min-w-0">

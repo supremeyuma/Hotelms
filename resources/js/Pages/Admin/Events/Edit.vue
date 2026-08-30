@@ -344,7 +344,7 @@ watch(mainImageIndex, (newIndex) => {
             <div>
               <label class="block text-sm font-medium text-slate-700 mb-2">Current Image</label>
               <div v-if="event.image" class="mb-4">
-                <img 
+                <img loading="lazy" 
                   :src="imagePreview" 
                   alt="Current event image" 
                   class="h-48 w-full object-cover rounded-lg border border-slate-200"
@@ -379,7 +379,7 @@ watch(mainImageIndex, (newIndex) => {
                 >
                   <div class="aspect-square rounded-lg overflow-hidden border-2 transition-colors"
                        :class="media.is_main_image ? 'border-blue-500' : 'border-slate-200'">
-                    <img 
+                    <img loading="lazy" 
                       v-if="media.media_type === 'image'" 
                       :src="`/storage/${media.media_url}`" 
                       :alt="media.title || `Media ${index + 1}`"
@@ -446,7 +446,7 @@ watch(mainImageIndex, (newIndex) => {
               >
                 <div class="aspect-square rounded-lg overflow-hidden border-2 transition-colors"
                      :class="media.is_main_image ? 'border-blue-500' : 'border-slate-200'">
-                  <img 
+                  <img loading="lazy" 
                     v-if="media.media_type === 'image'" 
                     :src="media.preview" 
                     :alt="`New Media ${index + 1}`"

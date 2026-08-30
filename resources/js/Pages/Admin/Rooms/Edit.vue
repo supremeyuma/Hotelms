@@ -163,7 +163,7 @@ function submit() {
 
             <div v-if="existingImages.length" class="mt-5 space-y-3">
               <article v-for="image in existingImages" :key="image.id" class="overflow-hidden rounded-2xl border border-slate-200">
-                <img :src="`/storage/${image.path}`" :alt="room.name" class="h-36 w-full object-cover" />
+                <img loading="lazy" :src="`/storage/${image.path}`" :alt="room.name" class="h-36 w-full object-cover" />
                 <div class="flex items-center justify-between gap-3 p-3">
                   <button
                     type="button"
@@ -195,7 +195,7 @@ function submit() {
 
             <div v-if="uploadPreviews.length" class="mt-5 space-y-3">
               <article v-for="preview in uploadPreviews" :key="preview.index" class="overflow-hidden rounded-2xl border border-slate-200">
-                <img :src="preview.url" :alt="preview.name" class="h-36 w-full object-cover" />
+                <img loading="lazy" :src="preview.url" :alt="preview.name" class="h-36 w-full object-cover" />
                 <div class="flex items-center justify-between gap-3 p-3">
                   <div class="min-w-0">
                     <p class="truncate text-sm font-bold text-slate-900">{{ preview.name }}</p>

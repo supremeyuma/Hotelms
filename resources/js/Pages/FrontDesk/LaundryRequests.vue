@@ -163,7 +163,7 @@ const submitStatusUpdate = () => {
                 </p>
                 <div class="flex flex-wrap gap-3">
                     <div v-for="img in req.requestable.images" :key="img.id" class="relative group">
-                        <img :src="`/storage/${img.path}`" 
+                        <img loading="lazy" :src="`/storage/${img.path}`" 
                              class="h-24 w-24 object-cover rounded-2xl shadow-sm border-2 border-white transition-transform group-hover:scale-105" />
                     </div>
                 </div>

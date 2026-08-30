@@ -139,7 +139,7 @@ function closeDetails() {
               class="group cursor-pointer bg-white rounded-2xl overflow-hidden border border-slate-200 hover:border-black hover:shadow-xl transition-all duration-300"
             >
               <div class="relative overflow-hidden bg-slate-100 h-32 sm:h-36">
-                <img
+                <img loading="lazy"
                   v-if="item.images?.length"
                   :src="`/storage/${item.images[0].path}`"
                   :alt="item.name"
@@ -177,7 +177,7 @@ function closeDetails() {
     >
       <div class="bg-white rounded-2xl overflow-hidden w-full max-w-md max-h-[90vh] overflow-y-auto">
         <div class="relative bg-slate-100 h-64 overflow-hidden">
-          <img
+          <img loading="lazy"
             v-if="selectedItem.images?.length"
             :src="`/storage/${selectedItem.images[0].path}`"
             :alt="selectedItem.name"

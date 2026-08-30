@@ -159,7 +159,7 @@ onBeforeUnmount(() => {
                   :key="room.id"
                   class="flex items-center gap-4 rounded-2xl bg-white px-4 py-3 border border-slate-100"
                 >
-                  <img
+                  <img loading="lazy"
                     v-if="image_settings.show_room_images && primaryImage(room)"
                     :src="primaryImage(room)"
                     :alt="room.name"

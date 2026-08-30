@@ -207,7 +207,7 @@ const saveOrder = (items) => {
             v-if="activeItem"
             class="bg-white border rounded-2xl p-6 space-y-6"
           >
-            <img
+            <img loading="lazy"
               :src="`/storage/${activeItem.image_path.replace('public/', '')}`"
               class="rounded-2xl border max-h-80 object-cover"
             />

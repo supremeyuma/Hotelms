@@ -114,6 +114,7 @@ onMounted(() => {
             >
               <div class="overflow-hidden rounded-xl bg-slate-100 aspect-[4/5] shadow-2xl transition-all duration-700 group-hover:shadow-indigo-500/10">
                 <img
+                  loading="lazy"
                   :src="getImagePath(img.image_path)"
                   class="w-full h-full object-cover transition-transform duration-[2s] ease-out group-hover:scale-110"
                 />
@@ -149,6 +150,7 @@ onMounted(() => {
           </button>
           
           <img 
+            loading="lazy"
             :src="getImagePath(selectedImage.image_path)" 
             class="max-w-full max-h-full object-contain rounded-xl shadow-3xl"
             data-aos="zoom-in"

@@ -304,7 +304,7 @@ function openHistory() {
               >
                 <!-- IMAGE -->
                 <div class="relative overflow-hidden bg-slate-100 h-40">
-                  <img
+                  <img loading="lazy"
                     v-if="item.images?.length"
                     :src="`/storage/${item.images[0].path}`"
                     :alt="item.name"
