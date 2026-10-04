@@ -1,0 +1,1 @@
+<?php\n\nnamespace App\Sync\Policies;\n\nclass SyncPolicy\n{\n}\n

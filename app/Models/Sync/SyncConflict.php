@@ -1,0 +1,1 @@
+<?php\n\nnamespace App\\Models\\Sync;\n\nuse App\\Sync\\Syncable;\nuse Illuminate\\Database\\Eloquent\\Model;\n\nclass SyncConflict extends Model\n{\n    use Syncable;\n\n    protected \ = strtolower(str_replace('Sync', 'sync_', 'SyncConflict'));\n\n    protected \ = [];\n}\n

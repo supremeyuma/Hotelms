@@ -1,0 +1,1 @@
+<?php\n\nnamespace App\Sync\Policies;\n\nclass AdditivePolicy extends SyncPolicy\n{\n}\n

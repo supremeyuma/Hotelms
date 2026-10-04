@@ -1,0 +1,1 @@
+<?php\n\nnamespace App\Sync\Policies;\n\nclass ConflictPolicy extends SyncPolicy\n{\n}\n

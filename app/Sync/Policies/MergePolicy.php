@@ -1,0 +1,1 @@
+<?php\n\nnamespace App\Sync\Policies;\n\nclass MergePolicy extends SyncPolicy\n{\n}\n
