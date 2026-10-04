@@ -74,9 +74,12 @@ return new class extends Migration
             $table->decimal('quantity', 12, 2)->default(0)->change();
         });
 
-        $stockIndexes = $driver === 'mysql'
-            ? collect(DB::select('SHOW INDEX FROM inventory_stocks'))->pluck('Key_name')->all()
-            : [];
+        $stockIndexes = [];
+        if ($driver === 'mysql') {
+            $stockIndexes = collect(DB::select('SHOW INDEX FROM inventory_stocks'))->pluck('Key_name')->all();
+        } elseif ($driver === 'pgsql') {
+            $stockIndexes = collect(DB::select("SELECT indexname AS Key_name FROM pg_indexes WHERE schemaname = current_schema() AND tablename = 'inventory_stocks'"))->pluck('Key_name')->all();
+        }
 
         if (! in_array('inventory_stocks_item_location_unique', $stockIndexes, true)) {
             Schema::table('inventory_stocks', function (Blueprint $table) {
@@ -87,9 +90,12 @@ return new class extends Migration
             });
         }
 
-        $movementIndexes = $driver === 'mysql'
-            ? collect(DB::select('SHOW INDEX FROM inventory_movements'))->pluck('Key_name')->all()
-            : [];
+        $movementIndexes = [];
+        if ($driver === 'mysql') {
+            $movementIndexes = collect(DB::select('SHOW INDEX FROM inventory_movements'))->pluck('Key_name')->all();
+        } elseif ($driver === 'pgsql') {
+            $movementIndexes = collect(DB::select("SELECT indexname AS Key_name FROM pg_indexes WHERE schemaname = current_schema() AND tablename = 'inventory_movements'"))->pluck('Key_name')->all();
+        }
 
         Schema::table('inventory_movements', function (Blueprint $table) use ($movementIndexes) {
             if (! in_array('inventory_movements_created_at_index', $movementIndexes, true)) {
