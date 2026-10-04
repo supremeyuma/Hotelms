@@ -8,19 +8,19 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('pos_docket_payments', function (Blueprint ) {
-            ->string('sync_hlc')->nullable();
-            ->string('sync_origin_node_id')->nullable();
-            ->softDeletesTz('sync_deleted_at')->nullable();
-            ->index(['sync_hlc']);
+        Schema::table('pos_docket_payments', function (Blueprint $table) {
+            $table->string('sync_hlc')->nullable();
+            $table->string('sync_origin_node_id')->nullable();
+            $table->softDeletesTz('sync_deleted_at')->nullable();
+            $table->index(['sync_hlc']);
         });
     }
 
     public function down(): void
     {
-        Schema::table('pos_docket_payments', function (Blueprint ) {
-            ->dropIndex(['sync_hlc']);
-            ->dropColumn(['sync_hlc', 'sync_origin_node_id', 'sync_deleted_at']);
+        Schema::table('pos_docket_payments', function (Blueprint $table) {
+            $table->dropIndex(['sync_hlc']);
+            $table->dropColumn(['sync_hlc', 'sync_origin_node_id', 'sync_deleted_at']);
         });
     }
 };
