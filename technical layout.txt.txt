@@ -357,3 +357,6 @@ If you want, I can also generate:
 ✅ The exact prompt to feed into GPT-based coding models
 ✅ A version tailored for Claude, Cursor, or GitHub Copilot
 Just tell me which one.
+
+---
+> **SUPERSEDED IN PART.** The shared-hosting constraints in this document (lines 15, 40-47, 54-59) were superseded on 2026-10-04. See docs/ARCHITECTURE.md ADR-001 and docs/superpowers/specs/2026-10-04-desktop-lan-offline-sync-design.md. Do not add features that assume no long-running processes are available.
