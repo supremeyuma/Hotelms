@@ -28,24 +28,20 @@ class RoomBillPaymentTest extends TestCase
         parent::setUp();
 
         $this->roomType = RoomType::factory()->create([
-            'name' => 'Deluxe Suite',
-            'nightly_rate' => 50000
+            'title' => 'Deluxe Suite',
+            'base_price' => 50000
         ]);
 
         $this->room = Room::factory()->create([
             'room_type_id' => $this->roomType->id,
-            'room_number' => '101'
+            'name' => '101'
         ]);
 
-        $this->guest = User::factory()->create([
-            'email' => 'guest@example.com',
-            'role' => 'guest'
-        ]);
+        $this->guest = User::factory()->withRole('guest')->create([
+            'email' => 'guest@example.com']);
 
-        $this->manager = User::factory()->create([
-            'email' => 'manager@example.com',
-            'role' => 'manager'
-        ]);
+        $this->manager = User::factory()->withRole('manager')->create([
+            'email' => 'manager@example.com']);
 
         $this->booking = Booking::factory()->create([
             'user_id' => $this->guest->id,
@@ -240,7 +236,7 @@ class RoomBillPaymentTest extends TestCase
 
         // Manually create duplicate reference
         Payment::create([
-            'user_id' => $this->guest->id,
+            'method' => 'flutterwave',
             'reference' => $reference,
             'provider' => 'flutterwave',
             'amount' => 50000,
@@ -339,15 +335,14 @@ class RoomBillPaymentTest extends TestCase
     {
         $room2 = Room::factory()->create([
             'room_type_id' => $this->roomType->id,
-            'room_number' => '102'
+            'name' => '102'
         ]);
 
         $booking2 = Booking::factory()->create([
             'user_id' => $this->guest->id,
             'room_id' => $room2->id,
             'guest_email' => 'guest@example.com',
-            'guest_name' => 'Jane Doe',
-        ]);
+            'guest_name' => 'Jane Doe']);
 
         $token2 = RoomAccessToken::factory()->create([
             'room_id' => $room2->id,
@@ -374,8 +369,7 @@ class RoomBillPaymentTest extends TestCase
             'amount' => 75000,
             'metadata' => json_encode([
                 'booking_id' => $booking2->id,
-                'room_id' => $room2->id,
-            ])
+                'room_id' => $room2->id])
         ]);
     }
 

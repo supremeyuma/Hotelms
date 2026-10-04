@@ -27,19 +27,17 @@ class PaymentVerificationTest extends TestCase
         parent::setUp();
 
         $this->roomType = RoomType::factory()->create([
-            'name' => 'Deluxe Suite',
-            'nightly_rate' => 50000
+            'title' => 'Deluxe Suite',
+            'base_price' => 50000
         ]);
 
         $this->room = Room::factory()->create([
             'room_type_id' => $this->roomType->id,
-            'room_number' => '101'
+            'name' => '101'
         ]);
 
-        $this->guest = User::factory()->create([
-            'email' => 'guest@example.com',
-            'role' => 'guest'
-        ]);
+        $this->guest = User::factory()->withRole('guest')->create([
+            'email' => 'guest@example.com']);
 
         $this->booking = Booking::factory()->create([
             'user_id' => $this->guest->id,

@@ -24,8 +24,8 @@ class BookingPaymentTest extends TestCase
         parent::setUp();
 
         $this->roomType = RoomType::factory()->create([
-            'name' => 'Deluxe Suite',
-            'nightly_rate' => 50000
+            'title' => 'Deluxe Suite',
+            'base_price' => 50000
         ]);
 
         $this->room = Room::factory()->create([
@@ -33,15 +33,11 @@ class BookingPaymentTest extends TestCase
             'name' => 'Room 101'
         ]);
 
-        $this->guest = User::factory()->create([
-            'email' => 'guest@example.com',
-            'role' => 'guest'
-        ]);
+        $this->guest = User::factory()->withRole('guest')->create([
+            'email' => 'guest@example.com']);
 
-        $this->manager = User::factory()->create([
-            'email' => 'manager@example.com',
-            'role' => 'manager'
-        ]);
+        $this->manager = User::factory()->withRole('manager')->create([
+            'email' => 'manager@example.com']);
     }
 
     /**
@@ -50,7 +46,7 @@ class BookingPaymentTest extends TestCase
     public function test_booking_with_offline_payment(): void
     {
         $booking = Booking::factory()->create([
-            'guest_id' => $this->guest->id,
+            'user_id' => $this->guest->id,
             'payment_method' => 'offline',
             'payment_status' => 'pending'
         ]);
@@ -68,7 +64,7 @@ class BookingPaymentTest extends TestCase
     public function test_booking_payment_callback_success(): void
     {
         $booking = Booking::factory()->create([
-            'guest_id' => $this->guest->id,
+            'user_id' => $this->guest->id,
             'payment_method' => 'online',
             'payment_status' => 'pending'
         ]);
@@ -81,7 +77,7 @@ class BookingPaymentTest extends TestCase
         // Verify booking payment status was updated
         $booking->refresh();
         $this->assertEquals('online', $booking->payment_method);
-        $this->assertIn($booking->payment_status, ['pending', 'paid']);
+        $this->assertContains($booking->payment_status, ['pending', 'paid']);
     }
 
     /**
@@ -90,7 +86,7 @@ class BookingPaymentTest extends TestCase
     public function test_booking_payment_status_transitions(): void
     {
         $booking = Booking::factory()->create([
-            'guest_id' => $this->guest->id,
+            'user_id' => $this->guest->id,
             'payment_method' => 'online',
             'payment_status' => 'pending'
         ]);
@@ -115,15 +111,16 @@ class BookingPaymentTest extends TestCase
     public function test_accounting_entry_on_booking_payment_success(): void
     {
         $booking = Booking::factory()->create([
-            'guest_id' => $this->guest->id,
+            'user_id' => $this->guest->id,
             'payment_method' => 'online',
             'payment_status' => 'pending',
-            'total_cost' => 150000
+            'total_amount' => 150000
         ]);
 
         $payment = Payment::create([
             'amount' => 150000,
             'currency' => 'NGN',
+            'method' => 'flutterwave',
             'reference' => 'BKG-' . $booking->id,
             'status' => 'pending',
             'flutterwave_tx_id' => 'tx-bkg-123'
@@ -163,13 +160,13 @@ class BookingPaymentTest extends TestCase
     public function test_multiple_booking_payment_methods(): void
     {
         $offlineBooking = Booking::factory()->create([
-            'guest_id' => $this->guest->id,
+            'user_id' => $this->guest->id,
             'payment_method' => 'offline',
             'payment_status' => 'pending'
         ]);
 
         $onlineBooking = Booking::factory()->create([
-            'guest_id' => $this->guest->id,
+            'user_id' => $this->guest->id,
             'payment_method' => 'online',
             'payment_status' => 'pending'
         ]);
@@ -192,14 +189,15 @@ class BookingPaymentTest extends TestCase
     public function test_booking_payment_reference_tracking(): void
     {
         $booking = Booking::factory()->create([
-            'guest_id' => $this->guest->id,
+            'user_id' => $this->guest->id,
             'payment_method' => 'online',
             'payment_status' => 'pending'
         ]);
 
         $payment = Payment::create([
-            'amount' => $booking->total_cost ?? 100000,
+            'amount' => $booking->total_amount ?? 100000,
             'currency' => 'NGN',
+            'method' => 'cash',
             'reference' => 'BKG-' . $booking->id,
             'status' => 'pending'
         ]);

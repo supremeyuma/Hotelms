@@ -21,14 +21,12 @@ class EventTicketPaymentTest extends TestCase
     {
         parent::setUp();
         
-        $this->user = User::factory()->create([
-            'email' => 'guest@example.com',
-            'role' => 'guest'
-        ]);
+        $this->user = User::factory()->withRole('guest')->create([
+            'email' => 'guest@example.com']);
 
         $this->event = Event::factory()->create([
-            'name' => 'Test Event',
-            'event_date' => now()->addDays(10),
+            'title' => 'Test Event',
+            'start_datetime' => now()->addDays(10),
             'is_active' => true
         ]);
 
@@ -36,7 +34,7 @@ class EventTicketPaymentTest extends TestCase
             'event_id' => $this->event->id,
             'name' => 'Regular Ticket',
             'price' => 5000,
-            'quantity' => 100
+            'quantity_available' => 100
         ]);
     }
 
@@ -78,6 +76,7 @@ class EventTicketPaymentTest extends TestCase
         $payment = Payment::create([
             'amount' => 5000,
             'currency' => 'NGN',
+            'method' => 'flutterwave',
             'reference' => 'FLW-' . uniqid(),
             'status' => 'pending',
             'flutterwave_tx_id' => 'tx-123456'
@@ -178,6 +177,7 @@ class EventTicketPaymentTest extends TestCase
         $payment = Payment::create([
             'amount' => 5000,
             'currency' => 'NGN',
+            'method' => 'flutterwave',
             'reference' => 'FLW-' . uniqid(),
             'status' => 'pending',
             'flutterwave_tx_id' => 'tx-failed-123'

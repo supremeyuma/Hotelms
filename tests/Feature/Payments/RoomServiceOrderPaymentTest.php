@@ -28,8 +28,8 @@ class RoomServiceOrderPaymentTest extends TestCase
         parent::setUp();
 
         $this->roomType = RoomType::factory()->create([
-            'name' => 'Deluxe Room',
-            'nightly_rate' => 50000
+            'title' => 'Deluxe Room',
+            'base_price' => 50000
         ]);
 
         $this->room = Room::factory()->create([
@@ -37,20 +37,16 @@ class RoomServiceOrderPaymentTest extends TestCase
             'name' => 'Room 201'
         ]);
 
-        $this->guest = User::factory()->create([
-            'email' => 'guest@example.com',
-            'role' => 'guest'
-        ]);
+        $this->guest = User::factory()->withRole('guest')->create([
+            'email' => 'guest@example.com']);
 
-        $this->staff = User::factory()->create([
-            'email' => 'staff@example.com',
-            'role' => 'staff'
-        ]);
+        $this->staff = User::factory()->withRole('staff')->create([
+            'email' => 'staff@example.com']);
 
         // Create menu structure for room service
         $category = MenuCategory::factory()->create([
             'name' => 'Breakfast',
-            'prep_time' => 15
+            'prep_time_minutes' => 15
         ]);
 
         $this->menuItem = MenuItem::factory()->create([
@@ -176,6 +172,7 @@ class RoomServiceOrderPaymentTest extends TestCase
         $payment = Payment::create([
             'amount' => 7000,
             'currency' => 'NGN',
+            'method' => 'flutterwave',
             'reference' => $txRef,
             'status' => 'pending',
             'flutterwave_tx_id' => 'tx-ord-123'
@@ -228,6 +225,7 @@ class RoomServiceOrderPaymentTest extends TestCase
         $payment = Payment::create([
             'amount' => 12500,
             'currency' => 'NGN',
+            'method' => 'flutterwave',
             'reference' => 'ORD-' . $order->id,
             'status' => 'successful',
             'flutterwave_tx_id' => 'tx-ord-acc-123',
