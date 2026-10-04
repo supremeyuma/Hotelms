@@ -223,7 +223,7 @@ public function checkout(Booking $booking)
 
 ### Scheduled Jobs
 
-Add to `app/Console/Kernel.php`:
+Add to `routes/console.php`:
 
 ```php
 protected function schedule(Schedule $schedule)

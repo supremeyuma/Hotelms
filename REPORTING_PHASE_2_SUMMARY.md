@@ -181,7 +181,7 @@ All overridable via `.env` variables
 
 ### 9. **Task Scheduling** ✅
 
-Updated `app/Console/Kernel.php`:
+Updated `routes/console.php`:
 
 ```php
 $schedule->command('reporting:aggregate')->dailyAt('03:30');
@@ -352,7 +352,7 @@ For production, configure persistent queue driver in `config/queue.php`
 ### Modified Files: 2
 
 - routes/admin.php (added reporting routes)
-- app/Console/Kernel.php (added schedule entries)
+- routes/console.php (added schedule entries)
 
 ---
 

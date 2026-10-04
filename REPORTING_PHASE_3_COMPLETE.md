@@ -41,7 +41,7 @@ php artisan reporting:backfill --days=90
 
 ### 3. Console Scheduler Configured
 
-In `app/Console/Kernel.php`:
+In `routes/console.php`:
 
 ```php
 $schedule->command('reporting:aggregate')->dailyAt('03:30');  // Off-peak
