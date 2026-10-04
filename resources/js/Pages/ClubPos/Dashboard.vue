@@ -78,7 +78,7 @@ function handleAddItem(item) {
     })
     return
   }
-  router.post(route('club.pos.dockets.items.add', { docket: activeDocketId.value }), {
+  router.post(route('club.pos.dockets.items.store', { docket: activeDocketId.value }), {
     menu_item_id: item.id,
     quantity: 1,
   }, {

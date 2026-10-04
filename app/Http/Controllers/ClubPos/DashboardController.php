@@ -11,6 +11,7 @@ use App\Models\MenuCategory;
 use App\Models\DrinkStock;
 use App\Services\ClubPosService;
 use Illuminate\Http\Request;
+use App\Models\PosDevice;
 
 class DashboardController extends Controller
 {
@@ -21,51 +22,51 @@ class DashboardController extends Controller
     public function index()
     {
         $user = request()->user();
-        $device = null;
-
-        return Inertia::render('ClubPos/Dashboard', [
-            'device' => $device,
-            'openDockets' => [],
-            'currentSession' => null,
-            'categories' => MenuCategory::where('type', 'bar')
-                ->where('is_active', true)
-                ->orderBy('sort_order')
-                ->with(['subcategories' => function ($q) {
-                    $q->where('is_active', true)->orderBy('sort_order');
-                }])
-                ->get(),
-            'menuItems' => MenuItem::where('service_area', 'club')
-                ->where('is_available', true)
-                ->with('category')
-                ->orderBy('name')
-                ->get(),
-            'lowStockCount' => DrinkStock::where('is_active', true)
-                ->whereColumn('full_bottles', '<=', 'low_stock_threshold')
-                ->count(),
+        $device = PosDevice::first() ?? PosDevice::create([
+            "device_code" => "POS-001",
+            "device_name" => "Club POS",
+            "device_type" => "club",
+            "is_active" => true,
         ]);
-    }
 
-    public function posData(Request $request)
-    {
-        $user = $request->user();
-        $session = PosSession::where('user_id', $user->id)
-            ->where('status', 'open')
-            ->with('dockets')
+        $currentSession = PosSession::where("device_id", $device->id)
+            ->where("user_id", $user->id)
+            ->where("status", "open")
             ->latest()
             ->first();
 
-        $openDockets = collect();
-        if ($session) {
-            $openDockets = $session->dockets()
-                ->where('status', 'open')
-                ->with(['items', 'items.menuItem', 'staff'])
-                ->orderBy('opened_at')
+        $openDockets = [];
+        if ($currentSession) {
+            $openDockets = PosDocket::where("session_id", $currentSession->id)
+                ->where("status", "open")
+                ->with(["items.menuItem", "payments"])
                 ->get();
         }
 
-        return response()->json([
-            'session' => $session,
-            'openDockets' => $openDockets,
+        return Inertia::render("ClubPos/Dashboard", [
+            "device" => $device,
+            "openDockets" => $openDockets,
+            "currentSession" => $currentSession,
+            "categories" => MenuCategory::where("type", "bar")
+                ->where("is_active", true)
+                ->orderBy("sort_order")
+                ->with(["subcategories" => function ($q) {
+                    $q->where("is_active", true)->orderBy("sort_order");
+                }])
+                ->get(),
+            "menuItems" => MenuItem::where("service_area", "club")
+                ->where("is_available", true)
+                ->with("category")
+                ->orderBy("name")
+                ->get(),
+            "drinkStock" => DrinkStock::with("menuItem")
+                ->orderBy("quantity")
+                ->get(),
         ]);
+    }
+
+    public function posData()
+    {
+        return response()->json(["ok" => true]);
     }
 }
