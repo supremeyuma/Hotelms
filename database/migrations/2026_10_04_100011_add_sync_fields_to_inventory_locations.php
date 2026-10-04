@@ -1,1 +1,26 @@
-<?php\n\nuse Illuminate\Database\Migrations\Migration;\nuse Illuminate\Database\Schema\Blueprint;\nuse Illuminate\Support\Facades\Schema;\n\nreturn new class extends Migration\n{\n    public function up(): void\n    {\n        Schema::table('inventory_locations', function (Blueprint \) {\n            \->string('sync_hlc')->nullable();\n            \->string('sync_origin_node_id')->nullable();\n            \->softDeletesTz('sync_deleted_at')->nullable();\n            \->index(['sync_hlc']);\n        });\n    }\n\n    public function down(): void\n    {\n        Schema::table('inventory_locations', function (Blueprint \) {\n            \->dropIndex(['sync_hlc']);\n            \->dropColumn(['sync_hlc', 'sync_origin_node_id', 'sync_deleted_at']);\n        });\n    }\n};\n
+﻿<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('inventory_locations', function (Blueprint $table) {
+            $table->string('sync_hlc')->nullable();
+            $table->string('sync_origin_node_id')->nullable();
+            $table->softDeletesTz('sync_deleted_at')->nullable();
+            $table->index(['sync_hlc']);
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('inventory_locations', function (Blueprint $table) {
+            $table->dropIndex(['sync_hlc']);
+            $table->dropColumn(['sync_hlc', 'sync_origin_node_id', 'sync_deleted_at']);
+        });
+    }
+};
