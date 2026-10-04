@@ -36,7 +36,6 @@ Route::post('/payments/initialize-by-reference', [PaymentController::class, 'ini
 require __DIR__ . '/admin.php';
 require __DIR__ . '/auth.php';
 require __DIR__ . '/club.php';
-require __DIR__ . '/console.php';
 require __DIR__ . '/finance.php';
 require __DIR__ . '/hr.php';
 require __DIR__ . '/images.php';
@@ -44,3 +43,9 @@ require __DIR__ . '/public.php';
 require __DIR__ . '/roomservice.php';
 require __DIR__ . '/staff.php';
 //require __DIR__ . '/cleaning.php';
+
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [App\Http\Controllers\ProfileController::class, 'destroy'])->name('profile.destroy');
+});
