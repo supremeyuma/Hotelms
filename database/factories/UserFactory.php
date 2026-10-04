@@ -5,6 +5,7 @@ namespace Database\Factories;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Spatie\Permission\Models\Role;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\User>
@@ -30,6 +31,29 @@ class UserFactory extends Factory
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
         ];
+    }
+
+    /**
+     * Assign a role through the Spatie permission tables.
+     *
+     * Roles are relations, not a users column, so they cannot be passed
+     * through create([...]) mass assignment. The role is created on demand
+     * because roles.slug is required and tests run against a fresh database.
+     *
+     * @param  string|\Spatie\Permission\Models\Role  $role
+     */
+    public function withRole($role): static
+    {
+        return $this->afterCreating(function ($user) use ($role) {
+            $name = $role instanceof Role ? $role->name : (string) $role;
+
+            $user->assignRole(
+                Role::firstOrCreate(
+                    ['name' => $name, 'guard_name' => 'web'],
+                    ['slug' => Str::slug($name)]
+                )
+            );
+        });
     }
 
     /**
