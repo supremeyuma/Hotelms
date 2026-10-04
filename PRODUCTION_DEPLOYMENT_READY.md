@@ -1,3 +1,5 @@
+
+> **Status: not production-approved.** This document is a checklist, not an approval record. As of Phase 0 the test suite baseline was 66 failed, 65 passed (390 assertions); see docs/superpowers/plans/2026-10-04-phase-0-unblock-ground-truth.md for the corrected baseline.
 # ✅ PRODUCTION DEPLOYMENT READY
 
 ## System Verification Report
@@ -393,7 +395,7 @@ This system is cleared for production deployment with:
 **Documentation Complete**: YES ✅  
 **Quality Assured**: YES ✅  
 
-**APPROVED FOR PRODUCTION DEPLOYMENT**
+**Status: not production-approved DEPLOYMENT**
 
 ---
 
