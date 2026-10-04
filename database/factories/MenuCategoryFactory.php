@@ -18,7 +18,7 @@ class MenuCategoryFactory extends Factory
     {
         return [
             'name' => $this->faker->unique()->words(2, true),
-            'type' => $this->faker->randomElement(['food', 'beverage']),
+            'type' => $this->faker->randomElement(['kitchen', 'bar', 'both']),
             'is_active' => true,
             'sort_order' => $this->faker->numberBetween(0, 50),
             'prep_time_minutes' => $this->faker->numberBetween(5, 45),
