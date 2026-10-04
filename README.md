@@ -8,7 +8,7 @@ A comprehensive, full-stack hotel operations platform designed to streamline boo
 
 **HotelMS** is a complete hotel operations system that automates and integrates every aspect of hotel management—from guest reservations and room bookings to staff task management, room service ordering, and administrative dashboards. The platform provides role-based access for guests, staff, managers, and administrators.
 
-**Key Achievement**: Successfully implemented a **multi-payment gateway integration** (Flutterwave, Stripe, PayPal) with automated reconciliation, tax calculations, and comprehensive audit logging—demonstrating advanced e-commerce and financial systems integration.
+**Key Achievement**: Successfully implemented a **multi-payment gateway integration** (Flutterwave and Paystack) with automated reconciliation, tax calculations, and comprehensive audit logging—demonstrating advanced e-commerce and financial systems integration.
 
 ---
 
@@ -27,7 +27,7 @@ A comprehensive, full-stack hotel operations platform designed to streamline boo
 - **Service Ratings**: Guest feedback collection for service improvements
 
 ### Payment Systems (Multi-Gateway)
-- **Integrated Payment Processing**: Flutterwave, Stripe, and PayPal support
+- **Integrated Payment Processing**: Flutterwave and Paystack support
 - **Automated Reconciliation**: Transaction verification and booking status updates
 - **Tax Calculations**: Automated tax computation on bookings and orders
 - **Payment Auditing**: Complete transaction history with audit trails
@@ -44,13 +44,13 @@ A comprehensive, full-stack hotel operations platform designed to streamline boo
 - **Staff Management**: Team organization, role assignments, performance tracking
 - **Inventory Control**: Stock tracking, usage monitoring, automated reordering
 - **Reports & Analytics**: Comprehensive reporting with export capabilities
-- **System Settings**: Multi-tenant configuration and customization
+- **System Settings**: Site-wide configuration and customization
 
 ### Advanced Features
 - **Email Verification**: Automated email confirmation workflows
 - **Role-Based Access Control (RBAC)**: Guest, Staff, Manager, and Admin roles
 - **Audit Logging**: Complete system activity tracking
-- **RESTful APIs**: JSON endpoints for mobile and third-party integrations
+- **Web routes**: Organized modular route files (public, guest, staff, admin).
 - **Database Migrations**: Version-controlled schema management
 
 ---
@@ -62,7 +62,7 @@ A comprehensive, full-stack hotel operations platform designed to streamline boo
 |---|---|---|
 | **Laravel Framework** | 12.x | Core web framework with MVC architecture |
 | **PHP** | 8.2+ | Server-side language with strict typing |
-| **SQLite** | Latest | Development database; configurable for production |
+| **SQLite** | Latest | SQLite for tests and local development; MySQL/MariaDB in production; Postgres targeted for LAN/server/cloud |
 | **Eloquent ORM** | Built-in | Database abstraction and relational models |
 | **Laravel Queue** | Built-in | Background job processing |
 
@@ -70,7 +70,7 @@ A comprehensive, full-stack hotel operations platform designed to streamline boo
 | Technology | Version | Purpose |
 |---|---|---|
 | **Vue.js** | 3.x | Reactive component framework |
-| **Inertia.js** | Latest | Server-driven Vue SSR without page reloads |
+| **Inertia.js** | Latest | Server-driven Vue navigation without page reloads |
 | **Tailwind CSS** | 4.x | Utility-first CSS styling |
 | **Vite** | Latest | Lightning-fast module bundler and dev server |
 
@@ -102,7 +102,7 @@ Services (Business Logic)
     ↓
 Models (Data Access / Eloquent)
     ↓
-Database (SQLite/Production DB)
+Database (MySQL / Postgres / SQLite)
 ```
 
 ### Key Design Decisions
@@ -126,16 +126,11 @@ Database (SQLite/Production DB)
 
 **Multi-Gateway Payment Integration**
 - Abstracted payment processor interface
-- Support for Flutterwave, Stripe, PayPal
+- Support for Flutterwave and Paystack
 - Centralized reconciliation logic
 - Automatic tax calculation
 - Comprehensive audit trail
 
-**RESTful API Architecture**
-- JSON endpoints for mobile and integrations
-- Consistent error handling
-- Resource-based routing
-- API versioning ready
 
 ### Code Organization
 
@@ -143,7 +138,7 @@ Database (SQLite/Production DB)
 |---|---|
 | `app/Models/` | Eloquent models (User, Room, Booking, Order, etc.) |
 | `app/Services/` | Business logic (BookingService, PaymentService, etc.) |
-| `app/Http/Controllers/` | HTTP endpoint handlers (public, staff, admin, API) |
+| `app/Http/Controllers/` | HTTP endpoint handlers (public, guest, staff, admin) |
 | `app/Policies/` | Authorization rules (RoomPolicy, BookingPolicy, etc.) |
 | `app/Providers/` | Service provider registration and bootstrapping |
 | `database/migrations/` | Timestamped schema migrations |
@@ -159,7 +154,7 @@ Database (SQLite/Production DB)
 - PHP 8.2+
 - Composer
 - Node.js & npm
-- SQLite (built-in)
+- SQLite for local development and tests
 
 ### Setup
 
@@ -211,7 +206,7 @@ Comprehensive test coverage with PHPUnit 11.5+:
 composer run test
 
 # Run specific test file
-php artisan test tests/Feature/BookingTest.php
+php artisan test tests/Feature/ExampleTest.php
 
 # Run with coverage report
 php artisan test --coverage
@@ -266,7 +261,7 @@ php artisan test tests/Unit/
 
 ### Payment Processing Flow
 1. Guest initiates booking payment
-2. System routes to selected payment gateway (Flutterwave, Stripe, PayPal)
+2. System routes to selected payment gateway (Flutterwave and Paystack)
 3. Payment processor returns transaction result
 4. Automated reconciliation with booking status update
 5. Tax calculation applied
@@ -366,7 +361,7 @@ hotelms/
 This project demonstrates:
 - **Full-Stack Development**: Backend + frontend integration
 - **Database Design**: Normalized schema with relationships
-- **API Design**: RESTful endpoints with consistent patterns
+- **API Design**: Payment gateway webhooks only (no general-purpose JSON API)
 - **Testing Practices**: Feature and unit tests with coverage
 - **Security**: Authentication, authorization, and data protection
 - **Payment Integration**: Multi-gateway processing with reconciliation
@@ -378,7 +373,7 @@ This project demonstrates:
 
 ## 📄 License
 
-This project is open-source software. Check the LICENSE file for details.
+This project is not distributed under an open-source license at this time. All rights reserved unless and until a LICENSE file is added.
 
 ---
 
@@ -391,7 +386,7 @@ HotelMS represents a complete, production-ready hotel management system built wi
 - Role-based access control with fine-grained permissions
 - Real-time order tracking across departments
 - Comprehensive audit logging for compliance
-- 100% test coverage with PHPUnit
-- Zero-downtime database migrations
+- Test coverage varies; see php artisan test for current baseline.
+- Zero-downtime migrations not guaranteed; migrations run as needed.
 
-Perfect for hotels, hospitality chains, or booking platforms requiring a robust, extensible management system.
+Built for single-property hotel operations with modular features for staff workflows.

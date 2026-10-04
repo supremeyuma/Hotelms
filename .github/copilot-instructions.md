@@ -4,10 +4,10 @@
 Hotel Management System (HotelMS) is a Laravel 12 + Inertia.js + Vue 3 web application using:
 - **Backend**: Laravel Framework (^12.0), PHP ^8.2
 - **Frontend**: Inertia.js + Vue 3 + Vite + Tailwind CSS v4
-- **Database**: SQLite (development), configurable via `config/database.php`
+- **Database**: MySQL/MariaDB in production, SQLite for tests and local development, Postgres targeted for the LAN server and cloud. `config/database.php` defines sqlite, mysql, mariadb, pgsql and sqlsrv.
 - **Testing**: PHPUnit 11.5+ with Feature and Unit test suites
 - **Build System**: Composer + npm with concurrent dev server
-- **Routing**: Multi-layer routes (public, staff, admin, API) with role-based middleware
+- **Routing**: Multi-layer routes (public, guest, staff, admin) plus a payment webhook file with role-based middleware
 
 **Key Purpose**: Complete hotel operations system with room bookings, guest management, room service ordering, staff workflows, inventory, maintenance, and comprehensive admin dashboards
 
@@ -19,17 +19,17 @@ Hotel Management System (HotelMS) is a Laravel 12 + Inertia.js + Vue 3 web appli
 - `app/Http/Controllers/Admin/` - Admin module (RoomController, StaffController, InventoryController, ReportController, etc.)
 - `app/Http/Controllers/Staff/` - Staff portal (StaffDashboardController, StaffActionController, StaffOrderController)
 - `app/Http/Controllers/Auth/` - Authentication (Breeze-generated)
-- `app/Http/Controllers/Api/` - API endpoints (RoomApiController, BookingApiController)
+
 - `app/Services/` - Business logic (BookingService, OrderService, InventoryService, AuditLoggerService, etc.)
 - `app/Policies/` - Authorization policies (RoomPolicy, BookingPolicy, StaffPolicy, etc.)
 - `app/Providers/` - Service providers for dependency injection
-- `database/migrations/` - Schema (timestamped format, not numbered)
+- `database/migrations/` - Schema (timestamped migrations (e.g. 2026_04_12_000001_create_*))
 - `database/seeders/` - Database seed data
 - `resources/js/Pages/` - Vue 3 pages for Inertia.js (Admin/, Staff/, Public/)
 - `resources/css/` - Tailwind CSS (app.css)
 - `routes/web.php` - Primary web routes (public, room service, staff, admin, orders)
 - `routes/auth.php` - Authentication routes (login, register, password reset)
-- `routes/api.php` - API routes (JSON endpoints)
+- `routes/api.php` - Payment gateway webhooks (Flutterwave, Paystack)
 - `tests/Feature/` & `tests/Unit/` - Test files
 
 ### Service Registration
@@ -93,7 +93,7 @@ php artisan test --coverage
 ### Route File Organization
 - `routes/web.php` - Main application routes (public, room service, staff, admin, orders)
 - `routes/auth.php` - Authentication flows (login, register, password reset)
-- `routes/api.php` - API endpoints for mobile/integrations
+- `routes/api.php` - Payment gateway webhooks (Flutterwave, Paystack)
 
 ### Key Route Groups & Middleware
 ```php
@@ -136,12 +136,12 @@ protected function casts(): array {
 ```
 
 ### Database Migrations
-- Use **named migrations** (not timestamps): `0001_01_01_000000_create_users_table.php`
+- Use **timestamped** migrations: `2026_04_12_000001_create_reporting_events_table.php`
 - Return migration class as anonymous: `return new class extends Migration { ... }`
 - Use `Schema::create()` for new tables, always define up/down methods
 
 ### Routing
-- Web routes in `routes/web.php` (no API routes currently)
+- Web routes in `routes/web.php` � there is no general-purpose JSON API; routes/api.php contains only payment gateway webhooks
 - Use `Route::get()`, `Route::post()`, etc. with closures or controllers
 - Example: `Route::get('/', function () { return view('welcome'); });`
 
@@ -205,10 +205,10 @@ protected function casts(): array {
 
 ### Queue System
 - Jobs processed via `php artisan queue:listen` during dev
-- Configure queue driver in `config/queue.php` (default: sync for testing)
+- Configure queue driver in `config/queue.php` (see .env.example)
 
 ### Mail & Notifications
-- Configure in `config/mail.php` (array driver for testing)
+- Configure in `config/mail.php` (see .env.example)
 - Use `Notification` facade or model's `notify()` method
 
 ## Key Dependencies
@@ -228,4 +228,4 @@ protected function casts(): array {
 5. Use `php artisan pail` to stream logs in real-time
 
 ---
-**Last Updated**: December 2025 | Laravel 12 | PHP 8.2
+**Last Updated: October 2026 | Laravel 12 | PHP 8.2
