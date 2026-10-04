@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -11,6 +12,8 @@ return new class extends Migration
      */
     public function up(): void
     {
+        $driver = DB::getDriverName();
+
         Schema::create('reporting_events', function (Blueprint $table) {
             $table->id();
             $table->timestamp('occurred_at')->index();
@@ -30,9 +33,17 @@ return new class extends Migration
             $table->string('currency', 3)->nullable()->default('USD');
             $table->json('meta')->nullable(); // additional context
             $table->timestamps();
-
-            $table->fullText(['event_type', 'domain', 'department']);
         });
+
+        // Laravel's schema builder cannot create a fulltext index on SQLite.
+        // No query uses MATCH, so nothing depends on it there. Real SQLite
+        // fulltext needs an fts5 virtual table plus sync triggers, which is a
+        // separate decision and a separate migration - tracked in the spec.
+        if ($driver !== 'sqlite') {
+            Schema::table('reporting_events', function (Blueprint $table) {
+                $table->fullText(['event_type', 'domain', 'department']);
+            });
+        }
     }
 
     /**
