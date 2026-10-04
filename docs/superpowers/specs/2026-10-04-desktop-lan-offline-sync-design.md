@@ -33,6 +33,8 @@ Verified position as of this document:
 | Synchronization | Absent. No change log, no outbox, no version column, no cursor. |
 | Cloud synchronization | Absent. Only empty AWS placeholders in `.env.example:59-63`. |
 | API surface for clients | `routes/api.php` contains two payment webhook endpoints only. |
+| Test suite | Red at baseline: 52 failed, 1 passed, 78 pending. |
+| SQLite schema build | **Fails.** Migration 120 of 144 aborts, so 24 migrations never run. |
 | Club POS | Backend substantially real — schema, `ClubPosService`, `DrinkStockService`, five controllers, 16 routes. Frontend is a non-functional scaffold. Zero tests. |
 | Inventory | Mature and ledger-based — `InventoryService`, immutable `InventoryMovement`, unique `(item, location)`, feature tests present. |
 
@@ -49,7 +51,21 @@ Verified position as of this document:
 
 An always-on LAN server holding authoritative data is incompatible with that specification. Superseding it is an explicit decision recorded in this document, not an implementation detail.
 
-### 2.2 Defects that block POS
+### 2.2 SQLite cannot build the schema — and terminals depend on it
+
+`migrate:fresh` on SQLite aborts at migration 120 of 144, `2026_04_12_000001_create_reporting_events_table.php`, because Laravel's schema builder throws `This database driver does not support fulltext index creation` for the `fullText` call at line 34. No `fts5` or virtual-table handling exists anywhere in `database/migrations/`.
+
+The 24 migrations that consequently never run on SQLite are all 12 reporting tables (`reporting_events` through `reporting_metric_definitions`), the `jobs` and `failed_jobs` tables, the kitchen menu items table, **and all 9 Club POS tables** (`pos_devices` through `reporting_pos_facts`).
+
+Consequences:
+
+- The test suite is red at baseline — 52 failed, 1 passed, 78 pending — because tests run against in-memory SQLite (`phpunit.xml:26-27`, enforced at `tests/TestCase.php:26-28`) and tables such as `events` do not exist.
+- Club POS has no tables and therefore no tests. Its zero test coverage is a consequence, not an oversight.
+- **This directly blocks the design.** Decision 4 puts SQLite on every POS terminal and decision 5 makes terminals run migrations against their own SQLite file. A terminal cannot be built until this is fixed.
+
+`fullText` appears in exactly one migration. This is a bounded fix, though more failures may surface among the 24 migrations that have never been exercised on SQLite.
+
+### 2.3 Defects that block POS
 
 | Location | Defect |
 |---|---|
@@ -268,12 +284,12 @@ Synchronization is purely additive — new columns and new tables, with no chang
 
 ## 11. Database and Migration Strategy
 
-The 128 existing migrations are MySQL-hardened; `MIGRATION_RESOLUTION.md` records duplicate columns, duplicate indexes and the 64-character identifier limit. Both engines are already first-class in `config/database.php:34,46`. The current state is contradictory and is resolved in Phase 0: `README.md:65` claims SQLite, while `.env:23`, `.env.testing:18` and `MIGRATION_RESOLUTION.md` prove MySQL, and `phpunit.xml:26-27` runs tests on in-memory SQLite with `tests/TestCase.php:26-28` enforcing it.
+The 144 existing migrations are MySQL-hardened; `MIGRATION_RESOLUTION.md` records duplicate columns, duplicate indexes and the 64-character identifier limit. Both engines are already first-class in `config/database.php:34,46`. The current state is contradictory and is resolved in Phase 0: `README.md:65` claims SQLite, while `.env:23`, `.env.testing:18` and `MIGRATION_RESOLUTION.md` prove MySQL, and `phpunit.xml:26-27` runs tests on in-memory SQLite with `tests/TestCase.php:26-28` enforcing it.
 
 Rules:
 
 1. **Never rewrite an applied migration's effect.** Only make driver-specific code paths conditional, following the driver-aware pattern already established in `database/migrations/2026_04_10_160000_harden_inventory_ledger_tables.php`.
-2. Run all 128 migrations fresh against Postgres and fix every failure.
+2. Run all 144 migrations fresh against Postgres and fix every failure.
 3. Add a **schema parity test** comparing a fresh Postgres schema against MySQL — columns, types, nullability, indexes, foreign keys — as a permanent gate. Migrating without erroring is not evidence the schemas match.
 4. All `sync_*` columns arrive via new migrations, never by editing existing files.
 
@@ -283,13 +299,14 @@ Each phase ships something usable. The dependency chain is not negotiable: make 
 
 ### Phase 0 — Unblock the ground truth
 
-Nothing else can be trusted until this is done.
+Nothing else can be trusted until this is done. Ordered by dependency, not by convenience.
 
-- Correct documentation that actively misleads: `README.md:47,53,65,134-138` and `.github/copilot-instructions.md:7,22` describe a REST API and an `app/Http/Controllers/Api/` directory that do not exist, and disagree about the database driver.
-- Remove `app/Policies/GuestRequestPoicy.php` and `app/Services/BookingAccontingService.php` — both zero bytes, both misspelled.
-- Remove `database/migrations/cmb.py`, a 424-line Python script committed inside the migrations directory.
-- Record the decision superseding `technical layout.txt.txt:15,40-47,54-59`.
-- Resolve the split scheduling brain. `app/Console/Kernel.php:22-54` holds the minutely `queue:work --once` and 03:30 reporting aggregation, but `bootstrap/app.php:9-13` wires only `web:`, `api:`, `commands:` and `health:`, so that class is dead. The live schedule is `routes/console.php`. Port the Kernel entries into `routes/console.php` and delete the dead class — the synchronization worker added in Phase 4 needs a real home, and this must be settled before it lands.
+- **0a — Make SQLite build the schema.** Fix the `fullText` blocker in `2026_04_12_000001_create_reporting_events_table.php` in a driver-conditional way, then iterate until `migrate:fresh` completes all 144 migrations on SQLite. On SQLite use an `fts5` virtual table rather than an index; on MySQL and Postgres keep the existing index. Do not assume this is the only failure — 24 migrations have never run on SQLite, so expect to find more. This is first because terminals run migrations against SQLite and the test suite depends on it.
+- **0b — Restore a green test suite.** With 0a done, drive the suite from 52 failed to zero, or failing that, to an explicitly documented and justified set of skips. Without a trustworthy suite, no later phase can prove it did not break anything.
+- **0c — Remove dead files.** `app/Policies/GuestRequestPoicy.php` and `app/Services/BookingAccontingService.php` (both zero bytes, both misspelled, both unreferenced), and `database/migrations/cmb.py`, a 328-line Python development script committed inside the migrations directory. Note that no correctly-spelled `GuestRequestPolicy` exists either, so guest-request authorization is genuinely absent and must be specified rather than merely renamed.
+- **0d — Delete the dead console kernel.** `app/Console/Kernel.php` is never registered by `bootstrap/app.php:9-13`. Verified entry-by-entry, `routes/console.php` is a strict superset — all sixteen identical entries plus the `inspire` command — so nothing needs porting. Delete the class. Correct the four documents that still send developers there to add schedule entries, where such edits would be silently ignored: `REPORTING_PHASE_2_SUMMARY.md:184`, `REPORTING_IMPLEMENTATION.md:226`, `REPORTING_COMPLETE.md:104`, `REPORTING_PHASE_3_COMPLETE.md:44`.
+- **0e — Correct documentation that actively misleads.** See §12.2 for the enumerated false claims.
+- **0f — Record the superseded architecture decision**, so the constraint in `technical layout.txt.txt:15,40-47,54-59` has a visible replacement rather than being quietly ignored.
 
 ### Phase 1 — Postgres portability
 
@@ -303,7 +320,7 @@ Tested as a library against two SQLite databases simulating two disconnected nod
 
 ### Phase 3 — Repair Club POS
 
-A prerequisite, not a side quest. Fix the defects in §2.2 and ship a working POS on the web, with the tests it currently lacks.
+A prerequisite, not a side quest. Fix the defects in §2.3 and ship a working POS on the web, with the tests it currently lacks. This phase is only possible once Phase 0 has made the POS tables exist on SQLite.
 
 ### Phase 4 — Runtime and sync node role
 
@@ -337,6 +354,46 @@ This design is not one implementation plan. It is eight phases spanning database
 
 Phases 0 to 3 are worth planning together as one body of work, because none of them ship user-visible value alone and each is small. Phases 4 through 8 each need their own plan.
 
+### 12.2 Enumerated documentation defects for Phase 0e
+
+Every item below was verified against the code, not inferred.
+
+**`README.md` — actively false:**
+
+| Line | Claim | Reality |
+|---|---|---|
+| 11, 30 | "Flutterwave, Stripe, and PayPal" | Flutterwave and Paystack only. Stripe and PayPal appear solely as transitive entries in `composer.lock`. |
+| 47 | "System Settings: Multi-tenant configuration" | No tenancy exists anywhere — no `users.property_id`, no tenant middleware, no scoped roles. `README.md:47` is aspirational. |
+| 53 | "RESTful APIs: JSON endpoints for mobile and third-party integrations" | `routes/api.php` holds two payment webhook POSTs. |
+| 65 | "SQLite — Development database" | Production is MySQL (`.env:23`), and this design moves it to Postgres. |
+| 73 | "Inertia.js — Server-driven Vue SSR" | Inertia is not SSR. |
+| 105 | "Database (SQLite/Production DB)" | Same driver confusion. |
+| 134-138 | "RESTful API Architecture" section | Entirely false. |
+| 146 | "`app/Http/Controllers/` — handlers (public, staff, admin, API)" | No `Api/` directory exists. |
+| 162 | "SQLite (built-in)" listed as a prerequisite | SQLite cannot currently build the schema (§2.2). |
+| 214 | `php artisan test tests/Feature/BookingTest.php` | That file does not exist. |
+| 350 | "`api.php` — JSON API routes" | Two webhooks. |
+| 369 | "API Design: RESTful endpoints with consistent patterns" | False. |
+| 381 | "open-source software. Check the LICENSE file" | **No LICENSE file exists.** Publishing posture needs a decision, not a correction. |
+| 394 | "100% test coverage with PHPUnit" | Suite is red at baseline: 52 failed, 1 passed, 78 pending. |
+| 395 | "Zero-downtime database migrations" | Not implemented. |
+| 397 | "Perfect for hotels, hospitality chains" | Contradicts the single-property design decision. |
+
+**`.github/copilot-instructions.md` — false and internally contradictory:**
+
+| Line | Claim | Reality |
+|---|---|---|
+| 7 | "Database: SQLite (development)" | Omits MySQL production and the Postgres target. |
+| 10, 32, 96 | Routes include an API layer | Two webhooks only. |
+| 22 | "`app/Http/Controllers/Api/` — RoomApiController, BookingApiController" | **The directory does not exist.** |
+| 139 | "Use named migrations (not timestamps)" | All 144 are timestamped. Contradicts its own line 26. |
+| 144 | "Web routes in `routes/web.php` (no API routes currently)" | Contradicts its own lines 10, 32 and 96. |
+| 208 | "queue driver default: sync for testing" | `.env` sets `QUEUE_CONNECTION=redis`. |
+| 211 | "`config/mail.php` (array driver for testing)" | `.env.example` sets `MAIL_MAILER=log`. |
+| 231 | "Last Updated: December 2025" | Stale. |
+
+**Documents claiming completion of work that is not complete:** `PRODUCTION_DEPLOYMENT_READY.md` ("APPROVED FOR PRODUCTION"), `REPORTING_COMPLETE.md` ("fully implemented, tested"), `DEPLOYMENT_READINESS.md:318-319` ("Approved By: [Manager Name Here]"). These mislead readers about production readiness and should be corrected or withdrawn.
+
 ## 13. Testing Strategy
 
 Risk is concentrated in merge correctness, so that receives the attention.
@@ -357,6 +414,8 @@ Risk is concentrated in merge correctness, so that receives the attention.
 **Embedded Postgres** on the server role is a dependency chosen for convenience. If it proves fragile on a target OS the fallback reintroduces an installer, which requirement 3 exists to avoid.
 
 **Clock skew.** The HLC is what makes cross-node comparison safe, but it is subtle code written once and tested hard. Getting it subtly wrong produces silent data loss rather than an exception.
+
+**SQLite portability was assumed, not verified.** Every terminal in this design runs migrations against its own SQLite file, and 24 migrations have never successfully run on SQLite (§2.2). The count of further failures behind that one is unknown until Phase 0a works through them. If they prove deep rather than shallow, the terminal sizing and the Phase 6 estimate both move.
 
 **The 36-hour rule is a business change.** It must reach front-desk staff before it ships, or staff discover it the hard way.
 
