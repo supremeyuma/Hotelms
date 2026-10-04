@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 
+use App\Sync\Syncable;
+
 class PosDocket extends Model
 {
     use HasUlids;

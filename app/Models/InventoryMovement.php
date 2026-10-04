@@ -5,6 +5,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+use App\Sync\Syncable;
+
 class InventoryMovement extends Model
 {
     public const TYPE_IN = 'in';
