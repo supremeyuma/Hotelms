@@ -22,12 +22,12 @@ class AuditLoggerService
      *
      * @param string $action Short action key, e.g. 'booking_created'
      * @param Model|string $model Either model instance or model name
-     * @param int|null $modelId Model primary key id
+     * @param int|string|null $modelId Model primary key id (string for UUID-keyed models)
      * @param array $metadata Arbitrary metadata (before/after etc.)
      * @param Request|null $request Optional request to capture IP/user agent
      * @return AuditLog
      */
-    public function log(string $action, $model, ?int $modelId = null, array $metadata = [], ?Request $request = null)
+    public function log(string $action, $model, int|string|null $modelId = null, array $metadata = [], ?Request $request = null)
     {
         $user = Auth::user();
 

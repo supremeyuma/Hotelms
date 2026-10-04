@@ -64,12 +64,12 @@ class PosDocket extends Model
 
     public function items()
     {
-        return $this->hasMany(PosDocketItem::class);
+        return $this->hasMany(PosDocketItem::class, 'docket_id');
     }
 
     public function payments()
     {
-        return $this->hasMany(PosDocketPayment::class);
+        return $this->hasMany(PosDocketPayment::class, 'docket_id');
     }
 
     public function booking()

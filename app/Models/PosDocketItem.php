@@ -28,7 +28,7 @@ class PosDocketItem extends Model
 
     public function docket()
     {
-        return $this->belongsTo(PosDocket::class);
+        return $this->belongsTo(PosDocket::class, 'docket_id');
     }
 
     public function menuItem()
