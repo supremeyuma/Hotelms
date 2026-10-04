@@ -5,6 +5,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+use App\Sync\Syncable;
+
 class InventoryLocation extends Model
 {
     public const TYPE_MAIN_STORE = 'main_store';

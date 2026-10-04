@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Sync\Syncable;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Carbon\Carbon;
@@ -11,7 +12,7 @@ use App\Models\RoomAccessToken;
 
 class Booking extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, Syncable, SoftDeletes;
 
     protected $fillable = [
         'property_id',

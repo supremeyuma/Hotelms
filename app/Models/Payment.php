@@ -5,9 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+use App\Sync\Syncable;
+
 class Payment extends Model
 {
-    use HasFactory;
+    use HasFactory, Syncable;
 
     protected $fillable = [
         'booking_id',
