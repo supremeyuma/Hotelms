@@ -41,7 +41,7 @@ class RoomBillingAccountingTest extends TestCase
             'method' => 'card',
             'reference' => 'ROOM-PAY-1',
             'transaction_ref' => 'ROOM-PAY-1',
-            'status' => 'completed',
+            'status' => 'successful',
             'provider' => 'manual',
             'payment_type' => 'room_bill',
             'paid_at' => now(),
@@ -95,7 +95,7 @@ class RoomBillingAccountingTest extends TestCase
         $this->assertDatabaseHas('payments', [
             'id' => $payment->id,
             'reference' => 'BILL-REF-1',
-            'status' => 'completed',
+            'status' => 'successful',
         ]);
     }
 

@@ -103,7 +103,7 @@ class PaymentGatewayFlowTest extends TestCase
             ->assertJsonPath('public_key', 'FLWPUBK_TEST');
     }
 
-    public function test_flutterwave_webhook_marks_existing_payment_as_completed(): void
+    public function test_flutterwave_webhook_marks_existing_payment_as_successful(): void
     {
         $payment = Payment::create([
             'method' => 'flutterwave',
@@ -136,13 +136,13 @@ class PaymentGatewayFlowTest extends TestCase
 
         $payment->refresh();
 
-        $this->assertSame('completed', $payment->status);
+        $this->assertSame('successful', $payment->status);
         $this->assertSame('flw_txn_1001', $payment->flutterwave_tx_id);
         $this->assertSame('successful', $payment->flutterwave_tx_status);
         $this->assertNotNull($payment->verified_at);
     }
 
-    public function test_paystack_webhook_marks_existing_payment_as_completed(): void
+    public function test_paystack_webhook_marks_existing_payment_as_successful(): void
     {
         $payment = Payment::create([
             'method' => 'paystack',
@@ -177,7 +177,7 @@ class PaymentGatewayFlowTest extends TestCase
 
         $payment->refresh();
 
-        $this->assertSame('completed', $payment->status);
+        $this->assertSame('successful', $payment->status);
         $this->assertSame('90101', (string) $payment->external_reference);
         $this->assertNotNull($payment->verified_at);
     }
@@ -218,7 +218,7 @@ class PaymentGatewayFlowTest extends TestCase
         $this->assertDatabaseHas('payments', [
             'reference' => $booking->booking_code,
             'provider' => 'paystack',
-            'status' => 'completed',
+            'status' => 'successful',
         ]);
     }
 
@@ -254,7 +254,7 @@ class PaymentGatewayFlowTest extends TestCase
             'amount' => 50000,
             'amount_paid' => 50000,
             'currency' => 'NGN',
-            'status' => 'completed',
+            'status' => 'successful',
             'payment_type' => 'booking',
             'paid_at' => now(),
         ]);
