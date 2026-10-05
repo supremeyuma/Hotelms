@@ -8,10 +8,13 @@ use App\Models\RoomType;
 use App\Models\User;
 use App\Models\Payment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\FakesPaymentGatewayHttp;
 use Tests\TestCase;
 
 class BookingPaymentTest extends TestCase
 {
+    use FakesPaymentGatewayHttp;
+
     use RefreshDatabase;
 
     protected User $guest;
@@ -22,6 +25,7 @@ class BookingPaymentTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->fakePaymentGatewayHttp();
 
         $this->roomType = RoomType::factory()->create([
             'title' => 'Deluxe Suite',

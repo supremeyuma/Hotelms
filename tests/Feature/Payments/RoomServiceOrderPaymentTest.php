@@ -65,7 +65,7 @@ class RoomServiceOrderPaymentTest extends TestCase
         $response = $this->actingAs($this->guest)
             ->postJson('/order', [
                 'room_id' => $this->room->id,
-                'department' => 'kitchen',
+                'service_area' => 'kitchen',
                 'items' => [
                     [
                         'name' => $this->menuItem->name,
@@ -92,7 +92,7 @@ class RoomServiceOrderPaymentTest extends TestCase
         $response = $this->actingAs($this->guest)
             ->postJson('/order', [
                 'room_id' => $this->room->id,
-                'department' => 'kitchen',
+                'service_area' => 'kitchen',
                 'items' => [
                     [
                         'name' => $this->menuItem->name,
@@ -117,9 +117,10 @@ class RoomServiceOrderPaymentTest extends TestCase
     public function test_order_total_calculation(): void
     {
         $order = Order::create([
+            'order_code' => 'ORD-' . uniqid(),
             'room_id' => $this->room->id,
             'user_id' => $this->guest->id,
-            'department' => 'kitchen',
+            'service_area' => 'kitchen',
             'status' => OrderStatus::PENDING,
             'payment_method' => 'postpaid',
             'payment_status' => 'not_required',
@@ -157,9 +158,10 @@ class RoomServiceOrderPaymentTest extends TestCase
     public function test_order_payment_callback_success(): void
     {
         $order = Order::create([
+            'order_code' => 'ORD-' . uniqid(),
             'room_id' => $this->room->id,
             'user_id' => $this->guest->id,
-            'department' => 'kitchen',
+            'service_area' => 'kitchen',
             'status' => OrderStatus::PENDING,
             'payment_method' => 'online',
             'payment_status' => 'pending',
@@ -212,9 +214,10 @@ class RoomServiceOrderPaymentTest extends TestCase
     public function test_accounting_entry_on_order_payment(): void
     {
         $order = Order::create([
+            'order_code' => 'ORD-' . uniqid(),
             'room_id' => $this->room->id,
             'user_id' => $this->guest->id,
-            'department' => 'kitchen',
+            'service_area' => 'kitchen',
             'status' => OrderStatus::PENDING,
             'payment_method' => 'online',
             'payment_status' => 'pending',
@@ -246,9 +249,10 @@ class RoomServiceOrderPaymentTest extends TestCase
     public function test_order_payment_reference_tracking(): void
     {
         $order = Order::create([
+            'order_code' => 'ORD-' . uniqid(),
             'room_id' => $this->room->id,
             'user_id' => $this->guest->id,
-            'department' => 'kitchen',
+            'service_area' => 'kitchen',
             'status' => OrderStatus::PENDING,
             'payment_method' => 'online',
             'payment_status' => 'pending',
@@ -269,9 +273,10 @@ class RoomServiceOrderPaymentTest extends TestCase
     {
         // Create postpaid order
         $postpaidOrder = Order::create([
+            'order_code' => 'ORD-' . uniqid(),
             'room_id' => $this->room->id,
             'user_id' => $this->guest->id,
-            'department' => 'kitchen',
+            'service_area' => 'kitchen',
             'status' => OrderStatus::PENDING,
             'payment_method' => 'postpaid',
             'payment_status' => 'not_required',
@@ -280,9 +285,10 @@ class RoomServiceOrderPaymentTest extends TestCase
 
         // Create online payment order
         $onlineOrder = Order::create([
+            'order_code' => 'ORD-' . uniqid(),
             'room_id' => $this->room->id,
             'user_id' => $this->guest->id,
-            'department' => 'laundry',
+            'service_area' => 'kitchen',
             'status' => OrderStatus::PENDING,
             'payment_method' => 'online',
             'payment_status' => 'pending',
@@ -309,9 +315,10 @@ class RoomServiceOrderPaymentTest extends TestCase
     public function test_order_status_progression_with_payment(): void
     {
         $order = Order::create([
+            'order_code' => 'ORD-' . uniqid(),
             'room_id' => $this->room->id,
             'user_id' => $this->guest->id,
-            'department' => 'kitchen',
+            'service_area' => 'kitchen',
             'status' => OrderStatus::PENDING,
             'payment_method' => 'online',
             'payment_status' => 'pending',

@@ -7,10 +7,13 @@ use App\Models\Event;
 use App\Models\User;
 use App\Models\Payment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\FakesPaymentGatewayHttp;
 use Tests\TestCase;
 
 class EventTicketPaymentTest extends TestCase
 {
+    use FakesPaymentGatewayHttp;
+
     use RefreshDatabase;
 
     protected User $user;
@@ -20,6 +23,7 @@ class EventTicketPaymentTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->fakePaymentGatewayHttp();
         
         $this->user = User::factory()->withRole('guest')->create([
             'email' => 'guest@example.com']);

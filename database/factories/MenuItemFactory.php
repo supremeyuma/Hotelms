@@ -24,7 +24,7 @@ class MenuItemFactory extends Factory
             'prep_time_minutes' => $this->faker->numberBetween(5, 45),
             'is_available' => true,
             'is_active' => true,
-            'service_area' => $this->faker->randomElement(['restaurant', 'bar', 'room_service', 'pool']),
+            'service_area' => $this->faker->randomElement(['kitchen', 'bar']),
         ];
     }
 }

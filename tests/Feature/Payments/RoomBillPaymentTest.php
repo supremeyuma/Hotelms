@@ -10,10 +10,13 @@ use App\Models\Payment;
 use App\Models\RoomAccessToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Tests\Concerns\FakesPaymentGatewayHttp;
 use Tests\TestCase;
 
 class RoomBillPaymentTest extends TestCase
 {
+    use FakesPaymentGatewayHttp;
+
     use RefreshDatabase;
 
     protected User $guest;
@@ -26,6 +29,7 @@ class RoomBillPaymentTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->fakePaymentGatewayHttp();
 
         $this->roomType = RoomType::factory()->create([
             'title' => 'Deluxe Suite',
@@ -48,6 +52,7 @@ class RoomBillPaymentTest extends TestCase
             'room_id' => $this->room->id,
             'guest_email' => 'guest@example.com',
             'guest_name' => 'John Doe',
+            'status' => 'checked_in',
             'payment_status' => 'pending'
         ]);
 

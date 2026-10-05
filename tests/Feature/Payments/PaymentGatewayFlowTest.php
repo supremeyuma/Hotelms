@@ -12,15 +12,19 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
+use Tests\Concerns\FakesPaymentGatewayHttp;
 use Tests\TestCase;
 
 class PaymentGatewayFlowTest extends TestCase
 {
+    use FakesPaymentGatewayHttp;
+
     use RefreshDatabase;
 
     protected function setUp(): void
     {
         parent::setUp();
+        $this->fakePaymentGatewayHttp();
 
         config()->set('payment.flutterwave.public_key', 'FLWPUBK_TEST');
         config()->set('payment.flutterwave.secret_key', 'FLWSECK_TEST');
