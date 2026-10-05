@@ -250,9 +250,11 @@ protected RoomServiceService $roomService;
                 'currency' => 'NGN',
                 'status' => 'pending',
                 'payment_type' => 'room_bill',
-                'raw_response' => [
+                'meta' => [
                     'booking_id' => $booking->id,
                     'room_id' => $room->id,
+                    'guest_name' => $booking->guest_name,
+                    'room_number' => $room->room_number,
                 ],
             ]);
 

@@ -326,11 +326,13 @@ class RoomBillPaymentTest extends TestCase
         $payment = Payment::where('reference', $reference)->first();
 
         $this->assertNotNull($payment);
-        $metadata = json_decode($payment->metadata, true);
-        $this->assertArrayHasKey('booking_id', $metadata);
-        $this->assertArrayHasKey('room_id', $metadata);
-        $this->assertEquals($this->booking->id, $metadata['booking_id']);
-        $this->assertEquals($this->room->id, $metadata['room_id']);
+        // `meta` is the column name and is cast to an array on the Payment model.
+        $meta = $payment->meta;
+        $this->assertIsArray($meta);
+        $this->assertArrayHasKey('booking_id', $meta);
+        $this->assertArrayHasKey('room_id', $meta);
+        $this->assertEquals($this->booking->id, $meta['booking_id']);
+        $this->assertEquals($this->room->id, $meta['room_id']);
     }
 
     /**
