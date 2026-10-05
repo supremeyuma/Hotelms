@@ -46,7 +46,8 @@ class RoleRedirectService
             return route('staff.bar.dashboard');
         }
 
-        // Fallback (should never happen)
-        return route('login');
+        // Users without a resolvable role are sent to the canonical dashboard
+        // route, which decides what to do with them.
+        return route('dashboard');
     }
 }

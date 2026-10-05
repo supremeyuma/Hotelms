@@ -5,6 +5,7 @@ use App\Http\Controllers\PublicController;
 use App\Http\Controllers\Public\PublicEventController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\DashboardRedirectController;
 use App\Http\Controllers\PaymentController;
 
 /*
@@ -20,6 +21,12 @@ use App\Http\Controllers\PaymentController;
 
 // Order placement (public or authenticated)
 Route::post('/order', [OrderController::class, 'store'])->name('order.store');
+
+// Canonical post-authentication landing page. Resolves the signed-in user's
+// role-specific dashboard (see RoleRedirectService).
+Route::get('/dashboard', DashboardRedirectController::class)
+    ->middleware('auth')
+    ->name('dashboard');
 
 // Payment initialization and verification (multi-provider)
 Route::post('/payments/initialize', [PaymentController::class, 'initialize'])->name('payments.initialize');
