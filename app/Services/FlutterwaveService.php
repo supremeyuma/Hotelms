@@ -488,7 +488,7 @@ class FlutterwaveService
             
         if ($payment) {
             $payment->update([
-                'status' => 'completed',
+                'status' => 'successful',
                 'flutterwave_tx_id' => $paymentData['id'] ?? null,
                 'flutterwave_tx_status' => 'successful',
                 'amount_paid' => $amount,

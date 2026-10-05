@@ -339,7 +339,7 @@ class PaymentController extends Controller
                         'amount' => $booking->total_amount,
                         'amount_paid' => $booking->total_amount,
                         'currency' => 'NGN',
-                        'status' => 'completed',
+                        'status' => 'successful',
                         'payment_type' => 'booking',
                         'meta' => ['provider' => $provider, 'reference' => $reference],
                         'verified_at' => now(),
@@ -367,7 +367,7 @@ class PaymentController extends Controller
             if ($payment = $this->findPaymentByReference($reference)) {
                 $payment->update([
                     'provider' => $provider,
-                    'status' => 'completed',
+                    'status' => 'successful',
                     'verified_at' => now(),
                     'paid_at' => now(),
                 ]);

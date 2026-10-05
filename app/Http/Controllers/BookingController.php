@@ -452,7 +452,7 @@ public function payment(Booking $booking)
                     'amount' => $booking->total_amount,
                     'amount_paid' => $this->normalizeVerifiedAmount($verification['amount'] ?? $booking->total_amount, $verifiedProvider),
                     'currency' => $verification['currency'] ?? 'NGN',
-                    'status' => 'completed',
+                    'status' => 'successful',
                     'payment_type' => 'booking',
                     'transaction_ref' => $booking->booking_code,
                     'verified_at' => now(),

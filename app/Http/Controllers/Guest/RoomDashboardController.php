@@ -333,7 +333,7 @@ protected RoomServiceService $roomService;
                 $wasCompleted = in_array($payment->status, ['successful', 'completed'], true);
 
                 $payment->update([
-                    'status' => 'completed',
+                    'status' => 'successful',
                     'method' => $payment->method ?? $payment->provider,
                     'room_id' => $payment->room_id ?? $roomModel->id,
                     'amount_paid' => $payment->amount_paid ?? $payment->amount,
