@@ -338,7 +338,7 @@ class RoomBillPaymentTest extends TestCase
     /**
      * Test payment for different room numbers
      */
-    public function test_payment_for_different_rooms(): void
+    public function test_room_token_only_pays_its_own_booking(): void
     {
         $room2 = Room::factory()->create([
             'room_type_id' => $this->roomType->id,
@@ -349,18 +349,23 @@ class RoomBillPaymentTest extends TestCase
             'user_id' => $this->guest->id,
             'room_id' => $room2->id,
             'guest_email' => 'guest@example.com',
-            'guest_name' => 'Jane Doe']);
+            'guest_name' => 'Jane Doe',
+            'status' => 'checked_in',
+        ]);
 
         $token2 = RoomAccessToken::factory()->create([
             'room_id' => $room2->id,
             'booking_id' => $booking2->id
         ]);
 
+        // A room token settles only the booking it was issued for. It cannot be
+        // pointed at another room's bill, and the payment it creates stays bound
+        // to its own booking and room.
         $response = $this->postJson(
             '/guest/room/' . $token2->token . '/payment',
             [
                 'amount' => 75000,
-                'provider' => 'flutterwave'
+                'provider' => 'flutterwave',
             ],
             [
                 'HTTP_X_ROOM_TOKEN' => $token2->token
@@ -369,15 +374,47 @@ class RoomBillPaymentTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertJsonPath('amount', 75000);
-        
+
         $reference = $response->json('reference');
-        $this->assertDatabaseHas('payments', [
+
+        $payment = Payment::where('reference', $reference)->first();
+
+        $this->assertNotNull($payment);
+        $this->assertSame($booking2->id, $payment->booking_id);
+        $this->assertSame($room2->id, $payment->room_id);
+
+        $this->assertDatabaseMissing('payments', [
             'reference' => $reference,
-            'amount' => 75000,
-            'metadata' => json_encode([
-                'booking_id' => $booking2->id,
-                'room_id' => $room2->id])
+            'booking_id' => $this->booking->id,
         ]);
+    }
+
+    public function test_room_token_is_rejected_for_an_inactive_booking(): void
+    {
+        $pendingBooking = Booking::factory()->create([
+            'user_id' => $this->guest->id,
+            'room_id' => $this->room->id,
+            'guest_email' => 'guest@example.com',
+            'guest_name' => 'Jane Doe',
+            'status' => 'pending',
+        ]);
+
+        $pendingToken = RoomAccessToken::factory()->create([
+            'room_id' => $this->room->id,
+            'booking_id' => $pendingBooking->id
+        ]);
+
+        // ValidateRoomToken only grants access for active/checked_in bookings.
+        $this->postJson(
+            '/guest/room/' . $pendingToken->token . '/payment',
+            [
+                'amount' => 75000,
+                'provider' => 'flutterwave',
+            ],
+            [
+                'HTTP_X_ROOM_TOKEN' => $pendingToken->token
+            ]
+        )->assertStatus(403);
     }
 
     /**
