@@ -233,11 +233,19 @@ class BookingService
         );
 
         $totalDue = max($this->effectiveBookingAmount($booking) + $extraCharges, 0);
-        $paymentStatus = $this->resolveBookingPaymentStatus(
-            storedStatus: $booking->payment_status,
-            amountDue: $totalDue,
-            paymentsReceived: $paymentsReceived,
-        );
+
+        // markPaidAndConfirm() records a settled booking directly without a Payment
+        // row (offline/cash settlements), so an empty payment set must never
+        // downgrade an already-paid booking back to pending.
+        $storedPaymentStatus = strtolower(trim((string) $booking->payment_status));
+
+        $paymentStatus = ($booking->payments->isEmpty() && $storedPaymentStatus === 'paid')
+            ? 'paid'
+            : $this->resolveBookingPaymentStatus(
+                storedStatus: $booking->payment_status,
+                amountDue: $totalDue,
+                paymentsReceived: $paymentsReceived,
+            );
 
         $latestSuccessfulPayment = $successfulPayments->first();
         // The booking records the instrument used (Cash, Transfer, card, ...);
