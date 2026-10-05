@@ -240,8 +240,10 @@ class BookingService
         );
 
         $latestSuccessfulPayment = $successfulPayments->first();
-        $resolvedPaymentMethod = $latestSuccessfulPayment?->provider
-            ?: $latestSuccessfulPayment?->method
+        // The booking records the instrument used (Cash, Transfer, card, ...);
+        // provider is the settlement channel (manual, flutterwave, ...).
+        $resolvedPaymentMethod = $latestSuccessfulPayment?->method
+            ?: $latestSuccessfulPayment?->provider
             ?: $booking->payment_method;
 
         $updates = [];
