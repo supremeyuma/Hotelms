@@ -69,12 +69,27 @@ class User extends Authenticatable
 
     /* ---------------- Mutators ---------------- */
 
-    // Automatically hash passwords
+    /**
+     * Automatically hash passwords.
+     *
+     * The check for an existing hash keeps this idempotent: assigning an
+     * already-hashed value (factories, importers, password resets that copy
+     * the current hash) must never bcrypt a hash a second time, which would
+     * make the credential unverifiable.
+     */
     public function setPasswordAttribute($value)
     {
-        if ($value) {
-            $this->attributes['password'] = bcrypt($value);
+        if ($value === null || $value === '') {
+            return;
         }
+
+        if (password_get_info($value)['algo'] ?? null) {
+            $this->attributes['password'] = $value;
+
+            return;
+        }
+
+        $this->attributes['password'] = bcrypt($value);
     }
 
     /* ---------------- Scopes ---------------- */
