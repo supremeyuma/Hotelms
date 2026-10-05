@@ -117,10 +117,12 @@ class ReportDashboardBookingDetailTest extends TestCase
         $response->assertInertia(fn ($page) => $page
             ->component('Admin/Reports/Hub')
             ->has('bookings', 1)
-            ->where('bookings.0.booked_amount', 50000.0)
-            ->where('bookings.0.extra_charges', 0.0)
-            ->where('bookings.0.payments_received', 50000.0)
-            ->where('bookings.0.outstanding_balance', 0.0)
+            // JSON encodes whole floats without a fractional part, so these
+            // arrive as integers; Inertia's where() compares strictly.
+            ->where('bookings.0.booked_amount', 50000)
+            ->where('bookings.0.extra_charges', 0)
+            ->where('bookings.0.payments_received', 50000)
+            ->where('bookings.0.outstanding_balance', 0)
         );
     }
 }
