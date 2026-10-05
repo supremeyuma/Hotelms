@@ -239,6 +239,7 @@ protected RoomServiceService $roomService;
 
             // Create payment record in database for tracking
             $payment = Payment::create([
+                'user_id' => $booking->user_id,
                 'booking_id' => $booking->id,
                 'room_id' => $room->id,
                 'method' => $provider,

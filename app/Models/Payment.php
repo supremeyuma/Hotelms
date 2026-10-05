@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+use App\Models\User;
 use App\Sync\Syncable;
 
 class Payment extends Model
@@ -12,6 +13,7 @@ class Payment extends Model
     use HasFactory, Syncable;
 
     protected $fillable = [
+        'user_id',
         'booking_id',
         'room_id',
         'amount',
@@ -44,6 +46,11 @@ class Payment extends Model
         'verified_at' => 'datetime',
         'refunded_at' => 'datetime',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 
     public function booking()
     {

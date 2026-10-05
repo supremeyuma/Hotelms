@@ -15,6 +15,7 @@ use App\Services\PaymentProviderManager;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -608,6 +609,12 @@ class PaymentController extends Controller
 
         if ($roomId && isset($columns['room_id'])) {
             $values['room_id'] = $roomId;
+        }
+
+        $userId = Auth::id();
+
+        if ($userId && isset($columns['user_id'])) {
+            $values['user_id'] = $userId;
         }
 
         if (isset($columns['method'])) {
