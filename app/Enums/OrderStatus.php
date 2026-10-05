@@ -10,7 +10,7 @@ enum OrderStatus: string
     case DELIVERED = 'delivered';
     case COMPLETED = 'completed';
     case CANCELLED = 'cancelled';
-    case CONFIRMED = 'confirmed ';
+    case CONFIRMED = 'confirmed';
 
     public static function active(): array
     {

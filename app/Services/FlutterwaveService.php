@@ -482,13 +482,13 @@ class FlutterwaveService
         }
         
         // Update payment status in database
-        $payment = Payment::where('flutterwave_tx_ref', $reference)
-            ->orWhere('payment_reference', $reference)
-            ->first();
+        // Resolve across every reference column the schema may carry
+        // (reference / payment_reference / flutterwave_tx_ref / external_reference).
+        $payment = resolve(PaymentRecordService::class)->findByReference($reference);
             
         if ($payment) {
             $payment->update([
-                'status' => 'paid',
+                'status' => 'completed',
                 'flutterwave_tx_id' => $paymentData['id'] ?? null,
                 'flutterwave_tx_status' => 'successful',
                 'amount_paid' => $amount,
@@ -511,7 +511,7 @@ class FlutterwaveService
             }
 
             // Confirm event ticket if this is an event payment
-            if ($payment->description && str_contains($payment->description, 'event')) {
+            if (str_starts_with((string) $payment->payment_type, 'event')) {
                 resolve(EventService::class)->confirmPayment($reference, 'flutterwave', 'paid');
             }
             
@@ -549,9 +549,9 @@ class FlutterwaveService
             return ['success' => false, 'message' => 'No payment reference found'];
         }
         
-        $payment = Payment::where('flutterwave_tx_ref', $reference)
-            ->orWhere('payment_reference', $reference)
-            ->first();
+        // Resolve across every reference column the schema may carry
+        // (reference / payment_reference / flutterwave_tx_ref / external_reference).
+        $payment = resolve(PaymentRecordService::class)->findByReference($reference);
             
         if ($payment) {
             $payment->update([

@@ -18,6 +18,7 @@ trait FakesPaymentGatewayHttp
         config([
             'payment.flutterwave.public_key' => 'FLWPUBK-TEST',
             'payment.flutterwave.secret_key' => 'FLWSECRET-TEST',
+        'payment.flutterwave.secret_hash' => 'flw-webhook-secret',
             'payment.paystack.public_key' => 'pk_test',
             'payment.paystack.secret_key' => 'sk_test',
         ]);

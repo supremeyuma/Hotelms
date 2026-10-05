@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class OrderItem extends Model
@@ -22,6 +23,16 @@ class OrderItem extends Model
     protected $casts = [
         'price' => 'decimal:2',
     ];
+
+    /**
+     * Line total is derived; order_items stores unit price and quantity only.
+     */
+    protected function subtotal(): Attribute
+    {
+        return Attribute::get(
+            fn () => round((float) $this->price * (int) $this->qty, 2)
+        );
+    }
 
     /* ---------------- Relationships ---------------- */
 

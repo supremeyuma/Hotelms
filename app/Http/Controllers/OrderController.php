@@ -15,6 +15,7 @@ use App\Services\AuditLogger;
 use App\Services\PaymentAccountingService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 
 class OrderController extends Controller
@@ -28,35 +29,31 @@ class OrderController extends Controller
 
         return DB::transaction(function () use ($validated, $request) {
 
-            // Determine department based on order category
-            $department = strtolower($validated['category']); // kitchen/laundry/housekeeping/maintenance
-
-            // Generate order tracking code
-            $trackingCode = strtoupper('ORD-' . uniqid() . '-' . rand(1000, 9999));
+            $paymentMethod = $validated['payment_method'] ?? 'postpaid';
 
             $order = Order::create([
-                'room_id'       => $validated['room_id'],
-                'user_id'       => Auth::check() ? Auth::id() : null,
-                'department'    => $department,
-                'status'        => OrderStatus::PENDING,
-                'notes'         => $validated['notes'] ?? null,
-                'tracking_code' => $trackingCode,
-                'total'         => 0,
-                'payment_method' => $validated['payment_method'] ?? 'postpaid',
-                'payment_status' => $validated['payment_method'] === 'online' ? 'pending' : 'not_required',
+                'room_id' => $validated['room_id'] ?? null,
+                'user_id' => Auth::id(),
+                'service_area' => $validated['service_area'],
+                'order_code' => 'ORD-' . strtoupper(Str::random(10)),
+                'status' => OrderStatus::PENDING,
+                'notes' => $validated['notes'] ?? null,
+                'total' => 0,
+                'payment_method' => $paymentMethod,
+                'payment_status' => $paymentMethod === 'online' ? 'pending' : 'not_required',
             ]);
 
             $total = 0;
 
             foreach ($validated['items'] as $item) {
                 $line = OrderItem::create([
-                    'order_id'   => $order->id,
-                    'name'       => $item['name'],
-                    'price'      => $item['price'],
-                    'quantity'   => $item['quantity'],
-                    'subtotal'   => $item['price'] * $item['quantity'],
+                    'order_id' => $order->id,
+                    'item_name' => $item['item_name'],
+                    'price' => $item['price'],
+                    'qty' => $item['qty'],
                 ]);
-                $total += $line->subtotal;
+
+                $total += (float) $line->price * (int) $line->qty;
             }
 
             $order->update(['total' => $total]);

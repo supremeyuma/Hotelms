@@ -34,19 +34,19 @@ class OrderPolicy
         }
 
         // Staff can view orders for their department
-        return $this->isStaffForDepartment($user, $order->department);
+        return $this->isStaffForDepartment($user, $order->service_area);
     }
 
     public function create(User $user): bool
     {
         // Orders can be created by guests via public flow; authenticated staff may create orders for rooms
-        return $user->hasAnyRole(['staff','manager','md']);
+        return $user->hasAnyRole(['guest', 'staff', 'manager', 'md']);
     }
 
     public function update(User $user, Order $order): bool
     {
         // Only staff assigned to department or managers can update
-        return $this->isStaffForDepartment($user, $order->department);
+        return $this->isStaffForDepartment($user, $order->service_area);
     }
 
     public function delete(User $user, Order $order): bool

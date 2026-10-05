@@ -27,6 +27,8 @@ class RoomServiceOrderPaymentTest extends TestCase
     {
         parent::setUp();
 
+        config()->set('payment.flutterwave.secret_hash', 'flw-webhook-secret');
+
         $this->roomType = RoomType::factory()->create([
             'title' => 'Deluxe Room',
             'base_price' => 50000
@@ -68,9 +70,9 @@ class RoomServiceOrderPaymentTest extends TestCase
                 'service_area' => 'kitchen',
                 'items' => [
                     [
-                        'name' => $this->menuItem->name,
+                        'item_name' => $this->menuItem->name,
                         'price' => $this->menuItem->price,
-                        'quantity' => 2
+                        'qty' => 2
                     ]
                 ],
                 'payment_method' => 'postpaid',
@@ -95,9 +97,9 @@ class RoomServiceOrderPaymentTest extends TestCase
                 'service_area' => 'kitchen',
                 'items' => [
                     [
-                        'name' => $this->menuItem->name,
+                        'item_name' => $this->menuItem->name,
                         'price' => $this->menuItem->price,
-                        'quantity' => 1
+                        'qty' => 1
                     ]
                 ],
                 'payment_method' => 'online',
@@ -130,17 +132,17 @@ class RoomServiceOrderPaymentTest extends TestCase
         // Add items and calculate total
         $item1 = OrderItem::create([
             'order_id' => $order->id,
-            'name' => 'Item 1',
+            'item_name' => 'Item 1',
             'price' => 5000,
-            'quantity' => 2,
+            'qty' => 2,
             'subtotal' => 10000
         ]);
 
         $item2 = OrderItem::create([
             'order_id' => $order->id,
-            'name' => 'Item 2',
+            'item_name' => 'Item 2',
             'price' => 3000,
-            'quantity' => 1,
+            'qty' => 1,
             'subtotal' => 3000
         ]);
 
@@ -191,16 +193,7 @@ class RoomServiceOrderPaymentTest extends TestCase
                 'currency' => 'NGN'
             ]
         ], [
-            'verif-hash' => hash_hmac('sha512', json_encode([
-                'event' => 'charge.completed',
-                'data' => [
-                    'id' => 'tx-ord-123',
-                    'tx_ref' => $txRef,
-                    'status' => 'successful',
-                    'amount' => 7000,
-                    'currency' => 'NGN'
-                ]
-            ]), config('payment.flutterwave.secret_hash'))
+            'verif-hash' => config('payment.flutterwave.secret_hash')
         ]);
 
         // Verify payment was marked successful

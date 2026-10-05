@@ -141,16 +141,7 @@ class BookingPaymentTest extends TestCase
                 'currency' => 'NGN'
             ]
         ], [
-            'verif-hash' => hash_hmac('sha512', json_encode([
-                'event' => 'charge.completed',
-                'data' => [
-                    'id' => 'tx-bkg-123',
-                    'tx_ref' => $payment->reference,
-                    'status' => 'successful',
-                    'amount' => 150000,
-                    'currency' => 'NGN'
-                ]
-            ]), config('payment.flutterwave.secret_hash'))
+            'verif-hash' => config('payment.flutterwave.secret_hash')
         ]);
 
         // Verify payment was marked as successful
