@@ -13,8 +13,8 @@ class ChargeObserver
     public function created(Charge $charge)
     {
         // Track charge posting in booking's reservation facts
-        if ($charge->chargeable_type === 'App\Models\Booking' && $charge->chargeable_id) {
-            $booking = \App\Models\Booking::find($charge->chargeable_id);
+        if ($charge->billable_type === 'App\Models\Booking' && $charge->billable_id) {
+            $booking = \App\Models\Booking::find($charge->billable_id);
             if ($booking) {
                 BookingProjector::projectFinancialTransaction(
                     $booking,
@@ -31,8 +31,8 @@ class ChargeObserver
     public function deleted(Charge $charge)
     {
         // Track charge reversal if needed
-        if ($charge->chargeable_type === 'App\Models\Booking' && $charge->chargeable_id) {
-            $booking = \App\Models\Booking::find($charge->chargeable_id);
+        if ($charge->billable_type === 'App\Models\Booking' && $charge->billable_id) {
+            $booking = \App\Models\Booking::find($charge->billable_id);
             if ($booking) {
                 BookingProjector::projectFinancialTransaction(
                     $booking,
