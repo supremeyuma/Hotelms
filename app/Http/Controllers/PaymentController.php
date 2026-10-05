@@ -399,6 +399,66 @@ class PaymentController extends Controller
         }
     }
 
+    /**
+     * Resolve the hosted checkout link for a provider.
+     *
+     * Prefers the gateway's own hosted-checkout URL. Flutterwave's Standard
+     * Checkout link is also derivable from the public key and reference, so a
+     * usable link is still returned when the gateway call cannot be made.
+     *
+     * @return array{payment_link: ?string, access_code: ?string, authorization_url: ?string}
+     */
+    protected function resolveHostedCheckout(string $provider, array $paymentData): array
+    {
+        $empty = [
+            'payment_link' => null,
+            'access_code' => null,
+            'authorization_url' => null,
+        ];
+
+        $result = $this->paymentManager->initializePayment($provider, $paymentData);
+
+        $link = $result['payment_link']
+            ?? $result['data']['link']
+            ?? $result['authorization_url']
+            ?? null;
+
+        if (! is_string($link) || $link === '') {
+            $link = $this->deriveHostedCheckoutLink(
+                $provider,
+                $paymentData['reference'] ?? null
+            );
+        }
+
+        return [
+            'payment_link' => $link,
+            'access_code' => $result['access_code'] ?? $result['data']['access_code'] ?? null,
+            'authorization_url' => $result['authorization_url'] ?? null,
+        ];
+    }
+
+    /**
+     * Build the provider's hosted checkout URL from known public identifiers.
+     */
+    protected function deriveHostedCheckoutLink(string $provider, ?string $reference): ?string
+    {
+        if (! $reference) {
+            return null;
+        }
+
+        if ($provider === 'flutterwave') {
+            $publicKey = $this->paymentManager->getPublicKey($provider);
+
+            if (! $publicKey) {
+                return null;
+            }
+
+            return 'https://checkout.flutterwave.com/pay/' . $publicKey . '/' . $reference;
+        }
+
+        return null;
+    }
+
     private function buildPaymentResponse(
         string $type,
         float $amount,
@@ -443,6 +503,19 @@ class PaymentController extends Controller
                 ]);
             }
 
+            $gateway = $this->resolveHostedCheckout($provider, [
+                'email' => $customer['email'] ?? null,
+                'name' => $customer['name'] ?? null,
+                'phone_number' => $customer['phone'] ?? null,
+                'amount' => $amount,
+                'currency' => $currency,
+                'reference' => $reference,
+                'tx_ref' => $reference,
+                'callback_url' => $callbackUrl,
+                'description' => $description,
+                'metadata' => $meta,
+            ]);
+
             $response = [
                 'success' => true,
                 'type' => $type,
@@ -466,13 +539,20 @@ class PaymentController extends Controller
                 $response['public_key'] = $publicKey;
             }
 
-            if ($provider === 'flutterwave') {
-                $response['payment_options'] = 'card,banktransfer,ussd';
+            if ($gateway['payment_link'] !== null) {
+                $response['payment_link'] = $gateway['payment_link'];
             }
 
-            if ($provider === 'paystack') {
-                $response['access_code'] = null;
-                $response['authorization_url'] = null;
+            if ($gateway['access_code'] !== null) {
+                $response['access_code'] = $gateway['access_code'];
+            }
+
+            if ($gateway['authorization_url'] !== null) {
+                $response['authorization_url'] = $gateway['authorization_url'];
+            }
+
+            if ($provider === 'flutterwave') {
+                $response['payment_options'] = 'card,banktransfer,ussd';
             }
 
             return response()->json($response);
