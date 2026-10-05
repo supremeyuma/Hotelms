@@ -4,6 +4,7 @@ namespace App\Services\Billing;
 
 use App\Models\Room;
 use App\Models\Booking;
+use App\Services\BookingService;
 
 class RoomRateResolver
 {

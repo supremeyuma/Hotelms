@@ -7,6 +7,7 @@ use App\Services\RoomSchedulingService;
 use App\Services\RoomAvailabilityService;
 use App\Services\AuditLoggerService;
 use App\Services\RoomCheckoutService;
+use App\Services\Billing\NightlyRoomChargeService;
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
