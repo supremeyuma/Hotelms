@@ -301,7 +301,7 @@ $this->paymentRecords = $paymentRecords;
         $nights = \Carbon\Carbon::parse($bookingData['check_in'])
             ->diffInDays(\Carbon\Carbon::parse($bookingData['check_out']));
 
-$rate = $this->effectiveNightlyRate($roomType, $bookingData['check_in'], $bookingData['check_out']);
+        $rate = $this->effectiveNightlyRate($roomType, $bookingData['check_in'], $bookingData['check_out']);
 
         $basePrice = $rate * $nights * $bookingData['quantity'];
         $discountPreview = null;
@@ -315,7 +315,7 @@ $rate = $this->effectiveNightlyRate($roomType, $bookingData['check_in'], $bookin
         
         //dd($bookingData, $totalPrice, $roomType, $nights);
         try {
-            $booking = DB::transaction(function () use ($bookingData, $roomType, $pricing, $totalPrice, $discountPreview) {
+            $booking = DB::transaction(function () use ($bookingData, $roomType, $rate, $pricing, $totalPrice, $discountPreview) {
                 $booking = $this->bookingService->createBooking([
                     'room_type_id' => $bookingData['room_type_id'],
                     'check_in' => $bookingData['check_in'],
@@ -332,7 +332,7 @@ $rate = $this->effectiveNightlyRate($roomType, $bookingData['check_in'], $bookin
                     'selected_room_ids' => $bookingData['selected_room_ids'] ?? [],
                     'total_amount' => $totalPrice,
                     'guest_name' => $bookingData['guest_name'],
-'nightly_rate' => $rate,
+                    'nightly_rate' => $rate,
                     'status' => 'pending_payment',
                     'details' => $discountPreview ? [
                         'discount' => [
