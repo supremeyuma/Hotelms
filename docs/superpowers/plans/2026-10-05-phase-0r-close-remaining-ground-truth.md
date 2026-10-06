@@ -2,6 +2,39 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> **Status: COMPLETE (2026-10-05).** All five tasks executed and verified.
+> Commits: `fc4c4e39`, `7a03e40e`, `c5c7c80c`, `bcc7660d`, `ae1d2fe4`.
+>
+> ### Decisions recorded
+> - **Guest-request authorization scope:** frontdesk + md only. Fulfilment
+>   departments (housekeeping, laundry, kitchen, bar) are deliberately denied.
+>   Matches the route middleware that was already enforced.
+> - **Guest-request ownership:** a request belongs to one booking
+>   (`booking_id` + `room_id`, both non-null and constrained).
+> - **Image extension:** **GD**. Ships inside the PHP runtime, so the Windows
+>   packaging surface is smaller than Imagick.
+>
+> ### Corrections to this plan made during execution
+> - **Migration count is 165, not 166.** Verified three ways on a fresh sqlite
+>   database: `(Get-ChildItem database/migrations -Filter *.php -File).Count`,
+>   `git ls-files database/migrations | Measure-Object -Line`, and a tinker
+>   diff of files vs the `migrations` table (165 files, 165 rows, no drift).
+>   The plan's "166 DONE" figure and the Phase 1R gate's "167 DONE" should read
+>   **165** and **166** respectively.
+> - **The plan's sample policy was wrong for this codebase.** It used
+>   `hasPermissionTo('guest_requests.view')`, but no policy here relies on
+>   permissions alone; all 13 use `before()` + `hasAnyRole()`. The implemented
+>   policy follows the house convention instead.
+> - **Test baseline is now 164 tests / 675 assertions**, not 141 / 582 — the
+>   23 new GuestRequest tests are included.
+> - **REPORTING_COMPLETE.md had more false claims than the plan listed.** Beyond
+>   "fully implemented" and "100%", the rollout timeline, the "Next Steps"
+>   checklist, the "Guarantee" block and the "Ready for Production" footer all
+>   asserted unmeasured outcomes. All corrected.
+> - **The spec's "SQLite schema build fails" was already stale.** The `fullText`
+>   blocker is guarded by `if ($driver !== 'sqlite')` and all 165 migrations
+>   apply on SQLite. Marked done rather than left as an open failure.
+
 **Goal:** Finish the Phase 0 work that was left incomplete — the dead files that are still present, a documentation file that still claims false completeness, and a missing authorization policy that must be specified rather than renamed.
 
 **Architecture:** No new architecture. This phase deletes verified-dead files, corrects one document, and specifies and implements guest-request authorization, which the original Phase 0 plan explicitly deferred.
@@ -46,7 +79,7 @@
 - Consumes: nothing.
 - Produces: a repository with no zero-byte or misspelled dead code.
 
-- [ ] **Step 1: Confirm all three are unreferenced**
+- [x] **Step 1: Confirm all three are unreferenced**
 
 ```powershell
 rg -n "GuestRequestPoicy|BookingAccontingService|cmb\.py" app/ tests/ database/ config/ routes/ resources/ composer.json
@@ -55,7 +88,7 @@ rg -n "GuestRequestPoicy|BookingAccontingService|cmb\.py" app/ tests/ database/ 
 Expected: only the files themselves. If `GuestRequestPoicy` appears in a
 `Gate::policy` registration, stop — Task 3 covers that case.
 
-- [ ] **Step 2: Confirm the byte counts**
+- [x] **Step 2: Confirm the byte counts**
 
 ```powershell
 python -c "
@@ -67,20 +100,21 @@ import os; print('cmb.py', os.path.getsize('database/migrations/cmb.py'), 'bytes
 
 Expected: `0 bytes`, `0 bytes`, and roughly 328 lines for `cmb.py`.
 
-- [ ] **Step 3: Delete them**
+- [x] **Step 3: Delete them**
 
 ```powershell
 git rm app/Policies/GuestRequestPoicy.php app/Services/BookingAccontingService.php database/migrations/cmb.py
 ```
 
-- [ ] **Step 4: Verify nothing broke**
+- [x] **Step 4: Verify nothing broke**
 
 ```powershell
 php artisan migrate:fresh --force
 php artisan test
 ```
 
-Expected: `166 DONE, 0 FAIL`, 141 passed.
+Expected: 165 migrations applied, 0 failures. (The original figure of 166 was
+wrong by one; see the execution record at the top of this file.)
 Commit: `chore: remove three verified dead files from the migrations and services trees`
 
 ---
@@ -98,13 +132,13 @@ Phase 0 Task 8 corrected `PRODUCTION_DEPLOYMENT_READY.md` and
 - Consumes: nothing.
 - Produces: documentation whose stated facts are true.
 
-- [ ] **Step 1: Locate the false claims**
+- [x] **Step 1: Locate the false claims**
 
 ```powershell
 rg -n "fully implemented|100%|100 percent|complete" REPORTING_COMPLETE.md
 ```
 
-- [ ] **Step 2: Replace each with the actual state**
+- [x] **Step 2: Replace each with the actual state**
 
 The reporting projectors are implemented and the suite passes, so the honest
 claim is narrower than "fully implemented". State what is true: which projectors
@@ -118,7 +152,7 @@ taken.
 > coverage report has been taken, so no coverage figure is claimed.
 ```
 
-- [ ] **Step 3: Verify no false claims remain anywhere**
+- [x] **Step 3: Verify no false claims remain anywhere**
 
 ```powershell
 rg -n "100% test coverage|fully implemented|APPROVED FOR PRODUCTION" *.md
@@ -144,14 +178,14 @@ rg -n "class GuestRequestPoicy|GuestRequestPolicy|Gate::policy" app/Providers/ a
 `GuestRequestController`, `GuestRequestService`, `GuestRequest` and
 `GuestRequestCreated` all exist. The controller has no policy backing it.
 
-- [ ] **Step 1: Read the controller and model to establish what access rules are needed**
+- [x] **Step 1: Read the controller and model to establish what access rules are needed**
 
 ```powershell
 Get-Content app/Http/Controllers/FrontDesk/GuestRequestController.php
 Get-Content app/Models/GuestRequest.php
 ```
 
-- [ ] **Step 2: Ask before assuming the rules**
+- [x] **Step 2: Ask before assuming the rules**
 
 This is a business authorization decision. Do not invent it. Confirm with the
 user:
@@ -164,7 +198,7 @@ user:
 
 Record the answers in a short decision note in this plan's commit message.
 
-- [ ] **Step 3: Write the policy**
+- [x] **Step 3: Write the policy**
 
 ```php
 <?php
@@ -208,14 +242,14 @@ class GuestRequestPolicy
 }
 ```
 
-- [ ] **Step 4: Register it and add the permissions**
+- [x] **Step 4: Register it and add the permissions**
 
 Register in `app/Providers/AppServiceProvider.php` using whatever registration
 pattern the project already uses, then seed the `guest_requests.*` permissions
 for each role that Step 2 confirmed. Follow the existing permission seeding
 pattern — do not invent a new one.
 
-- [ ] **Step 5: Add the controller authorization calls**
+- [x] **Step 5: Add the controller authorization calls**
 
 ```php
 $this->authorize('viewAny', GuestRequest::class);
@@ -223,13 +257,13 @@ $this->authorize('create', GuestRequest::class);
 $this->authorize('update', $request);
 ```
 
-- [ ] **Step 6: Write tests for the confirmed rules**
+- [x] **Step 6: Write tests for the confirmed rules**
 
 One test per role per action, derived from the Step 2 answers. A test that
 asserts the unauthorized case is denied is worth more than one asserting the
 authorized case succeeds.
 
-- [ ] **Step 7: Verify**
+- [x] **Step 7: Verify**
 
 ```powershell
 php artisan test --filter=GuestRequest
@@ -252,28 +286,28 @@ around the mismatch, so the next reader is not misled.
 - Consumes: the audit findings.
 - Produces: a spec whose table and class names exist.
 
-- [ ] **Step 1: Fix the `cash_shifts` reference**
+- [x] **Step 1: Fix the `cash_shifts` reference**
 
 Spec §6 Class 4 says "Two cash shifts claiming one device." No `cash_shifts`
 table exists. The real tables are `pos_sessions` and `pos_devices`.
 
 Replace with: "Two `pos_sessions` claiming one `pos_devices` row."
 
-- [ ] **Step 2: Fix the folio table reference**
+- [x] **Step 2: Fix the folio table reference**
 
 Spec §7 says "`bookings` and the folio/ledger tables." No table contains `folio`
 or `ledger`. The ledger is `charges` + `journal_entries` + `journal_lines`.
 
 Replace with the actual table names.
 
-- [ ] **Step 3: Fix the permissions reference**
+- [x] **Step 3: Fix the permissions reference**
 
 Spec §7 says "Authentication and permission tables." No `permissions` table
 exists — authorization is `roles` only.
 
 Replace with "`users` and `roles`".
 
-- [ ] **Step 4: Fix the migration count**
+- [x] **Step 4: Fix the migration count**
 
 Spec §11 and §12 say "the 144 existing migrations" in five places. The count is
 now 166.
@@ -284,14 +318,14 @@ rg -n "144|128 migrations|128 existing" docs/superpowers/specs/2026-10-04-deskto
 
 Replace with "166 existing migrations".
 
-- [ ] **Step 5: Resolve the image-extension ambiguity**
+- [x] **Step 5: Resolve the image-extension ambiguity**
 
 Spec §9.1 says "and an image extension" without naming one. This blocks Phase 6
 estimation, which the spec itself calls the largest technical risk. Confirm the
 choice with the user — GD versus Imagick has real licensing and packaging
 consequences on Windows — then name it in the spec.
 
-- [ ] **Step 6: Record the §16 open items as blocking**
+- [x] **Step 6: Record the §16 open items as blocking**
 
 Spec §16 leaves two items unresolved that Phase 6 depends on: the embedded
 Postgres build and FrankenPHP extension packaging on Windows. Annotate both to
@@ -303,7 +337,7 @@ Commit: `docs: correct spec references to tables and migration counts that do no
 
 ## Task 5: Final verification
 
-- [ ] **Step 1: Run the gate**
+- [x] **Step 1: Run the gate**
 
 ```powershell
 $env:DB_CONNECTION='sqlite'
@@ -314,9 +348,11 @@ php artisan migrate:fresh --force
 php artisan test
 ```
 
-Expected: `166 DONE, 0 FAIL` and a green suite with zero skips.
+Expected: 165 migrations applied, 0 failures, and a green suite with zero skips.
+At the time of execution the suite was 164 tests / 675 assertions (141 prior +
+23 new GuestRequest tests).
 
-- [ ] **Step 2: Confirm no dead file remains**
+- [x] **Step 2: Confirm no dead file remains**
 
 ```powershell
 python -c "
@@ -328,7 +364,7 @@ for p in glob.glob('app/**/*.php', recursive=True):
 
 Expected: no output.
 
-- [ ] **Step 3: Confirm the scheduler still registers 16 events**
+- [x] **Step 3: Confirm the scheduler still registers 16 events**
 
 ```powershell
 php artisan tinker --execute="echo count(app(Illuminate\Console\Scheduling\Schedule::class)->events()), PHP_EOL;"
@@ -336,7 +372,7 @@ php artisan tinker --execute="echo count(app(Illuminate\Console\Scheduling\Sched
 
 Expected: `16`. Do not parse `schedule:list`; it is truncated and undercounts.
 
-- [ ] **Step 4: Commit any residual work**
+- [x] **Step 4: Commit any residual work**
 
 Commit: `chore: phase 0r verification`
 
@@ -344,9 +380,18 @@ Commit: `chore: phase 0r verification`
 
 ## Exit criteria
 
-- The three dead files are gone and the suite is unchanged at 141 passing.
-- `REPORTING_COMPLETE.md` makes no unsupported claim.
-- Guest-request authorization exists, is registered, is enforced, and is tested.
-- The spec names tables and counts that actually exist.
+- [x] The three dead files are gone and the suite is green (164 tests / 675
+  assertions at the time of verification; the baseline of 141 rose because 23
+  new GuestRequest tests were added).
+- [x] `REPORTING_COMPLETE.md` makes no unsupported claim.
+- [x] Guest-request authorization exists, is registered by auto-discovery, is
+  enforced in the controller, and is tested (23 tests, 93 assertions).
+- [x] The spec names tables and counts that actually exist.
+- [x] No zero-byte PHP file remains under `app/`.
+- [x] The scheduler still registers 16 events.
 
 Next: [Phase 1R — Postgres portability and the parity gate](2026-10-05-phase-1r-postgres-portability-and-parity-gate.md).
+**Gate correction:** Phase 1R's exit gate reads "167 DONE after Phase 1R (166 + 1)".
+The verified baseline is 165, so that gate should read **166 DONE (165 + 1)**.
+Same correction applies to Phase 2R Part A's "173 DONE (167 + 6)" — it becomes
+**172 DONE (166 + 6)**.

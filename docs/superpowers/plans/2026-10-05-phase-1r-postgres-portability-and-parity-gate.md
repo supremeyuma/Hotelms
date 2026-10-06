@@ -4,7 +4,7 @@
 >
 > **Prerequisite:** [Phase 0R](2026-10-05-phase-0r-close-remaining-ground-truth.md) complete.
 
-**Goal:** Run all 166 migrations fresh against PostgreSQL, fix every driver-specific failure, and replace the placeholder schema test with a real parity gate that compares a fresh Postgres schema against SQLite column by column.
+**Goal:** Run all 165 migrations fresh against PostgreSQL, fix every driver-specific failure, and replace the placeholder schema test with a real parity gate that compares a fresh Postgres schema against SQLite column by column.
 
 **Architecture:** No behaviour changes; portability only. The parity test is the permanent gate the spec calls "the sleeper risk" (§14) — migrating without erroring is not evidence the schemas match.
 
@@ -227,7 +227,7 @@ A fix that breaks SQLite is not a fix. Commit per migration:
 php artisan migrate:fresh --force --database=pgsql
 ```
 
-Expected: `166 DONE, 0 FAIL`.
+Expected: `165 DONE, 0 FAIL`.
 
 - [ ] **Step 5: Audit for driver-specific runtime queries**
 
@@ -557,7 +557,7 @@ php artisan migrate:fresh --force --database=pgsql
 php artisan test --filter=SchemaParityTest
 ```
 
-Expected: `167 DONE` on both engines (166 plus this phase's one migration), parity test green.
+Expected: `166 DONE` on both engines (165 plus this phase's one migration), parity test green.
 Commit: `fix: normalise sync_deleted_at type across all engines`
 
 ---
@@ -572,7 +572,7 @@ $env:DB_CONNECTION='pgsql'; $env:DB_PORT='5433'
 php artisan migrate:fresh --force --database=pgsql
 ```
 
-Expected: `167 DONE, 0 FAIL` on both.
+Expected: `166 DONE, 0 FAIL` on both.
 
 - [ ] **Step 2: Suite green on SQLite, the committed default**
 

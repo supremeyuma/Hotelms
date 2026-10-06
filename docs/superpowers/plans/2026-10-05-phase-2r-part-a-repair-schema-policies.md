@@ -228,7 +228,7 @@ key: `pos_dockets.id`, `inventory_items.id`, `bookings.id`. A ULID stored in
 `PosDocket::find('01HQ...')` returns null on every engine, and every sync change
 fails to apply.
 
-Converting domain primary keys to ULIDs is not an option: 166 migrations, dozens
+Converting domain primary keys to ULIDs is not an option: 165 migrations, dozens
 of foreign keys, existing production data, and spec §10 requires synchronisation
 to be purely additive.
 
@@ -304,7 +304,7 @@ php artisan migrate:fresh --force
 php artisan test
 ```
 
-Expected: `171 DONE, 0 FAIL` (166 plus 5), suite unchanged at 141 passed.
+Expected: `170 DONE, 0 FAIL` (165 plus 5), suite unchanged from the start of the phase.
 Commit: `feat: align sync tables with spec 5.2 and 5.4`
 
 ---
@@ -950,7 +950,7 @@ php artisan test
 ```
 
 - Every file in `app/Sync/Policies/` and `app/Models/Sync/` reports real newlines.
-- `migrate:fresh` reports `173 DONE, 0 FAIL` (167 after Phase 1R, plus 6).
+- `migrate:fresh` reports `172 DONE, 0 FAIL` (166 after Phase 1R, plus 6).
 - The catalogue test passes, including the Class 4 blocking case.
 - The full suite has zero failures and zero skips.
 

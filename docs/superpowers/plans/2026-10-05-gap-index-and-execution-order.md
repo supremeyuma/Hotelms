@@ -16,8 +16,8 @@ Re-measured 2026-10-05 against the working tree at `5326df2d`:
 
 | Fact | Value |
 |---|---|
-| Migrations applied on SQLite | 166 |
-| Test suite | 141 passed, 0 failed, 0 skipped, 582 assertions |
+| Migrations applied on SQLite | 165 |
+| Test suite | 164 passed, 0 failed, 0 skipped, 675 assertions (141 before Phase 0R added 23 GuestRequest tests) |
 | Scheduled events | 16 |
 | Sync tables | 4 exist and migrate |
 | Sync columns | 15 tables migrated with `sync_hlc`, `sync_origin_node_id`, `sync_deleted_at` |
@@ -100,9 +100,9 @@ Each needs a decision, recorded in the spec, not a silent workaround.
 | §6 Class 2 "Field-level last-write-wins" | The schema has one `sync_hlc` per **row**, which can only express row-level LWW. True field-level LWW needs a per-field HLC map. | **Resolved: row-level LWW, and §6 is amended in the same commit.** Phase 2R Part A Task 3 Step 4. Accepted risk: two terminals editing different fields of one row offline — the later write wins. |
 | §5.4 "Every row retains the ULID" | Every synced domain table has an auto-increment integer primary key. A ULID in `sync_changes.row_id` has nothing to point at. | **Resolved:** Phase 2R Part A adds a nullable unique `sync_uid` ULID column to every synced table, backfilled. `row_id` references `sync_uid`, never `id`. Integer PKs and existing FKs untouched. |
 | §7 "folio/ledger tables" | No `folio` or `ledger` table exists. The ledger is `charges` + `journal_entries` + `journal_lines`. | Phase 4S builds the manifest from the real transitive closure. |
-| §7 "authentication and permission tables" | No `permissions` table. Authorization is `roles` only. | Phase 4S. |
-| §11 "the 144 existing migrations" | 166 now. | Every plan uses the live count. Expected gates: 167 after Phase 1R, 173 after Phase 2R. |
-| §9.1 required extension list | Image extension is unspecified. | Phase 6 Gate A decides and records it. |
+| §7 "authentication and permission tables" | Spatie's permission tables exist (created by `2026_04_09_101500_create_permission_support_tables.php`) but are not what authorises anything in practice. Every policy gates on `hasRole`/`hasAnyRole`; a few also accept `hasPermissionTo` as an extra OR. No permission rows are seeded for ordinary roles. | Phase 4S builds the manifest from `users` and `roles`, which is what actually decides access. |
+| §11 "the 144 existing migrations" | **165 now** (verified on a fresh SQLite database, cross-checked against `git ls-files`). | Every plan uses the live count. Corrected gates: **166 after Phase 1R**, **172 after Phase 2R**. The earlier 166/167/173 figures were off by one. |
+| §9.1 required extension list | Image extension was unspecified. | **Resolved 2026-10-05: GD.** It ships inside the PHP runtime, so the Windows packaging surface is smaller than Imagick. Recorded in §9.1 and §16. |
 | §9.1 "embedded Postgres build" | No off-the-shelf Windows installer-free embedded Postgres covers all target platforms. | Phase 6 Gate B. Options and costs are laid out. |
 | §16 open item 3 | FrankenPHP extension packaging for Windows, specifically `pdo_pgsql`. | Phase 6 Gate C. `scripts/verify-runtime.ps1` is written before any packaging code, so the answer arrives before the work does. |
 | §16 open item 1 | Receipt-printing hardware unknown. | **Answered: thermal / ESC-POS.** Phase 7 Gate; generic ESC/POS command set so the exact model does not block the build. |
@@ -164,7 +164,8 @@ php artisan migrate:fresh --force
 php artisan test
 ```
 
-Expected: `166 DONE, 0 FAIL`, then zero failures and zero skips.
+Expected: `165 DONE, 0 FAIL`, then zero failures and zero skips. (At the time
+Phase 0R was executed the suite was 164 tests / 675 assertions.)
 
 ---
 
