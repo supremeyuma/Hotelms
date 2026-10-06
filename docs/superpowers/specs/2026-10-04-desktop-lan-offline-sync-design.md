@@ -34,7 +34,7 @@ Verified position as of this document:
 | Cloud synchronization | Absent. Only empty AWS placeholders in `.env.example:59-63`. |
 | API surface for clients | `routes/api.php` contains two payment webhook endpoints only. |
 | Test suite | Red at baseline: 52 failed, 1 passed, 78 pending. |
-| SQLite schema build | **Fails.** Migration 120 of 144 aborts, so 24 migrations never run. |
+| SQLite schema build | **Succeeds.** All 165 migrations apply on SQLite as of Phase 0R. |
 | Club POS | Backend substantially real — schema, `ClubPosService`, `DrinkStockService`, five controllers, 16 routes. Frontend is a non-functional scaffold. Zero tests. |
 | Inventory | Mature and ledger-based — `InventoryService`, immutable `InventoryMovement`, unique `(item, location)`, feature tests present. |
 
@@ -53,7 +53,7 @@ An always-on LAN server holding authoritative data is incompatible with that spe
 
 ### 2.2 SQLite cannot build the schema — and terminals depend on it
 
-`migrate:fresh` on SQLite aborts at migration 120 of 144, `2026_04_12_000001_create_reporting_events_table.php`, because Laravel's schema builder throws `This database driver does not support fulltext index creation` for the `fullText` call at line 34. No `fts5` or virtual-table handling exists anywhere in `database/migrations/`.
+`migrate:fresh` on SQLite previously aborted at `2026_04_12_000001_create_reporting_events_table.php`, because Laravel's schema builder throws `This database driver does not support fulltext index creation` for the `fullText` call at line 34. That call is now guarded by `if ($driver !== 'sqlite')`, and `migrate:fresh` completes all 165 migrations on SQLite as of Phase 0R. A real SQLite fulltext index would need an `fts5` virtual table plus matching sync triggers; no application query currently uses `MATCH`, so that remains a separate decision.
 
 The 24 migrations that consequently never run on SQLite are all 12 reporting tables (`reporting_events` through `reporting_metric_definitions`), the `jobs` and `failed_jobs` tables, the kitchen menu items table, **and all 9 Club POS tables** (`pos_devices` through `reporting_pos_facts`).
 
@@ -199,7 +199,7 @@ These are caches of a sum over Class 1 rows. Each node computes the sum in a det
 ### Class 4 — Hard conflicts. Blocked, surfaced to a human.
 
 - Two bookings on the same room for overlapping dates. Overlap detection already exists at `app/Services/RoomAvailabilityService.php:229-233` and is reused.
-- Two cash shifts claiming one device.
+- Two `pos_sessions` claiming one `pos_devices` row.
 - A payment captured on one node and refunded on another.
 
 Never auto-resolved. Per decision 9, the booking case is architecturally unreachable — see §8.
@@ -222,8 +222,8 @@ A terminal does not synchronize the whole hotel database. It synchronizes the tr
 
 - POS tables (Class 1 and Class 3 above)
 - Inventory tables
-- `bookings` and the folio/ledger tables — required because `app/Services/ClubPosService.php:140-152` posts `room_charge` sales to a guest folio, which cannot be evaluated offline without booking data
-- Authentication and permission tables
+- `bookings`, `charges`, `journal_entries` and `journal_lines` — required because `app/Services/ClubPosService.php:140-152` posts `room_charge` sales to a guest folio, which cannot be evaluated offline without booking data. There is no `folio` or `ledger` table; the ledger is `charges` + `journal_entries` + `journal_lines`.
+- `users` and `roles` — authentication and authorization. There is no `permissions` table in active use; authorization is role-based via Spatie's `hasRole`/`hasAnyRole`.
 
 A test fails if a new dependency is added that the manifest does not cover.
 
@@ -254,7 +254,7 @@ This is a business change as well as a code change and must be communicated to f
 
 **FrankenPHP** — a single static binary embedding Caddy and PHP. Cross-platform, runs Laravel in worker mode for genuine concurrency. One binary ships per platform, supervised as a child process by the Tauri application. The same runtime serves terminals, staff-facing local serving and the LAN server; only `.env` differs.
 
-Required extensions: `pdo_sqlite`, `pdo_pgsql`, `bcmath`, `intl`, `zip`, and an image extension. This is real packaging work per platform and the largest technical risk in this design (§14).
+Required extensions: `pdo_sqlite`, `pdo_pgsql`, `bcmath`, `intl`, `zip`, and an image extension. **The image extension is not yet chosen.** GD and Imagick differ in licensing (Imagick is backed by ImageMagick, which has its own licence terms) and in Windows packaging effort; the choice has not been made, so Phase 6 estimation is provisional. This is real packaging work per platform and the largest technical risk in this design (§14).
 
 **Portable Postgres for the server role.** Windows offers no clean way to install Postgres without administrator rights, and Docker Desktop would violate both `technical layout.txt.txt:57` and requirement 3. An embedded Postgres build unpacked into the application's data directory and supervised as a child process avoids an installer entirely. If this proves fragile on a target OS, the fallback is a system Postgres, which reintroduces the installer requirement 3 exists to avoid.
 
@@ -284,12 +284,12 @@ Synchronization is purely additive — new columns and new tables, with no chang
 
 ## 11. Database and Migration Strategy
 
-The 144 existing migrations are MySQL-hardened; `MIGRATION_RESOLUTION.md` records duplicate columns, duplicate indexes and the 64-character identifier limit. Both engines are already first-class in `config/database.php:34,46`. The current state is contradictory and is resolved in Phase 0: `README.md:65` claims SQLite, while `.env:23`, `.env.testing:18` and `MIGRATION_RESOLUTION.md` prove MySQL, and `phpunit.xml:26-27` runs tests on in-memory SQLite with `tests/TestCase.php:26-28` enforcing it.
+The 165 existing migrations are MySQL-hardened; `MIGRATION_RESOLUTION.md` records duplicate columns, duplicate indexes and the 64-character identifier limit. Both engines are already first-class in `config/database.php:34,46`. The current state is contradictory and is resolved in Phase 0: `README.md:65` claims SQLite, while `.env:23`, `.env.testing:18` and `MIGRATION_RESOLUTION.md` prove MySQL, and `phpunit.xml:26-27` runs tests on in-memory SQLite with `tests/TestCase.php:26-28` enforcing it.
 
 Rules:
 
 1. **Never rewrite an applied migration's effect.** Only make driver-specific code paths conditional, following the driver-aware pattern already established in `database/migrations/2026_04_10_160000_harden_inventory_ledger_tables.php`.
-2. Run all 144 migrations fresh against Postgres and fix every failure.
+2. Run all 165 migrations fresh against Postgres and fix every failure.
 3. Add a **schema parity test** comparing a fresh Postgres schema against MySQL — columns, types, nullability, indexes, foreign keys — as a permanent gate. Migrating without erroring is not evidence the schemas match.
 4. All `sync_*` columns arrive via new migrations, never by editing existing files.
 
@@ -301,7 +301,7 @@ Each phase ships something usable. The dependency chain is not negotiable: make 
 
 Nothing else can be trusted until this is done. Ordered by dependency, not by convenience.
 
-- **0a — Make SQLite build the schema.** Fix the `fullText` blocker in `2026_04_12_000001_create_reporting_events_table.php` in a driver-conditional way, then iterate until `migrate:fresh` completes all 144 migrations on SQLite. On MySQL and Postgres keep the existing fulltext index unchanged. On SQLite, Laravel's schema builder cannot create a fulltext index at all; Phase 0 requires only that the schema *builds*, so the index is skipped there and the gap is recorded rather than papered over. Building a real `fts5` virtual table (with sync triggers and matching query changes) is a separate decision that needs its own migration, because no application query currently uses `MATCH` — verified across `app/`. Do not assume the `fullText` blocker is the only failure — 24 migrations have never run on SQLite, so expect to find more. This is first because terminals run migrations against SQLite and the test suite depends on it.
+- **0a — Make SQLite build the schema.** **Done as of Phase 0R.** The `fullText` blocker in `2026_04_12_000001_create_reporting_events_table.php` is now guarded by `if ($driver !== 'sqlite')`, and `migrate:fresh` completes all 165 migrations on SQLite with 0 failures. On MySQL and Postgres the fulltext index is unchanged. A real SQLite fulltext index would need an `fts5` virtual table plus sync triggers and matching query changes; that is a separate decision because no application query currently uses `MATCH` — verified across `app/`. This was first because terminals run migrations against SQLite and the test suite depends on it.
 - **0a-bis — Stop the schedule running every job twice.** `routes/web.php:39` does `require __DIR__ . '/console.php'` alongside its sibling route files, while `bootstrap/app.php:11` also registers that file via `withRouting(commands:)`. The result is 32 registered schedule events for 16 real jobs, so every scheduled job — queue draining, revenue and occupancy reports, billing, night audit, cleanup — executes twice per tick. Remove the stray `require`. This is a live production defect, not documentation.
 - **0b — Restore a green test suite.** With 0a done, drive the suite from 52 failed to zero, or failing that, to an explicitly documented and justified set of skips. Without a trustworthy suite, no later phase can prove it did not break anything.
 - **0c — Remove dead files.** `app/Policies/GuestRequestPoicy.php` and `app/Services/BookingAccontingService.php` (both zero bytes, both misspelled, both unreferenced), and `database/migrations/cmb.py`, a 328-line Python development script committed inside the migrations directory. Note that no correctly-spelled `GuestRequestPolicy` exists either, so guest-request authorization is genuinely absent and must be specified rather than merely renamed.
@@ -311,7 +311,7 @@ Nothing else can be trusted until this is done. Ordered by dependency, not by co
 
 ### Phase 1 — Postgres portability
 
-All 128 migrations run fresh against Postgres, driver-specific paths made conditional, schema parity test added as a permanent gate.
+All 165 migrations run fresh against Postgres, driver-specific paths made conditional, schema parity test added as a permanent gate.
 
 ### Phase 2 — Sync engine, headless
 
@@ -387,7 +387,7 @@ Every item below was verified against the code, not inferred.
 | 7 | "Database: SQLite (development)" | Omits MySQL production and the Postgres target. |
 | 10, 32, 96 | Routes include an API layer | Two webhooks only. |
 | 22 | "`app/Http/Controllers/Api/` — RoomApiController, BookingApiController" | **The directory does not exist.** |
-| 139 | "Use named migrations (not timestamps)" | All 144 are timestamped. Contradicts its own line 26. |
+| 139 | "Use named migrations (not timestamps)" | All 165 are timestamped. Contradicts its own line 26. |
 | 144 | "Web routes in `routes/web.php` (no API routes currently)" | Contradicts its own lines 10, 32 and 96. |
 | 208 | "queue driver default: sync for testing" | `.env` sets `QUEUE_CONNECTION=redis`. |
 | 211 | "`config/mail.php` (array driver for testing)" | `.env.example` sets `MAIL_MAILER=log`. |
@@ -408,7 +408,7 @@ Risk is concentrated in merge correctness, so that receives the attention.
 
 ## 14. Risks
 
-**Schema parity is the sleeper risk.** 128 migrations ported to a second engine is where this project is most likely to quietly diverge, and a missing index or a widened nullable column produces no error — only slow queries and bad data six months later. The parity test is the mitigation and is not optional.
+**Schema parity is the sleeper risk.** 165 migrations ported to a second engine is where this project is most likely to quietly diverge, and a missing index or a widened nullable column produces no error — only slow queries and bad data six months later. The parity test is the mitigation and is not optional.
 
 **FrankenPHP packaging is the largest unknown.** One binary per platform with the correct extensions, supervised reliably, surviving operating system restarts. This is not a configuration task and needs real time.
 
@@ -420,7 +420,7 @@ Risk is concentrated in merge correctness, so that receives the attention.
 
 **The 36-hour rule is a business change.** It must reach front-desk staff before it ships, or staff discover it the hard way.
 
-**Bundled PHP means terminal migrations run repeatedly.** Each terminal runs all 128 migrations against its own SQLite file on first setup. Acceptable at three to six terminals; worth monitoring if that grows.
+**Bundled PHP means terminal migrations run repeatedly.** Each terminal runs all 165 migrations against its own SQLite file on first setup. Acceptable at three to six terminals; worth monitoring if that grows.
 
 ## 15. Out of Scope
 
@@ -436,7 +436,8 @@ Risk is concentrated in merge correctness, so that receives the attention.
 
 These are deliberately unresolved and require input before the phase that depends on them.
 
-1. **Receipt printing.** `PosPrintLog` exists but no print implementation does. Target hardware is unknown — thermal receipt printers, or reprint from a management screen.
-2. **Embedded Postgres distribution.** Confirm the chosen embedded build and its licensing and platform coverage.
-3. **FrankenPHP extension packaging** for Windows specifically, which is the most constrained platform.
+1. **Receipt printing.** `PosPrintLog` exists but no print implementation does. Target hardware is unknown — thermal receipt printers, or reprint from a management screen. **Resolved in favour of thermal/ESC-POS via a local daemon bridge** (see Phase 7); the printer model and transport are still to be captured from the user and do not block the generic ESC/POS implementation.
+2. **Embedded Postgres distribution.** Confirm the chosen embedded build and its licensing and platform coverage. **BLOCKING:** Phase 6 estimation is unreliable until this is answered.
+3. **FrankenPHP extension packaging** for Windows specifically, which is the most constrained platform. **BLOCKING:** Phase 6 estimation is unreliable until this is answered.
 4. **Firewall rule registration** during server setup may require elevation on Windows and macOS. If it cannot be done without prompting, setup must say so explicitly rather than failing silently.
+5. **Image extension choice (GD vs Imagick).** Not decided. **BLOCKING** for the same reason as items 2 and 3 — packaging effort and licensing differ materially per platform.
