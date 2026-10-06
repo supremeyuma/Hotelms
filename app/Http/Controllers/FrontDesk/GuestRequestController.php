@@ -19,6 +19,8 @@ class GuestRequestController extends Controller
 
     public function index()
     {
+        $this->authorize('viewAny', GuestRequest::class);
+
         $requests = GuestRequest::with('booking', 'room')
             ->orderBy('created_at', 'desc')
             ->paginate(20);
@@ -30,6 +32,8 @@ class GuestRequestController extends Controller
 
     public function acknowledge(GuestRequest $request)
     {
+        $this->authorize('acknowledge', $request);
+
         $this->requestService->acknowledgeRequest($request, auth()->user());
 
         return back()->with('success', 'Request acknowledged.');
@@ -37,6 +41,8 @@ class GuestRequestController extends Controller
 
     public function complete(GuestRequest $request)
     {
+        $this->authorize('resolve', $request);
+
         $this->requestService->completeRequest($request);
 
         return back()->with('success', 'Request marked as completed.');

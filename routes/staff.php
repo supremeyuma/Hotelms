@@ -103,7 +103,7 @@ Route::prefix('frontdesk')->middleware(['auth', 'role:frontdesk|md'])->name('fro
     Route::resource('rooms', RoomController::class)->only(['index', 'show', 'updateStatus']);
     Route::patch('rooms/{room}/status', [RoomController::class, 'updateStatus'])->name('rooms.update-status');
 
-    Route::get('guest-requests', [GuestRequestController::class, 'index'])->name('guest-requests.index');;
+    Route::get('guest-requests', [GuestRequestController::class, 'index'])->name('guest-requests.index');
     Route::post('guest-requests/{request}/acknowledge', [GuestRequestController::class, 'acknowledge']);
     Route::post('guest-requests/{request}/complete', [GuestRequestController::class, 'complete']);
 
