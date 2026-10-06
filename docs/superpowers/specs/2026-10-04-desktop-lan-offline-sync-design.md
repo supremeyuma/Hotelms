@@ -254,7 +254,7 @@ This is a business change as well as a code change and must be communicated to f
 
 **FrankenPHP** — a single static binary embedding Caddy and PHP. Cross-platform, runs Laravel in worker mode for genuine concurrency. One binary ships per platform, supervised as a child process by the Tauri application. The same runtime serves terminals, staff-facing local serving and the LAN server; only `.env` differs.
 
-Required extensions: `pdo_sqlite`, `pdo_pgsql`, `bcmath`, `intl`, `zip`, and an image extension. **The image extension is not yet chosen.** GD and Imagick differ in licensing (Imagick is backed by ImageMagick, which has its own licence terms) and in Windows packaging effort; the choice has not been made, so Phase 6 estimation is provisional. This is real packaging work per platform and the largest technical risk in this design (§14).
+Required extensions: `pdo_sqlite`, `pdo_pgsql`, `bcmath`, `intl`, `zip`, and **GD** for image processing. GD was chosen over Imagick on 2026-10-05 because it ships inside the PHP runtime itself, which keeps the Windows packaging surface smaller; Imagick would have introduced a separate C library with its own licence terms. This is still real packaging work per platform and remains the largest technical risk in this design (§14).
 
 **Portable Postgres for the server role.** Windows offers no clean way to install Postgres without administrator rights, and Docker Desktop would violate both `technical layout.txt.txt:57` and requirement 3. An embedded Postgres build unpacked into the application's data directory and supervised as a child process avoids an installer entirely. If this proves fragile on a target OS, the fallback is a system Postgres, which reintroduces the installer requirement 3 exists to avoid.
 
@@ -440,4 +440,4 @@ These are deliberately unresolved and require input before the phase that depend
 2. **Embedded Postgres distribution.** Confirm the chosen embedded build and its licensing and platform coverage. **BLOCKING:** Phase 6 estimation is unreliable until this is answered.
 3. **FrankenPHP extension packaging** for Windows specifically, which is the most constrained platform. **BLOCKING:** Phase 6 estimation is unreliable until this is answered.
 4. **Firewall rule registration** during server setup may require elevation on Windows and macOS. If it cannot be done without prompting, setup must say so explicitly rather than failing silently.
-5. **Image extension choice (GD vs Imagick).** Not decided. **BLOCKING** for the same reason as items 2 and 3 — packaging effort and licensing differ materially per platform.
+5. **Image extension choice (GD vs Imagick).** **Resolved 2026-10-05: GD.** It ships inside the PHP runtime, so the Windows packaging surface is smaller. Recorded in §9.1.
