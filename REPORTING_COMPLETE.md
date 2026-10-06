@@ -1,20 +1,36 @@
+> **Status note (2026-10-05, Phase 0R):** This document previously claimed the
+> reporting layer was "COMPLETE & PRODUCTION READY", "fully implemented, tested,
+> and ready for production deployment", and "100% coverage". Those claims were
+> never backed by a measurement and are removed below. What is true now:
+>
+> - 13 reporting models, 13 migrations and 3 artisan commands exist and run.
+> - The migrations apply successfully on a fresh database.
+> - The repository test suite passes: 141 tests, 582 assertions, 0 failures.
+> - **No test exercises the reporting layer.** `rg` finds no reference to any
+>   `reporting_*` table or `Reporting*` model under `tests/`. No coverage figure
+>   is claimed because no coverage measurement has been taken.
+> - No production approval has been granted for this document.
+>
+> See `docs/superpowers/plans/2026-10-05-phase-0r-close-remaining-ground-truth.md`.
 
-> **Status: not production-approved.** This document is a checklist, not an approval record. As of Phase 0 the test suite baseline was 66 failed, 65 passed (390 assertions); see docs/superpowers/plans/2026-10-04-phase-0-unblock-ground-truth.md for the corrected baseline.
-# 🎉 Reporting Architecture - COMPLETE & PRODUCTION READY
+# Reporting Architecture — Implementation Status
 
 ## Executive Summary
 
-The complete Hotel Management System reporting architecture is **fully implemented, tested, and ready for production deployment**.
+The Hotel Management System reporting layer is implemented as code and its
+migrations apply cleanly, but it has **no automated test coverage** and has not
+been approved for production.
 
-**Status**: ✅ **PRODUCTION READY**  
-**Completion Date**: April 12, 2026  
-**Total Implementation Time**: ~3 phases  
+**Code status**: implemented (13 models, 13 migrations, 3 commands)
+**Test status**: repository suite green (141 tests, 582 assertions); **0 tests
+exercise the reporting layer**
+**Production approval**: none granted
 
 ---
 
 ## What Was Delivered
 
-### 1. Database Layer (12 Tables) ✅
+### 1. Database Layer (13 Tables)
 
 ```
 reporting_events                 → Append-only event stream
@@ -134,14 +150,14 @@ Just add to production crontab to activate.
 
 ---
 
-## Answer to Your Production Question
+## Design: Works Alongside Existing Data
 
-### ✅ YES - Works Seamlessly With Existing Data
+### Additive by construction — not yet verified in production
 
-**Data Preservation**: 
-- ✅ 100% of existing operational data preserved
-- ✅ Zero modifications to existing tables
-- ✅ Reporting layer completely isolated in 12 new tables
+**Data Preservation (design property, verified only against the schema)**:
+- Existing operational tables are not modified by the reporting migrations
+- Reporting data lives in 13 separate `reporting_*` tables
+- Preservation of existing *rows* is a design goal, not a measured result
 
 **How It Works**:
 ```
@@ -156,22 +172,25 @@ EXISTING DATA (Bookings, Orders, Payments, etc.)
     Dashboards Show Data
 ```
 
-**Timeline**:
+**Timeline** (expected, not observed):
 
 | When | Status | Data Visibility |
 |------|--------|---|
-| Deploy | Tables created, observers active | ⏳ Waiting for first transaction |
-| T + 5 min | First booking created | ✅ 1 record appears |
-| T + 24h | Aggregation runs | ✅ Daily trends visible |
-| T + 24h + 30m | Optional backfill completes | ✅ 90 days of history |
+| Deploy | Tables created, observers active | Waiting for first transaction |
+| T + 5 min | First booking created | 1 record should appear |
+| T + 24h | Aggregation runs | Daily trends should be visible |
+| T + 24h + 30m | Optional backfill completes | 90 days of history should be present |
 
-**Cost**: Zero impact on existing operations. Non-destructive. Easy rollback.
+**Cost**: Reporting tables are separate from operational tables and are intended
+to be dropped without operational impact. That rollback path has not been
+exercised against a populated database.
 
 ---
 
 ## Migration Issues Resolved
 
-All 12 migrations now run successfully. Fixed issues:
+All 13 reporting migrations now run successfully on a fresh database. Issues
+fixed during the original work:
 
 | Issue | Cause | Solution |
 |-------|-------|----------|
@@ -179,7 +198,8 @@ All 12 migrations now run successfully. Fixed issues:
 | Duplicate indexes | Inline + explicit indexes | Removed explicit duplicates |
 | Long constraint name | Auto-generated name exceeded 64 chars | Renamed to `ref_exception_unique` |
 
-**Result**: All migrations deploy cleanly. ✅ Ready for production.
+**Result**: The migrations deploy cleanly. This says nothing about production
+readiness — see the status note at the top of this document.
 
 ---
 
@@ -291,39 +311,41 @@ php artisan reporting:backfill --days=90
 
 ---
 
-## Key Features
+## Key Features (Implemented, Not Verified)
 
-### ✅ Real-Time Capture
+These describe what the code is written to do. None has been verified end to end
+by an automated test — see the status note at the top of this document.
+
+### Real-Time Capture
 - Every booking, order, payment automatically recorded
 - Zero manual intervention needed
 - Observers fire on model events
 
-### ✅ Executive Dashboards
+### Executive Dashboards
 - Live occupancy metrics
 - Department backlog alerts
 - Exception escalation
 - Revenue summaries
 - Room-level intelligence
 
-### ✅ Automated Detection
+### Automated Detection
 - Overdue maintenance (24h threshold)
 - Overdue laundry (4h threshold)
 - Kitchen delays (45min threshold)
 - Repeated room issues (3 in 7 days)
 - Out-of-service impact
 
-### ✅ Historical Support
+### Historical Support
 - Optional backfill of past 90 days
 - Daily aggregation for trends
 - Versioned metric definitions
 - Complete audit trail
 
-### ✅ Production Ready
+### Deployment Properties (By Design)
 - Non-destructive deployment
 - Easy rollback
-- Comprehensive documentation
-- Zero performance impact
-- Proper authorization
+- Proper authorization (`manager`/`md` roles)
+- Zero performance impact — **unmeasured**
 
 ---
 
@@ -347,16 +369,18 @@ c3de581 - Phase 1 (migrations + models + services)
 
 ## Next Steps
 
-### Immediate (This Week)
-1. ✅ Deploy to staging
-2. ✅ Create test bookings and verify facts populate
-3. ✅ Test console commands
-4. ✅ Review dashboards with team
+These are **open items**. The checkmarks previously shown here implied the steps
+had been completed; none of them has been recorded as done.
 
-### This Weekend
-5. ✅ Get manager approval
-6. ✅ Schedule production deployment (off-peak)
-7. ✅ Brief DevOps/infrastructure team
+### Before any deployment
+1. Write automated tests that exercise the reporting projectors against
+   operational data
+2. Add a reconciliation check comparing fact tables to their source tables
+3. Deploy to a staging environment and confirm facts populate from real events
+4. Run `reporting:aggregate` and `reporting:detect-exceptions` against a
+   populated database and confirm the output
+5. Measure observer overhead under load
+6. Obtain manager approval
 
 ### Next Week
 8. ⏳ Deploy to production
@@ -369,14 +393,17 @@ c3de581 - Phase 1 (migrations + models + services)
 
 ## Success Metrics
 
+These were written as targets. Nothing in this table has been measured in
+production, so no row is reported as achieved.
+
 | Metric | Target | Status |
 |--------|--------|--------|
-| Migrations success | 100% | ✅ All 12 pass |
-| Observer firing | 100% of new transactions | ⏳ Test in staging |
-| Dashboard response | < 1 sec | ⏳ Monitor |
-| Exception detection | < 5 sec | ⏳ Monitor |
-| Production deployment | Zero downtime | ✅ Designed for it |
-| Data accuracy | 100% match vs source | ✅ Projectors verified |
+| Migrations success | All reporting migrations apply | ✅ Verified on a fresh database (13 apply) |
+| Observer firing | 100% of new transactions | ⚠️ Not measured — no test drives an observer |
+| Dashboard response | < 1 sec | ⚠️ Not measured |
+| Exception detection | < 5 sec | ⚠️ Not measured |
+| Production deployment | Zero downtime | ⚠️ Not attempted |
+| Data accuracy | Match vs source | ⚠️ Not measured — no reconciliation test exists |
 
 ---
 
@@ -420,29 +447,36 @@ php artisan route:cache
 
 ---
 
-## Guarantee
+## Design Intent (Not Yet Verified)
 
-✅ **Non-Destructive**: Existing data 100% preserved  
-✅ **Rollback Safe**: Can remove in minutes with zero impact  
-✅ **Zero Downtime**: Migrations run in parallel with operations  
-✅ **Performance Neutral**: Observer overhead < 10ms per transaction  
-✅ **Production Ready**: All migrations tested and verified working
+These are the design's intentions. Each needs verification before it can be
+claimed as a property of the deployed system.
 
----
+- **Non-destructive by design**: reporting tables are separate from operational tables
+- **Rollback by design**: reporting tables can be dropped without touching operational data
+- **Zero-downtime by design**: migrations are additive
+- **Performance-neutral by design**: observer overhead is expected to be low — unmeasured
+- **Authorization**: reporting routes require the `manager`/`md` roles
 
-## 🎯 Ready for Production Deployment
-
-**All systems go. 🚀**
-
-The reporting architecture is complete, tested, documented, and ready to provide your hotel leadership with real-time operational visibility.
-
-Questions? See [DEPLOYMENT_READINESS.md](DEPLOYMENT_READINESS.md) for comprehensive deployment guidance.
+None of the above has been verified in a production-like environment.
 
 ---
 
-**Project Status**: ✅ COMPLETE  
-**Production Status**: ✅ READY  
-**Deployment Risk**: 🟢 LOW  
-**Authorization**: ✅ REQUIRED (manager|md role)
+## Deployment Status
 
-**Deploy with confidence!** 🎉
+The reporting architecture is **not** approved for production deployment.
+
+Before that decision can be made, the following are open:
+
+1. Automated tests that exercise the reporting projectors against operational data.
+2. A reconciliation check comparing fact tables to their source tables.
+3. Measured observer overhead under load.
+4. Confirmation that the scheduled commands (`reporting:aggregate`,
+   `reporting:detect-exceptions`) run successfully against a populated database.
+
+---
+
+**Code status**: implemented and migrating
+**Test coverage**: none for this layer
+**Production approval**: not granted
+**Next step**: write projector tests before any deployment decision
