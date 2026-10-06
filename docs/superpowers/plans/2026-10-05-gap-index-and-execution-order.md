@@ -1,0 +1,176 @@
+# Gap Index and Execution Order
+
+> **Date:** 2026-10-05
+> **Status:** Planning. No task in any linked plan has been started.
+
+This document is the entry point for closing every gap between
+`docs/superpowers/specs/2026-10-04-desktop-lan-offline-sync-design.md` and the
+codebase. It enumerates the gaps, points at the plan that owns each one, and
+fixes the execution order. Read this first, then work the plans in order.
+
+---
+
+## Verified baseline
+
+Re-measured 2026-10-05 against the working tree at `5326df2d`:
+
+| Fact | Value |
+|---|---|
+| Migrations applied on SQLite | 166 |
+| Test suite | 141 passed, 0 failed, 0 skipped, 582 assertions |
+| Scheduled events | 16 |
+| Sync tables | 4 exist and migrate |
+| Sync columns | 15 tables migrated with `sync_hlc`, `sync_origin_node_id`, `sync_deleted_at` |
+| Phase plans on disk | 0, 1, 2, 4 |
+| Phases with no plan | 3, 5, 6, 7, 8 |
+| Desktop runtime | none (no `Cargo.toml`, `src-tauri/`, `tauri.conf.json`) |
+
+---
+
+## Gap register
+
+Every row is a gap verified against code, not inferred. "Owner" is the plan that
+closes it.
+
+| # | Gap | Severity | Owner plan |
+|---|---|---|---|
+| G1 | 9 sync files contain literal `\n` bytes and cannot autoload | Blocker | [Phase 2R Part A](2026-10-05-phase-2r-part-a-repair-schema-policies.md) |
+| G2 | Nothing writes `sync_hlc`; no change-log capture exists | Blocker | Phase 2R |
+| G3 | `SyncMerger::merge()` is `array_merge`, ignores policy, cannot return conflict | Blocker | Phase 2R |
+| G4 | 6 policy classes do not exist | Blocker | Phase 2R |
+| G5 | `Syncable` is a 2-method accessor, not a sync trait | Blocker | Phase 2R |
+| G6 | `sync_nodes` lacks `property_id` and `credential` required by §5.4/§4.4 | High | Phase 2R |
+| G7 | `sync_cursors` stores `cursor_hlc`, not `last_applied_change_id` (§5.4) | High | Phase 2R |
+| G8 | `sync_changes` has no per-node monotonic sequence (§5.4) | High | Phase 2R |
+| G9 | ULID row identity (§5.4) incompatible with `row_id unsignedBigInteger` | High | Phase 2R |
+| G10 | `sync_changes` stores `old_values`/`new_values` (diff), §5.2 requires full snapshot | High | Phase 2R |
+| G11 | `TwoDbSyncTest` opens the same in-memory handle twice | High | Phase 2R |
+| G12 | `SyncEngineTest` only asserts HLC round-trip and an accessor | High | Phase 2R |
+| G13 | `softDeletesTz` for `sync_deleted_at` yields different types per engine | Medium | Phase 1R |
+| G14 | Phase 0 Task 4 dead files still present (`GuestRequestPoicy`, `BookingAccontingService`, `cmb.py`) | Medium | [Phase 0R](2026-10-05-phase-0r-close-remaining-ground-truth.md) |
+| G15 | Guest-request authorization genuinely absent; needs specification, not a rename | High | Phase 0R |
+| G16 | `REPORTING_COMPLETE.md` still claims "fully implemented" and "100%" | Medium | Phase 0R |
+| G17 | `SchemaParityTest` asserts `true` and its name is false | Blocker | [Phase 1R](2026-10-05-phase-1r-postgres-portability-and-parity-gate.md) |
+| G18 | No migration has been run against Postgres | Blocker | Phase 1R |
+| G19 | `2026_04_10_160000_harden_inventory_ledger_tables.php` uses MySQL-only index inspection | High | Phase 1R |
+| G20 | `sync:push`/`sync:pull` print "No remote configured; skipping." | Blocker | [Phase 4R](2026-10-05-phase-4r-sync-node-runtime-and-transport.md) |
+| G21 | `SyncWorker` is never dispatched; `routes/console.php` has zero sync entries | Blocker | Phase 4R |
+| G22 | No HTTP transport, no auth, no peer registry wiring | Blocker | Phase 4R |
+| G23 | No Class 3 drink-stock rebuild (§6.2 names both ledgers) | High | Phase 4R |
+| G24 | `inventory:rebuild` uses double-quoted string literals inside `DB::raw` SQL | Medium | Phase 4R |
+| G25 | No multi-process convergence proof | High | Phase 4R |
+| G26 | No sync scope manifest and no tripwire test (§7) | High | [Phase 4S](2026-10-05-phase-4s-sync-scope-manifest.md) |
+| G27 | `resources/js/ziggy.js` bakes `http://localhost` (§9.4 prerequisite) | Blocker | [Ziggy](2026-10-05-ziggy-runtime-route-manifest.md) |
+| G51 | Three routes have an empty name (`admin.reports.`, `frontdesk.`, `staff.`), so they are unreachable by `route()` name and risk future collisions | Medium | [Ziggy](2026-10-05-ziggy-runtime-route-manifest.md) Task 4 Step 6 |
+| G52 | `resources/js/ziggy.js` is tracked in git but imported by nothing; `@routes` in `app.blade.php` is the actual runtime source. Anyone editing the file fixes nothing. | Medium | [Ziggy](2026-10-05-ziggy-runtime-route-manifest.md) |
+| G28 | Phase 3 has no plan; §2.3 defects mostly fixed but unverified as a set | High | [Phase 3](2026-10-05-phase-3-club-pos-repair.md) |
+| G29 | `PosDevice` has no seeder or registration endpoint | High | Phase 3 |
+| G30 | No receipt or print implementation despite `pos_print_logs` (spec §16.1 open item) | Medium | Phase 7 |
+| G31 | `BookingAdminController::reassignRoom` writes only the legacy `bookings.room_id`, bypassing the `booking_rooms` pivot every other query reads | High | Phase 5 |
+| G32 | 36-hour booking cutoff (§8) absent from `app/`, `config/`, `resources/` | Blocker | [Phase 5](2026-10-05-phase-5-booking-authority-partition.md) |
+| G33 | Online booking engine has no authority gate; both channels book freely | Blocker | Phase 5 |
+| G34 | Front-desk booking form has no far-out refusal | Blocker | Phase 5 |
+| G35 | Cutoff not stored as property-level `settings` config (Class 5) | High | Phase 5 |
+| G36 | No staff communication for a business-rule change (§8, §14) | High | Phase 5 |
+| G37 | No Tauri application, bundled FrankenPHP, or setup wizard | Blocker | [Phase 6](2026-10-05-phase-6-tauri-desktop-and-setup-wizard.md) |
+| G38 | No embedded Postgres for the server role | Blocker | Phase 6 |
+| G39 | No UDP discovery or pairing-code flow | High | Phase 6 |
+| G40 | No offline snapshot-pull path proven against a LAN server | Blocker | [Phase 7](2026-10-05-phase-7-offline-terminal.md) |
+| G41 | No offline shift scenario test (§13) | High | Phase 7 |
+| G42 | No Coolify/Postgres cloud deployment with a sync daemon | High | [Phase 8](2026-10-05-phase-8-cloud-deployment.md) |
+| G43 | No golden sync fixture (§13) | Medium | Phase 4R |
+| G44 | `ClubPosService` calls `BillingService` without importing it | Low | Phase 3 |
+| G45 | Spec names `cash_shifts` and folio tables that do not exist | Low | Phase 0R (correct the spec) |
+| G46 | `FrontDesk\BookingsController::store` and `update` attach rooms with no availability re-check | Blocker | Phase 5 |
+| G47 | `BookingController::cancelBooking` calls an unassigned `$this->service` (fatal) and is unrouted | High | Phase 5 |
+| G48 | `BookingService::extendStay` calls `$booking->isEditable()`, which does not exist (fatal) | High | Phase 5 |
+| G49 | `bookings.checked_in_at`/`checked_out_at` are written but exist in no migration | High | Phase 5 |
+| G50 | `Room::$fillable` lists `room_number`, dropped by `2026_01_08_163319_remove_room_number_from_rooms_table.php`; three live readers remain | Medium | Phase 5 |
+
+---
+
+## Spec defects to correct
+
+These are contradictions inside the spec that implementation must resolve one way.
+Each needs a decision, recorded in the spec, not a silent workaround.
+
+| Spec reference | Problem | Resolution owner |
+|---|---|---|
+| §6 Class 4 "two cash shifts claiming one device" | No `cash_shifts` table. The real tables are `pos_sessions` and `pos_devices`. | Phase 0R corrects the spec text; Phase 4R implements against `pos_sessions`. |
+| §6 Class 2 "Field-level last-write-wins" | The schema has one `sync_hlc` per **row**, which can only express row-level LWW. True field-level LWW needs a per-field HLC map. | **Resolved: row-level LWW, and §6 is amended in the same commit.** Phase 2R Part A Task 3 Step 4. Accepted risk: two terminals editing different fields of one row offline — the later write wins. |
+| §5.4 "Every row retains the ULID" | Every synced domain table has an auto-increment integer primary key. A ULID in `sync_changes.row_id` has nothing to point at. | **Resolved:** Phase 2R Part A adds a nullable unique `sync_uid` ULID column to every synced table, backfilled. `row_id` references `sync_uid`, never `id`. Integer PKs and existing FKs untouched. |
+| §7 "folio/ledger tables" | No `folio` or `ledger` table exists. The ledger is `charges` + `journal_entries` + `journal_lines`. | Phase 4S builds the manifest from the real transitive closure. |
+| §7 "authentication and permission tables" | No `permissions` table. Authorization is `roles` only. | Phase 4S. |
+| §11 "the 144 existing migrations" | 166 now. | Every plan uses the live count. Expected gates: 167 after Phase 1R, 173 after Phase 2R. |
+| §9.1 required extension list | Image extension is unspecified. | Phase 6 Gate A decides and records it. |
+| §9.1 "embedded Postgres build" | No off-the-shelf Windows installer-free embedded Postgres covers all target platforms. | Phase 6 Gate B. Options and costs are laid out. |
+| §16 open item 3 | FrankenPHP extension packaging for Windows, specifically `pdo_pgsql`. | Phase 6 Gate C. `scripts/verify-runtime.ps1` is written before any packaging code, so the answer arrives before the work does. |
+| §16 open item 1 | Receipt-printing hardware unknown. | **Answered: thermal / ESC-POS.** Phase 7 Gate; generic ESC/POS command set so the exact model does not block the build. |
+| §8 "36-hour cutoff" | `bookings.check_in` is cast to `date`, carrying up to a day of imprecision. A literal 36h cutoff evaluated against dates flips the answer near the boundary. | **Resolved: cutoff default widened to 48h**, arrival read at `endOfDay()` for the most inclusive reading. Effective window is 48–72h, reported as a range. Phase 5 Decision 2. Alternative — an `arrival_at` column — was not taken. |
+| §8 front-desk authority | The spec's realistic desk handling (walk the guest online, or take a deposit) is a workflow, not code. | Phase 5 ships the refusal plus the hand-off, and documents the provisional-hold flow as out of scope. |
+| §16.1 open item 1 — receipt hardware | Unknown target device. | **Resolved: thermal / ESC-POS.** Phase 7 builds a device-agnostic ESC/POS adapter plus per-terminal configuration, not browser print. The concrete command set still needs the printer model — see the Phase 7 Gate. |
+
+---
+
+## Execution order
+
+Dependency chain is not negotiable. Each boundary commits a verified state.
+
+```
+Phase 0R   close remaining ground truth          (G14, G15, G16, G45)
+    |
+Phase 1R   Postgres portability + real parity gate  (G13, G17, G18, G19)
+    |
+Phase 2R   repair + complete the sync engine     (G1-G12, G43)  [Part A + Part B]
+    |
+Ziggy      runtime route manifest                (G27) - blocks every non-cloud node
+    |
+Phase 3    Club POS repair                       (G28, G29, G44)
+    |
+Phase 4S   sync scope manifest + tripwire        (G26)
+    |
+Phase 4R   sync node runtime + transport         (G20-G25)
+    |
+Phase 5    booking authority partition           (G31-G36, G46-G50)
+    |
+Phase 6    Tauri app + setup wizard              (G37, G38, G39)
+    |
+Phase 7    offline terminal                      (G30, G40, G41)
+    |
+Phase 8    cloud deployment                      (G42)
+```
+
+Two ordering notes that matter:
+
+- **Phase 2R precedes everything.** Nine unloadable files and a `array_merge`
+  merge function mean no sync test can pass. Fixing this first is what makes
+  every later phase verifiable.
+- **Ziggy sits before Phase 3.** The spec calls §9.4 a prerequisite, not a
+  phase item. It blocks any node other than the cloud from serving the
+  application, so it cannot wait for Phase 6.
+
+---
+
+## Verification gate between phases
+
+Every plan ends with the same gate. Do not proceed until it passes:
+
+```powershell
+$env:DB_CONNECTION='sqlite'
+$env:DB_DATABASE="$env:TEMP\hotelms_gap_gate.sqlite"
+Remove-Item $env:DB_DATABASE -ErrorAction SilentlyContinue
+New-Item -ItemType File -Path $env:DB_DATABASE -Force | Out-Null
+php artisan migrate:fresh --force
+php artisan test
+```
+
+Expected: `166 DONE, 0 FAIL`, then zero failures and zero skips.
+
+---
+
+## What is deliberately not planned here
+
+Out of scope per spec §15, and not covered by any plan here: multi-property
+partitioning, tenant isolation, per-property users or roles, staff-client local
+read caching, migration off Hostinger, offline guest room-service ordering, and
+provisional holds for far-out front-desk reservations.
