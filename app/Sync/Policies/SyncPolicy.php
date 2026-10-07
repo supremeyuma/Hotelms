@@ -7,6 +7,18 @@ use App\Sync\ConflictResult;
 abstract class SyncPolicy
 {
     /**
+     * @param  string|null  $entityKey  the catalogue key this policy was resolved
+     *                                   for, so a policy that holds several
+     *                                   distinct rules can tell which one applies.
+     *                                   Null when a policy is constructed directly
+     *                                   rather than through SyncScope.
+     */
+    public function __construct(
+        protected readonly ?string $entityKey = null,
+    ) {
+    }
+
+    /**
      * Merge a local row with a remote row for the same entity.
      *
      * Pure by contract: identical inputs must produce identical output on

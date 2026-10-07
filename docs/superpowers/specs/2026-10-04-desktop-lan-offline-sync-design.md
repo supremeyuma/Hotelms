@@ -180,15 +180,30 @@ Classification principle: **does the row represent something that happened, or s
 
 ### Class 1 — Immutable facts. Append-only, never merged.
 
-`pos_dockets`, `pos_docket_items`, `pos_docket_payments`, `pos_print_logs`, `inventory_movements`, `drink_stock_movements`, `payments`, `audit_logs`.
+`pos_dockets`, `pos_docket_items`, `pos_docket_payments`, `pos_print_logs`, `inventory_movements`, `drink_stock_movements`, `audit_logs`.
 
 Once written, never edited. Two nodes creating rows of the same class both survive. No conflict is possible.
 
-### Class 2 — Mutable reference data. Field-level last-write-wins.
+`payments` was listed here in the original draft. It does not belong: the
+application mutates `payments.status` and `payments.refunded_at` in place when a
+payment is refunded (`app/Services/FlutterwaveService.php`), so "once written,
+never edited" was already false. It is Class 4, below.
+
+### Class 2 — Mutable reference data. Row-level last-write-wins.
 
 `inventory_items`, `inventory_locations`, `room_types`, `rooms`, `staff_profiles`.
 
-Per field, the newest `sync_hlc` wins, with `sync_origin_node_id` breaking ties. Never surfaced to a human.
+**Row-level** last-write-wins: the row with the higher `sync_hlc` replaces the
+other, with `sync_origin_node_id` breaking an exact tie. Concurrent edits to
+different fields of the same row resolve in favour of the later write; this is a
+known and accepted limitation. Never surfaced to a human.
+
+Not implemented: field-level last-write-wins. It would require a per-field HLC
+map on every Class 2 row, maintained on every write. The schema carries one
+`sync_hlc` per **row**, which cannot express per-field write times. If a lost
+edit is ever observed in practice, add `sync_field_hlc JSON` and change the
+policy. The accepted risk, stated plainly: one terminal changing a room's rate
+discards another terminal's simultaneous change to its description.
 
 ### Class 3 — Derived balances. Never synced as authoritative; recomputed.
 
@@ -199,10 +214,16 @@ These are caches of a sum over Class 1 rows. Each node computes the sum in a det
 ### Class 4 — Hard conflicts. Blocked, surfaced to a human.
 
 - Two bookings on the same room for overlapping dates. Overlap detection already exists at `app/Services/RoomAvailabilityService.php:229-233` and is reused.
-- Two `pos_sessions` claiming one `pos_devices` row.
-- A payment captured on one node and refunded on another.
+- Two `pos_sessions` claiming one `pos_devices` row. The link column is `sessions.device_id`, a foreign Ulid to `pos_devices`, and the two sessions claim it when their `[opened_at, closed_at)` intervals intersect. A null `closed_at` means still open, so it has no upper bound.
+- A payment captured on one node and refunded on another. The two rows are the same payment seen on both nodes: they conflict only when both sides have reached a terminal `status` and those statuses point opposite ways. `pending` against `paid` is a normal progression and never blocks.
 
 Never auto-resolved. Per decision 9, the booking case is architecturally unreachable — see §8.
+
+Resolved: `payments` is Class 4, not Class 1. This section and §6 Class 1
+disagreed about it, and Class 4 wins because the application mutates
+`payments.status` in place on refund, so the Class 1 premise was already false.
+Had Class 1 been chosen instead, a capture-against-refund split would have
+resolved silently by newest timestamp with no human ever seeing it.
 
 ### Class 5 — Cloud-authoritative configuration. Cloud wins, nodes do not write.
 
