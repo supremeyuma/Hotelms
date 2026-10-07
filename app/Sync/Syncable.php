@@ -70,6 +70,15 @@ trait Syncable
             return;
         }
 
+        // A row written by the applier already carries the origin's HLC in its
+        // payload. Stamping here would replace it with a fresh local one, so a
+        // row whose latest write came from another node would claim it was
+        // written here and the next last-write-wins comparison would use the
+        // wrong clock.
+        if (SyncLogger::isApplying()) {
+            return;
+        }
+
         if (! SyncScope::has($this->getSyncTable())) {
             return;
         }
