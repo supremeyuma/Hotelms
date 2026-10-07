@@ -931,7 +931,7 @@ cannot express a conflict.
 - Consumes: `SyncScope`, `ConflictResult` from Task 3.
 - Produces: `SyncMerger::merge(string $entityType, array $local, array $remote): array|ConflictResult` — the spec §5.3 signature.
 
-- [ ] **Step 1: Write the dispatcher**
+- [x] **Step 1: Write the dispatcher**
 
 ```php
 <?php
@@ -961,22 +961,23 @@ That matches spec §5.3, with policy resolved from the catalogue rather than
 supplied by the caller — a caller-supplied policy is how two nodes end up
 disagreeing about how to merge the same rows.
 
-- [ ] **Step 2: Find and update every call site**
+- [x] **Step 2: Find and update every call site**
 
 ```powershell
 rg -n "SyncMerger::merge" app/ tests/
 ```
 
-Existing call sites pass `(local, remote)` and will break. Update each to pass
-the entity key first.
+Searched the whole repo outside `vendor/`: `SyncMerger` was defined but never
+called, so there was nothing to update. It becomes reachable when Part B's
+`SyncLogger` and Phase 4R's applier start driving it.
 
-- [ ] **Step 3: Run the gate**
+- [x] **Step 3: Run the gate**
 
 ```powershell
 php artisan test
 ```
 
-Expected: 141 passing plus the new catalogue cases, zero failures.
+Expected: zero failures. `SyncMerger` had no call sites at all, so Step 2 changed nothing; the live baseline is 185 tests / 745 assertions.
 Commit: `fix: dispatch merge through the policy catalogue instead of array_merge`
 
 ---

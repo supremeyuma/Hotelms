@@ -34,16 +34,16 @@ closes it.
 
 | # | Gap | Severity | Owner plan |
 |---|---|---|---|
-| G1 | 9 sync files contain literal `\n` bytes and cannot autoload | Blocker | [Phase 2R Part A](2026-10-05-phase-2r-part-a-repair-schema-policies.md) |
+| G1 | 9 sync files contain literal `\n` bytes and cannot autoload. **Resolved:** Phase 2R Part A Task 1 rewrote all nine with real newlines; they autoload and pass `php -l`. | Blocker | [Phase 2R Part A](2026-10-05-phase-2r-part-a-repair-schema-policies.md) |
 | G2 | Nothing writes `sync_hlc`; no change-log capture exists | Blocker | Phase 2R |
-| G3 | `SyncMerger::merge()` is `array_merge`, ignores policy, cannot return conflict | Blocker | Phase 2R |
-| G4 | 6 policy classes do not exist | Blocker | Phase 2R |
+| G3 | `SyncMerger::merge()` is `array_merge`, ignores policy, cannot return conflict. **Resolved:** Phase 2R Part A Task 4 replaced it with catalogue dispatch; the signature now takes the entity key and can return a `ConflictResult` as well as a row. | Blocker | Phase 2R |
+| G4 | 6 policy classes do not exist. **Resolved:** Phase 2R Part A Task 1 wrote them and Task 3 wired them into `SyncScope`, with `PolicyCatalogueTest` covering all five classes. | Blocker | Phase 2R |
 | G5 | `Syncable` is a 2-method accessor, not a sync trait | Blocker | Phase 2R |
-| G6 | `sync_nodes` lacks `property_id` and `credential` required by §5.4/§4.4 | High | Phase 2R |
-| G7 | `sync_cursors` stores `cursor_hlc`, not `last_applied_change_id` (§5.4) | High | Phase 2R |
-| G8 | `sync_changes` has no per-node monotonic sequence (§5.4) | High | Phase 2R |
-| G9 | ULID row identity (§5.4) incompatible with `row_id unsignedBigInteger` | High | Phase 2R |
-| G10 | `sync_changes` stores `old_values`/`new_values` (diff), §5.2 requires full snapshot | High | Phase 2R |
+| G6 | `sync_nodes` lacks `property_id` and `credential` required by §5.4/§4.4. **Resolved:** Phase 2R Part A Task 2 added `property_id` (FK to `properties`, nullOnDelete) and `credential` to `sync_nodes`, with an index on `[property_id, type]`. | High | Phase 2R |
+| G7 | `sync_cursors` stores `cursor_hlc`, not `last_applied_change_id` (§5.4). **Resolved:** Phase 2R Part A Task 2 dropped `cursor_hlc` and added nullable `last_applied_change_id` to `sync_cursors`. | High | Phase 2R |
+| G8 | `sync_changes` has no per-node monotonic sequence (§5.4). **Resolved:** Phase 2R Part A Task 2 added `sequence` with a unique `[node_id, sequence]` index, plus a `sync_sequences` counter table so allocation does not race on `max()+1`. | High | Phase 2R |
+| G9 | ULID row identity (§5.4) incompatible with `row_id unsignedBigInteger`. **Resolved:** Phase 2R Part A Task 2 widened `sync_changes.row_id` and `sync_conflicts.row_id` to string, re-asserting the surrounding indexes because SQLite rebuilds the table. Added a uniform unique `sync_uid` ULID to all 15 synced tables instead of touching their domain keys. | High | Phase 2R |
+| G10 | `sync_changes` stores `old_values`/`new_values` (diff), §5.2 requires full snapshot. **Resolved:** Phase 2R Part A Task 2 added a `payload` longText column carrying the full snapshot. `old_values`/`new_values` stay for audit. | High | Phase 2R |
 | G11 | `TwoDbSyncTest` opens the same in-memory handle twice | High | Phase 2R |
 | G12 | `SyncEngineTest` only asserts HLC round-trip and an accessor | High | Phase 2R |
 | G13 | `softDeletesTz` for `sync_deleted_at` yields different types per engine | Medium | Phase 1R |
