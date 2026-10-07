@@ -327,7 +327,7 @@ currently true?**
   - Phase 4R consumes `keys()`.
   - Phase 4S fills in `config('sync_scope.read_only')`, which `mayEmit()` reads.
 
-- [ ] **Step 1: Define the catalogue as data**
+- [x] **Step 1: Define the catalogue as data**
 
 ```php
 <?php
@@ -433,7 +433,7 @@ Throwing on an unregistered key is deliberate. An unmapped entity means nobody
 decided its conflict semantics, and silently picking a policy is how divergent
 state gets produced.
 
-- [ ] **Step 2: Implement the `ConflictResult` value object**
+- [x] **Step 2: Implement the `ConflictResult` value object**
 
 ```php
 <?php
@@ -456,7 +456,7 @@ final class ConflictResult
 }
 ```
 
-- [ ] **Step 3: Implement Class 1 — immutable append**
+- [x] **Step 3: Implement Class 1 — immutable append**
 
 Two nodes creating rows of the same class both survive, so no conflict is
 possible. When both sides carry the same row key, the newer HLC wins; otherwise
@@ -534,7 +534,7 @@ class MergePolicy extends SyncPolicy
 `Hlc::max` already applies the node-id tie-break, so this comparison is
 deterministic across nodes. That determinism is what makes convergence hold.
 
-- [ ] **Step 4: Implement Class 2 — row-level last-write-wins**
+- [x] **Step 4: Implement Class 2 — row-level last-write-wins**
 
 **Decision made: Option A.** Ship row-level LWW and amend §6 to say "row-level".
 This is recorded so a later reader does not reopen it.
@@ -663,7 +663,7 @@ The tie-break on `sync_origin_node_id` is what makes the function *pure* in the
 sense spec §5.3 requires: two nodes comparing the same two rows reach the same
 answer without coordinating.
 
-- [ ] **Step 5: Implement Class 3 — derived balances**
+- [x] **Step 5: Implement Class 3 — derived balances**
 
 Class 3 values are caches of a sum over Class 1 movements. They are never
 exchanged as authoritative, so this policy exists mainly to make the "never
@@ -694,7 +694,7 @@ class AdditivePolicy extends SyncPolicy
 }
 ```
 
-- [ ] **Step 6: Implement Class 4 — block and surface**
+- [x] **Step 6: Implement Class 4 — block and surface**
 
 Reuse the overlap detection that already exists in
 `app/Services/RoomAvailabilityService.php:229-233` rather than writing new
@@ -741,7 +741,7 @@ class ConflictPolicy extends SyncPolicy
 Cover the other two Class 4 cases in the test: two `pos_sessions` claiming one
 `pos_device_id`, and a payment captured on one node and refunded on another.
 
-- [ ] **Step 7: Implement Class 5 and the idempotent replay helper**
+- [x] **Step 7: Implement Class 5 and the idempotent replay helper**
 
 `IdempotentPolicy` makes the §5.4 replay guarantee explicit: applying a change
 whose `sync_row_key` already exists locally is a no-op. Phase 4R's pull path
@@ -767,7 +767,7 @@ class IdempotentPolicy extends SyncPolicy
 }
 ```
 
-- [ ] **Step 8: Write the policy catalogue unit test**
+- [x] **Step 8: Write the policy catalogue unit test**
 
 Spec §13: "Policy catalogue unit tests — explicit cases for each of the five
 classes, including the three-term case where Class 4 must block."
@@ -857,13 +857,56 @@ class PolicyCatalogueTest extends TestCase
 Adjust the Class 1 assertion to match the `union()` implementation you write;
 the point of the test is that both rows survive.
 
-- [ ] **Step 9: Run the catalogue test**
+- [x] **Step 9: Run the catalogue test**
 
 ```powershell
 php artisan test --filter=PolicyCatalogueTest
 ```
 
 Expected: all cases pass. Commit: `feat: implement the five-class sync policy catalogue`
+
+### Deviations recorded during execution
+
+Five things in this task did not match the sample code, and each was resolved
+rather than copied:
+
+1. **`payments` moved from Class 1 to Class 4.** Spec §6 listed it in both
+   Class 1 ("once written, never edited") and Class 4 ("a payment captured on
+   one node and refunded on another"). The application mutates
+   `payments.status` and `payments.refunded_at` in place on refund
+   (`app/Services/FlutterwaveService.php:325`), so Class 1's premise was already
+   false. Decided in favour of Class 4: money divergences are surfaced, never
+   auto-resolved. The catalogue, `ConflictPolicy` and §6 now all agree.
+
+2. **`ConflictPolicy` needed to know which entity it was holding.** The sample
+   only ever did booking date-overlap detection, so `pos_sessions` — which has
+   no `check_in`/`check_out` — was mapped to Class 4 but could never fire.
+   `SyncPolicy` gained an optional `entityKey` constructor parameter and
+   `SyncScope::policyFor()` passes it. `ConflictPolicy` dispatches on it.
+
+3. **Two Class 4 rules were missing entirely.** The sample's Step 6 note asked
+   the *test* to cover a device double-claim and a capture-against-refund, but
+   supplied no code for either. Both rules are now implemented:
+   `device_already_in_use` (same `device_id`, intersecting `[opened_at,
+   closed_at)` intervals, null `closed_at` meaning still open) and
+   `captured_then_refunded` (same row, both sides terminal, statuses pointing
+   opposite ways). The status vocabularies were taken from the literals the
+   application actually writes, not invented.
+
+4. **The sample's column name was wrong.** The plan says `pos_device_id`; the
+   column is `device_id`, a foreign Ulid to `pos_devices`.
+
+5. **`ConflictPolicy::merge()` discarded the remote row.** It returned `$local`
+   whenever no conflict was found, so a non-overlapping remote booking was
+   silently dropped. Two distinct rows now both survive, and two nodes that saw
+   the same row without disagreeing take the newer one.
+
+Also corrected in the test: HLC fixtures use the real dash-separated format
+`timestamp-counter-nodeId`, not the colon format in the sample, and the Class 1
+assertion matches the list `merge()` returns.
+
+Gate: `PolicyCatalogueTest` 21 passed / 70 assertions. Full suite 185 passed /
+745 assertions, up from the 164 / 675 baseline.
 
 ---
 
