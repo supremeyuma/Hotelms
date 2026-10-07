@@ -12,4 +12,10 @@ class SyncChange extends Model
     protected $table = "sync_changes";
 
     protected $guarded = [];
+
+    protected $casts = [
+        'payload'    => 'array',
+        'sequence'   => 'integer',
+        'applied_at' => 'datetime',
+    ];
 }
