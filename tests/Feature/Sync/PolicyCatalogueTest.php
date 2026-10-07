@@ -208,7 +208,7 @@ class PolicyCatalogueTest extends TestCase
     public function test_a_terminal_node_may_not_emit_read_only_configuration(): void
     {
         config([
-            'sync.node_kind' => 'terminal',
+            'sync.node_type' => 'terminal',
             'sync_scope.read_only' => ['settings', 'roles'],
         ]);
 

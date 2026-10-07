@@ -408,7 +408,7 @@ final class SyncScope
      */
     public static function mayEmit(string $entityKey): bool
     {
-        if (config('sync.node_kind') !== 'terminal') {
+        if (config('sync.node_type') !== 'terminal') {
             return true;
         }
 

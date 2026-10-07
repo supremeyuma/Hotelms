@@ -80,14 +80,15 @@ final class SyncScope
      * cloud over live configuration, and last-write-wins means it can win with
      * a stale clock and leave no conflict record.
      *
-     * `config('sync.node_kind')` does not exist yet - Phase 4R creates it - and
-     * `config('sync_scope.read_only')` does not exist yet - Phase 4S creates it.
-     * Until both are in place this returns true for every key. The mechanism
-     * ships here; the contents ship there.
+     * Two things gate this. `config('sync.node_type')` defaults to 'terminal',
+     * so a node that never configured itself is treated as the most restricted
+     * kind rather than the least. `config('sync_scope.read_only')` is empty
+     * until Phase 4S fills it, which makes the second gate inert until the
+     * manifest exists. The mechanism ships here; the contents ship there.
      */
     public static function mayEmit(string $entityKey): bool
     {
-        if (config('sync.node_kind') !== 'terminal') {
+        if (config('sync.node_type') !== 'terminal') {
             return true;
         }
 
