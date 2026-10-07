@@ -1,1 +1,17 @@
-<?php\n\nnamespace App\\Models\\Sync;\n\nuse App\\Sync\\Syncable;\nuse Illuminate\\Database\\Eloquent\\Model;\n\nclass SyncNode extends Model\n{\n    use Syncable;\n\n    protected \ = strtolower(str_replace('Sync', 'sync_', 'SyncNode'));\n\n    protected \ = [];\n}\n
+<?php
+
+namespace App\Models\Sync;
+
+use Illuminate\Database\Eloquent\Model;
+
+class SyncNode extends Model
+{
+    protected $table = 'sync_nodes';
+
+    protected $guarded = [];
+
+    protected $casts = [
+        'meta' => 'array',
+        'last_seen_at' => 'datetime',
+    ];
+}
