@@ -620,7 +620,7 @@ belongs. If the applier does not claim it there, raise it before Phase 4R.
 - Consumes: Tasks 2–3, Part A policies.
 - Produces: `SyncApplier::apply(SyncChange $change): void`, consumed by Phase 4R's pull path.
 
-- [ ] **Step 1: Whitelist entity keys to model classes**
+- [x] **Step 1: Whitelist entity keys to model classes**
 
 Never derive a class name from a table name in incoming data — that would let a
 hostile payload name an arbitrary class.
@@ -684,7 +684,7 @@ final class SyncEntityRegistry
 }
 ```
 
-- [ ] **Step 2: Implement the applier**
+- [x] **Step 2: Implement the applier**
 
 ```php
 <?php
@@ -770,7 +770,7 @@ class SyncApplier
 same change produces the same row, because the payload is a full snapshot and
 the write is a plain overwrite rather than an increment.
 
-- [ ] **Step 3: Write the idempotency test**
+- [x] **Step 3: Write the idempotency test**
 
 Spec §13: "Idempotency test — replay an entire change log twice; assert
 byte-identical state."
@@ -833,13 +833,46 @@ class IdempotencyTest extends TestCase
 The second test is the echo guard. Without it, a pull would append changes that
 the peer then pulls, forever.
 
-- [ ] **Step 4: Run the idempotency test**
+- [x] **Step 4: Run the idempotency test**
 
 ```powershell
 php artisan test --filter=IdempotencyTest
 ```
 
 Commit: `feat: apply remote changes idempotently`
+
+Resolved during execution — four defects:
+
+1. `Arr::except()` was called with no `use Illuminate\Support\Arr`, so the
+   update path would have thrown a class-not-found on its first remote change.
+2. `fill()` honours `$fillable` and all fifteen syncable models declare one.
+   `InventoryItem` does not list `quantity`, so a remote stock change would have
+   been discarded silently and the nodes would never converge - the exact
+   failure the merge policy exists to prevent. Both paths now `forceFill`, and
+   the payload is first narrowed to the columns the table actually has, so an
+   unknown remote key cannot reach the statement. The insert path uses
+   `forceFill` on a new instance rather than `create()`, for the same reason,
+   and still drops the origin's `id`.
+3. `stampSyncMetadata()` ran on saves made by the applier, replacing the
+   origin's HLC with a fresh local one. It now yields while
+   `SyncLogger::isApplying()` is set, alongside capture.
+4. Timestamps: the payload serialises dates as UTC, which is correct for
+   transport, but assigning an ISO-8601 value makes Eloquent format it in UTC
+   while this engine reads the column back in `app.timezone`
+   (`Africa/Lagos`). Replay shifted every timestamp by the offset, so the log
+   applied twice was not byte-identical - the precise failure spec section 13
+   asks the test to catch. Dates are converted to this node's database format
+   before assignment. Two nodes in different timezones each store their own
+   wall-clock rendering of the same instant.
+
+The test file ships the plan's two cases plus four regression tests, one per
+defect above.
+
+`SyncEntityRegistry` maps the fifteen tables that carry sync fields. The four
+catalogue entries with no model there - `inventory_stocks`, `drink_stock`,
+`settings`, `roles` - have no capture path either, so no change for them can
+be produced today. The docblock records that an unknown key failing loudly is
+the intended behaviour of a whitelist.
 
 ---
 
