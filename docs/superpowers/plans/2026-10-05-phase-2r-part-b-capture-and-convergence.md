@@ -84,7 +84,7 @@ There is no boot hook, no HLC stamp, no change row. This part adds both.
 - Consumes: environment.
 - Produces: `config('sync.enabled')`, `config('sync.node_id')`, `config('sync.node_type')`, `config('sync.peers')`, `config('sync.batch_size')`.
 
-- [ ] **Step 1: Write the config**
+- [x] **Step 1: Write the config**
 
 ```php
 <?php
@@ -142,7 +142,7 @@ return [
 ];
 ```
 
-- [ ] **Step 2: Add the environment keys to `.env.example`**
+- [x] **Step 2: Add the environment keys to `.env.example`**
 
 ```
 SYNC_ENABLED=false
@@ -155,7 +155,7 @@ SYNC_BATCH_SIZE=500
 
 Do not touch `.env` — it is untracked local state.
 
-- [ ] **Step 3: Verify the config resolves**
+- [x] **Step 3: Verify the config resolves**
 
 ```powershell
 php artisan tinker --execute="var_dump(config('sync.enabled'), config('sync.node_type'), config('sync.batch_size'));"
@@ -163,6 +163,13 @@ php artisan tinker --execute="var_dump(config('sync.enabled'), config('sync.node
 
 Expected: `bool(false)`, `'terminal'`, `500`.
 Commit: `feat: add sync node configuration`
+
+Resolved during execution: Part A Task 3's `SyncScope::mayEmit()` sample read
+`config('sync.node_kind')`, a key nothing ever defines. This task defines it as
+`sync.node_type`, and Phase 4R, 5, 6 and 8 all read that name, so `node_kind`
+was a typo in the Part A sample. `SyncScope` and its test were corrected to
+`sync.node_type` and the Part A plan was fixed at source. Without that, the
+read-only gate would have silently stayed open.
 
 ---
 
@@ -181,7 +188,7 @@ This is the architectural spine. Everything downstream depends on it.
   - `SyncLogger::isApplying(): bool`
   - `SyncLogger::nextSequence(): int`
 
-- [ ] **Step 1: Write the service**
+- [x] **Step 1: Write the service**
 
 ```php
 <?php
@@ -296,7 +303,7 @@ The `$previous` save in `applyingRemote` rather than a bare reset matters: neste
 or exception-interrupted application must restore the prior state, not force it
 to false.
 
-- [ ] **Step 2: Fix `SyncChange` casts and fillable**
+- [x] **Step 2: Fix `SyncChange` casts and fillable**
 
 The current model is `protected $guarded = []` with no casts, so `payload`,
 `meta` and any JSON columns come back as raw strings. Add explicit casts.
@@ -325,7 +332,7 @@ class SyncChange extends Model
 A `payload` cast to array is what lets the applier use it directly instead of
 `json_decode` on every row.
 
-- [ ] **Step 3: Verify the logger in isolation**
+- [x] **Step 3: Verify the logger in isolation**
 
 ```powershell
 php artisan tinker --execute="
@@ -337,6 +344,30 @@ echo var_export(App\Sync\SyncLogger::isApplying(), true) . PHP_EOL;
 ```
 
 Expected: `1`, `2`, `false`. Commit: `feat: add sync change logger`
+
+Resolved during execution — four defects in the sample:
+
+1. `payload` was built with `json_encode(...)` while `SyncChange` casts payload
+   to array. Laravel json_encodes on set for that cast, so the value would have
+   been stored double-encoded and read back as a string. Passed as an array
+   instead; verified the raw column holds a single-encoded object.
+2. `capture()` logged no guard for an empty `sync.node_id`. Every unconfigured
+   node would write `node_id` = `''`, and two such nodes mint interleaved
+   sequences under that one key, corrupting the receiving cursor with no error
+   locally. A fifth null-return was added, and `nextSequence()` now takes the
+   already-resolved id so it is read exactly once.
+3. `nextSequence()` used a bare insert to create the counter row. On the very
+   first capture two concurrent transactions can both find no row and one
+   fails on the primary key. Replaced with `insertOrIgnore` followed by
+   `lockForUpdate`.
+4. `nextSequence()` was documented as `nextSequence(): int` in the interface
+   list and is called with no arguments in Step 3 below, so it stays public
+   and takes an optional node id rather than the required parameter the sample
+   implied.
+
+`SyncChange` casts were applied as written. Verified: sequences 1 then 2,
+`isApplying()` false, `applyingRemote` restores prior state, payload round-trips
+as an array, suite unchanged at 185 passed / 745 assertions.
 
 ---
 
