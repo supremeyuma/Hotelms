@@ -71,7 +71,7 @@ declaration.
 - Consumes: nothing.
 - Produces: a loadable `SyncPolicy` abstract base with `merge(array $local, array $remote): array|ConflictResult`. Part B and every later phase depend on this.
 
-- [ ] **Step 1: Confirm the corruption with a byte check**
+- [x] **Step 1: Confirm the corruption with a byte check**
 
 ```powershell
 python -c "import glob; [print(p, 'newlines=', open(p,'rb').read().count(b'\x0a'), 'literal=', open(p,'rb').read().count(b'\x5cn')) for p in sorted(glob.glob('app/Sync/Policies/*.php') + glob.glob('app/Models/Sync/*.php'))]"
@@ -81,7 +81,7 @@ Expected: `app/Sync/Policies/*.php` and `SyncNode.php`, `SyncCursor.php`,
 `SyncConflict.php` all report `newlines=0`. `SyncChange.php`, `Syncable.php`,
 `SyncMerger.php` and `Hlc.php` report a non-zero count — those four are intact.
 
-- [ ] **Step 2: Confirm they cannot autoload**
+- [x] **Step 2: Confirm they cannot autoload**
 
 ```powershell
 php artisan tinker --execute="var_dump(class_exists('App\Sync\Policies\SyncPolicy')); var_dump(class_exists('App\Models\Sync\SyncNode')); var_dump(class_exists('App\Sync\Hlc'));"
@@ -89,7 +89,7 @@ php artisan tinker --execute="var_dump(class_exists('App\Sync\Policies\SyncPolic
 
 Expected: `bool(false)`, `bool(false)`, `bool(true)`.
 
-- [ ] **Step 3: Write the abstract base with real newlines**
+- [x] **Step 3: Write the abstract base with real newlines**
 
 ```php
 <?php
@@ -118,7 +118,7 @@ The return union is the important change. The existing placeholder signature is
 `merge(array $local, array $remote, array $policy = [])` returning a hard `array`,
 which is structurally incapable of representing a Class 4 conflict.
 
-- [ ] **Step 4: Write the three sync models with real newlines**
+- [x] **Step 4: Write the three sync models with real newlines**
 
 `SyncNode` needs a working primary key. The corrupt version derived it as
 `strtolower(str_replace('Sync', 'sync_', 'SyncNode'))`, which yields
@@ -150,7 +150,7 @@ Apply the same treatment to `SyncCursor` (table `sync_cursors`, casts
 `local_change`, `remote_change` and `resolution` to array, `resolved_at` to
 datetime).
 
-- [ ] **Step 5: Verify newlines and autoload for all nine**
+- [x] **Step 5: Verify newlines and autoload for all nine**
 
 ```powershell
 python -c "import glob; [print(p, 'newlines=', open(p,'rb').read().count(b'\x0a')) for p in sorted(glob.glob('app/Sync/Policies/*.php') + glob.glob('app/Models/Sync/*.php'))]"
