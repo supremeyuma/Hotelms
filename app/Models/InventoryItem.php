@@ -3,10 +3,13 @@
 
 namespace App\Models;
 
+use App\Sync\Syncable;
 use Illuminate\Database\Eloquent\Model;
 
 class InventoryItem extends Model
 {
+    use Syncable;
+
     protected $fillable = [
         'name',
         'sku',
