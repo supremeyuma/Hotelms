@@ -380,7 +380,7 @@ as an array, suite unchanged at 185 passed / 745 assertions.
 - Consumes: Task 2 `SyncLogger`, Part A `Hlc`.
 - Produces: `Syncable::bootSyncable()` registering the hooks, and `Syncable::stampSyncMetadata(): void`.
 
-- [ ] **Step 1: Write the trait**
+- [x] **Step 1: Write the trait**
 
 ```php
 <?php
@@ -452,7 +452,7 @@ trait Syncable
 `saved`, which captures again, which persists a new HLC — an infinite loop
 inside a single save.
 
-- [ ] **Step 2: Apply the trait to the syncable models**
+- [x] **Step 2: Apply the trait to the syncable models**
 
 The models whose tables carry `sync_hlc` (all 15 from the Part A catalogue plus
 `bookings`). Add `use Syncable;` and declare the columns fillable if the model
@@ -465,7 +465,7 @@ rg -l "class (PosDocket|PosDocketItem|PosDocketPayment|PosPrintLog|InventoryMove
 Verify each gained the trait. Do not add it to `InventoryStock` or `DrinkStock` —
 Class 3 balances are recomputed, not synchronised as authoritative.
 
-- [ ] **Step 3: Write the capture test**
+- [x] **Step 3: Write the capture test**
 
 ```php
 <?php
@@ -559,7 +559,7 @@ Drop the redundant third assertion in the second test; the fourth one is the
 meaningful version. The point of the pair is that the sequence is monotonic and
 that a save produces exactly one change row.
 
-- [ ] **Step 4: Run the capture test**
+- [x] **Step 4: Run the capture test**
 
 ```powershell
 php artisan test --filter=ChangeLogCaptureTest
@@ -568,6 +568,45 @@ php artisan test --filter=ChangeLogCaptureTest
 Expected: all pass. Before this task these columns and the `sync_changes` table
 are untouched by any application write.
 Commit: `feat: capture sync changes on every write to a syncable row`
+
+Resolved during execution — the assertion instruction above was miscounted and
+the sample carried three defects:
+
+Assertion note: "the redundant third assertion in the second test" points at
+nothing. The tautology is `$this->assertSame(2, SyncChange::orderBy('sequence')
+->first()->sequence === 1 ? 2 : 2);`, the second assertion of the *third* test,
+which is always true whatever the sequence is. It was dropped; the `[1, 2]`
+pluck assertion below it is the one that proves monotonicity.
+
+1. `stampSyncMetadata()` had no scope guard. `SyncChange` uses this trait but
+   `sync_changes` has no `sync_hlc`, `sync_origin_node_id` or `sync_uid`, so the
+   first captured change would have issued an UPDATE naming a column that does
+   not exist and failed outright - capture could never have worked at all. Both
+   stamping and minting now return early unless the table is in the catalogue.
+   The same guard covers a model given the trait without the matching columns.
+2. `sync_uid` was never minted. `sync_uid` was added nullable with a unique
+   index and no default, and no code wrote it, so `getSyncId()` fell back to a
+   ULID generated on the spot and never persisted. `row_id` would have pointed
+   at an identifier that exists nowhere, and every remote apply would miss.
+   It is now minted on `creating` so it lands inside the INSERT itself, whether
+   or not sync is enabled, and again before stamping as a safety net.
+3. Stamping proceeded with an empty `sync.node_id`, producing an HLC with an
+   empty node component and a change row under `node_id` = `''`. Two such nodes
+   interleave sequences under one key and corrupt the receiving cursor. Stamp
+   and capture now refuse together, so a row is never stamped without being
+   logged.
+
+`InventoryItem` was the only catalogue model without the trait; it has been
+added. `InventoryStock`, `DrinkStock`, `Setting` and `Role` are excluded as the
+plan requires.
+
+The test file ships the plan's six cases plus four regression tests, one per
+defect above.
+
+Unresolved observation, deliberately not acted on: all fifteen synced tables
+carry `sync_deleted_at`, and nothing in Tasks 2 or 3 writes it. It reads as
+applier-side bookkeeping rather than capture-side, so Task 4 is where it
+belongs. If the applier does not claim it there, raise it before Phase 4R.
 
 ---
 
