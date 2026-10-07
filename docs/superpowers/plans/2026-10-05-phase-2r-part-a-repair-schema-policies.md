@@ -186,7 +186,7 @@ integer, which cannot hold the ULID the spec requires for row identity.
 - Consumes: Task 1.
 - Produces: `sync_nodes` with `property_id` and `credential`; `sync_changes` with `sequence`, `payload` and a string-capable `row_id`; `sync_cursors` with `last_applied_change_id`; a `sync_uid` ULID column on every synced domain table; a `sync_sequences` counter table.
 
-- [ ] **Step 1: Add `property_id` and `credential` to `sync_nodes`**
+- [x] **Step 1: Add `property_id` and `credential` to `sync_nodes`**
 
 Spec §4.4 keys the registry by `(cloud, property)` and §5.4 lists a credential
 column. Neither exists in `2026_10_04_000001_create_sync_nodes_table.php`.
@@ -200,7 +200,7 @@ $table->index(['property_id', 'type']);
 Store a hashed credential, never a plaintext shared secret. This is the LAN and
 cloud authentication surface, and Phase 4R authenticates against it.
 
-- [ ] **Step 2: Add per-node sequence and full-snapshot payload to `sync_changes`**
+- [x] **Step 2: Add per-node sequence and full-snapshot payload to `sync_changes`**
 
 Spec §5.4 requires "per-node monotonic sequence". Spec §5.2 requires the full
 row snapshot, and explains why: "snapshots eliminate an entire class of bug."
@@ -215,7 +215,7 @@ Keep `old_values` and `new_values` in place. They cost nothing and remain useful
 for audit. `payload` becomes the authoritative full snapshot that Part B writes
 and the applier reads.
 
-- [ ] **Step 3: Widen `row_id` and add `sync_uid` to every synced domain table**
+- [x] **Step 3: Widen `row_id` and add `sync_uid` to every synced domain table**
 
 Spec §5.4: "Every row retains the ULID minted at its origin node, so replaying a
 change is a primary-key no-op and application is idempotent." The current
@@ -263,7 +263,7 @@ PostgreSQL; for SQLite, drop and recreate inside the same migration. Both tables
 hold no production data yet, so recreation is safe. Note this in the migration's
 docblock.
 
-- [ ] **Step 4: Add the per-node sequence counter table**
+- [x] **Step 4: Add the per-node sequence counter table**
 
 Part B allocates a per-node sequence. Reading `max(sequence) + 1` is a race: two
 concurrent writes on one node read the same maximum, both mint the same value, and
@@ -280,7 +280,7 @@ Schema::create('sync_sequences', function (Blueprint $table) {
 
 Part B's `SyncLogger::nextSequence()` locks this row with `lockForUpdate()`.
 
-- [ ] **Step 5: Replace `cursor_hlc` with `last_applied_change_id`**
+- [x] **Step 5: Replace `cursor_hlc` with `last_applied_change_id`**
 
 Spec §5.4 defines a cursor as `(peer_node_id, last_applied_change_id)`. An HLC
 string is not that and cannot express "everything up to change 412" precisely.
@@ -293,7 +293,7 @@ $table->dropColumn('cursor_hlc');
 The existing `unique(['node_id', 'target_node_id'])` already matches the
 `(peer, cursor)` pairing, so it stays.
 
-- [ ] **Step 6: Verify migrations and the full gate**
+- [x] **Step 6: Verify migrations and the full gate**
 
 ```powershell
 $env:DB_CONNECTION='sqlite'
@@ -304,7 +304,7 @@ php artisan migrate:fresh --force
 php artisan test
 ```
 
-Expected: `170 DONE, 0 FAIL` (165 plus 5), suite unchanged from the start of the phase.
+Expected: `171 DONE, 0 FAIL` (165 plus 6; Step 3 ships two migrations), suite unchanged from the start of the phase.
 Commit: `feat: align sync tables with spec 5.2 and 5.4`
 
 ---
@@ -950,7 +950,7 @@ php artisan test
 ```
 
 - Every file in `app/Sync/Policies/` and `app/Models/Sync/` reports real newlines.
-- `migrate:fresh` reports `172 DONE, 0 FAIL` (166 after Phase 1R, plus 6).
+- `migrate:fresh` reports `171 DONE, 0 FAIL` (165 baseline plus 6; Phase 1R is deferred, so its +1 has not been added).
 - The catalogue test passes, including the Class 4 blocking case.
 - The full suite has zero failures and zero skips.
 
