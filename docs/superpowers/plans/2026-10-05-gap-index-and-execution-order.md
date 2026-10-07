@@ -98,10 +98,10 @@ Each needs a decision, recorded in the spec, not a silent workaround.
 |---|---|---|
 | §6 Class 4 "two cash shifts claiming one device" | No `cash_shifts` table. The real tables are `pos_sessions` and `pos_devices`. | Phase 0R corrects the spec text; Phase 4R implements against `pos_sessions`. |
 | §6 Class 2 "Field-level last-write-wins" | The schema has one `sync_hlc` per **row**, which can only express row-level LWW. True field-level LWW needs a per-field HLC map. | **Resolved: row-level LWW, and §6 is amended in the same commit.** Phase 2R Part A Task 3 Step 4. Accepted risk: two terminals editing different fields of one row offline — the later write wins. |
-| §5.4 "Every row retains the ULID" | Every synced domain table has an auto-increment integer primary key. A ULID in `sync_changes.row_id` has nothing to point at. | **Resolved:** Phase 2R Part A adds a nullable unique `sync_uid` ULID column to every synced table, backfilled. `row_id` references `sync_uid`, never `id`. Integer PKs and existing FKs untouched. |
+| §5.4 "Every row retains the ULID" | 9 of the 15 synced domain tables have an auto-increment integer primary key, so a ULID in `sync_changes.row_id` has nothing to point at. The other 6 already use a ULID primary key. | **Resolved:** Phase 2R Part A adds a nullable unique `sync_uid` ULID column to every synced table, backfilled. `row_id` references `sync_uid`, never `id`. Domain primary keys and existing FKs untouched. Adding it to all 15 rather than only the integer 9 is deliberate: it lets `row_id` always mean `sync_uid`, so the applier needs no per-table rule. |
 | §7 "folio/ledger tables" | No `folio` or `ledger` table exists. The ledger is `charges` + `journal_entries` + `journal_lines`. | Phase 4S builds the manifest from the real transitive closure. |
 | §7 "authentication and permission tables" | Spatie's permission tables exist (created by `2026_04_09_101500_create_permission_support_tables.php`) but are not what authorises anything in practice. Every policy gates on `hasRole`/`hasAnyRole`; a few also accept `hasPermissionTo` as an extra OR. No permission rows are seeded for ordinary roles. | Phase 4S builds the manifest from `users` and `roles`, which is what actually decides access. |
-| §11 "the 144 existing migrations" | **165 now** (verified on a fresh SQLite database, cross-checked against `git ls-files`). | Every plan uses the live count. Corrected gates: **166 after Phase 1R**, **172 after Phase 2R**. The earlier 166/167/173 figures were off by one. |
+| §11 "the 144 existing migrations" | **165 now** (verified on a fresh SQLite database, cross-checked against `git ls-files`). | Every plan uses the live count. Corrected gates: **166 after Phase 1R**, **172 after Phase 2R**. The earlier 166/167/173 figures were off by one. **Because Phase 1R is deferred (see below), Phase 2R actually lands on 171 — 165 + its own 6 — until Phase 1R runs and adds its 1.** |
 | §9.1 required extension list | Image extension was unspecified. | **Resolved 2026-10-05: GD.** It ships inside the PHP runtime, so the Windows packaging surface is smaller than Imagick. Recorded in §9.1 and §16. |
 | §9.1 "embedded Postgres build" | No off-the-shelf Windows installer-free embedded Postgres covers all target platforms. | Phase 6 Gate B. Options and costs are laid out. |
 | §16 open item 3 | FrankenPHP extension packaging for Windows, specifically `pdo_pgsql`. | Phase 6 Gate C. `scripts/verify-runtime.ps1` is written before any packaging code, so the answer arrives before the work does. |
@@ -114,7 +114,45 @@ Each needs a decision, recorded in the spec, not a silent workaround.
 
 ## Execution order
 
-Dependency chain is not negotiable. Each boundary commits a verified state.
+### Postgres deferral (decided 2026-10-05)
+
+Postgres does not exist anywhere in this design until **Phase 1R Task 1**, which
+provisions it with `docker-compose.pgsql.yml`. Everything before that point runs
+on SQLite or MySQL only. The machine executing these phases also has no Postgres
+available today: Docker Desktop is installed but its daemon is stopped, and no
+`psql`, `pg_ctl` or `postgres` binary is on PATH.
+
+So Phase 1R, Phase 6 Gate B (embedded Postgres packaging) and Phase 8 (cloud) are
+**deferred to the moment Postgres can be provisioned**, and everything with no
+Postgres dependency runs first:
+
+```
+NOW, in this order:                    DEFERRED until Postgres exists:
+  Phase 2R Part A   (no prereq)          Phase 1R      74/74 refs are Postgres
+  Phase 2R Part B   (needs 2R Part A)    Phase 6 Gate B embedded Postgres
+  Ziggy             (no prereq)          Phase 8       cloud, 19 refs
+  Phase 3           (see caveat)
+  Phase 4S -> 4R -> 5
+  Phase 6 minus Gate B
+  Phase 7
+```
+
+Two declared prerequisites are sequencing artifacts rather than technical
+dependencies, and are treated as satisfied by Phase 0R: Phase 3 and Phase 7 both
+list Phase 1R, but their only Postgres references are a tech-stack line and a
+back-reference in a list. Phase 4S, 4R and 5 inherit the same artifact through
+their chain back to Phase 3. Flag this again rather than silently ignoring it
+when each of those phases is opened.
+
+Consequence for gates: a phase's expected migration count assumes Phase 1R ran
+first. Under deferral, subtract 1. Phase 2R Part A therefore lands on **171**, not
+172.
+
+### The chain the plans were written against
+
+Dependency chain is not negotiable. Each boundary commits a verified state. The
+deferral above governs where execution actually starts; this is the order the
+individual plan documents assume.
 
 ```
 Phase 0R   close remaining ground truth          (G14, G15, G16, G45)
@@ -164,8 +202,11 @@ php artisan migrate:fresh --force
 php artisan test
 ```
 
-Expected: `165 DONE, 0 FAIL`, then zero failures and zero skips. (At the time
-Phase 0R was executed the suite was 164 tests / 675 assertions.)
+Expected: `0 FAIL`, then zero failures and zero skips. The DONE count grows by
+whatever the phase being verified added, so read it against that phase's own
+gate rather than against a fixed number. The Phase 0R-era figures were
+`165 DONE` and a suite of 164 tests / 675 assertions; after Phase 2R Part A
+it is `171 DONE`, with the suite still 164 / 675.
 
 ---
 
