@@ -22,3 +22,7 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+# Ziggy's generated manifest is dead output: nothing imports it, and @routes
+# serves the live manifest per request. Regenerating would reintroduce a stale,
+# host-bound file that future readers may mistake for authoritative.
+resources/js/ziggy.js
