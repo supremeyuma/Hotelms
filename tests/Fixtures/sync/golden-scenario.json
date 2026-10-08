@@ -1,0 +1,32 @@
+{
+  "name": "two-node-mixed-writes",
+  "description": "Both nodes create and update while disconnected. Both must converge on identical business state.",
+  "nodes": ["node-a", "node-b"],
+  "operations": [
+    {
+      "node": "node-a",
+      "entity": "inventory_items",
+      "action": "create",
+      "row": { "id": 1, "name": "Rice", "sku": "INV-RICE-001", "unit": "kg" }
+    },
+    {
+      "node": "node-b",
+      "entity": "inventory_items",
+      "action": "create",
+      "row": { "id": 2, "name": "Beans", "sku": "INV-BEANS-001", "unit": "kg" }
+    },
+    {
+      "node": "node-a",
+      "entity": "inventory_items",
+      "action": "update",
+      "row": { "id": 1, "name": "Jollof Rice", "sku": "INV-RICE-001", "unit": "kg" }
+    }
+  ],
+  "assert": {
+    "converges": true,
+    "expected_rows": [
+      { "name": "Jollof Rice", "sku": "INV-RICE-001", "unit": "kg" },
+      { "name": "Beans", "sku": "INV-BEANS-001", "unit": "kg" }
+    ]
+  }
+}
