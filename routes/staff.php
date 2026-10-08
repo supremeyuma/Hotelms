@@ -92,8 +92,8 @@ Route::middleware(['auth'])->prefix('staff')->name('staff.')->group(function () 
 Route::prefix('frontdesk')->middleware(['auth', 'role:frontdesk|md'])->name('frontdesk.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    Route::get('/rooms/{room}/billing', [RoomBillingController::class, 'show']);
-    Route::post('/rooms/{room}/billing/pay', [RoomBillingController::class, 'pay']);
+    Route::get('/rooms/{room}/billing', [RoomBillingController::class, 'show'])->name('rooms.billing');
+    Route::post('/rooms/{room}/billing/pay', [RoomBillingController::class, 'pay'])->name('rooms.billing.pay');
 
     Route::resource('bookings', BookingsController::class);
     Route::post('bookings/{booking}/checkin', [BookingsController::class, 'checkIn'])->name('bookings.checkIn');
@@ -104,8 +104,8 @@ Route::prefix('frontdesk')->middleware(['auth', 'role:frontdesk|md'])->name('fro
     Route::patch('rooms/{room}/status', [RoomController::class, 'updateStatus'])->name('rooms.update-status');
 
     Route::get('guest-requests', [GuestRequestController::class, 'index'])->name('guest-requests.index');
-    Route::post('guest-requests/{request}/acknowledge', [GuestRequestController::class, 'acknowledge']);
-    Route::post('guest-requests/{request}/complete', [GuestRequestController::class, 'complete']);
+    Route::post('guest-requests/{request}/acknowledge', [GuestRequestController::class, 'acknowledge'])->name('guest-requests.acknowledge');
+    Route::post('guest-requests/{request}/complete', [GuestRequestController::class, 'complete'])->name('guest-requests.complete');
 
     Route::get('billing/{booking}', [BillingController::class, 'viewBill'])->name('billing.show');
     Route::post('billing/{booking}/pay', [BillingController::class, 'acceptPayment'])->name('billing.pay');
@@ -180,20 +180,20 @@ Route::middleware(['auth', 'role:frontdesk|manager|md|kitchen|bar'])->prefix('st
 
 
     /* Categories */
-    Route::post('/menu/categories', [MenuCategoryController::class, 'store']);
-    Route::patch('/menu/categories/{category}', [MenuCategoryController::class, 'update']);
-    Route::delete('/menu/categories/{category}', [MenuCategoryController::class, 'destroy']);
+    Route::post('/menu/categories', [MenuCategoryController::class, 'store'])->name('menu.categories.store');
+    Route::patch('/menu/categories/{category}', [MenuCategoryController::class, 'update'])->name('menu.categories.update');
+    Route::delete('/menu/categories/{category}', [MenuCategoryController::class, 'destroy'])->name('menu.categories.destroy');
 
     /* Subcategories */
-    Route::post('/menu/subcategories', [MenuSubcategoryController::class, 'store']);
-    Route::patch('/menu/subcategories/{subcategory}', [MenuSubcategoryController::class, 'update']);
-    Route::delete('/menu/subcategories/{subcategory}', [MenuSubcategoryController::class, 'destroy']);
+    Route::post('/menu/subcategories', [MenuSubcategoryController::class, 'store'])->name('menu.subcategories.store');
+    Route::patch('/menu/subcategories/{subcategory}', [MenuSubcategoryController::class, 'update'])->name('menu.subcategories.update');
+    Route::delete('/menu/subcategories/{subcategory}', [MenuSubcategoryController::class, 'destroy'])->name('menu.subcategories.destroy');
 
     /* Items */
-    Route::post('/menu/items', [MenuItemController::class, 'store']);
-    Route::patch('/menu/items/{item}', [MenuItemController::class, 'update']);
-    Route::delete('/menu/items/{item}', [MenuItemController::class, 'destroy']);
-    Route::delete('/menu/items/images/{image}', [MenuItemController::class, 'deleteImage']);
+    Route::post('/menu/items', [MenuItemController::class, 'store'])->name('menu.items.store');
+    Route::patch('/menu/items/{item}', [MenuItemController::class, 'update'])->name('menu.items.update');
+    Route::delete('/menu/items/{item}', [MenuItemController::class, 'destroy'])->name('menu.items.destroy');
+    Route::delete('/menu/items/images/{image}', [MenuItemController::class, 'deleteImage'])->name('menu.items.images.destroy');
 
 
 
@@ -206,21 +206,21 @@ Route::middleware(['auth', 'role:frontdesk|manager|md|kitchen|bar'])->prefix('st
     // Edit item
     Route::get('/menu/items/{item}/edit', [MenuItemController::class, 'edit'])
         ->name('menu.items.edit');
-    Route::patch('/menu/items/{item}/toggle', [MenuItemController::class, 'toggle']);
+    Route::patch('/menu/items/{item}/toggle', [MenuItemController::class, 'toggle'])->name('menu.items.toggle');
 
     // Edit category
     Route::get('/menu/categories/{category}/edit', [MenuCategoryController::class, 'edit'])
         ->name('menu.categories.edit');
-    Route::patch('/menu/categories/{category}/toggle', [MenuCategoryController::class, 'toggle']);
+    Route::patch('/menu/categories/{category}/toggle', [MenuCategoryController::class, 'toggle'])->name('menu.categories.toggle');
 
     // Edit subcategory
     Route::get('/menu/subcategories/{subcategory}/edit', [MenuSubcategoryController::class, 'edit'])
         ->name('menu.subcategories.edit');
-    Route::patch('/menu/subcategories/{subcategory}/toggle', [MenuSubcategoryController::class, 'toggle']);
+    Route::patch('/menu/subcategories/{subcategory}/toggle', [MenuSubcategoryController::class, 'toggle'])->name('menu.subcategories.toggle');
 
     // Drag & drop ordering
-    Route::post('/menu/reorder', [MenuCategoryController::class, 'reorder']);
-    Route::post('/menu/reorder-items', [MenuItemController::class, 'reorder']);
+    Route::post('/menu/reorder', [MenuCategoryController::class, 'reorder'])->name('menu.categories.reorder');
+    Route::post('/menu/reorder-items', [MenuItemController::class, 'reorder'])->name('menu.items.reorder');
 
 });
 

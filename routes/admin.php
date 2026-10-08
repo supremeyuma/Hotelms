@@ -132,8 +132,8 @@ Route::middleware(['auth', 'role:manager|md|superuser'])->prefix('admin')->as('a
             Route::get('/inventory/export/{format}', [InventoryReportController::class, 'export'])->name('inventory.export');
 
                 Route::prefix('charts')->group(function () {
-                    Route::get('/occupancy', [ChartController::class, 'occupancy']);
-                    Route::get('/inventory', [ChartController::class, 'inventory']);
+                    Route::get('/occupancy', [ChartController::class, 'occupancy'])->name('charts.occupancy');
+                    Route::get('/inventory', [ChartController::class, 'inventory'])->name('charts.inventory');
                 });
 
             //Route::get('/maintenance', [MaintenanceReportController::class, 'index'])->name('maintenance');
