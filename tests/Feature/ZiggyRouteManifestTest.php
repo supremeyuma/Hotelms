@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 use Tighten\Ziggy\Ziggy;
 
