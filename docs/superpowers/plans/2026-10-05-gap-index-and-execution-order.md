@@ -35,17 +35,17 @@ closes it.
 | # | Gap | Severity | Owner plan |
 |---|---|---|---|
 | G1 | 9 sync files contain literal `\n` bytes and cannot autoload. **Resolved:** Phase 2R Part A Task 1 rewrote all nine with real newlines; they autoload and pass `php -l`. | Blocker | [Phase 2R Part A](2026-10-05-phase-2r-part-a-repair-schema-policies.md) |
-| G2 | Nothing writes `sync_hlc`; no change-log capture exists | Blocker | Phase 2R |
+| G2 | Nothing writes `sync_hlc`; no change-log capture exists. **Resolved:** Phase 2R Part B Tasks 2–3 added `SyncLogger::capture` and made `Syncable` stamp the HLC and append one change row per create/update/delete, all guarded so a remote apply is not re-logged. `ChangeLogCaptureTest` covers every capture rule. | Blocker | Phase 2R |
 | G3 | `SyncMerger::merge()` is `array_merge`, ignores policy, cannot return conflict. **Resolved:** Phase 2R Part A Task 4 replaced it with catalogue dispatch; the signature now takes the entity key and can return a `ConflictResult` as well as a row. | Blocker | Phase 2R |
 | G4 | 6 policy classes do not exist. **Resolved:** Phase 2R Part A Task 1 wrote them and Task 3 wired them into `SyncScope`, with `PolicyCatalogueTest` covering all five classes. | Blocker | Phase 2R |
-| G5 | `Syncable` is a 2-method accessor, not a sync trait | Blocker | Phase 2R |
+| G5 | `Syncable` is a 2-method accessor, not a sync trait. **Resolved:** Phase 2R Part B Task 3 built it out: mint `sync_uid`, stamp HLC + origin node, capture create/update/delete, refuse to stamp without node identity or outside the catalogue. | Blocker | Phase 2R |
 | G6 | `sync_nodes` lacks `property_id` and `credential` required by §5.4/§4.4. **Resolved:** Phase 2R Part A Task 2 added `property_id` (FK to `properties`, nullOnDelete) and `credential` to `sync_nodes`, with an index on `[property_id, type]`. | High | Phase 2R |
 | G7 | `sync_cursors` stores `cursor_hlc`, not `last_applied_change_id` (§5.4). **Resolved:** Phase 2R Part A Task 2 dropped `cursor_hlc` and added nullable `last_applied_change_id` to `sync_cursors`. | High | Phase 2R |
 | G8 | `sync_changes` has no per-node monotonic sequence (§5.4). **Resolved:** Phase 2R Part A Task 2 added `sequence` with a unique `[node_id, sequence]` index, plus a `sync_sequences` counter table so allocation does not race on `max()+1`. | High | Phase 2R |
 | G9 | ULID row identity (§5.4) incompatible with `row_id unsignedBigInteger`. **Resolved:** Phase 2R Part A Task 2 widened `sync_changes.row_id` and `sync_conflicts.row_id` to string, re-asserting the surrounding indexes because SQLite rebuilds the table. Added a uniform unique `sync_uid` ULID to all 15 synced tables instead of touching their domain keys. | High | Phase 2R |
 | G10 | `sync_changes` stores `old_values`/`new_values` (diff), §5.2 requires full snapshot. **Resolved:** Phase 2R Part A Task 2 added a `payload` longText column carrying the full snapshot. `old_values`/`new_values` stay for audit. | High | Phase 2R |
-| G11 | `TwoDbSyncTest` opens the same in-memory handle twice | High | Phase 2R |
-| G12 | `SyncEngineTest` only asserts HLC round-trip and an accessor | High | Phase 2R |
+| G11 | `TwoDbSyncTest` opens the same in-memory handle twice. **Resolved:** Phase 2R Part B Task 5 built `TwoNodeSyncHarness` on two real file-backed SQLite databases and rewrote `TwoDbSyncTest` to prove they are separate, that a row crosses, and that an apply is not re-logged. | High | Phase 2R |
+| G12 | `SyncEngineTest` only asserts HLC round-trip and an accessor. **Resolved:** Phase 2R Part B Task 6 rewrote it: round trip, monotonic counter, tie-break by node id, higher timestamp wins, and the syncable trait. | High | Phase 2R |
 | G13 | `softDeletesTz` for `sync_deleted_at` yields different types per engine | Medium | Phase 1R |
 | G14 | Phase 0 Task 4 dead files still present (`GuestRequestPoicy`, `BookingAccontingService`, `cmb.py`) | Medium | [Phase 0R](2026-10-05-phase-0r-close-remaining-ground-truth.md) |
 | G15 | Guest-request authorization genuinely absent; needs specification, not a rename | High | Phase 0R |
@@ -86,6 +86,9 @@ closes it.
 | G48 | `BookingService::extendStay` calls `$booking->isEditable()`, which does not exist (fatal) | High | Phase 5 |
 | G49 | `bookings.checked_in_at`/`checked_out_at` are written but exist in no migration | High | Phase 5 |
 | G50 | `Room::$fillable` lists `room_number`, dropped by `2026_01_08_163319_remove_room_number_from_rooms_table.php`; three live readers remain | Medium | Phase 5 |
+| G53 | Two disconnected nodes creating the same business key (e.g. the same inventory `sku`) hit the unique index on the second insert — a `UniqueConstraintViolationException` before sync ever runs. Needs a product decision (upsert-by-key, per-key conflict, or a documented constraint on offline creation), not an implementation guess | High | Phase 4R (decision needed) |
+| G54 | `ConflictPolicy::overlappingReservation` (bookings) and `doubleClaimedDevice` (pos_sessions) gate on `sync_row_key`, a column no migration defines. The branches always compare `null` to `null` and bail to `capturedThenRefunded`, so only `payments` (Class 4) can ever surface a conflict. Recorded as intent vs. reachable code | Medium | Phase 4R |
+| G55 | Applying a remote `delete` for a row edited locally while disconnected drops the local edit outright; the delete path in `SyncApplier::apply` bypasses the merge policy entirely. A local write then a peer delete is a real offline scenario (e.g. voiding against a live row) and currently has no conflict protection | Medium | Phase 4R |
 
 ---
 

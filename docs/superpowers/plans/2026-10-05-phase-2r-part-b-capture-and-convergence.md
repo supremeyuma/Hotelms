@@ -903,7 +903,7 @@ simulating two disconnected nodes."
 - Consumes: Tasks 2–4.
 - Produces: `TwoNodeSyncHarness::make()`, `->migrateBoth()`, `->syncBothWays()`, `->snapshot(string $node)`, `->cleanup()`. Phase 4R reuses this for multi-process proof.
 
-- [ ] **Step 1: Build the harness on two real files**
+- [x] **Step 1: Build the harness on two real files**
 
 Two `:memory:` connections are one handle. Use two temporary files and two named
 connections registered at runtime.
@@ -1028,7 +1028,7 @@ class TwoNodeSyncHarness
 }
 ```
 
-- [ ] **Step 2: Add the exchange helper to the test class**
+- [x] **Step 2: Add the exchange helper to the test class**
 
 Exchange belongs in the test, not the harness, because it is the stand-in for
 the transport that Phase 4R replaces.
@@ -1063,7 +1063,7 @@ private function exchange(string $from, string $to): void
 An unsaved `SyncChange` works here because `apply()` reads only attributes. Once
 Phase 4R adds real transport, this becomes a genuine HTTP payload.
 
-- [ ] **Step 3: Prove the two nodes are actually separate**
+- [x] **Step 3: Prove the two nodes are actually separate**
 
 This is the assertion the current test is missing. If it fails, every other
 two-node test is worthless.
@@ -1079,7 +1079,7 @@ public function test_the_two_nodes_are_separate_databases(): void
 }
 ```
 
-- [ ] **Step 4: Rewrite `TwoDbSyncTest` to use the harness**
+- [x] **Step 4: Rewrite `TwoDbSyncTest` to use the harness**
 
 ```php
 <?php
@@ -1134,7 +1134,7 @@ class TwoDbSyncTest extends TestCase
 }
 ```
 
-- [ ] **Step 5: Prove convergence**
+- [x] **Step 5: Prove convergence**
 
 ```php
 <?php
@@ -1230,7 +1230,7 @@ The second test is the one that actually proves merge determinism: both nodes
 wrote the same SKU with different names, and the winner must be the same on both
 regardless of who pushed first. That is spec §5.3's central claim.
 
-- [ ] **Step 6: Strengthen `SyncEngineTest`**
+- [x] **Step 6: Strengthen `SyncEngineTest`**
 
 Keep the HLC round-trip but assert the properties that actually matter: monotonic
 counter behaviour and a stable tie-break.
@@ -1261,7 +1261,7 @@ public function test_hlc_max_breaks_ties_by_node_id(): void
 }
 ```
 
-- [ ] **Step 7: Run the sync suite**
+- [x] **Step 7: Run the sync suite**
 
 ```powershell
 php artisan test --filter=Sync
@@ -1270,6 +1270,71 @@ php artisan test --filter=Sync
 Expected: every sync test passes, and `test_the_two_nodes_are_separate_databases`
 confirms the harness is real.
 Commit: `test: replace placeholder sync tests with a real two-node harness`
+
+---
+
+### Task 5 execution notes
+
+**Live decisions (user-approved during execution):**
+
+1. **Duplicate business keys are out of scope for this task.** The plan's
+   `test_convergence_holds_regardless_of_exchange_order` wrote `R-1` on both
+   nodes; on the second insert the `inventory_items.sku` unique index raised
+   `UniqueConstraintViolationException` before any sync ran. Per user decision,
+   duplicate-SKU convergence is recorded as a new open gap and this task proves
+   determinism a different way (below).
+2. **The merge policy was never wired.** `SyncMerger::merge()` had zero call
+   sites; the applier force-filled by `sync_uid`, so two offline edits of one
+   row *swapped* instead of converging (A ended "Edited on B", B ended "Edited
+   on A" — proven with a temporary probe). Per user decision, Task 5 wires the
+   catalogue policy into `SyncApplier` and persists blocked merges to
+   `sync_conflicts` (new `reason` column, migration `2026_10_05_100026`),
+   matching the `ConflictPolicy` contract.
+
+**Resulting behaviour:** the applier now applies a change through the table's
+policy. A `ConflictResult` stops the write and records an open conflict; a row
+alive on both sides is merged last-write-wins (or the table's policy) instead
+of clobbered. `ConflictPersistenceTest` proves a `paid` vs `refunded` payment
+records `captured_then_refunded` on both nodes and neither side is written.
+
+**Deviations from the plan's code:**
+
+- `exchange()` moved onto the harness (public `TwoNodeSyncHarness::exchange`)
+  instead of a private test helper: three test classes and the golden fixture
+  need it. `syncBothWays()` still exists for symmetric use.
+- `snapshot()` also unsets `id` — the integer primary key is node-local and
+  differs on insert order.
+- `RefreshDatabase` dropped from the convergence tests: the harness owns both
+  databases entirely.
+- `SyncEngineTest` fixtures followed the step's pseudocode but the colon format
+  (`001:0000000001:0000000000:aaa`) does not parse; the real format is
+  dash-separated `timestamp-counter-nodeId` (`1000000000001-0-aaa`).
+- `TwoNodeConvergenceTest` replaced the unique-SKU test with **forced-clock
+  determinism**: `seedDivergence()` writes the same sku on both nodes, edits
+  each side, then rewrites both rows' HLC and their last change payload to
+  known values. `test_the_higher_hlc_wins_in_either_exchange_order` asserts the
+  newer side wins on both nodes in both push orders; a stale remote change
+  loses. Plus `test_sync_is_idempotent_when_run_twice`.
+
+**Bugs found by making convergence actually run (fixed in this task):**
+
+- `Hlc::fromString()` threw on every production stamp: the default node id
+  `node-a` contains a dash, so `1791418426582-0-node-a` exploded into four
+  parts. Every merge silently degenerated to a null-HLC local win — remote
+  updates were dropped and the merged `sync_hlc` was blanked. Parsing now
+  accepts 2-part legacy stamps and 3-part stamps whose numeric counter splits
+  off a dashed node id.
+- `Syncable` logged every second write through one instance as `create`,
+  because `wasRecentlyCreated` is set on insert and never cleared. The
+  operation now comes from `creating`/`updating` listener flags.
+- `IdempotencyTest::test_applying_a_change_overwrites_columns_the_model_does_not_fill`
+  encoded blind-upsert semantics (payload always wins). Under merge, identical
+  local and remote HLCs tie and the local row legitimately keeps its newer
+  quantity. The test now forces a strictly newer remote HLC so the non-fillable
+  `quantity` column still demonstrates the forceFill path.
+
+**Commit:** `feat: converge offline edits through catalogue merge policies`
+(Sync filter: 43 passed; full suite: 212 passed, 811 assertions).
 
 ---
 
