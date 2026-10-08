@@ -1351,7 +1351,7 @@ every engine, so SQLite and Postgres cannot drift."
 - Consumes: Tasks 3–5.
 - Produces: a scenario file Phase 1R can also replay against Postgres.
 
-- [ ] **Step 1: Write the scenario**
+- [x] **Step 1: Write the scenario**
 
 ```json
 {
@@ -1388,7 +1388,7 @@ every engine, so SQLite and Postgres cannot drift."
 }
 ```
 
-- [ ] **Step 2: Write the replay test**
+- [x] **Step 2: Write the replay test**
 
 ```php
 <?php
@@ -1460,7 +1460,7 @@ Keep the `exchange` helper in a shared trait rather than duplicating it across
 three test classes. Extract it to `tests/Support/ExchangesChangesBetweenNodes.php`
 in this task.
 
-- [ ] **Step 3: Verify the fixture replays identically twice**
+- [x] **Step 3: Verify the fixture replays identically twice**
 
 ```powershell
 php artisan test --filter=GoldenFixtureTest
@@ -1469,6 +1469,29 @@ php artisan test --filter=GoldenFixtureTest
 
 Both runs must pass. A fixture that passes once is not a regression guard.
 Commit: `test: add golden sync fixture replayed on every engine`
+
+### Task 6 execution notes
+
+- The fixture is the plan's scenario verbatim: two creates (one per node) and
+  one update on node-a, then a bidirectional exchange; the two nodes must
+  converge to `Jollof Rice / INV-RICE-001` and `Beans / INV-BEANS-001`.
+- The `id` values in the fixture are illustrative only. `id` is node-local and
+  not fillable on `InventoryItem`, so the replay drops it and locates update
+  targets by `sku` (the fixture's stable business key). The plan's sample used
+  `findOrFail($row['id'])` and asserted `id == 1` via `assertDatabaseHas`,
+  which only holds on the node that created the row; the node that inserts from
+  a sync payload may assign a different integer.
+- The plan's shared-`exchange`-trait extraction is unnecessary: `exchange`
+  already lives on `TwoNodeSyncHarness`, shared by every sync test class and
+  by this test. Phase 4R replaces one harness method rather than one trait.
+- The assertion is stronger than the plan's `assertEqualsCanonicalizing`:
+  `assertSame($harness->snapshot('a'), $harness->snapshot('b'))` proves the two
+  nodes end byte-identical on every business column, `sync_uid`, and both
+  timestamps, then `assertDatabaseHas` checks the expected rows per node.
+- `GoldenFixtureTest` runs twice in Step 3; both runs passed (5 assertions
+  each). Full suite after adding it: 213 passed, 816 assertions.
+
+**Commit:** `test: add golden sync fixture replayed on every engine`
 
 ---
 

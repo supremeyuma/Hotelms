@@ -78,7 +78,7 @@ closes it.
 | G40 | No offline snapshot-pull path proven against a LAN server | Blocker | [Phase 7](2026-10-05-phase-7-offline-terminal.md) |
 | G41 | No offline shift scenario test (§13) | High | Phase 7 |
 | G42 | No Coolify/Postgres cloud deployment with a sync daemon | High | [Phase 8](2026-10-05-phase-8-cloud-deployment.md) |
-| G43 | No golden sync fixture (§13) | Medium | Phase 4R |
+| G43 | No golden sync fixture (§13). **Resolved:** Phase 2R Part B Task 6 added `tests/Fixtures/sync/golden-scenario.json` and `GoldenFixtureTest`, which replays the committed scenario through the harness and asserts both nodes end byte-identical; run twice in CI-style verification. | Medium | Phase 4R |
 | G44 | `ClubPosService` calls `BillingService` without importing it | Low | Phase 3 |
 | G45 | Spec names `cash_shifts` and folio tables that do not exist | Low | Phase 0R (correct the spec) |
 | G46 | `FrontDesk\BookingsController::store` and `update` attach rooms with no availability re-check | Blocker | Phase 5 |
