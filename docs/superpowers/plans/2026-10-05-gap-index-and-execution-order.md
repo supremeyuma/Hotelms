@@ -60,9 +60,9 @@ closes it.
 | G24 | `inventory:rebuild` uses double-quoted string literals inside `DB::raw` SQL | Medium | Phase 4R |
 | G25 | No multi-process convergence proof | High | Phase 4R |
 | G26 | No sync scope manifest and no tripwire test (§7) | High | [Phase 4S](2026-10-05-phase-4s-sync-scope-manifest.md) |
-| G27 | `resources/js/ziggy.js` bakes `http://localhost` (§9.4 prerequisite) | Blocker | [Ziggy](2026-10-05-ziggy-runtime-route-manifest.md) |
-| G51 | Three routes have an empty name (`admin.reports.`, `frontdesk.`, `staff.`), so they are unreachable by `route()` name and risk future collisions | Medium | [Ziggy](2026-10-05-ziggy-runtime-route-manifest.md) Task 4 Step 6 |
-| G52 | `resources/js/ziggy.js` is tracked in git but imported by nothing; `@routes` in `app.blade.php` is the actual runtime source. Anyone editing the file fixes nothing. | Medium | [Ziggy](2026-10-05-ziggy-runtime-route-manifest.md) |
+| G27 | `resources/js/ziggy.js` bakes `http://localhost` (§9.4 prerequisite). **Refuted/Resolved:** Ziggy v2.6.0 builds the manifest per requesting host (`url('/')` in `new Ziggy`); a live non-local probe (`Host` header) rendered host-correct, and nothing imports the generated file. Dead output deleted; guard test #4 asserts no built asset bakes an origin. | Blocker | [Ziggy](2026-10-05-ziggy-runtime-route-manifest.md) **closed** |
+| G51 | Three routes have an empty name (`admin.reports.`, `frontdesk.`, `staff.`) — actually **21** after collapsing duplicates — so they are unreachable by `route()` name and risk future collisions. **Resolved:** all named across `routes/admin.php` and `routes/staff.php`; no callers broke; guard test #3 fails on any empty leaf. | Medium | [Ziggy](2026-10-05-ziggy-runtime-route-manifest.md) Task 4 Step 6 **closed** |
+| G52 | `resources/js/ziggy.js` is tracked in git but imported by nothing; `@routes` in `app.blade.php` is the actual runtime source. Anyone editing the file fixes nothing. **Resolved:** deleted and gitignored. | Medium | [Ziggy](2026-10-05-ziggy-runtime-route-manifest.md) **closed** |
 | G28 | Phase 3 has no plan; §2.3 defects mostly fixed but unverified as a set | High | [Phase 3](2026-10-05-phase-3-club-pos-repair.md) |
 | G29 | `PosDevice` has no seeder or registration endpoint | High | Phase 3 |
 | G30 | No receipt or print implementation despite `pos_print_logs` (spec §16.1 open item) | Medium | Phase 7 |
@@ -164,7 +164,7 @@ Phase 1R   Postgres portability + real parity gate  (G13, G17, G18, G19)
     |
 Phase 2R   repair + complete the sync engine     (G1-G12, G43)  [Part A + Part B]
     |
-Ziggy      runtime route manifest                (G27) - blocks every non-cloud node
+Ziggy      runtime route manifest                (G27, G51, G52) - done 2026-10-08
     |
 Phase 3    Club POS repair                       (G28, G29, G44)
     |
@@ -187,8 +187,11 @@ Two ordering notes that matter:
   merge function mean no sync test can pass. Fixing this first is what makes
   every later phase verifiable.
 - **Ziggy sits before Phase 3.** The spec calls §9.4 a prerequisite, not a
-  phase item. It blocks any node other than the cloud from serving the
-  application, so it cannot wait for Phase 6.
+  phase item. It blocked any node other than the cloud from serving the
+  application, so it could not wait for Phase 6. **Executed and closed
+  2026-10-08** — the premise turned out to be partially false (Ziggy v2.6.0
+  already resolves per request), so the plan was scoped down to the verified
+  defects (G51, G52) and now completes before Phase 3 with no further work.
 
 ---
 

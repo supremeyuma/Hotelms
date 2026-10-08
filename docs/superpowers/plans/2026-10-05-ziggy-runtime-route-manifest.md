@@ -14,6 +14,10 @@
 
 **Priority: high.** Spec §9.4 calls this "a prerequisite, not a phase item." It blocks every node other than the cloud from serving the application, so it cannot wait for Phase 6.
 
+> **Scope-down decision (2026-10-08, verified before changing anything):**
+> Task 1 verification **refuted the plan's core premise**. The installed Ziggy is **v2.6.0**, whose `BladeRouteGenerator` constructs `new Ziggy($group)` with null URL and the constructor falls back to `rtrim(url('/'), '/')` — the **request root**, not `config('app.url')`. A live serve probe with `Host: 192.168.1.50:8018` rendered `"url":"http:\/\/192.168.1.50:8018"` from `@routes`. The client never reads `resources/js/ziggy.js` (dead output), and the installed `ziggy-js` plugin falls back to `window.Ziggy` when installed without a config argument. Nothing forces the root URL in `app/`. So a LAN client already resolves every `route()` against the serving host; Tasks 2 and 3 (endpoint + fetch-before-boot) would replace a working, per-request mechanism with a redundant one and were **not executed**.
+> Executed instead, per owner decision: the verified defects only — **G51** (rename the empty-leaf routes; the plan said three, verification found **21** routes across `admin.reports.`, `frontdesk.`, and `staff.`), **G52** (delete dead `ziggy.js` + gitignore), and a regression test suite (4 guards). Each change is committed.
+
 ---
 
 ## The gap this closes
@@ -130,41 +134,41 @@ removal. No UI work.
 - Consumes: nothing.
 - Produces: a reproduction that fails today.
 
-- [ ] **Step 1: Confirm the baked origin**
+- [x] **Step 1: Confirm the baked origin**
 
-```powershell
-rg -o '"url":"[^"]*"' resources/js/ziggy.js
-```
+Verified: `resources/js/ziggy.js` did bake `"url":"http:\/\/localhost"`, but it is
+**dead** — no file in `resources/js/` imports `./ziggy`, and `app.js` wires the
+route helper through the installed `ziggy-js` package (`ZiggyVue`), which falls
+back to `window.Ziggy` when installed without a config arg. The live source of
+`window.Ziggy` is the `@routes` directive in `resources/views/app.blade.php`.
 
-Expected: `"url":"http:\/\/localhost"`.
+- [x] **Step 2: Confirm route calls exist in the frontend**
 
-- [ ] **Step 2: Confirm route calls exist in the frontend**
+Verified: hundreds of `route('...')` call sites across `resources/js/` (booking,
+POS, sheets), all resolving against `window.Ziggy`. Every one is relative to the
+serving host — see Step 3.
 
-```powershell
-rg -c "route\(" resources/js/
-```
+- [x] **Step 3: Reproduce against a non-localhost origin**
 
-Expected: a non-zero count. Every one of these resolves against the baked origin.
-
-- [ ] **Step 3: Reproduce against a non-localhost origin**
-
-Build, serve the built assets from a different host name, and open the app.
-
-```powershell
-npm run build
-php artisan serve --host=127.0.0.1 --port=8000
-```
-
-Then request the app with a `Host` header naming another machine and inspect the
-rendered `order.store` URL. It will resolve to `http://localhost/order`.
-
-A machine-level reproduction is stronger: open the app from another PC on the
-LAN and watch the network tab. Every route call returns 404 or a wrong-host
-redirect.
+The plan expected `order.store` to resolve to `http://localhost/order`. It does
+not: building and serving with `Host: 192.168.1.50:<port>` rendered
+`"url":"http:\/\/192.168.1.50:<port>"` and `order.store` resolved to
+`http://192.168.1.50:<port>/order` — host-correct, no wrong-host redirect. Ziggy
+**v2.6.0** (`vendor/tightenco/ziggy`) constructs the manifest with no URL
+argument (`BladeRouteGenerator` → `new Ziggy($group)`), and the constructor
+falls back to `rtrim(url('/'), '/')`, i.e. the request root. `app/` sets no
+`forceRootUrl`/`forceScheme` (only `TrustProxies`). **The defect does not
+reproduce**, so Tasks 2–3 are superseded — see the scope-down decision in the
+header.
 
 ---
 
-## Task 2: Serve the manifest at runtime
+## Task 2: Serve the manifest at runtime — SUPERSEDED, NOT EXECUTED
+
+The premise this task existed to fix was refuted by Task 1 Step 3: the manifest
+is already built per requesting host by `@routes`. An explicit endpoint would
+only add a request and a boot-time fetch. All three steps below are kept for
+the record and left unchecked.
 
 **Files:**
 - Create: `app/Http/Controllers/ZiggyController.php`
@@ -240,11 +244,23 @@ Commit: `feat: serve the ziggy route manifest at runtime`
 
 ---
 
-## Task 3: Load it before the Inertia app boots
+## Task 3: Load it before the Inertia app boots — PARTIALLY SUPERSEDED
+
+Steps 2–3 were not executed (no fetch bootstrap is needed — see the scope-down
+decision). Steps 4–6 were retained and adapted: they cover the two verified
+defects (dead `ziggy.js`, empty route names).
 
 **Files:**
-- Modify: `resources/js/app.js`
-- Modify: `resources/views/app.blade.php`
+- Modify: `resources/js/app.js` — unchanged (superseded)
+- Modify: `resources/views/app.blade.php` — unchanged (superseded)
+- Delete: `resources/js/ziggy.js` + `.gitignore` entry — done
+- Modify: `routes/admin.php`, `routes/staff.php` — done (G51)
+
+- [x] **Step 1: Read the current boot**
+
+Verified: `app.js` imports `ZiggyVue` **from the `ziggy-js` package**, never
+`./ziggy`; `app.blade.php:20` still contains `@routes`. The installed plugin
+falls back to `window.Ziggy`, which `@routes` populates per request.
 
 **Interfaces:**
 - Consumes: Task 2's endpoint.
@@ -260,7 +276,7 @@ Get-Content resources/views/app.blade.php
 Confirm the diagnosis first: `app.js` must import `ziggy-js` (the package), not
 `./ziggy`, and `app.blade.php` must still contain `@routes`.
 
-- [ ] **Step 2: Replace `@routes` with the runtime fetch**
+- [ ] **Step 2: Replace `@routes` with the runtime fetch** — not executed (superseded), kept for the record.
 
 Remove `@routes` from `resources/views/app.blade.php`. Leaving it in place
 means the page carries both a baked origin and a fetched one, and it is
@@ -302,7 +318,7 @@ plugin *configuration* has to be deferred. What must not happen is installing
 If the project does not already use top-level await, wrap the boot in an async
 function and mount on resolve. Keep it minimal — do not restructure the app.
 
-- [ ] **Step 3: Handle the failure path visibly**
+- [ ] **Step 3: Handle the failure path visibly** — not executed (superseded), kept for the record.
 
 A blank page with a console error is worse than a clear message. Catch the fetch
 failure and render a short explanation.
@@ -319,7 +335,9 @@ try {
 }
 ```
 
-- [ ] **Step 4: Decide the fate of `resources/js/ziggy.js`**
+- [x] **Step 4: Decide the fate of `resources/js/ziggy.js`** — done: deleted (G52).
+
+Nothing imports it once `@routes` is gone, so either outcome is correct:
 
 Nothing imports it once `@routes` is gone, so either outcome is correct:
 
@@ -332,35 +350,31 @@ Nothing imports it once `@routes` is gone, so either outcome is correct:
 
 Do not delete the vendor plugin. Only the generated manifest is in question.
 
-- [ ] **Step 5: Rebuild and verify the artifact no longer bakes an origin**
+- [x] **Step 5: Rebuild and verify the artifact no longer bakes an origin**
 
-```powershell
-npm run build
-rg -o '"url":"[^"]*"' public/build/assets/*.js
-```
+Done: `npm run build` succeeded, and a new guard test
+(`tests/Feature/ZiggyRouteManifestTest::test_no_built_asset_bakes_a_fixed_route_origin`)
+greps every `public/build/assets/*.js` for `"url":"http:\/\/localhost"` and
+fails otherwise. Steps 4–5 together replaced the plan's "keep out of the build"
+alternative with a provable, automatically-checked guarantee.
 
-- [ ] **Step 6: Name the three empty routes**
+- [x] **Step 6: Name the empty-leaf routes**
 
-Find them first — do not trust the list above if routes have changed since:
-
-```powershell
-rg -n "\->name\(''\)" routes/web.php
-```
-
-Assign each a real leaf name, then update every caller:
-
-| Route | Suggested name | Known callers to check |
-|---|---|---|
-| `admin/reports/charts/occupancy` | `admin.reports.charts.occupancy` | chart components under `admin/reports` |
-| `frontdesk/rooms/{room}/billing` | `frontdesk.rooms.billing` | front-desk billing Vue pages |
-| `staff/menu/categories` | `staff.menu.categories.store` | the categories controller / Vue caller |
+The plan said three routes; verification found **21** — `getRoutesByName()`
+collapses the duplicate `.` leaves to one key each, hiding the rest. All were
+renamed in `routes/admin.php` (2: `admin.reports.charts.occupancy`,
+`admin.reports.charts.inventory`) and `routes/staff.php` (19: frontdesk group —
+`frontdesk.rooms.billing`, `frontdesk.rooms.billing.pay`,
+`frontdesk.guest-requests.acknowledge`, `frontdesk.guest-requests.complete`;
+staff menu group — `staff.menu.categories.{store,update,destroy,toggle,reorder}`,
+`staff.menu.subcategories.{store,update,destroy,toggle}`,
+`staff.menu.items.{store,update,destroy,toggle,reorder}`,
+`staff.menu.items.images.destroy`).
 
 `rg -n "route\('frontdesk\.'\)|route\('staff\.'\)|route\('admin\.reports\.'\)" resources/js`
-returns nothing today — these routes are reachable by path but not by name. That
-is why the empty names have survived. Give them names, confirm no caller breaks,
-and note the count in the commit message.
-
-Expected: no match. The origin must not appear in any built asset.
+still returns nothing — the routes were reachable by path but not name, so no
+caller breaks. Names resolve via `route()` and the new empty-leaf guard test
+(601 assertions) passes.
 
 - [ ] **Step 6: Verify at runtime, from a second origin**
 
@@ -386,71 +400,31 @@ and fails after a rebuild reintroduces the problem.
 - Create: `tests/Feature/ZiggyRouteManifestTest.php`
 
 **Interfaces:**
-- Consumes: Tasks 2–3.
-- Produces: a test that fails if the manifest is ever baked again.
+- Consumes: Tasks 1–3 (in the scoped-down form: no endpoint).
+- Produces: a test that fails if the manifest is ever baked again, or a
+  generated manifest ever regains an empty-leaf route name.
 
-- [ ] **Step 1: Write the test**
+- [x] **Step 1: Write the test**
 
-```php
-<?php
+Committed as `tests/Feature/ZiggyRouteManifestTest.php` (4 tests, 601
+assertions). The endpoint-based draft below was replaced because there is no
+`/ziggy.js` endpoint in the scoped-down scope. The real file asserts, in order:
 
-namespace Tests\Feature;
+1. the manifest URL resolves against the requesting host — boots the container
+   with a synthetic `192.168.1.57:8000` request and confirms `(new Ziggy)`
+   reports that host (not `localhost`);
+2. the manifest still carries `order.store` and `sanctum.csrf-cookie`, the
+   routes every Inertia POST depends on;
+3. no route name ends with an empty leaf (G51 guard — 349 names iterated);
+4. no built asset bakes `"url":"http:\/\/localhost"` (G27 guard — skips when
+   `public/build/assets` is absent, fails if a baked manifest ever returns).
 
-use Illuminate\Support\Facades\Route;
-use Tests\TestCase;
+- [x] **Step 2: Verify**
 
-class ZiggyRouteManifestTest extends TestCase
-{
-    public function test_the_manifest_endpoint_reflects_the_requesting_host(): void
-    {
-        $response = $this->withServerVariables([
-            'HTTP_HOST' => '192.168.1.50:8000',
-            'HTTPS'     => false,
-        ])->getJson('/ziggy.js');
+`php artisan test --filter=ZiggyRouteManifestTest` → 4 passed. Full suite →
+217 passed / 1417 assertions.
 
-        $response->assertOk();
-
-        $this->assertStringContainsString('192.168.1.50', $response->json('url'));
-        $this->assertNotSame('http://localhost', $response->json('url'));
-    }
-
-    public function test_the_manifest_contains_named_routes(): void
-    {
-        $routes = $this->getJson('/ziggy.js')->json('routes');
-
-        $this->assertArrayHasKey('order.store', $routes);
-        $this->assertArrayHasKey('sanctum.csrf-cookie', $routes);
-    }
-
-    public function test_no_built_asset_bakes_a_fixed_route_origin(): void
-    {
-        if (! is_dir(public_path('build/assets'))) {
-            $this->markTestSkipped('Front-end assets are not built.');
-        }
-
-        foreach (glob(public_path('build/assets/*.js')) as $asset) {
-            $this->assertStringNotContainsString(
-                '"url":"http:\\/\\/localhost"',
-                (string) file_get_contents($asset),
-                "Asset [{$asset}] bakes a fixed route origin.",
-            );
-        }
-    }
-}
-```
-
-The third test is the regression guard. It skips when assets are absent, so it
-does not fail CI before a build — but it does fail if someone reintroduces a
-baked manifest after building.
-
-- [ ] **Step 2: Verify**
-
-```powershell
-npm run build
-php artisan test --filter=ZiggyRouteManifestTest
-```
-
-Commit: `test: guard against a baked route manifest returning`
+Commit: `test: guard the runtime route manifest against a baked origin` (`90b4ab44`)
 
 ---
 
@@ -462,48 +436,51 @@ Commit: `test: guard against a baked route manifest returning`
 - Consumes: Task 3.
 - Produces: confirmation that the cloud deployment is unaffected.
 
-- [ ] **Step 1: Exercise the main surfaces**
+- [ ] **Step 1: Exercise the main surfaces** — automatic portion done; the
+  click-through itself is a human UAT step and remains open.
 
-Open and use each of these on `http://localhost`:
+HTTP-level render checks with a non-local `Host` header showed `/login` renders
+with `"url"` matching the requesting origin, and `http://localhost:8019` renders
+unchanged on the loopback host — so the "cloud deployment is unchanged" claim is
+confirmed for load. Dragging through booking, POS, order, and dashboard in a
+real browser is left for a human.
 
-| Surface | Route | Check |
-|---|---|---|
-| Home | `/` | Renders |
-| Booking flow | `/rooms`, `/booking/...` | Search, select, pay |
-| Order | `order.store` | Places a guest order |
-| Login | `/login` | Loads and submits |
-| Dashboard | `/dashboard` | Loads |
-| Club POS | `/club/pos` | Opens a docket |
+- [x] **Step 2: Confirm the CSRF cookie route still resolves**
 
-Every network request must target `localhost`, matching today's behaviour.
+`rg -n "sanctum.csrf-cookie" resources/js/` → the axios wrapper resolves the
+CSRF cookie route; guard test #2 asserts `sanctum.csrf-cookie` is still in the
+manifest.
 
-- [ ] **Step 2: Confirm the CSRF cookie route still resolves**
+- [x] **Step 3: Run the full suite**
 
-`sanctum.csrf-cookie` is in the manifest and is load-bearing for Inertia POSTs. A
-break here breaks every form.
+`php artisan test` → 217 passed / 1417 assertions, zero failures.
 
-```powershell
-rg -n "sanctum.csrf-cookie" resources/js/
-```
+Task 5 produced no `chore:`-only commit; the rebuild was committed separately:
+`chore: rebuild front-end assets after removing the dead ziggy manifest` (`2dd55106`).
+The full change set for this plan, in order:
 
-- [ ] **Step 3: Run the full suite**
-
-```powershell
-php artisan test
-```
-
-Expected: zero failures.
-
-Commit: `chore: ziggy fix verification`
+- `c7588623` fix: name all empty-leaf routes unreachable by route() (G51)
+- `1d1d767a` chore: delete the dead generated ziggy.js manifest (G52)
+- `90b4ab44` test: guard the runtime route manifest against a baked origin
+- `2dd55106` chore: rebuild front-end assets after removing the dead ziggy manifest
 
 ---
 
-## Exit criteria
+## Exit criteria (re-scoped 2026-10-08)
 
-- `/ziggy.js` returns a manifest whose `url` matches the requesting host.
-- No built asset contains a baked origin.
-- The application loads and works from a LAN server origin.
-- The cloud deployment on `localhost` is unchanged.
-- `ZiggyRouteManifestTest` passes and would fail if the manifest were re-baked.
+- Every LAN client resolves `route()` against the serving host. **Holds** —
+  Ziggy v2.6.0 builds the manifest per request (`url('/')`); reproduction
+  confirmed host-correct from a non-local host.
+- No built asset contains a baked origin. **Holds** — live guard in
+  `ZiggyRouteManifestTest` test #4.
+- The application loads and works from a LAN server origin. **Holds** (load
+  verified at HTTP level; full click-through left as a human UAT step).
+- The cloud deployment on `localhost` is unchanged. **Holds** — loopback render
+  unchanged.
+- `ZiggyRouteManifestTest` passes and would fail if the manifest were re-baked or
+  a route name regressed to an empty leaf. **Holds** — 4/4 passing, plus G51/G52
+  resolved.
+- ~~`/ziggy.js` endpoint exists~~ — **cancelled** by the scope-down decision; the
+  endpoint would replace a provably working mechanism.
 
 Next: [Phase 3 — Club POS repair](2026-10-05-phase-3-club-pos-repair.md).

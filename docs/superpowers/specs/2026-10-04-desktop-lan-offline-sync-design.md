@@ -297,6 +297,21 @@ A UDP broadcast probe on a fixed port, with the pairing QR code and manual IP en
 
 `resources/js/ziggy.js` is a 35.5 KB route manifest baked at build time against a fixed origin. A staff client pointed at a LAN server would resolve routes against whatever host built the assets. Runtime route fetching must be fixed before any node other than the cloud can serve the application. This is a prerequisite, not a phase item.
 
+> **Correction (2026-10-08).** The blocker was investigated before acting and
+> largely **does not hold** for the installed Ziggy **v2.6.0**: `@routes`
+> constructs the manifest per requesting host (`new Ziggy` with no URL falls
+> back to `rtrim(url('/'), '/')`, i.e. the request root, and `app/` sets no
+> `forceRootUrl`). A live probe with a non-local `Host` header rendered
+> `"url"` matching the requesting host, so a staff client already resolves
+> every `route()` against the LAN server that served the page. The referenced
+> `ziggy.js` was dead — nothing imported it — and it has been **deleted and
+> gitignored** (gap G52). The remaining real defects were the empty-leaf route
+> names (gap G51, 21 routes, all named) and a missing guarantee that no built
+> asset can bake an origin again (`ZiggyRouteManifestTest`, four guards). Full
+> detail: `docs/superpowers/plans/2026-10-05-ziggy-runtime-route-manifest.md`.
+> Requirement 2's "no hardcoded LAN/server URL in client code" is satisfied by
+> the request-root behaviour; no runtime fetch bootstrap is required.
+
 ## 10. Web Version
 
 Untouched in behaviour. Same Coolify deployment, same routes, same pages.
