@@ -8,6 +8,16 @@ use Illuminate\Support\Str;
 trait Syncable
 {
     /**
+     * Which event kind the in-flight save is, so capture can tell a create
+     * from an update regardless of wasRecentlyCreated.
+     *
+     * A declared property (not a dynamic one) so it stays out of the model's
+     * attribute array: Eloquent's __set would otherwise funnel it into
+     * $attributes and inject it into every captured payload.
+     */
+    protected ?string $syncOperation = null;
+
+    /**
      * Register capture on write.
      *
      * `saved` rather than `creating`: the change row references the row, so
@@ -18,11 +28,16 @@ trait Syncable
     {
         static::creating(function (Model $row): void {
             $row->mintSyncUidIfMissing();
+            $row->syncOperation = 'create';
+        });
+
+        static::updating(function (Model $row): void {
+            $row->syncOperation = 'update';
         });
 
         static::saved(function (Model $row): void {
             $row->stampSyncMetadata();
-            SyncLogger::capture($row, $row->wasRecentlyCreated ? 'create' : 'update');
+            SyncLogger::capture($row, $row->syncOperation ?? ($row->wasRecentlyCreated ? 'create' : 'update'));
         });
 
         static::deleted(function (Model $row): void {

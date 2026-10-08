@@ -3,6 +3,7 @@
 namespace App\Sync;
 
 use App\Models\Sync\SyncChange;
+use App\Models\Sync\SyncConflict;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
@@ -58,11 +59,105 @@ class SyncApplier
                     return;
                 }
 
-                $instance ??= new $model;
+                if ($instance === null) {
+                    // A row this node has never seen: adopt it as it stands.
+                    // Two nodes that created distinct rows must both survive,
+                    // and there is nothing of ours to merge it against.
+                    (new $model)
+                        ->forceFill($this->attributesFor(new $model, $payload, $uid))
+                        ->save();
 
-                $instance->forceFill($this->attributesFor($instance, $payload, $uid))->save();
+                    return;
+                }
+
+                // The row exists on both sides, and this node may have edited
+                // it while they were disconnected. Applying the remote payload
+                // over it wholesale would silently discard a newer local write,
+                // which is the exact divergence this section exists to prevent.
+                // The change goes through the catalogue policy, and the policy
+                // answer is what gets persisted - or, when blocked, a conflict
+                // instead of either side.
+                $this->mergeAndSave($instance, $payload, $uid, $change->table_name);
             });
         });
+    }
+
+    /**
+     * Merge this node's row with the remote payload and persist the result.
+     */
+    private function mergeAndSave(Model $instance, array $payload, string $uid, string $table): void
+    {
+        // attributesToArray() rather than getAttributes(): the payload was
+        // built by attributesToArray() on the origin, so the two rows must be
+        // in the same shape before a policy compares them. Raw database
+        // attributes hold timezone-less timestamps while the payload holds
+        // ISO-8601, and comparing a date across those two encodings is a
+        // silent wrong answer rather than an error.
+        $merged = SyncMerger::merge($table, $instance->attributesToArray(), $payload);
+
+        if ($merged instanceof ConflictResult) {
+            // The policy refused to pick a winner: two rows claim the same
+            // scarce resource. Neither side is written until a human decides.
+            $this->recordConflict($table, $uid, $merged);
+
+            return;
+        }
+
+        if (array_is_list($merged)) {
+            // Both rows are meant to survive but they arrived under one
+            // sync_uid, and sync_uid is unique - writing the second would
+            // fail the index, and dropping either would lose work. Nothing in
+            // the current catalogue can reach this branch: it is guarded by
+            // sync_row_key, a column no migration defines, so the check is
+            // always `false`. If a future table adds the column, a wrong merge
+            // becomes a recorded conflict rather than a lost row.
+            $this->recordConflict($table, $uid, new ConflictResult(
+                $instance->attributesToArray(),
+                $payload,
+                'distinct_rows_share_one_identity',
+            ));
+
+            return;
+        }
+
+        $instance->forceFill($this->attributesFor($instance, $merged, $uid))->save();
+    }
+
+    /**
+     * Record an unresolved merge for human decision.
+     *
+     * Applying the same change on a replay must not pile up rows: the log is
+     * re-applied over the whole life of a node, so a conflict is keyed by its
+     * incoming payload as well as the row it concerns. A genuinely different
+     * remote payload produces its own row.
+     */
+    private function recordConflict(string $table, string $uid, ConflictResult $result): void
+    {
+        $remote = $result->remote;
+
+        $alreadyOpen = SyncConflict::query()
+            ->where('table_name', $table)
+            ->where('row_id', $uid)
+            ->where('status', 'open')
+            ->when(
+                $remote === null,
+                fn ($query) => $query->whereNull('remote_change'),
+                fn ($query) => $query->where('remote_change', json_encode($remote, JSON_UNESCAPED_UNICODE)),
+            )
+            ->exists();
+
+        if ($alreadyOpen) {
+            return;
+        }
+
+        SyncConflict::create([
+            'table_name'    => $table,
+            'row_id'        => $uid,
+            'local_change'  => $result->local,
+            'remote_change' => $remote,
+            'reason'        => $result->reason,
+            'status'        => 'open',
+        ]);
     }
 
     /**

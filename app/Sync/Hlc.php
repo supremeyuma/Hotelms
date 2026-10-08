@@ -18,9 +18,19 @@ class Hlc
     public static function fromString(string $hlc): self
     {
         $parts = explode("-", $hlc);
-        if (count($parts) === 3) {
-            return new self($parts[0], (int) $parts[1], $parts[2]);
+
+        if (count($parts) === 2) {
+            // Legacy offset-package stamp: "timestamp-nodeId", no counter.
+            return new self($parts[0], 0, $parts[1]);
         }
+
+        // "timestamp-counter-nodeId" where the node id itself may contain
+        // dashes ("node-a", "front-desk-02"). The counter is numeric, so the
+        // node id is everything after the second segment.
+        if (count($parts) >= 3 && is_numeric($parts[1])) {
+            return new self($parts[0], (int) $parts[1], implode("-", array_slice($parts, 2)));
+        }
+
         throw new \InvalidArgumentException("Invalid HLC format");
     }
 

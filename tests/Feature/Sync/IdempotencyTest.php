@@ -67,13 +67,20 @@ class IdempotencyTest extends TestCase
         $item->save();
 
         $change = SyncChange::orderByDesc('sequence')->first();
+        $payload = $change->payload;
+        $payload['sync_hlc'] = '9999999999999-9-node-b';
+        $payload['sync_origin_node_id'] = 'node-b';
+        $change->payload = $payload;
+        $change->save();
 
         config(['sync.enabled' => false]);
         $item->quantity = 99;
         $item->save();
         config(['sync.enabled' => true]);
 
-        app(SyncApplier::class)->apply($change);
+        // Remote row wins the merge on the clock, and the winner's quantity
+        // column lands even though InventoryItem does not declare it fillable.
+        app(SyncApplier::class)->apply($change->fresh());
 
         $this->assertSame(5, (int) $item->fresh()->quantity);
     }
