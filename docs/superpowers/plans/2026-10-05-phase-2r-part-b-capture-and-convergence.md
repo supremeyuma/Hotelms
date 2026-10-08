@@ -1506,7 +1506,7 @@ php artisan migrate:fresh --force
 php artisan test
 ```
 
-- `migrate:fresh` reports `170 DONE, 0 FAIL`.
+- `migrate:fresh` reports `172 DONE, 0 FAIL`.
 - The full suite passes with zero failures and zero skips.
 - `test_the_two_nodes_are_separate_databases` passes, proving the harness is two
   real databases.
