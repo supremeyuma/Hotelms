@@ -4,12 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 use App\Sync\Syncable;
 
 class PosSession extends Model
 {
-    use HasUlids;
+    use HasFactory, HasUlids;
 
     protected $fillable = [
         'device_id',
@@ -43,12 +44,12 @@ class PosSession extends Model
 
     public function device()
     {
-        return $this->belongsTo(PosDevice::class);
+        return $this->belongsTo(PosDevice::class, 'device_id');
     }
 
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function supervisor()
@@ -58,6 +59,6 @@ class PosSession extends Model
 
     public function dockets()
     {
-        return $this->hasMany(PosDocket::class);
+        return $this->hasMany(PosDocket::class, 'session_id');
     }
 }

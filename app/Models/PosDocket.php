@@ -4,12 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 use App\Sync\Syncable;
 
 class PosDocket extends Model
 {
-    use HasUlids;
+    use HasFactory, HasUlids;
 
     protected $fillable = [
         'device_id',
@@ -44,12 +45,12 @@ class PosDocket extends Model
 
     public function device()
     {
-        return $this->belongsTo(PosDevice::class);
+        return $this->belongsTo(PosDevice::class, 'device_id');
     }
 
     public function session()
     {
-        return $this->belongsTo(PosSession::class);
+        return $this->belongsTo(PosSession::class, 'session_id');
     }
 
     public function staff()
