@@ -50,13 +50,13 @@ class ClubDrinkSeeder extends Seeder
 
         foreach ($drinks as $drink) {
             $item = MenuItem::updateOrCreate(
-                ['name' => $drink['name'], 'service_area' => 'club'],
+                ['name' => $drink['name'], 'service_area' => 'bar'],
                 [
                     'menu_category_id' => $category->id,
                     'description' => $drink['description'],
                     'price' => $drink['price'],
                     'is_available' => true,
-                    'service_area' => 'club',
+                    'service_area' => 'bar',
                 ]
             );
 
