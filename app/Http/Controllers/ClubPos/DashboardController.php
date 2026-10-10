@@ -11,7 +11,7 @@ use App\Models\MenuCategory;
 use App\Models\DrinkStock;
 use App\Services\ClubPosService;
 use Illuminate\Http\Request;
-use App\Models\PosDevice;
+use Illuminate\Support\Facades\Cookie;
 
 class DashboardController extends Controller
 {
@@ -19,15 +19,15 @@ class DashboardController extends Controller
         private ClubPosService $clubPos,
     ) {}
 
-    public function index()
+    public function index(Request $request)
     {
-        $user = request()->user();
-        $device = PosDevice::first() ?? PosDevice::create([
-            "device_code" => "POS-001",
-            "device_name" => "Club POS",
-            "device_type" => "club",
-            "is_active" => true,
-        ]);
+        $user = $request->user();
+        $identity = $request->cookie(config('pos.devices.identity_cookie'));
+        $device = $this->clubPos->resolveDevice($identity);
+
+        if (config('pos.devices.auto_register') && $identity !== $device->device_code) {
+            Cookie::queue(cookie()->forever(config('pos.devices.identity_cookie'), $device->device_code));
+        }
 
         $currentSession = PosSession::where("device_id", $device->id)
             ->where("user_id", $user->id)

@@ -63,6 +63,7 @@ class DatabaseSeeder extends Seeder
         // Club POS demo data
         $this->call([
             ClubDrinkSeeder::class,
+            PosDeviceSeeder::class,
         ]);
     }
 }

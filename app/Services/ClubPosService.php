@@ -13,6 +13,7 @@ use App\Models\Booking;
 use App\Services\AuditLoggerService;
 use App\Services\PricingService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class ClubPosService
 {
@@ -21,6 +22,38 @@ class ClubPosService
         private AuditLoggerService $audit,
         private DrinkStockService $stock,
     ) {}
+
+    public function resolveDevice(?string $identity = null): PosDevice
+    {
+        if (!config('pos.devices.auto_register', true)) {
+            return $this->defaultDevice();
+        }
+
+        return PosDevice::firstOrCreate(
+            ['device_code' => $identity ?? 'POS-' . strtoupper(Str::random(8))],
+            [
+                'device_name' => 'Web POS',
+                'device_type' => 'club_terminal',
+                'is_active' => true,
+                'metadata' => ['registered_via' => 'pos_access'],
+            ]
+        );
+    }
+
+    public function defaultDevice(): PosDevice
+    {
+        $defaults = config('pos.devices.default');
+
+        return PosDevice::firstOrCreate(
+            ['device_code' => $defaults['code']],
+            [
+                'device_name' => $defaults['name'],
+                'device_type' => $defaults['type'],
+                'is_active' => true,
+                'metadata' => ['registered_via' => 'seeder'],
+            ]
+        );
+    }
 
     public function getOrCreateSession(PosDevice $device, User $user): PosSession
     {

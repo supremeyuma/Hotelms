@@ -6,10 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\PosDocket;
 use App\Models\PosDocketItem;
 use App\Models\MenuItem;
-use App\Models\PosDevice;
 use App\Models\PosSession;
 use App\Services\ClubPosService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cookie;
 
 class DocketController extends Controller
 {
@@ -31,12 +31,13 @@ class DocketController extends Controller
         if (!empty($validated["session_id"])) {
             $session = PosSession::findOrFail($validated["session_id"]);
         } else {
-            $device = PosDevice::first() ?? PosDevice::create([
-                "device_code" => "POS-001",
-                "device_name" => "Club POS",
-                "device_type" => "club",
-                "is_active" => true,
-            ]);
+            $identity = $request->cookie(config('pos.devices.identity_cookie'));
+            $device = $this->clubPos->resolveDevice($identity);
+
+            if (config('pos.devices.auto_register') && $identity !== $device->device_code) {
+                Cookie::queue(cookie()->forever(config('pos.devices.identity_cookie'), $device->device_code));
+            }
+
             $session = $this->clubPos->getOrCreateSession($device, $request->user());
         }
 
