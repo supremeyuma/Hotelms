@@ -58,4 +58,68 @@ class DocketController extends Controller
             $docket->load(["items", "items.menuItem", "payments", "staff", "session"])
         );
     }
+
+    public function addItem(Request $request, PosDocket $docket)
+    {
+        $validated = $request->validate([
+            "menu_item_id" => "required|exists:menu_items,id",
+            "quantity" => "required|integer|min:1|max:9999",
+        ]);
+
+        $menuItem = MenuItem::findOrFail($validated["menu_item_id"]);
+
+        try {
+            $docket = $this->clubPos->addItem($docket, $menuItem, (int) $validated["quantity"], $request->user());
+        } catch (\RuntimeException $e) {
+            return response()->json(["error" => $e->getMessage()], 422);
+        }
+
+        return response()->json($docket->load("items", "payments"));
+    }
+
+    public function removeItem(Request $request, PosDocket $docket, PosDocketItem $item)
+    {
+        try {
+            $docket = $this->clubPos->removeItem($docket, $item, $request->user());
+        } catch (\RuntimeException $e) {
+            return response()->json(["error" => $e->getMessage()], 422);
+        }
+
+        return response()->json($docket->load("items", "payments"));
+    }
+
+    public function pay(Request $request, PosDocket $docket)
+    {
+        $validated = $request->validate([
+            "payments" => "required|array|min:1",
+            "payments.*.method" => "required|in:cash,card,room_charge,mobile_money,voucher",
+            "payments.*.amount" => "required|numeric|min:0",
+            "payments.*.reference" => "nullable|string|max:100",
+            "payments.*.change_given" => "nullable|numeric|min:0",
+            "payments.*.meta" => "nullable|array",
+        ]);
+
+        try {
+            $docket = $this->clubPos->closeDocket($docket, $validated["payments"], $request->user());
+        } catch (\RuntimeException $e) {
+            return response()->json(["error" => $e->getMessage()], 422);
+        }
+
+        return response()->json($docket->load("items", "payments"));
+    }
+
+    public function void(Request $request, PosDocket $docket)
+    {
+        $validated = $request->validate([
+            "reason" => "required|string|max:500",
+        ]);
+
+        try {
+            $docket = $this->clubPos->voidDocket($docket, $validated["reason"], $request->user());
+        } catch (\RuntimeException $e) {
+            return response()->json(["error" => $e->getMessage()], 422);
+        }
+
+        return response()->json($docket->load("items", "payments"));
+    }
 }
