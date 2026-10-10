@@ -13,7 +13,6 @@ use App\Models\Booking;
 use App\Services\AuditLoggerService;
 use App\Services\PricingService;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 class ClubPosService
 {
@@ -140,14 +139,21 @@ class ClubPosService
                 if ($payment['method'] === 'room_charge' && $docket->booking_id) {
                     $booking = Booking::find($docket->booking_id);
                     if ($booking) {
-                        $roomId = $docket->room_id ?? $booking->rooms->first()?->id;
-                        app(BillingService::class)->addCharge(
-                            $booking,
-                            $roomId,
-                            "Club Lounge — Docket #{$docket->docket_number}",
-                            $payment['amount'],
-                            'pos_sale'
-                        );
+                        $roomId = $docket->room_id
+                            ?? $booking->room_id
+                            ?? $booking->rooms()->first()?->id;
+
+                        if ($roomId) {
+                            app(BillingService::class)->addCharge(
+                                $booking,
+                                $roomId,
+                                "Club Lounge — Docket #{$docket->docket_number}",
+                                $payment['amount'],
+                                'pos_sale'
+                            );
+                        } else {
+                            throw new \RuntimeException('No room is attached to this booking to charge.');
+                        }
                     }
                 }
             }
