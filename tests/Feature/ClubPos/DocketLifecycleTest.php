@@ -158,6 +158,21 @@ class DocketLifecycleTest extends TestCase
             ->assertNotFound();
     }
 
+    public function test_a_docket_auto_opens_a_shift_when_none_is_supplied(): void
+    {
+        $fresh = User::factory()->create();
+        $fresh->assignRole('club_staff');
+
+        $this->actingAs($fresh)
+            ->postJson(route('club.pos.dockets.store'), [])
+            ->assertCreated();
+
+        $this->assertDatabaseHas('pos_sessions', [
+            'user_id' => $fresh->id,
+            'status' => 'open',
+        ]);
+    }
+
     private function openDocket(): string
     {
         return $this->actingAs($this->staff)

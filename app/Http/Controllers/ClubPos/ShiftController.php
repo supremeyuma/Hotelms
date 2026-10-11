@@ -28,7 +28,7 @@ class ShiftController extends Controller
             ->first();
 
         if ($existing) {
-            return response()->json($existing, 200);
+            return $this->respond($request, $existing, 200);
         }
 
         $session = PosSession::create([
@@ -44,7 +44,7 @@ class ShiftController extends Controller
             'device_id' => $validated['device_id'],
         ]);
 
-        return response()->json($session, 201);
+        return $this->respond($request, $session, 201);
     }
 
     public function current(Request $request)
@@ -78,14 +78,12 @@ class ShiftController extends Controller
     public function close(Request $request, PosSession $session)
     {
         if ($session->status !== 'open') {
-            return response()->json(['error' => 'Shift is not open.'], 422);
+            return $this->respondError($request, 'Shift is not open.');
         }
 
         $openDockets = $session->dockets()->where('status', 'open')->count();
         if ($openDockets > 0) {
-            return response()->json([
-                'error' => "Cannot close shift. {$openDockets} docket(s) are still open.",
-            ], 422);
+            return $this->respondError($request, "Cannot close shift. {$openDockets} docket(s) are still open.");
         }
 
         $validated = $request->validate([
@@ -126,13 +124,13 @@ class ShiftController extends Controller
             'variance' => $variance,
         ]);
 
-        return response()->json($session);
+        return $this->respond($request, $session);
     }
 
     public function reconcile(Request $request, PosSession $session)
     {
         if ($session->status !== 'closed') {
-            return response()->json(['error' => 'Shift must be closed before reconciliation.'], 422);
+            return $this->respondError($request, 'Shift must be closed before reconciliation.');
         }
 
         $validated = $request->validate([
@@ -150,6 +148,24 @@ class ShiftController extends Controller
         $session->reconciled_at = now();
         $session->save();
 
-        return response()->json($session);
+        return $this->respond($request, $session);
+    }
+
+    private function respond(Request $request, $payload, int $status = 200)
+    {
+        if ($request->header('X-Inertia')) {
+            return redirect()->back();
+        }
+
+        return response()->json($payload, $status);
+    }
+
+    private function respondError(Request $request, string $message, int $status = 422)
+    {
+        if ($request->header('X-Inertia')) {
+            return redirect()->back()->withErrors(['shift' => $message]);
+        }
+
+        return response()->json(['error' => $message], $status);
     }
 }

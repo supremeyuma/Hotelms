@@ -106,4 +106,41 @@ class PosSessionLifecycleTest extends TestCase
         $response->assertOk();
         $this->assertSame($session->id, $response->json('id'));
     }
+
+    public function test_closing_a_shift_returns_a_redirect_for_inertia_requests(): void
+    {
+        $device = PosDevice::factory()->create();
+
+        $session = PosSession::factory()->create([
+            'device_id' => $device->id,
+            'user_id' => $this->staff->id,
+        ]);
+
+        $this->actingAs($this->staff)
+            ->post(route('club.pos.shifts.close', $session), ['cash_declared' => 0], ['X-Inertia' => 'true'])
+            ->assertStatus(302);
+
+        $this->assertSame('closed', $session->fresh()->status);
+    }
+
+    public function test_closing_a_shift_with_open_dockets_is_refused(): void
+    {
+        $device = PosDevice::factory()->create();
+
+        $session = PosSession::factory()->create([
+            'device_id' => $device->id,
+            'user_id' => $this->staff->id,
+        ]);
+
+        $this->actingAs($this->staff)
+            ->postJson(route('club.pos.dockets.store'), ['session_id' => $session->id])
+            ->assertCreated();
+
+        $this->actingAs($this->staff)
+            ->post(route('club.pos.shifts.close', $session), ['cash_declared' => 0], ['X-Inertia' => 'true'])
+            ->assertStatus(302)
+            ->assertSessionHasErrors('shift');
+
+        $this->assertSame('open', $session->fresh()->status);
+    }
 }

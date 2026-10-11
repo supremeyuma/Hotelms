@@ -8,7 +8,7 @@ const props = defineProps({
   device: { type: Object, default: null },
 })
 
-const emit = defineEmits(['lock', 'switch-staff'])
+const emit = defineEmits(['lock', 'switch-staff', 'close-shift'])
 
 const navItems = [
   { label: 'POS', route: 'club.pos.dashboard', active: 'club.pos.dashboard' },
@@ -78,6 +78,14 @@ const dateDisplay = computed(() => {
         <p class="text-lg font-bold text-white tabular-nums">{{ timeDisplay }}</p>
         <p class="text-xs text-slate-400">{{ dateDisplay }}</p>
       </div>
+
+      <button v-if="session?.status === 'open'" @click="$emit('close-shift')"
+        class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-amber-600/20 hover:text-amber-400 border border-slate-600 hover:border-amber-500/40 transition-all active:scale-95 flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span class="text-sm font-medium">Close Shift</span>
+      </button>
 
       <button @click="$emit('lock')"
         class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-red-600/20 hover:text-red-400 border border-slate-600 hover:border-red-500/40 transition-all active:scale-95 flex items-center gap-2">

@@ -8,6 +8,7 @@ import DocketPanel from '@/Components/ClubPos/DocketPanel.vue'
 import PaymentModal from '@/Components/ClubPos/PaymentModal.vue'
 import OpenDocketsBar from '@/Components/ClubPos/OpenDocketsBar.vue'
 import StaffPinModal from '@/Components/ClubPos/StaffPinModal.vue'
+import CloseShiftModal from '@/Components/ClubPos/CloseShiftModal.vue'
 
 defineOptions({ layout: ClubPosLayout })
 
@@ -31,6 +32,7 @@ const dockets = ref(props.openDockets)
 const activeDocketId = ref(null)
 const showPayment = ref(false)
 const creatingDocket = ref(false)
+const showCloseShift = ref(false)
 const staffPinRef = ref(null)
 
 const activeDocket = computed(() => {
@@ -88,14 +90,9 @@ function handleAddItem(item) {
 }
 
 function createDocket() {
-  if (!session.value) {
-    alert('No open shift. Please open a shift first.')
-    return Promise.reject()
-  }
   creatingDocket.value = true
   return new Promise((resolve, reject) => {
     router.post(route('club.pos.dockets.store'), {
-      session_id: session.value.id,
       table_identifier: null,
       customer_name: null,
     }, {
@@ -129,11 +126,22 @@ function refreshDockets() {
   router.reload({ only: ['openDockets', 'currentSession'], preserveScroll: true })
 }
 
+function onShiftClosed() {
+  showCloseShift.value = false
+  session.value = null
+  activeDocketId.value = null
+  refreshDockets()
+}
+
 watch(() => props.openDockets, (val) => {
   dockets.value = val
   if (val.length > 0 && !activeDocketId.value) {
     activeDocketId.value = val[0].id
   }
+}, { immediate: true })
+
+watch(() => props.currentSession, (val) => {
+  session.value = val
 }, { immediate: true })
 
 watch(showPinModal, (val) => {
@@ -146,7 +154,16 @@ watch(showPinModal, (val) => {
 <template>
   <div class="h-full flex flex-col">
     <TopBar :staff="currentStaff || authUser" :session="session" :device="device"
-      @lock="handleLock" @switch-staff="showPinModal = true" />
+      @lock="handleLock" @switch-staff="showPinModal = true"
+      @close-shift="showCloseShift = true" />
+
+    <div v-if="showCloseShift && session"
+      class="fixed inset-0 z-[90] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+      <div role="dialog" aria-modal="true" aria-label="Close shift"
+        class="w-full max-w-sm rounded-2xl bg-slate-800 border border-slate-700 shadow-2xl">
+        <CloseShiftModal :session="session" @close="showCloseShift = false" @closed="onShiftClosed" />
+      </div>
+    </div>
 
     <div class="flex flex-col flex-1 min-h-0">
       <div class="flex flex-1 min-h-0">
