@@ -7,6 +7,7 @@ use App\Http\Controllers\Public\PublicMenuOnlineController;
 use App\Http\Controllers\Public\PublicMenuViewOnlyController;
 use App\Http\Controllers\Public\PublicOrderController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\Booking\LocalWindowNoticeController;
 use App\Http\Controllers\BookingDiscountController;
 use App\Http\Controllers\GuestLaundryController;
 use App\Http\Controllers\FeedbackController;
@@ -33,6 +34,9 @@ Route::post('/feedback', [FeedbackController::class, 'storePublic'])->name('feed
 
 // Public booking endpoints
 //Route::post('/bookings/check-availability', [BookingController::class, 'checkAvailability'])->name('public.booking.check');
+
+// Front-desk arrival notice (shareable; carries the arrival date)
+Route::get('/booking/local-window', LocalWindowNoticeController::class)->name('booking.localWindow');
 
 // Event routes
 Route::get('/events', [PublicEventController::class, 'index'])->name('events.index');

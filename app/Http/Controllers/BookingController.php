@@ -26,6 +26,8 @@ use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use App\Services\DiscountCodeService;
+use App\Exceptions\ArrivalInsideLocalWindow;
+use App\Services\Booking\BookingAuthority;
 
 class BookingController extends Controller
 {
@@ -35,6 +37,7 @@ class BookingController extends Controller
     protected PaymentProviderManager $paymentManager;
     protected DiscountCodeService $discountCodeService;
     protected PaymentRecordService $paymentRecords;
+    protected BookingAuthority $authority;
     
 
     /*public function __construct(BookingService $service)
@@ -50,6 +53,7 @@ class BookingController extends Controller
         PaymentProviderManager $paymentManager,
         DiscountCodeService $discountCodeService,
         PaymentRecordService $paymentRecords,
+        BookingAuthority $authority,
     )
     {
         $this->availability = $availability;
@@ -58,6 +62,7 @@ class BookingController extends Controller
         $this->paymentManager = $paymentManager;
         $this->discountCodeService = $discountCodeService;
 $this->paymentRecords = $paymentRecords;
+        $this->authority = $authority;
     }
 
     /**
@@ -101,6 +106,12 @@ $this->paymentRecords = $paymentRecords;
         $checkOut = $request->input('check_out');
         $adults = $request->input('adults');
         $children = $request->input('children', 0);
+
+        try {
+            $this->authority->assertOnlineBookable(Carbon::parse($checkIn));
+        } catch (ArrivalInsideLocalWindow $e) {
+            return $this->localWindowResponse($e);
+        }
 
         $roomTypes = RoomType::with('images')->get()->map(function ($roomType) use ($checkIn, $checkOut, $adults, $children) {
             // Skip room types that cannot accommodate requested guests
@@ -166,6 +177,12 @@ $this->paymentRecords = $paymentRecords;
 
         $selectedRoomIds = array_values(array_unique(array_map('intval', $request->input('selected_room_ids', []))));
         $quantity = count($selectedRoomIds);
+
+        try {
+            $this->authority->assertOnlineBookable(Carbon::parse($request->input('check_in')));
+        } catch (ArrivalInsideLocalWindow $e) {
+            return $this->localWindowResponse($e);
+        }
 
         $available = $this->availability->areRoomsAvailable(
             $selectedRoomIds,
@@ -293,6 +310,12 @@ $this->paymentRecords = $paymentRecords;
         $bookingData = Session::get('booking');
         if (!$bookingData) {
             return redirect()->route('booking.search');
+        }
+
+        try {
+            $this->authority->assertOnlineBookable(Carbon::parse($bookingData['check_in']));
+        } catch (ArrivalInsideLocalWindow $e) {
+            return $this->localWindowResponse($e);
         }
         
 
@@ -572,6 +595,26 @@ public function payment(Booking $booking)
 
         return redirect()->route('booking.precheck.show', ['booking' => $booking->id] + $request->query())
             ->with('success', 'Pre-check-in completed. Room access will still be issued by the front desk on arrival.');
+    }
+
+    /**
+     * Tell the guest the front desk owns this arrival instead of showing an error.
+     *
+     * Spec §8: arrivals inside the cutoff are arranged at the desk. The page
+     * names the arrival, explains the window and shows the phone and WhatsApp
+     * numbers so the guest can reach the desk.
+     */
+    protected function localWindowResponse(ArrivalInsideLocalWindow $e)
+    {
+        return response()->view('booking.local-window', [
+            'hotelName' => Setting::get('hotel_name'),
+            'checkIn' => $e->checkIn->toFormattedDateString(),
+            'checkInDate' => $e->checkIn->toDateString(),
+            'cutoffHours' => $e->cutoffHours,
+            'windowDescription' => $this->authority->effectiveWindowDescription(),
+            'hotelPhone' => Setting::get('hotel_phone'),
+            'whatsapp' => Setting::get('site_whatsapp'),
+        ], 422);
     }
 
     protected function transformRoomForSelection(Room $room, ?RoomType $roomType = null): array

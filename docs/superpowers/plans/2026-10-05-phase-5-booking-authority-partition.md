@@ -877,6 +877,14 @@ Commit: `fix: enforce the booking cutoff on both channels and re-check availabil
 
 ## Task 4: Enforce the online half of the partition
 
+> **Status:** COMPLETE 2026-10-11. `availableRooms`, `selectRoom` and`r
+> `createBooking` refuse arrivals inside the window and render
+> `booking.local-window`; the shareable `booking/local-window` route renders the
+> same notice (200) or redirects to search when the date is outside the window.
+> Note: the notice page depends on `assertOnlineBookable`, so on a local node
+> (which may book inside the window online) it redirects instead of showing — the
+> plan's contact-details test was updated to set `sync.node_type = cloud`.
+
 **Files:**
 - Modify: `app/Http/Controllers/BookingController.php`
 - Create: `app/Http/Controllers/Booking/LocalWindowNoticeController.php`
@@ -886,14 +894,14 @@ Commit: `fix: enforce the booking cutoff on both channels and re-check availabil
 - Consumes: Task 2's `BookingAuthority::assertOnlineBookable`.
 - Produces: a 422 on availability and creation inside the window, plus a guest-facing notice page.
 
-- [ ] **Step 1: Confirm where to intervene**
+- [x] **Step 1: Confirm where to intervene**
 
 Three public steps read the arrival date: `availableRooms` (L91, validation
 L93-98), `selectRoom` (L155, validation L157-165), and `createBooking` (L291).
 Refusing only at `createBooking` wastes the guest's time filling in the form, so
 refuse at search time and again at creation.
 
-- [ ] **Step 2: Add the guard to availability search**
+- [x] **Step 2: Add the guard to availability search**
 
 ```php
 $this->authority->assertOnlineBookable(Carbon::parse($validated['check_in']));
@@ -901,7 +909,7 @@ $this->authority->assertOnlineBookable(Carbon::parse($validated['check_in']));
 
 placed immediately after validation in `availableRooms` and `selectRoom`.
 
-- [ ] **Step 3: Render a useful notice, not an error page**
+- [x] **Step 3: Render a useful notice, not an error page**
 
 Convert the exception into a view rather than a 500. Add a `local-window`
 handler in the controller:
@@ -923,7 +931,7 @@ The view states plainly that arrivals within the cutoff are arranged at the fron
 desk, gives the arrival date, and shows the phone and WhatsApp numbers from
 existing settings keys. No new setting keys are needed.
 
-- [ ] **Step 4: Wire the route**
+- [x] **Step 4: Wire the route**
 
 ```php
 Route::get('/booking/local-window', [LocalWindowNoticeController::class])
@@ -933,14 +941,14 @@ Route::get('/booking/local-window', [LocalWindowNoticeController::class])
 with its controller re-running `assertOnlineBookable` from a `check_in` query
 parameter, so the link is safe to share.
 
-- [ ] **Step 5: Respect local authority**
+- [x] **Step 5: Respect local authority**
 
 `assertOnlineBookable` returns early when `localAuthority()` is true, so a LAN
 terminal running the same public routes still books inside the window. That is
 the intended behaviour for a node acting as its own front desk. Confirm this is
 what the setup wizard should configure in Phase 6.
 
-- [ ] **Step 6: Test**
+- [x] **Step 6: Test**
 
 ```php
 public function test_online_availability_refuses_arrivals_inside_the_local_window(): void
