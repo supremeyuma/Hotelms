@@ -248,6 +248,11 @@ A terminal does not synchronize the whole hotel database. It synchronizes the tr
 
 A test fails if a new dependency is added that the manifest does not cover.
 
+The verified manifest, the per-table policy class, the tables deliberately left
+out and the reasons for each live in [`docs/SYNC_SCOPE.md`](../../SYNC_SCOPE.md)
+and [`config/sync_scope.php`](../../../config/sync_scope.php). The guard is
+`tests/Feature/Sync/SyncScopeTripwireTest.php`.
+
 ## 8. Booking Authority
 
 Authority is partitioned by **arrival date**, not booking date.
