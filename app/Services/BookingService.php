@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Support\Collection;
+use Illuminate\Validation\ValidationException;
 use Exception;
 use App\Mail\BookingConfirmationMail;
 use App\Models\Booking;
@@ -125,11 +126,7 @@ class BookingService
                 'details' => $data['details'] ?? null,
             ]);
 
-            $booking->rooms()->attach(
-                $selectedRooms->pluck('id')->mapWithKeys(fn ($roomId) => [
-                    $roomId => ['status' => 'reserved'],
-                ])->all()
-            );
+            $booking = $this->assignRooms($booking, $selectedRooms->pluck('id')->all());
 
             $this->audit->log(
                 'booking_created',
@@ -140,6 +137,78 @@ class BookingService
 
             return $booking;
         });
+    }
+
+    /**
+     * The only writer of a booking's room assignment.
+     *
+     * The pivot (booking_rooms) is authoritative. bookings.room_id is a legacy
+     * scalar kept in sync for reporting queries that have not been migrated
+     * yet, and must never be the source of truth. Pivot columns that check-in,
+     * check-out and room-swaps depend on are preserved for retained rooms.
+     *
+     * @throws \Illuminate\Validation\ValidationException
+     */
+    public function assignRooms(Booking $booking, array $roomIds): Booking
+    {
+        $roomIds = array_values(array_unique(array_map('intval', $roomIds)));
+
+        if ($roomIds === []) {
+            throw ValidationException::withMessages([
+                'selected_room_ids' => 'Select at least one room for this booking.',
+            ]);
+        }
+
+        $rooms = Room::whereIn('id', $roomIds)->get();
+
+        if ($rooms->count() !== count($roomIds)) {
+            throw ValidationException::withMessages([
+                'selected_room_ids' => 'One or more selected rooms do not exist.',
+            ]);
+        }
+
+        // Keep the caller's room order so bookings.room_id stays the first
+        // room the user actually chose.
+        $rooms = $rooms
+            ->sortBy(fn (Room $room) => array_search($room->id, $roomIds, true))
+            ->values();
+
+        $existing = DB::table('booking_rooms')
+            ->where('booking_id', $booking->id)
+            ->pluck('status', 'room_id')
+            ->all();
+
+        $retained = array_values(array_intersect($roomIds, array_keys($existing)));
+        $added = array_values(array_diff($roomIds, array_keys($existing)));
+        $removed = array_values(array_diff(array_keys($existing), $roomIds));
+
+        if ($removed !== []) {
+            $booking->rooms()->detach($removed);
+
+            Room::whereIn('id', $removed)
+                ->whereIn('status', ['reserved', 'occupied'])
+                ->update(['status' => 'available']);
+        }
+
+        if ($added !== []) {
+            $booking->rooms()->attach(array_fill_keys($added, ['status' => 'reserved']));
+        }
+
+        if ($retained !== []) {
+            $booking->rooms()->syncWithoutDetaching(
+                collect($retained)->mapWithKeys(fn ($id) => [
+                    $id => ['status' => $existing[$id] ?? 'reserved'],
+                ])->all(),
+            );
+        }
+
+        $booking->forceFill([
+            'room_id'      => $rooms->first()->id,
+            'quantity'     => count($roomIds),
+            'room_type_id' => $rooms->first()->room_type_id,
+        ])->save();
+
+        return $booking->refresh();
     }
 
 
@@ -458,22 +527,9 @@ class BookingService
                     throw new \Exception('Selected rooms must match the booking room type.');
                 }
 
-                $booking->rooms()->sync(
-                    $rooms->pluck('id')->mapWithKeys(function ($roomId) use ($booking) {
-                        $existing = $booking->rooms->firstWhere('id', $roomId);
+                $booking = $this->assignRooms($booking, $rooms->pluck('id')->all());
 
-                        return [
-                            $roomId => [
-                                'status' => $existing?->pivot?->status ?? 'reserved',
-                                'checked_in_at' => $existing?->pivot?->checked_in_at,
-                                'checked_out_at' => $existing?->pivot?->checked_out_at,
-                                'rate_override' => $existing?->pivot?->rate_override,
-                            ],
-                        ];
-                    })->all()
-                );
-
-                $data['room_id'] = $rooms->first()->id;
+                $data['room_id'] = $booking->room_id;
             }
 
             $booking->update($data);

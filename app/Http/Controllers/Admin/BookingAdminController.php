@@ -318,7 +318,7 @@ class BookingAdminController extends Controller
             'room_id' => 'required|exists:rooms,id',
         ]);
 
-        $booking->update(['room_id' => $data['room_id']]);
+        $this->service->assignRooms($booking, [(int) $data['room_id']]);
 
         AuditLogger::log('booking_reassigned', 'Booking', $booking->id, ['to_room' => $data['room_id']]);
 

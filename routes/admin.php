@@ -51,6 +51,8 @@ Route::middleware(['auth', 'role:manager|md|superuser'])->prefix('admin')->as('a
         Route::post('bookings/{booking}/reject-price-override', [BookingAdminController::class, 'rejectPriceOverride'])->name('bookings.price-override.reject');
         Route::post('bookings/{booking}/charges', [BookingAdminController::class, 'addCharge'])->name('bookings.charges.store');
         Route::post('bookings/{booking}/payments', [BookingAdminController::class, 'addPayment'])->name('bookings.payments.store');
+        Route::post('bookings/{booking}/reassign-room', [BookingAdminController::class, 'reassignRoom'])->name('bookings.reassign-room');
+        Route::delete('bookings/{booking}', [BookingAdminController::class, 'destroy'])->name('bookings.destroy');
         Route::get('discount-codes', [DiscountCodeController::class, 'index'])->name('discount-codes.index');
         Route::post('discount-codes', [DiscountCodeController::class, 'store'])->name('discount-codes.store');
         Route::patch('discount-codes/{discountCode}/toggle', [DiscountCodeController::class, 'toggle'])->name('discount-codes.toggle');
