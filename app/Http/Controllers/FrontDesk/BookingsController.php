@@ -2,14 +2,18 @@
 
 namespace App\Http\Controllers\FrontDesk;
 
+use App\Exceptions\ArrivalOutsideLocalWindow;
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\DiscountCode;
 use App\Models\Room;
 use App\Models\Setting;
 use App\Services\BillingService;
+use App\Services\Booking\BookingAuthority;
 use App\Services\BookingService;
 use App\Services\DiscountCodeService;
+use App\Services\RoomAvailabilityService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -20,12 +24,21 @@ class BookingsController extends Controller
     protected BookingService $bookingService;
     protected BillingService $billingService;
     protected DiscountCodeService $discountCodeService;
+    protected BookingAuthority $authority;
+    protected RoomAvailabilityService $roomAvailability;
 
-    public function __construct(BookingService $bookingService, BillingService $billingService, DiscountCodeService $discountCodeService)
-    {
+    public function __construct(
+        BookingService $bookingService,
+        BillingService $billingService,
+        DiscountCodeService $discountCodeService,
+        BookingAuthority $authority,
+        RoomAvailabilityService $roomAvailability,
+    ) {
         $this->bookingService = $bookingService;
         $this->billingService = $billingService;
         $this->discountCodeService = $discountCodeService;
+        $this->authority = $authority;
+        $this->roomAvailability = $roomAvailability;
     }
 
     public function index(Request $request)
@@ -77,11 +90,9 @@ class BookingsController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        $rooms = Room::with('roomType')
-            ->where('status', 'available')
-            ->get();
+        $rooms = $this->roomsForPicker($request);
 
         return Inertia::render('FrontDesk/Bookings/Create', [
             'rooms' => $rooms->map(function (Room $room) {
@@ -98,6 +109,8 @@ class BookingsController extends Controller
             })->values(),
             'roomDiscountCodeHint' => DiscountCode::scopeOptions()[DiscountCode::APPLIES_TO_ROOM_RATE],
             'priceOverrideSettings' => $this->priceOverrideSettings(),
+            'cutoffHours' => $this->authority->cutoffHours(),
+            'localWindowDescription' => $this->authority->effectiveWindowDescription(),
         ]);
     }
 
@@ -125,8 +138,21 @@ class BookingsController extends Controller
         $selectedRooms = $this->resolveSelectedRooms($data['selected_room_ids']);
         $roomType = $selectedRooms->first()->roomType;
         $quantity = $selectedRooms->count();
+        $roomIds = $selectedRooms->pluck('id')->all();
         $discountPreview = null;
         $priceOverrideSettings = $this->priceOverrideSettings();
+
+        try {
+            $this->authority->assertFrontDeskBookable(Carbon::parse($data['check_in']));
+        } catch (ArrivalOutsideLocalWindow $e) {
+            return $this->outsideWindowResponse($e);
+        }
+
+        $this->roomAvailability->assertRoomsAssignable(
+            $roomIds,
+            $data['check_in'],
+            $data['check_out'],
+        );
 
         if (! empty($data['discount_code'])) {
             $discountPreview = $this->discountCodeService->previewForBookingSelection([
@@ -193,11 +219,11 @@ class BookingsController extends Controller
             ->with('success', "Booking created successfully: {$booking->booking_code}");
     }
 
-    public function edit(Booking $booking)
+    public function edit(Request $request, Booking $booking)
     {
         $this->bookingService->normalizeLegacyCheckedInStatuses();
         $booking->load(['room.roomType', 'rooms.roomType', 'user']);
-        $rooms = Room::with('roomType')->where('status', 'available')->get();
+        $rooms = $this->roomsForPicker($request, $booking);
         $details = $booking->details ?? [];
         $preCheckIn = $details['pre_check_in'] ?? null;
 
@@ -222,6 +248,8 @@ class BookingsController extends Controller
                     ],
                 ];
             })->values(),
+            'cutoffHours' => $this->authority->cutoffHours(),
+            'localWindowDescription' => $this->authority->effectiveWindowDescription(),
         ]);
     }
 
@@ -247,6 +275,25 @@ class BookingsController extends Controller
         $selectedRooms = $this->resolveSelectedRooms($data['selected_room_ids']);
         $roomType = $selectedRooms->first()->roomType;
         $quantity = $selectedRooms->count();
+        $roomIds = $selectedRooms->pluck('id')->all();
+
+        $newCheckIn = Carbon::parse($data['check_in']);
+
+        if ($this->authority->authorityFor($newCheckIn) !== $this->authority->authorityFor($booking->check_in)) {
+            try {
+                $this->authority->assertFrontDeskBookable($newCheckIn);
+            } catch (ArrivalOutsideLocalWindow $e) {
+                return $this->outsideWindowResponse($e);
+            }
+        }
+
+        $this->roomAvailability->assertRoomsAssignable(
+            $roomIds,
+            $data['check_in'],
+            $data['check_out'],
+            $booking->id,
+        );
+
         $nights = max(
             now()->parse($data['check_in'])->startOfDay()->diffInDays(now()->parse($data['check_out'])->startOfDay()),
             1
@@ -441,6 +488,55 @@ class BookingsController extends Controller
                 ];
             })->values()->all(),
         ];
+    }
+
+    /**
+     * Rooms offered in the create/edit pickers.
+     *
+     * With dates present, only rooms free for the whole stay are offered so the
+     * desk never picks a room it will be refused for. Without dates we fall back
+     * to the legacy available-only list rather than showing nothing.
+     */
+    protected function roomsForPicker(Request $request, ?Booking $exclude = null)
+    {
+        $checkIn = $request->filled('check_in') ? $request->date('check_in') : null;
+        $checkOut = $request->filled('check_out') ? $request->date('check_out') : null;
+
+        if ($checkIn && $checkOut && $checkIn->lt($checkOut)) {
+            return $this->roomAvailability->getAvailableRoomsByIds(
+                Room::pluck('id')->all(),
+                $checkIn->toDateString(),
+                $checkOut->toDateString(),
+                $exclude?->id,
+            )->load('roomType');
+        }
+
+        return Room::with('roomType')->where('status', 'available')->get();
+    }
+
+    /**
+     * Hand a far-future arrival to the online channel instead of refusing it.
+     *
+     * Inertia submissions get inline form errors; plain/JSON requests get the
+     * hand-off page from Step 6.
+     */
+    protected function outsideWindowResponse(ArrivalOutsideLocalWindow $e)
+    {
+        $message = "Arrivals more than {$e->cutoffHours} hours out are taken on the online channel, not at the front desk.";
+
+        if (request()->header('X-Inertia')) {
+            return back()->withErrors(['check_in' => $message])->withInput();
+        }
+
+        return response()->view('booking.outside-local-window', [
+            'hotelName' => Setting::get('hotel_name'),
+            'checkIn' => $e->checkIn->toFormattedDateString(),
+            'checkInDate' => $e->checkIn->toDateString(),
+            'cutoffHours' => $e->cutoffHours,
+            'windowDescription' => $this->authority->effectiveWindowDescription(),
+            'bookingUrl' => route('booking.search', ['check_in' => $e->checkIn->toDateString()]),
+            'hotelPhone' => Setting::get('hotel_phone'),
+        ], 422);
     }
 
     protected function resolveSelectedRooms(array $selectedRoomIds)

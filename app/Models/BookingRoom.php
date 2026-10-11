@@ -65,9 +65,10 @@ class BookingRoom extends Pivot
             ->where('room_id', $this->room_id)
             ->delete();
 
-        // Mark room as available again
+        // Mark room dirty so housekeeping clears it before it is re-sold.
+        // This mirrors BookingService::checkOut; the two must agree.
         $this->room?->update([
-            'status' => 'available',
+            'status' => 'dirty',
         ]);
     }
 

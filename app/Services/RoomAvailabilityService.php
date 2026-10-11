@@ -9,7 +9,9 @@ use App\Models\RoomTypePriceSchedule;
 use App\Models\RoomAvailabilitySchedule;
 use App\Services\RoomSchedulingService;
 use Carbon\Carbon;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
+use Illuminate\Validation\ValidationException;
 
 /**
  * RoomAvailabilityService
@@ -51,8 +53,8 @@ protected function activeReservationQuery(string $checkIn, string $checkOut, ?in
                     });
             })
             ->where(function ($query) use ($checkIn, $checkOut) {
-                $query->where('check_in', '<', $checkOut)
-                    ->where('check_out', '>', $checkIn);
+                $query->whereDate('check_in', '<', $checkOut)
+                    ->whereDate('check_out', '>', $checkIn);
             });
     }
 
@@ -166,8 +168,8 @@ public function lockRoomsForCheckIn(
             ->whereDoesntHave('bookings', function ($q) use ($checkIn, $checkOut) {
                 $q->whereIn('bookings.status', ['active', 'checked_in', 'confirmed'])
                   ->where(fn ($q) =>
-                      $q->where('check_in', '<', $checkOut)
-                        ->where('check_out', '>', $checkIn)
+                      $q->whereDate('check_in', '<', $checkOut)
+                        ->whereDate('check_out', '>', $checkIn)
                   );
             })
             ->lockForUpdate()
@@ -204,8 +206,8 @@ public function lockRoomsForCheckIn(
                             });
                     })
                     ->where(function ($q2) use ($checkIn, $checkOut) {
-                        $q2->where('bookings.check_in', '<', $checkOut)
-                            ->where('bookings.check_out', '>', $checkIn);
+                        $q2->whereDate('bookings.check_in', '<', $checkOut)
+                            ->whereDate('bookings.check_out', '>', $checkIn);
                     });
             })
             ->lockForUpdate();
@@ -245,6 +247,49 @@ $conflicts = $this->activeReservationQuery($checkIn, $checkOut, $excludeBookingI
         return true;
     }
 
+    /**
+     * Throwing wrapper around areRoomsAvailable for the booking write paths.
+     *
+     * A bare false leaves the operator with a silent failure; this names the
+     * room and the guest holding it so the desk can act. Uses the pivot
+     * (bookings.rooms) so multi-room bookings are checked correctly.
+     *
+     * @throws ValidationException
+     */
+    public function assertRoomsAssignable(array $roomIds, string $checkIn, string $checkOut, ?int $excludeBookingId = null): void
+    {
+        $roomIds = array_values(array_unique(array_map('intval', $roomIds)));
+
+        if ($roomIds === [] || $this->areRoomsAvailable($roomIds, $checkIn, $checkOut, $excludeBookingId)) {
+            return;
+        }
+
+        $conflicts = $this->activeReservationQuery($checkIn, $checkOut, $excludeBookingId)
+            ->whereHas('rooms', fn ($query) => $query->whereIn('rooms.id', $roomIds))
+            ->with(['rooms' => fn ($query) => $query->whereIn('rooms.id', $roomIds)])
+            ->get();
+
+        $codes = Room::whereIn('id', $roomIds)->pluck('code', 'id');
+
+        if ($conflicts->isEmpty()) {
+            throw ValidationException::withMessages([
+                'selected_room_ids' => 'One or more selected rooms are blocked for those dates.',
+            ]);
+        }
+
+        $detail = $conflicts->map(function (Booking $booking) use ($codes) {
+            $roomId = $booking->rooms->first()?->id;
+            $label = $codes[$roomId] ?? ('Room #' . $roomId);
+            $arrival = $booking->check_in?->format('j M') ?? 'unscheduled';
+
+            return "{$label} ({$booking->guest_name}, {$arrival})";
+        })->implode('; ');
+
+        throw ValidationException::withMessages([
+            'selected_room_ids' => "These rooms are already reserved for those dates: {$detail}.",
+        ]);
+    }
+
     public function getAvailableRoomsByIds(array $roomIds, string $checkIn, string $checkOut, ?int $excludeBookingId = null): Collection
     {
         $roomIds = array_values(array_unique(array_map('intval', $roomIds)));
@@ -273,8 +318,8 @@ $conflicts = $this->activeReservationQuery($checkIn, $checkOut, $excludeBookingI
                             });
                     })
                     ->where(function ($dateQuery) use ($checkIn, $checkOut) {
-                        $dateQuery->where('bookings.check_in', '<', $checkOut)
-                            ->where('bookings.check_out', '>', $checkIn);
+                        $dateQuery->whereDate('bookings.check_in', '<', $checkOut)
+                            ->whereDate('bookings.check_out', '>', $checkIn);
                     });
             })
             ->lockForUpdate()

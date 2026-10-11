@@ -630,6 +630,15 @@ Commit: `feat: add a single booking authority decision service`
 
 ## Task 3: Make the front desk re-check availability
 
+> **Status:** COMPLETE 2026-10-11 (commit pending). Deviations from the plan:
+> `assertRoomsAssignable` and the overlap checks use the pivot (`bookings.rooms`)
+> instead of `bookings.room_id` so multi-room bookings are detected, and the
+> half-open overlap now uses `whereDate` because sqlite stores date-cast columns
+> as `YYYY-MM-DD 00:00:00` and raw string compares tripped on boundary days.
+> Checkout yields `dirty`: `BookingRoom::checkOut` now matches
+> `BookingService::checkOut` (Decision 3). Inertia submissions get inline form
+> errors; plain/JSON requests get the hand-off view.
+
 This is the correctness half of the phase. The front desk is authoritative inside
 the window, so it must never attach a room that is already reserved.
 
@@ -641,7 +650,7 @@ the window, so it must never attach a room that is already reserved.
 - Consumes: Task 1's `assignRooms`, existing `activeReservationQuery` (L38-57).
 - Produces: `RoomAvailabilityService::assertRoomsAssignable(array $roomIds, Carbon $checkIn, Carbon $checkOut, ?Booking $ignore = null): void`.
 
-- [ ] **Step 1: Confirm the defect**
+- [x] **Step 1: Confirm the defect**
 
 ```powershell
 rg -n -A 20 "function store" app/Http/Controllers/FrontDesk/BookingsController.php
@@ -653,7 +662,7 @@ rooms share one room type. There is no overlap query. `update` (L228) is the sam
 `create` (L80-84) lists `Room::where('status','available')` with no date filter, so
 the picker shows rooms that are booked for those dates.
 
-- [ ] **Step 2: Add the assertion**
+- [x] **Step 2: Add the assertion**
 
 ```php
 <?php
@@ -706,7 +715,7 @@ private function conflictingBookings(
 }
 ```
 
-- [ ] **Step 3: Call it from the front-desk write paths**
+- [x] **Step 3: Call it from the front-desk write paths**
 
 In `store`, after `resolveSelectedRooms` and before `Booking::create`:
 
@@ -720,13 +729,13 @@ In `update`, after date re-validation, with the booking itself ignored:
 $this->roomAvailability->assertRoomsAssignable($roomIds, $checkIn, $checkOut, $booking);
 ```
 
-- [ ] **Step 4: Date-filter the room pickers**
+- [x] **Step 4: Date-filter the room pickers**
 
 `create` (L80-84) and `edit` (L200) should accept `check_in` and `check_out`
 query parameters and list only rooms available for that range. When the dates are
 absent, fall back to the current behaviour rather than showing nothing.
 
-- [ ] **Step 5: Refuse arrivals beyond the cutoff**
+- [x] **Step 5: Refuse arrivals beyond the cutoff**
 
 Spec §8: the front desk books now and tomorrow; beyond the cutoff the online
 channel is authoritative. Guard `store` (L104) and `update` (L228) after
@@ -749,7 +758,7 @@ if ($this->authority->authorityFor(Carbon::parse($validated['check_in']))
 That comparison is the whole point of §8: it stops a *new* booking crossing the
 line without blocking an *existing* one from being maintained.
 
-- [ ] **Step 6: Render the hand-off, not an error**
+- [x] **Step 6: Render the hand-off, not an error**
 
 ```php
 private function outsideWindowResponse(ArrivalOutsideLocalWindow $e): Response
@@ -773,7 +782,7 @@ The date filter on `create`/`edit` should also stop offering far-future dates in
 the picker when they would be refused, so staff see the constraint before they
 fill the form.
 
-- [ ] **Step 7: Reconcile the `dirty` inconsistency**
+- [x] **Step 7: Reconcile the `dirty` inconsistency**
 `bookableStatuses()` (L28-31) permits `available` and `dirty`. But
 `lockRoomsForCheckIn` (L165) filters `status = 'available'` only, and
 `BookingService::checkOut` sets `dirty` (L657/L687) while `BookingRoom::checkOut`
@@ -787,7 +796,7 @@ behaviour, so **confirm which is intended before changing it.** Whichever is
 chosen, make `BookingRoom::checkOut` and `BookingService::checkOut` agree and add
 a test.
 
-- [ ] **Step 6: Test**
+- [x] **Step 6: Test**
 
 ```php
 public function test_front_desk_cannot_assign_a_room_already_reserved_for_those_dates(): void
@@ -831,7 +840,7 @@ public function test_updating_dates_to_overlap_another_booking_is_rejected(): vo
 }
 ```
 
-- [ ] **Step 7: Test the far-future refusal**
+- [x] **Step 7: Test the far-future refusal**
 
 ```php
 public function test_front_desk_is_refused_a_booking_beyond_the_cutoff(): void
