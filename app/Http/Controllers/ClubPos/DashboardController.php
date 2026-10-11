@@ -44,7 +44,7 @@ class DashboardController extends Controller
         if ($currentSession) {
             $openDockets = PosDocket::where("session_id", $currentSession->id)
                 ->where("status", "open")
-                ->with(["items.menuItem", "payments"])
+                ->with(["items.menuItem", "payments", "booking", "room"])
                 ->get();
         }
 

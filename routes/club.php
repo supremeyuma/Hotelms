@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ClubPos\DashboardController;
 use App\Http\Controllers\ClubPos\DocketController;
+use App\Http\Controllers\ClubPos\BookingSearchController;
 use App\Http\Controllers\ClubPos\ShiftController;
 use App\Http\Controllers\ClubPos\StockController;
 use App\Http\Controllers\ClubPos\ReportController;
@@ -45,6 +46,8 @@ Route::middleware(['auth', 'permission:club.pos.access'])->prefix('club')->name(
     Route::delete('/pos/dockets/{docket}/items/{item}', [DocketController::class, 'removeItem'])->name('pos.dockets.items.destroy');
     Route::post('/pos/dockets/{docket}/pay', [DocketController::class, 'pay'])->name('pos.dockets.pay');
     Route::post('/pos/dockets/{docket}/void', [DocketController::class, 'void'])->name('pos.dockets.void');
+    Route::post('/pos/dockets/{docket}/booking', [DocketController::class, 'attachBooking'])->name('pos.dockets.booking');
+    Route::get('/pos/bookings/search', [BookingSearchController::class, 'index'])->name('pos.bookings.search');
 
     /* ==============================
      | SHIFTS

@@ -9,6 +9,7 @@ import PaymentModal from '@/Components/ClubPos/PaymentModal.vue'
 import OpenDocketsBar from '@/Components/ClubPos/OpenDocketsBar.vue'
 import StaffPinModal from '@/Components/ClubPos/StaffPinModal.vue'
 import CloseShiftModal from '@/Components/ClubPos/CloseShiftModal.vue'
+import BookingSearchModal from '@/Components/ClubPos/BookingSearchModal.vue'
 
 defineOptions({ layout: ClubPosLayout })
 
@@ -33,6 +34,7 @@ const activeDocketId = ref(null)
 const showPayment = ref(false)
 const creatingDocket = ref(false)
 const showCloseShift = ref(false)
+const showBookingSearch = ref(false)
 const staffPinRef = ref(null)
 
 const activeDocket = computed(() => {
@@ -133,6 +135,11 @@ function onShiftClosed() {
   refreshDockets()
 }
 
+function onBookingAttached() {
+  showBookingSearch.value = false
+  refreshDockets()
+}
+
 watch(() => props.openDockets, (val) => {
   dockets.value = val
   if (val.length > 0 && !activeDocketId.value) {
@@ -185,6 +192,7 @@ watch(showPinModal, (val) => {
             :docket="activeDocket"
             @pay="handlePay"
             @void="refreshDockets"
+            @attach-room="showBookingSearch = true"
             @close="activeDocketId = null" />
         </div>
       </div>
@@ -205,6 +213,16 @@ watch(showPinModal, (val) => {
           aria-label="Staff login"
           class="w-full max-w-sm rounded-2xl bg-slate-800 border border-slate-700 shadow-2xl">
           <StaffPinModal ref="staffPinRef" @confirm="handlePinConfirm" @cancel="showPinModal = false" />
+        </div>
+      </div>
+    </Teleport>
+
+    <Teleport to="body">
+      <div v-if="showBookingSearch && activeDocket"
+        class="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div role="dialog" aria-modal="true" aria-label="Charge to room"
+          class="w-full max-w-md rounded-2xl bg-slate-800 border border-slate-700 shadow-2xl p-4">
+          <BookingSearchModal :docket="activeDocket" @close="showBookingSearch = false" @attached="onBookingAttached" />
         </div>
       </div>
     </Teleport>

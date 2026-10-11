@@ -7,6 +7,7 @@ use App\Models\PosDocket;
 use App\Models\PosDocketItem;
 use App\Models\MenuItem;
 use App\Models\PosSession;
+use App\Models\Booking;
 use App\Services\ClubPosService;
 use Illuminate\Http\Request;
 
@@ -47,7 +48,24 @@ class DocketController extends Controller
             $validated["room_id"] ?? null,
         );
 
-        return $this->respond($request, $docket->load("items", "payments", "staff"), 201);
+        return $this->respond($request, $docket->load("items", "payments", "staff", "booking", "room"), 201);
+    }
+
+    public function attachBooking(Request $request, PosDocket $docket)
+    {
+        $validated = $request->validate([
+            "booking_id" => "required|exists:bookings,id",
+        ]);
+
+        $booking = Booking::findOrFail($validated["booking_id"]);
+
+        try {
+            $docket = $this->clubPos->attachBooking($docket, $booking, $request->user());
+        } catch (\RuntimeException $e) {
+            return $this->respondError($request, $e->getMessage());
+        }
+
+        return $this->respond($request, $docket->load("items", "payments", "booking", "room"));
     }
 
     public function show(PosDocket $docket)

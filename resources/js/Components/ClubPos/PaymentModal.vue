@@ -22,6 +22,12 @@ const overPaid = computed(() => {
   return Math.max(0, paid - Number(props.docket?.total || 0))
 })
 
+const hasBooking = computed(() => !!props.docket?.booking_id)
+
+const roomChargeBlocked = computed(
+  () => !hasBooking.value && payments.value.some(p => p.method === 'room_charge'),
+)
+
 function addPayment() {
   if (payments.value.length >= 4) return
   payments.value.push({ method: 'cash', amount: '', reference: '', change_given: '' })
@@ -129,12 +135,16 @@ const methodColors = {
         <span class="font-bold text-amber-400 tabular-nums">Ksh {{ Number(overPaid).toLocaleString() }}</span>
       </div>
 
+      <p v-if="roomChargeBlocked" class="text-sm text-amber-400">
+        Charge a room to this docket before using Room Charge.
+      </p>
+
       <div class="flex gap-2 pt-1">
         <button @click="$emit('close')"
           class="flex-1 py-3 rounded-xl bg-slate-700 text-slate-300 font-medium hover:bg-slate-600 transition-all active:scale-95 min-h-[48px]">
           Back
         </button>
-        <button @click="submit" :disabled="loading || remainingTotal > 0"
+        <button @click="submit" :disabled="loading || remainingTotal > 0 || roomChargeBlocked"
           class="flex-[2] py-3 rounded-xl bg-emerald-600 text-white font-bold text-lg hover:bg-emerald-500 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed min-h-[48px]">
           {{ loading ? 'Processing...' : `Complete Payment` }}
         </button>

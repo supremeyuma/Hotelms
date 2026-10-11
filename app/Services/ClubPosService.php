@@ -126,6 +126,29 @@ class ClubPosService
         });
     }
 
+    public function attachBooking(PosDocket $docket, Booking $booking, User $staff): PosDocket
+    {
+        if ($docket->status !== 'open') {
+            throw new \RuntimeException('Cannot attach a room to a closed docket.');
+        }
+
+        return DB::transaction(function () use ($docket, $booking, $staff) {
+            $roomId = $booking->room_id ?? $booking->rooms()->first()?->id;
+
+            $docket->booking_id = $booking->id;
+            $docket->room_id = $roomId;
+            $docket->save();
+
+            $this->audit->log('pos_docket_booking_attached', $docket, $docket->id, [
+                'booking_id' => $booking->id,
+                'room_id' => $roomId,
+                'staff_id' => $staff->id,
+            ]);
+
+            return $docket->fresh();
+        });
+    }
+
     public function addItem(PosDocket $docket, MenuItem $menuItem, int $quantity, User $staff): PosDocket
     {
         if ($docket->status !== 'open') {

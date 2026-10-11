@@ -6,7 +6,7 @@ const props = defineProps({
   docket: { type: Object, default: null },
 })
 
-const emit = defineEmits(['pay', 'void', 'close'])
+const emit = defineEmits(['pay', 'void', 'close', 'attach-room'])
 
 const loading = ref(false)
 const voiding = ref(false)
@@ -17,6 +17,14 @@ const subtotal = computed(() => {
 })
 
 const total = computed(() => Number(props.docket?.total || subtotal.value))
+
+const roomLabel = computed(() => {
+  const room = props.docket?.room
+  if (!room) return null
+  return room.display_name || room.name || room.code || null
+})
+
+const guestName = computed(() => props.docket?.booking?.guest_name || null)
 
 function removeItem(item) {
   loading.value = true
@@ -84,6 +92,16 @@ function confirmVoid() {
         <span>Total</span>
         <span class="tabular-nums">Ksh {{ Number(total).toLocaleString() }}</span>
       </div>
+
+      <button @click="emit('attach-room')"
+        class="w-full py-2.5 rounded-xl border border-slate-600 text-sm font-medium transition-all active:scale-[0.99]"
+        :class="roomLabel ? 'bg-indigo-600/20 border-indigo-500/40 text-indigo-200 hover:bg-indigo-600/30' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'">
+        <template v-if="roomLabel">
+          Room {{ roomLabel }}<template v-if="guestName"> · {{ guestName }}</template>
+          <span class="text-indigo-300/70">— change</span>
+        </template>
+        <template v-else>Charge to Room</template>
+      </button>
 
       <div class="flex gap-2 pt-1">
         <button @click="emit('pay', docket)" :disabled="!docket.items?.length || loading"
