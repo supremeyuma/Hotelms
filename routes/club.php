@@ -58,6 +58,7 @@ Route::middleware(['auth', 'permission:club.pos.access'])->prefix('club')->name(
      | STOCK
      |==============================*/
     Route::get('/pos/stock', [StockController::class, 'index'])->name('pos.stock.index');
+    Route::get('/pos/stock/data', [StockController::class, 'data'])->name('pos.stock.data');
     Route::post('/pos/stock/{menuItem}/add', [StockController::class, 'add'])->name('pos.stock.add');
     Route::post('/pos/stock/{menuItem}/stocktake', [StockController::class, 'stocktake'])->name('pos.stock.stocktake');
 
@@ -65,6 +66,8 @@ Route::middleware(['auth', 'permission:club.pos.access'])->prefix('club')->name(
      | REPORTS
      |==============================*/
     Route::get('/pos/reports/sales', [ReportController::class, 'sales'])->name('pos.reports.sales');
+    Route::get('/pos/reports/sales/data', [ReportController::class, 'salesData'])->name('pos.reports.sales.data');
     Route::get('/pos/reports/trends', [ReportController::class, 'trends'])->name('pos.reports.trends');
+    Route::get('/pos/reports/trends/data', [ReportController::class, 'trendsData'])->name('pos.reports.trends.data');
     Route::get('/pos/reports/stock', [ReportController::class, 'stock'])->name('pos.reports.stock');
 });

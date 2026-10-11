@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers\ClubPos;
 
+use Inertia\Inertia;
 use App\Http\Controllers\Controller;
 use App\Models\MenuItem;
+use App\Models\PosSession;
 use App\Models\DrinkStock;
-use App\Models\DrinkStockMovement;
 use App\Services\DrinkStockService;
 use Illuminate\Http\Request;
 
@@ -15,22 +16,18 @@ class StockController extends Controller
         private DrinkStockService $stockService,
     ) {}
 
-    public function index()
+    public function index(Request $request)
     {
-        $items = MenuItem::where('service_area', 'bar')
-            ->where('is_available', true)
-            ->orderBy('name')
-            ->get()
-            ->map(function ($item) {
-                $stock = DrinkStock::where('menu_item_id', $item->id)->first();
-                return [
-                    'menu_item' => $item,
-                    'stock' => $stock,
-                    'low_stock' => $stock ? $stock->full_bottles <= $stock->low_stock_threshold : true,
-                ];
-            });
+        return Inertia::render('ClubPos/Stock', [
+            'staff' => $request->user(),
+            'currentSession' => $this->currentSession($request),
+            'items' => $this->stockItems(),
+        ]);
+    }
 
-        return response()->json($items);
+    public function data()
+    {
+        return response()->json($this->stockItems());
     }
 
     public function add(Request $request, MenuItem $menuItem)
@@ -65,5 +62,30 @@ class StockController extends Controller
         );
 
         return response()->json($stock);
+    }
+
+    private function stockItems()
+    {
+        return MenuItem::where('service_area', 'bar')
+            ->where('is_available', true)
+            ->orderBy('name')
+            ->get()
+            ->map(function ($item) {
+                $stock = DrinkStock::where('menu_item_id', $item->id)->first();
+                return [
+                    'menu_item' => $item,
+                    'stock' => $stock,
+                    'low_stock' => $stock ? $stock->full_bottles <= $stock->low_stock_threshold : true,
+                ];
+            })
+            ->values();
+    }
+
+    private function currentSession(Request $request): ?PosSession
+    {
+        return PosSession::where('user_id', $request->user()->id)
+            ->where('status', 'open')
+            ->latest('opened_at')
+            ->first();
     }
 }

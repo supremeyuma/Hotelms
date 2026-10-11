@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue'
-import { router } from '@inertiajs/vue3'
+import { router, Link } from '@inertiajs/vue3'
 
 const props = defineProps({
   staff: { type: Object, default: null },
@@ -9,6 +9,12 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['lock', 'switch-staff'])
+
+const navItems = [
+  { label: 'POS', route: 'club.pos.dashboard', active: 'club.pos.dashboard' },
+  { label: 'Stock', route: 'club.pos.stock.index', active: 'club.pos.stock.*' },
+  { label: 'Reports', route: 'club.pos.reports.sales', active: 'club.pos.reports.*' },
+]
 
 const now = ref(new Date())
 let timer
@@ -36,6 +42,22 @@ const dateDisplay = computed(() => {
         </div>
         <span class="text-sm font-semibold text-slate-200">POS</span>
       </div>
+
+      <div class="h-6 w-px bg-slate-600" />
+
+      <nav class="flex items-center gap-1">
+        <Link
+          v-for="item in navItems"
+          :key="item.route"
+          :href="route(item.route)"
+          class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+          :class="route().current(item.active)
+            ? 'bg-slate-700 text-white'
+            : 'text-slate-400 hover:text-white hover:bg-slate-700/50'"
+        >
+          {{ item.label }}
+        </Link>
+      </nav>
 
       <div class="h-6 w-px bg-slate-600" />
 
