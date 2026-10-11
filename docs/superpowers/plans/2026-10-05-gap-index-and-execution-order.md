@@ -63,8 +63,8 @@ closes it.
 | G27 | `resources/js/ziggy.js` bakes `http://localhost` (§9.4 prerequisite). **Refuted/Resolved:** Ziggy v2.6.0 builds the manifest per requesting host (`url('/')` in `new Ziggy`); a live non-local probe (`Host` header) rendered host-correct, and nothing imports the generated file. Dead output deleted; guard test #4 asserts no built asset bakes an origin. | Blocker | [Ziggy](2026-10-05-ziggy-runtime-route-manifest.md) **closed** |
 | G51 | Three routes have an empty name (`admin.reports.`, `frontdesk.`, `staff.`) — actually **21** after collapsing duplicates — so they are unreachable by `route()` name and risk future collisions. **Resolved:** all named across `routes/admin.php` and `routes/staff.php`; no callers broke; guard test #3 fails on any empty leaf. | Medium | [Ziggy](2026-10-05-ziggy-runtime-route-manifest.md) Task 4 Step 6 **closed** |
 | G52 | `resources/js/ziggy.js` is tracked in git but imported by nothing; `@routes` in `app.blade.php` is the actual runtime source. Anyone editing the file fixes nothing. **Resolved:** deleted and gitignored. | Medium | [Ziggy](2026-10-05-ziggy-runtime-route-manifest.md) **closed** |
-| G28 | Phase 3 has no plan; §2.3 defects mostly fixed but unverified as a set | High | [Phase 3](2026-10-05-phase-3-club-pos-repair.md) |
-| G29 | `PosDevice` has no seeder or registration endpoint | High | Phase 3 |
+| G28 | Phase 3 has no plan; §2.3 defects mostly fixed but unverified as a set. **Resolved:** [Phase 3](2026-10-05-phase-3-club-pos-repair.md) plan executed Tasks 1–7; every §2.3 row verified by a test or explicit note, plus a browser walkthrough | High | [Phase 3](2026-10-05-phase-3-club-pos-repair.md) **closed** |
+| G29 | `PosDevice` has no seeder or registration endpoint. **Resolved:** `ClubPosService` auto-registers one device per browser identity behind `config('pos.devices.auto_register')`, with a seeded default device; `PosDeviceRegistrationTest` | High | Phase 3 **closed** |
 | G30 | No receipt or print implementation despite `pos_print_logs` (spec §16.1 open item) | Medium | Phase 7 |
 | G31 | `BookingAdminController::reassignRoom` writes only the legacy `bookings.room_id`, bypassing the `booking_rooms` pivot every other query reads | High | Phase 5 |
 | G32 | 36-hour booking cutoff (§8) absent from `app/`, `config/`, `resources/` | Blocker | [Phase 5](2026-10-05-phase-5-booking-authority-partition.md) |
@@ -79,7 +79,7 @@ closes it.
 | G41 | No offline shift scenario test (§13) | High | Phase 7 |
 | G42 | No Coolify/Postgres cloud deployment with a sync daemon | High | [Phase 8](2026-10-05-phase-8-cloud-deployment.md) |
 | G43 | No golden sync fixture (§13). **Resolved:** Phase 2R Part B Task 6 added `tests/Fixtures/sync/golden-scenario.json` and `GoldenFixtureTest`, which replays the committed scenario through the harness and asserts both nodes end byte-identical; run twice in CI-style verification. | Medium | Phase 4R |
-| G44 | `ClubPosService` calls `BillingService` without importing it | Low | Phase 3 |
+| G44 | `ClubPosService` calls `BillingService` without importing it. **Resolved:** import added and the `room_charge` amount TypeError fixed (Phase 3 Task 1); covered by `DocketLifecycleTest` room-charge case | Low | Phase 3 **closed** |
 | G45 | Spec names `cash_shifts` and folio tables that do not exist | Low | Phase 0R (correct the spec) |
 | G46 | `FrontDesk\BookingsController::store` and `update` attach rooms with no availability re-check | Blocker | Phase 5 |
 | G47 | `BookingController::cancelBooking` calls an unassigned `$this->service` (fatal) and is unrouted | High | Phase 5 |
@@ -92,6 +92,9 @@ closes it.
 | G56 | `StaffSidebar` links "Shift History" → `club.pos.shifts.current`, which returns raw JSON, so the sidebar entry shows JSON in the browser (same class of defect as the stock/reports links fixed in Phase 3 Task 5). No shift-history Inertia page exists. **Deferred from Phase 3 Task 5** — build a Shift History screen over `club.pos.shifts.show`/`current` | Medium | Phase 3 (follow-up) |
 | G57 | Raw JSON club-POS endpoints reached by the Inertia router show an invalid-response error modal (`X-Inertia` request with a non-Inertia JSON response). **Resolved:** Phase 3 made the docket actions Inertia-aware (`redirect()->back()` when `X-Inertia` is present, JSON otherwise) and moved the stock/report JSON payloads to `*.data` routes behind Inertia pages; `DocketLifecycleTest` guards the redirect behaviour | High | Phase 3 |
 | G58 | `TwoNodeConvergenceTest::test_disconnected_writes_converge_after_bidirectional_sync` is a rare timing flake: under full-suite load one of the two timestamps lands a second apart on the other node, so `snapshot('a')` ≠ `snapshot('b')` even though every business column converged. Observed 2 failures across ~8 full-suite runs; passes 4/4 in isolation and the Sync group, and a probe that forces a 1s create/update boundary passes deterministically — the trigger is load timing, not data. **Not caused by Phase 3** (survived a stash test); recorded here so Phase 2R/4R owns it. Suggested hardening: freeze time (`Carbon::setTestNow`) in the harness so convergence asserts content, with timestamp propagation asserted separately | Medium | Phase 2R / 4R |
+| G59 | Club staff could not reach the club POS: `RoleRedirectService` had no `club_staff`/`club_supervisor` branch (fell through to `route('dashboard')`) and the dashboard's self-redirect guard compared an absolute to a relative URL, so it never fired → `ERR_TOO_MANY_REDIRECTS` on every club-staff login. **Resolved:** `275ac0ee` routes club roles to `club.pos.dashboard` and fixes the guard; `RoleRedirectTest` | High | Phase 3 **closed** |
+| G60 | The POS staff PIN never validated: `pos.staff.switch` matched the plaintext PIN against `staff_profiles.action_code`, which stores a `Crypt::encryptString` value (non-deterministic), and the dashboard never shared `club_pos.pin_verified`, so the PIN modal reappeared on every load. **Resolved:** `6b370e5a` matches via `StaffProfile::matchesActionCode()`, shares the session flag, adds `throttle:10,1`; `PosStaffSwitchTest` | High | Phase 3 **closed** |
+| G61 | The club POS has no UI to attach a booking/room to a docket, so `room_charge` cannot post to a guest folio from the browser. The API path works (`DocketLifecycleTest` supplies `booking_id`); the browser exit criterion "room charge works in the browser" is unmet. Needs a product decision on how a bartender selects the guest/room (booking search vs. room list) before building | Medium | Phase 3 (follow-up) |
 
 ---
 
@@ -169,7 +172,7 @@ Phase 2R   repair + complete the sync engine     (G1-G12, G43)  [Part A + Part B
     |
 Ziggy      runtime route manifest                (G27, G51, G52) - done 2026-10-08
     |
-Phase 3    Club POS repair                       (G28, G29, G44)
+Phase 3    Club POS repair                       (G28, G29, G44) - done 2026-10-11 (G61 follow-up)
     |
 Phase 4S   sync scope manifest + tripwire        (G26)
     |

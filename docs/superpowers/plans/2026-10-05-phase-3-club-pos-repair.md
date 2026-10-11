@@ -18,13 +18,18 @@
 
 ## Implementation status (2026-10-11)
 
-Tasks 1–5 executed. Commits on top of `3a50b3b4`:
+Tasks 1–7 executed; browser walkthrough complete. Commits on top of `3a50b3b4`:
 
 - `a71764c1` … `3a50b3b4` — Tasks 1–4 (see git log).
 - `c6ef059b` fix: load the club pos dashboard reliably.
 - `32c279d8` fix: return inertia responses for club pos docket actions.
 - `4f91244f` feat: add club pos stock and reports screens.
 - `9a0d90d0` chore: rebuild frontend assets for club pos stock and reports.
+- `dde309ce` docs: record phase 3 progress and gaps G56/G57.
+- `f0bfd1e1` feat: add print audit fields to `pos_print_logs`.
+- `275ac0ee` fix: redirect club staff to the club pos dashboard (G59).
+- `6b370e5a` fix: validate the club pos staff pin (G60).
+- Task 7 — feat: add club pos close-shift and auto-open session UI.
 
 Defects found beyond the §2.3 list (all fixed in the commits above):
 
@@ -40,6 +45,20 @@ Defects found beyond the §2.3 list (all fixed in the commits above):
   error modal; now Inertia-aware (G57).
 - `resolveDevice(null)` minted a random device per request; now one device per
   browser identity, default device otherwise.
+- **G59** — `RoleRedirectService` had no `club_staff`/`club_supervisor` branch,
+  so club staff fell through to `route('dashboard')`; the dashboard's
+  self-redirect guard compared an absolute to a relative URL and never fired, so
+  every club-staff login hit `ERR_TOO_MANY_REDIRECTS`. Fixed: club roles →
+  `route('club.pos.dashboard')` (`275ac0ee`, `RoleRedirectTest`).
+- **G60** — `pos.staff.switch` matched the PIN against
+  `staff_profiles.action_code`, which holds a `Crypt::encryptString` value, so it
+  never matched; the dashboard also never shared `club_pos.pin_verified`, so the
+  PIN modal reappeared on every load. Fixed via
+  `StaffProfile::matchesActionCode()` + a shared session flag (`6b370e5a`,
+  `PosStaffSwitchTest`).
+- `Dashboard.vue` held `session` in a one-time `ref(props.currentSession)` with
+  no watcher, so Close Shift never appeared after a docket auto-opened the
+  session. Fixed with a `currentSession` watcher.
 
 **Task 5 route decision (adapts Step 3).** The staff sidebar already linked
 `club.pos.stock.index` and `club.pos.reports.sales` as pages, so those exact
@@ -50,8 +69,22 @@ shapes are unchanged. New pages live under `Pages/ClubPos/` and use
 `ClubPosLayout`, matching `Dashboard.vue`.
 
 **Deferred:** the sidebar's "Shift History" link (`club.pos.shifts.current`)
-still returns JSON; recorded as G56. Browser walkthrough (Task 1 Step 2, Task 5
-Step 5, Task 7) not yet performed.
+still returns JSON; recorded as G56.
+
+**Task 7 walkthrough (2026-10-11).** Browser-verified end to end against a temp
+SQLite DB at `/club/pos`: PIN → auto-open shift → new docket → add item → cash
+payment → close/reconcile shift → stock page → sales and trends reports. The
+session closed with matching totals, and the run produced no console or HTTP
+errors. **Shift scope shipped:** the first docket auto-opens the session via
+`getOrCreateSession()`, and a Close Shift / reconcile panel was added
+(`CloseShiftModal.vue`; `ShiftController` made Inertia-aware). Opening a shift
+with a cash float and supervisor re-reconciliation remain JSON-only (no UI) —
+outside the chosen scope.
+
+**Scope gap found — G61.** The POS has no UI to attach a booking/room to a
+docket, so `room_charge` cannot post to a guest folio from the browser. The API
+path is covered by `DocketLifecycleTest` (which supplies `booking_id`), but the
+browser exit criterion "room charge works in the browser" is not met.
 
 ---
 
@@ -673,12 +706,15 @@ Commit: `chore: defer pos receipt printing to phase 7 pending hardware decision`
 
 ## Task 7: Final verification
 
-- [ ] **Step 1: Walk the POS end to end one more time**
+- [x] **Step 1: Walk the POS end to end one more time**
 
-Use `workflow-test`. Open shift, sell, pay by cash and by room charge, close and
-reconcile the shift, view stock and reports.
+Walked via Playwright at `/club/pos`: PIN → auto-open shift → new docket → add
+item → cash payment → close/reconcile shift → stock page → sales and trends
+reports. Cash path verified in the browser. **Room charge could not be exercised
+in the browser** — no UI attaches a booking to a docket (G61); the API path is
+covered by `DocketLifecycleTest`.
 
-- [ ] **Step 2: Run the gate**
+- [x] **Step 2: Run the gate**
 
 ```powershell
 php artisan migrate:fresh --force
@@ -687,7 +723,7 @@ php artisan test
 
 Expected: zero failures, zero skips.
 
-- [ ] **Step 3: Confirm the §2.3 table is fully closed**
+- [x] **Step 3: Confirm the §2.3 table is fully closed**
 
 Every row in the spec §2.3 table now has either a passing test or an explicit
 note. Record the test name covering each row in the commit message.
@@ -700,8 +736,9 @@ Commit: `chore: phase 3 verification`
 
 - Every §2.3 defect is either fixed and tested, or documented as already fixed
   with a covering test.
-- The shift lifecycle, docket lifecycle, room charge, stock and reports all work
-  in the browser.
+- The shift lifecycle, docket lifecycle, stock and reports work in the browser.
+  Room charge works at the API level (`DocketLifecycleTest`); the browser path is
+  blocked by G61 (no UI to attach a booking to a docket).
 - `PosDevice` rows are created by a real registration path.
 - `pos_print_logs` is ready to be written to, with a `node_id`.
 - Receipt printing is deliberately deferred to Phase 7, with the reason recorded.
