@@ -81,10 +81,14 @@ errors. **Shift scope shipped:** the first docket auto-opens the session via
 with a cash float and supervisor re-reconciliation remain JSON-only (no UI) —
 outside the chosen scope.
 
-**Scope gap found — G61.** The POS has no UI to attach a booking/room to a
-docket, so `room_charge` cannot post to a guest folio from the browser. The API
-path is covered by `DocketLifecycleTest` (which supplies `booking_id`), but the
-browser exit criterion "room charge works in the browser" is not met.
+**Scope gap G61 — resolved.** The POS had no UI to attach a booking/room to a
+docket, so `room_charge` could not post to a guest folio from the browser.
+Follow-up (2026-10-11): `BookingSearchController` searches active/checked-in
+bookings by room or guest name, `DocketPanel` gains a **Charge to Room** action
+(`BookingSearchModal.vue`) that sets the docket's `booking_id`/`room_id`, and
+`PaymentModal` blocks `room_charge` until a room is attached. `DocketBookingAttachTest`
+covers attach, refusal on a closed docket, search scope, and the folio charge;
+browser-verified end to end.
 
 ---
 
@@ -710,9 +714,17 @@ Commit: `chore: defer pos receipt printing to phase 7 pending hardware decision`
 
 Walked via Playwright at `/club/pos`: PIN → auto-open shift → new docket → add
 item → cash payment → close/reconcile shift → stock page → sales and trends
-reports. Cash path verified in the browser. **Room charge could not be exercised
-in the browser** — no UI attaches a booking to a docket (G61); the API path is
-covered by `DocketLifecycleTest`.
+reports. Cash path verified in the browser. Room charge was not exercisable at
+first (no UI attached a booking to a docket); the G61 follow-up below closed that
+and the room-charge path is now browser-verified as well.
+
+- [x] **Step 1b: Browser-verify room charge (G61 follow-up)**
+
+Walked via Playwright: PIN → new docket → add item → **Charge to Room** → search
+by room/guest → attach `Executive Suite 101` → `PaymentModal` unblocks
+`room_charge` → pay → docket closes and a folio charge posts to the booking.
+DB confirmed: docket `booking_id`/`room_id` set, one `room_charge` payment, one
+`charges` row for the booking. No console/page/HTTP errors.
 
 - [x] **Step 2: Run the gate**
 
@@ -723,7 +735,8 @@ php artisan test
 
 Expected: zero failures, zero skips. **Result (2026-10-11):** 251 passed,
 1542 assertions, 0 failures, 0 skips. G58 (the `TwoNodeConvergenceTest` timing
-flake) did not recur this run.
+flake) did not recur this run. After the G61 follow-up: 255 passed, 1557
+assertions.
 
 - [x] **Step 3: Confirm the §2.3 table is fully closed**
 
@@ -739,8 +752,8 @@ Commit: `chore: phase 3 verification`
 - Every §2.3 defect is either fixed and tested, or documented as already fixed
   with a covering test.
 - The shift lifecycle, docket lifecycle, stock and reports work in the browser.
-  Room charge works at the API level (`DocketLifecycleTest`); the browser path is
-  blocked by G61 (no UI to attach a booking to a docket).
+  Room charge works in the browser via the G61 booking-search UI and at the API
+  level (`DocketLifecycleTest`, `DocketBookingAttachTest`).
 - `PosDevice` rows are created by a real registration path.
 - `pos_print_logs` is ready to be written to, with a `node_id`.
 - Receipt printing is deliberately deferred to Phase 7, with the reason recorded.

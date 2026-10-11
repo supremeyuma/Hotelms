@@ -94,7 +94,7 @@ closes it.
 | G58 | `TwoNodeConvergenceTest::test_disconnected_writes_converge_after_bidirectional_sync` is a rare timing flake: under full-suite load one of the two timestamps lands a second apart on the other node, so `snapshot('a')` ≠ `snapshot('b')` even though every business column converged. Observed 2 failures across ~8 full-suite runs; passes 4/4 in isolation and the Sync group, and a probe that forces a 1s create/update boundary passes deterministically — the trigger is load timing, not data. **Not caused by Phase 3** (survived a stash test); recorded here so Phase 2R/4R owns it. Suggested hardening: freeze time (`Carbon::setTestNow`) in the harness so convergence asserts content, with timestamp propagation asserted separately | Medium | Phase 2R / 4R |
 | G59 | Club staff could not reach the club POS: `RoleRedirectService` had no `club_staff`/`club_supervisor` branch (fell through to `route('dashboard')`) and the dashboard's self-redirect guard compared an absolute to a relative URL, so it never fired → `ERR_TOO_MANY_REDIRECTS` on every club-staff login. **Resolved:** `275ac0ee` routes club roles to `club.pos.dashboard` and fixes the guard; `RoleRedirectTest` | High | Phase 3 **closed** |
 | G60 | The POS staff PIN never validated: `pos.staff.switch` matched the plaintext PIN against `staff_profiles.action_code`, which stores a `Crypt::encryptString` value (non-deterministic), and the dashboard never shared `club_pos.pin_verified`, so the PIN modal reappeared on every load. **Resolved:** `6b370e5a` matches via `StaffProfile::matchesActionCode()`, shares the session flag, adds `throttle:10,1`; `PosStaffSwitchTest` | High | Phase 3 **closed** |
-| G61 | The club POS has no UI to attach a booking/room to a docket, so `room_charge` cannot post to a guest folio from the browser. The API path works (`DocketLifecycleTest` supplies `booking_id`); the browser exit criterion "room charge works in the browser" is unmet. Needs a product decision on how a bartender selects the guest/room (booking search vs. room list) before building | Medium | Phase 3 (follow-up) |
+| G61 | ~~The club POS has no UI to attach a booking/room to a docket, so `room_charge` cannot post to a guest folio from the browser.~~ **Resolved 2026-10-11** — `BookingSearchController` searches active/checked-in bookings by room or guest name; `DocketPanel` **Charge to Room** action attaches a booking (`BookingSearchModal.vue`); `PaymentModal` blocks `room_charge` until attached. `DocketBookingAttachTest` + browser-verified folio charge | Medium | Phase 3 (follow-up) — done |
 
 ---
 
@@ -172,7 +172,7 @@ Phase 2R   repair + complete the sync engine     (G1-G12, G43)  [Part A + Part B
     |
 Ziggy      runtime route manifest                (G27, G51, G52) - done 2026-10-08
     |
-Phase 3    Club POS repair                       (G28, G29, G44) - done 2026-10-11 (G61 follow-up)
+Phase 3    Club POS repair                       (G28, G29, G44, G61) - done 2026-10-11
     |
 Phase 4S   sync scope manifest + tripwire        (G26)
     |
