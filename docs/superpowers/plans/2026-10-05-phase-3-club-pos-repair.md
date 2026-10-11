@@ -623,13 +623,17 @@ The one thing this phase must do is make sure the deferral leaves no trap: if
 view, remove it, because a half-built browser-print path is harder to delete
 later than an absent one.
 
-- [ ] **Step 1: Record why it is out of scope for this phase**
+- [x] **Step 1: Record why it is out of scope for this phase**
 
 Add a line to the Phase 3 commit history or a `docs/` note stating that receipt
 printing is deferred to Phase 7 pending the §16.1 hardware answer, so nobody
 reads the absence as an oversight.
 
-- [ ] **Step 2: Confirm `pos_print_logs` is ready to be written to**
+Recorded: spec §16.1 now states thermal/ESC-POS via a local daemon bridge, owned
+by Phase 7, printer model/transport to be captured from the user. This plan's
+Task 6 and Phase 7 Task 6 both state the deferral.
+
+- [x] **Step 2: Confirm `pos_print_logs` is ready to be written to**
 
 The table exists and nothing writes it. Check its columns match what Phase 7 will
 write § `docket_id`, `printed_by`, `printed_at`, `is_reprint`, `reason`, and a
@@ -639,16 +643,29 @@ write § `docket_id`, `printed_by`, `printed_at`, `is_reprint`, `reason`, and a
 rg -n -A 20 "create_pos_print_logs|Schema::create\('pos_print_logs'" database/migrations/
 ```
 
-- [ ] **Step 3: Add `node_id` if it is missing**
+Confirmed: `docket_id`, `type`, `printer_name`, `content`, `printed_at`,
+`success` already present; `printed_by`, `is_reprint`, `reason`, `node_id`
+missing.
+
+- [x] **Step 3: Add `node_id` if it is missing**
 
 A property with several terminals cannot answer "where was this receipt printed"
 without it. Adding it here, while the table is otherwise untouched, is cheaper
 than a migration in Phase 7.
 
-- [ ] **Step 4: Note it in the spec**
+Added `printed_by`, `is_reprint`, `reason` and `node_id` in
+`2026_10_11_000001_add_print_audit_fields_to_pos_print_logs.php`; `PosPrintLog`
+fillable/casts updated. `node_id` is written by the print path
+(`config('sync.node_id')`) independent of whether sync is enabled, so it is not
+redundant with the sync-internal `sync_origin_node_id`, which is only stamped
+when sync is on.
+
+- [x] **Step 4: Note it in the spec**
 
 Add receipt printing to the spec as Phase 7's scope with the hardware question
 still open, rather than leaving it implied as a Phase 3 obligation.
+
+Already present in spec §16.1.
 
 Commit: `chore: defer pos receipt printing to phase 7 pending hardware decision`
 
