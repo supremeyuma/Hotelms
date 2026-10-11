@@ -43,6 +43,24 @@ class NodeSyncService
     }
 
     /**
+     * Push only, for the `sync:push` command.
+     */
+    public function pushOnly(string $peerId, string $baseUrl): int
+    {
+        return $this->pushLocalChanges($peerId, $baseUrl);
+    }
+
+    /**
+     * Pull only, for the `sync:pull` command.
+     *
+     * @return array{0: int, 1: int}  [pulled count, cursor]
+     */
+    public function pullOnly(string $peerId, string $baseUrl): array
+    {
+        return $this->pullRemoteChanges($peerId, $baseUrl);
+    }
+
+    /**
      * Push our own changes the peer has not seen, in pages.
      */
     private function pushLocalChanges(string $peerId, string $baseUrl): int
