@@ -157,6 +157,11 @@ paths obey. Does not change the sync engine.
 
 ## Task 1: Fix the room-assignment inconsistency
 
+> **Status:** COMPLETE 2026-10-11 (commit `2acf4a83`). `assignRooms()` preserves
+> the pivot state (status, check-in/out, rate_override) of retained rooms rather
+> than resetting them to `reserved`, so an in-house booking keeps its `active`
+> pivot. Verified by `tests/Feature/Bookings/BookingRoomAssignmentTest.php`.
+
 This comes first because authority depends on every node seeing the same room
 assignment, and today it does not.
 
@@ -166,9 +171,9 @@ assignment, and today it does not.
 
 **Interfaces:**
 - Consumes: `BookingService::updateBooking`, `Booking::rooms()`.
-- Produces: `BookingService::assignRooms(Booking $booking, array $roomIds): void` as the only writer of `booking_rooms`.
+- Produces: `BookingService::assignRooms(Booking $booking, array $roomIds): Booking` as the only writer of `booking_rooms`.
 
-- [ ] **Step 1: Confirm the defect**
+- [x] **Step 1: Confirm the defect**
 
 ```powershell
 rg -n -A 12 "function reassignRoom" app/Http/Controllers/Admin/BookingAdminController.php
@@ -185,7 +190,7 @@ Both `BookingService::createBooking` (L104) and `FrontDesk\BookingsController::s
 (L174) / `update` (L271) also write `room_id` as `$selectedRooms->first()->id`
 alongside the pivot, which is the same duplication in a different shape.
 
-- [ ] **Step 2: Write one assignment method**
+- [x] **Step 2: Write one assignment method**
 
 ```php
 <?php
@@ -245,7 +250,7 @@ public function assignRooms(Booking $booking, array $roomIds): Booking
 }
 ```
 
-- [ ] **Step 3: Route every caller through it**
+- [x] **Step 3: Route every caller through it**
 
 Replace the three duplicated attach sites (`BookingService::createBooking` L128,
 `FrontDesk\BookingsController::store` L174, `update` L271) and
@@ -255,7 +260,7 @@ Replace the three duplicated attach sites (`BookingService::createBooking` L128,
 columns. Replace its body with `assignRooms` after its date re-validation
 (L416-429), so there is one implementation rather than two.
 
-- [ ] **Step 4: Register the unrouted admin methods**
+- [x] **Step 4: Register the unrouted admin methods**
 
 `reassignRoom` and `destroy` exist but have no route:
 
@@ -268,7 +273,7 @@ Route::delete('/bookings/{booking}', [BookingAdminController::class, 'destroy'])
 
 Inside the existing `auth` + `role:manager|md|superuser` group in `routes/admin.php`.
 
-- [ ] **Step 5: Test**
+- [x] **Step 5: Test**
 
 ```php
 public function test_reassigning_a_room_updates_the_pivot_not_only_the_legacy_scalar(): void
@@ -300,6 +305,10 @@ Commit: `fix: make the booking room pivot the single source of assignment truth`
 
 ## Task 2: Build the authority service
 
+> **Status:** COMPLETE 2026-10-11. Fixed a precedence bug in the plan's
+> `localAuthority()` (`(bool) config(...) !== 'cloud'` was always true); the
+> implemented version returns `config('sync.node_type') !== 'cloud'`.
+
 **Files:**
 - Create: `app/Services/Booking/BookingAuthority.php`
 - Create: `app/Exceptions/ArrivalInsideLocalWindow.php`
@@ -309,7 +318,7 @@ Commit: `fix: make the booking room pivot the single source of assignment truth`
 - Consumes: `Setting::get('booking_local_authority_cutoff_hours', 48)`.
 - Produces: `cutoffHours()`, `windowEnd()`, `isLocalWindow(Carbon $checkIn)`, `authorityFor(Carbon $checkIn)`, `effectiveWindowDescription()`.
 
-- [ ] **Step 1: Write both exceptions**
+- [x] **Step 1: Write both exceptions**
 
 ```php
 <?php
@@ -353,7 +362,7 @@ Two classes rather than one with a flag: the two directions have different
 recipients, different remediation text, and different tests. A boolean on one
 exception makes the wrong message easy to render.
 
-- [ ] **Step 2: Write the service**
+- [x] **Step 2: Write the service**
 
 ```php
 <?php
@@ -478,7 +487,7 @@ class BookingAuthority
 The cache mirrors `SettingService::all()`'s 1-hour TTL but at 5 minutes, because
 the cutoff affects booking availability and should not take an hour to propagate.
 
-- [ ] **Step 3: Seed the setting**
+- [x] **Step 3: Seed the setting**
 
 Add to `SettingsSeeder`:
 
@@ -494,7 +503,7 @@ admin settings screen groups by hard-coded section; add the cutoff to the
 booking section in `resources/js/js/Pages/Admin/Settings/Index.vue` rather than
 inventing a new classification system.
 
-- [ ] **Step 4: Test the service**
+- [x] **Step 4: Test the service**
 
 ```php
 public function test_arrivals_inside_the_window_belong_to_the_front_desk(): void
@@ -607,7 +616,7 @@ public function test_front_desk_booking_is_allowed_inside_the_window(): void
 }
 ```
 
-- [ ] **Step 5: Confirm the default without configuration**
+- [x] **Step 5: Confirm the default without configuration**
 
 ```powershell
 php artisan tinker --execute="var_dump(app(App\Services\Booking\BookingAuthority::class)->cutoffHours());"

@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Services\Booking\BookingAuthority;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -17,6 +18,13 @@ class SettingsSeeder extends Seeder
             ['key' => 'hotel_address', 'value' => '1 Marina Rd, Victoria Island, Lagos', 'meta' => null, 'created_at' => $now, 'updated_at' => $now],
             ['key' => 'map_embed_url', 'value' => 'https://www.google.com/maps/embed?pb=!1m18!...', 'meta' => null, 'created_at' => $now, 'updated_at' => $now],
             ['key' => 'site_whatsapp', 'value' => '+2348090000000', 'meta' => null, 'created_at' => $now, 'updated_at' => $now],
+            [
+                'key' => BookingAuthority::SETTING_KEY,
+                'value' => (string) BookingAuthority::DEFAULT_CUTOFF_HOURS,
+                'meta' => json_encode(['type' => 'integer', 'label' => 'Front desk arrival cutoff (hours)']),
+                'created_at' => $now,
+                'updated_at' => $now,
+            ],
         ];
 
         foreach ($settings as $s) {
