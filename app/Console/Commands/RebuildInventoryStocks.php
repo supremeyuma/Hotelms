@@ -24,9 +24,14 @@ class RebuildInventoryStocks extends Command
             $locations = InventoryLocation::all();
             foreach ($items as $item) {
                 foreach ($locations as $location) {
+                    // Single quotes, not double: double quotes are identifiers
+                    // in standard SQL and only happen to work on SQLite. The
+                    // signed SUM is order-independent, so it needs no explicit
+                    // total order to reach an identical balance on every node
+                    // (spec section 6, Class 3).
                     $total = InventoryMovement::where("inventory_item_id", $item->id)
                         ->where("inventory_location_id", $location->id)
-                        ->sum(DB::raw("CASE WHEN type IN (\"in\", \"transfer_in\") THEN quantity WHEN type IN (\"out\", \"transfer_out\", \"wastage\") THEN -quantity ELSE quantity END"));
+                        ->sum(DB::raw("CASE WHEN type IN ('in', 'transfer_in') THEN quantity WHEN type IN ('out', 'transfer_out', 'wastage') THEN -quantity ELSE quantity END"));
                     InventoryStock::updateOrCreate(
                         ["inventory_item_id" => $item->id, "inventory_location_id" => $location->id],
                         ["quantity" => $total ?? 0]

@@ -57,4 +57,42 @@ class InventoryRebuildTest extends TestCase
         $this->assertEquals($beforeMain, $afterMain);
         $this->assertEquals($beforeKitchen, $afterKitchen);
     }
+
+    public function test_rebuild_is_order_independent(): void
+    {
+        $location = InventoryLocation::create([
+            "name" => "Main Store",
+            "type" => InventoryLocation::TYPE_MAIN_STORE,
+        ]);
+
+        $first = InventoryItem::create(["name" => "Rice", "sku" => "INV-ORD-1", "unit" => "kg"]);
+        $second = InventoryItem::create(["name" => "Beans", "sku" => "INV-ORD-2", "unit" => "kg"]);
+
+        // The same multiset of movements, recorded in two different orders.
+        $this->movement($first, $location, "in", 20);
+        $this->movement($first, $location, "out", 5);
+        $this->movement($first, $location, "in", 3);
+
+        $this->movement($second, $location, "in", 3);
+        $this->movement($second, $location, "in", 20);
+        $this->movement($second, $location, "out", 5);
+
+        Artisan::call("inventory:rebuild");
+
+        $firstTotal = (float) InventoryStock::where("inventory_item_id", $first->id)->where("inventory_location_id", $location->id)->value("quantity");
+        $secondTotal = (float) InventoryStock::where("inventory_item_id", $second->id)->where("inventory_location_id", $location->id)->value("quantity");
+
+        $this->assertSame(18.0, $firstTotal);
+        $this->assertSame($firstTotal, $secondTotal);
+    }
+
+    private function movement(InventoryItem $item, InventoryLocation $location, string $type, float $quantity): void
+    {
+        InventoryMovement::create([
+            "inventory_item_id" => $item->id,
+            "inventory_location_id" => $location->id,
+            "type" => $type,
+            "quantity" => $quantity,
+        ]);
+    }
 }
