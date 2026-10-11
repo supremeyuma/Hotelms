@@ -50,7 +50,7 @@ class ChangeLogController extends Controller
         $changes = $validated['changes'];
         $accepted = 0;
 
-        DB::transaction(function () use ($changes, &$accepted): void {
+        DB::transaction(function () use ($changes, $request, &$accepted): void {
             foreach ($changes as $change) {
                 $this->applier->apply(new SyncChange($change));
 
@@ -58,7 +58,7 @@ class ChangeLogController extends Controller
             }
 
             $highest = (int) max(array_column($changes, 'change_id'));
-            $sender = $this->callerNodeId();
+            $sender = $this->callerNodeId($request);
 
             if ($sender !== null) {
                 $this->advanceInboundCursor($sender, $highest);
@@ -108,9 +108,9 @@ class ChangeLogController extends Controller
     /**
      * The authenticated peer that made this request.
      */
-    private function callerNodeId(): ?string
+    private function callerNodeId(Request $request): ?string
     {
-        $node = request()->attributes->get('sync_node');
+        $node = $request->attributes->get('sync_node');
 
         return $node?->node_id;
     }
