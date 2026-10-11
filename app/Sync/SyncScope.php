@@ -14,11 +14,11 @@ final class SyncScope
      * Spec section 6. Classification principle: does the row represent
      * something that happened, or something that is currently true?
      *
-     * The eight Class 1 entries plus the five Class 2 entries plus the three
-     * Class 4 entries are the fifteen tables that carry sync fields. The rest
-     * are registered because they can still arrive in a payload and somebody
-     * has to have decided their semantics: Class 3 rows are never emitted as
-     * authoritative, and Class 5 rows are written by the cloud only.
+     * Every table in config/sync_scope.php must have a policy here, and the
+     * tripwire test asserts it. Some registered tables do not (yet) carry sync
+     * fields, but they can still arrive in a payload and somebody has to have
+     * decided their semantics: Class 3 rows are never emitted as authoritative,
+     * and Class 5 rows are written by the cloud only.
      *
      * @var array<string, class-string<\App\Sync\Policies\SyncPolicy>>
      */
@@ -30,14 +30,21 @@ final class SyncScope
         'pos_print_logs' => MergePolicy::class,
         'inventory_movements' => MergePolicy::class,
         'drink_stock_movements' => MergePolicy::class,
+        'charges' => MergePolicy::class,
         'audit_logs' => MergePolicy::class,
 
         // Class 2 - mutable reference data. Row-level last-write-wins.
         'inventory_items' => LastWriteWinsPolicy::class,
         'inventory_locations' => LastWriteWinsPolicy::class,
+        'pos_devices' => LastWriteWinsPolicy::class,
+        'menu_items' => LastWriteWinsPolicy::class,
+        'menu_categories' => LastWriteWinsPolicy::class,
+        'menu_subcategories' => LastWriteWinsPolicy::class,
+        'menu_inventory_recipes' => LastWriteWinsPolicy::class,
         'room_types' => LastWriteWinsPolicy::class,
         'rooms' => LastWriteWinsPolicy::class,
         'staff_profiles' => LastWriteWinsPolicy::class,
+        'users' => LastWriteWinsPolicy::class,
 
         // Class 3 - derived balances. Never authoritative; recomputed.
         'inventory_stocks' => AdditivePolicy::class,
@@ -45,6 +52,7 @@ final class SyncScope
 
         // Class 4 - hard conflicts. Blocked, surfaced to a human.
         'bookings' => ConflictPolicy::class,
+        'booking_rooms' => ConflictPolicy::class,
         'pos_sessions' => ConflictPolicy::class,
         'payments' => ConflictPolicy::class,
 
@@ -82,9 +90,9 @@ final class SyncScope
      *
      * Two things gate this. `config('sync.node_type')` defaults to 'terminal',
      * so a node that never configured itself is treated as the most restricted
-     * kind rather than the least. `config('sync_scope.read_only')` is empty
-     * until Phase 4S fills it, which makes the second gate inert until the
-     * manifest exists. The mechanism ships here; the contents ship there.
+     * kind rather than the least. `config('sync_scope.read_only')` carries the
+     * verified list from config/sync_scope.php, which the tripwire test keeps
+     * aligned with the manifest.
      */
     public static function mayEmit(string $entityKey): bool
     {
