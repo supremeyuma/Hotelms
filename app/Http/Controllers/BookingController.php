@@ -725,9 +725,14 @@ public function payment(Booking $booking)
     /**
      * Cancel booking (soft delete or status)
      */
-    public function cancelBooking(Booking $booking)
+    public function cancelBooking(Request $request, Booking $booking)
     {
-        $this->authorize('delete', $booking);
+        // A valid signed URL proves the guest was given this link, so the
+        // signature is the authorization for that path. Staff cancellations
+        // that are not signature-gated still pass the delete policy.
+        if (! $request->hasValidSignature()) {
+            $this->authorize('delete', $booking);
+        }
 
         $this->bookingService->cancelBooking($booking);
 

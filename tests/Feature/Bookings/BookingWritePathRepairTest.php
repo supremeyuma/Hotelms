@@ -105,6 +105,38 @@ class BookingWritePathRepairTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_an_unauthenticated_guest_can_cancel_with_a_valid_signed_url(): void
+    {
+        $room = $this->roomFixture();
+        $booking = $this->bookingFixture($room, now()->addDay(), now()->addDays(2));
+
+        $url = URL::signedRoute('booking.cancel', ['booking' => $booking->id]);
+
+        $this->from('/')
+            ->delete($url)
+            ->assertRedirect('/')
+            ->assertSessionHas('success');
+
+        $this->assertSame('cancelled', $booking->refresh()->status);
+        $this->assertSoftDeleted('bookings', ['id' => $booking->id]);
+        $this->assertDatabaseHas('audit_logs', [
+            'action' => 'booking_cancelled',
+            'user_id' => null,
+        ]);
+    }
+
+    public function test_an_unauthenticated_cancel_without_a_valid_signature_is_forbidden(): void
+    {
+        $room = $this->roomFixture();
+        $booking = $this->bookingFixture($room, now()->addDay(), now()->addDays(2));
+
+        $this->from('/')
+            ->delete(route('booking.cancel', $booking))
+            ->assertForbidden();
+
+        $this->assertSame('confirmed', $booking->refresh()->status);
+    }
+
     public function test_check_in_writes_per_room_timestamps_only_on_the_pivot(): void
     {
         $room = $this->roomFixture();
