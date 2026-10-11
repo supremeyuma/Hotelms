@@ -18,6 +18,7 @@ import {
   Sparkles,
   Store,
   MessageCircle,
+  Timer,
 } from 'lucide-vue-next'
 
 const props = defineProps({
@@ -48,6 +49,7 @@ const form = useForm({
   booking_show_room_type_images: Boolean(props.settings.booking_show_room_type_images ?? true),
   frontdesk_price_override_enabled: Boolean(props.settings.frontdesk_price_override_enabled ?? false),
   frontdesk_price_override_requires_approval: Boolean(props.settings.frontdesk_price_override_requires_approval ?? false),
+  booking_local_authority_cutoff_hours: Number(props.settings.booking_local_authority_cutoff_hours ?? 48),
   logo: null,
   banner: null,
 })
@@ -133,6 +135,12 @@ const healthCards = computed(() => [
       : 'Locked',
     hint: 'Controls room amount override at the front desk',
     icon: CreditCard,
+  },
+  {
+    label: 'Arrival window',
+    value: `${form.booking_local_authority_cutoff_hours} hours`,
+    hint: 'Front desk arrivals within this window; beyond it goes online',
+    icon: Timer,
   },
 ])
 
@@ -696,6 +704,46 @@ onBeforeUnmount(() => {
                     :class="form.frontdesk_price_override_requires_approval ? 'translate-x-5' : 'translate-x-0'"
                   />
                 </button>
+              </label>
+            </div>
+          </section>
+
+          <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="flex items-start gap-4">
+              <div class="rounded-2xl bg-amber-50 p-3 text-amber-700">
+                <Timer class="h-5 w-5" />
+              </div>
+              <div>
+                <h2 class="text-xl font-black text-slate-900">Front Desk Arrival Window</h2>
+                <p class="mt-1 text-sm leading-6 text-slate-500">
+                  How far ahead the front desk can book an arrival itself. Beyond this window, guests
+                  are directed to the online booking channel. Because check-in dates have no time of
+                  day, the effective window runs up to 24 hours past this number.
+                </p>
+              </div>
+            </div>
+
+            <div class="mt-6 grid gap-4">
+              <label class="gateway-card">
+                <div class="max-w-xs">
+                  <p class="text-sm font-bold text-slate-900">Arrival cutoff (hours)</p>
+                  <p class="text-sm text-slate-500">
+                    Arrivals within this many hours of now are booked here. 24 covers tonight and
+                    tomorrow; 48 also reaches the day after via the end-of-day reading.
+                  </p>
+                  <input
+                    v-model.number="form.booking_local_authority_cutoff_hours"
+                    type="number"
+                    min="1"
+                    max="720"
+                    step="1"
+                    class="mt-3 field-input"
+                    placeholder="48"
+                  />
+                  <p v-if="form.errors.booking_local_authority_cutoff_hours" class="field-error">
+                    {{ form.errors.booking_local_authority_cutoff_hours }}
+                  </p>
+                </div>
               </label>
             </div>
           </section>

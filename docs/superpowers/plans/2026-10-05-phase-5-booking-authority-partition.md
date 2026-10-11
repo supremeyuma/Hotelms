@@ -882,7 +882,7 @@ Commit: `fix: enforce the booking cutoff on both channels and re-check availabil
 > `booking.local-window`; the shareable `booking/local-window` route renders the
 > same notice (200) or redirects to search when the date is outside the window.
 > Note: the notice page depends on `assertOnlineBookable`, so on a local node
-> (which may book inside the window online) it redirects instead of showing � the
+> (which may book inside the window online) it redirects instead of showing — the
 > plan's contact-details test was updated to set `sync.node_type = cloud`.
 
 **Files:**
@@ -1133,17 +1133,31 @@ This is not optional polish. A refusal the staff were not told about will be
 worked around, and a workaround that re-books a guest online reintroduces the
 conflict the partition exists to prevent.
 
+> **Status:** Steps 1–4 COMPLETE 2026-10-11. Inline notices on `Create.vue`/`Edit.vue`
+> (amber `role="status"`, shown only when the arrival is beyond the window; Edit
+> also only when the arrival changed), index banner fed by
+> `FrontDesk\BookingsController::index()`, Settings form shows the cutoff number
+> input and the SettingController persists / invalidates `BookingAuthority::CACHE_KEY`,
+> operator note at `docs/FRONT_DESK_CUTOFF.md`. Steps 5–6 are human steps (staff
+> read-through; rollout marker) — **awaiting owner sign-off**. Tests:
+> `FrontDeskCutoffCommunicationTest` (3) + `SettingsChargeConfigurationTest` entries (2).
+
 **Files:**
-- Modify: `resources/js/js/Pages/FrontDesk/Bookings/Create.vue`
-- Modify: `resources/js/js/Pages/FrontDesk/Bookings/Edit.vue`
+- Modify: `resources/js/Pages/FrontDesk/Bookings/Create.vue`
+- Modify: `resources/js/Pages/FrontDesk/Bookings/Edit.vue`
+- Modify: `resources/js/Pages/FrontDesk/Bookings/Index.vue`
+- Modify: `app/Http/Controllers/FrontDesk/BookingsController.php`
+- Modify: `app/Http/Controllers/Admin/SettingController.php`
+- Modify: `resources/js/Pages/Admin/Settings/Index.vue`
 - Create: `docs/FRONT_DESK_CUTOFF.md`
+- Create: `tests/Feature/FrontDesk/FrontDeskCutoffCommunicationTest.php`
 - Modify: `database/seeders/SettingsSeeder.php`
 
 **Interfaces:**
 - Consumes: `BookingAuthority::cutoffHours()`.
 - Produces: in-product guidance and an operator-facing note.
 
-- [ ] **Step 1: Explain the rule inside the form, before the refusal fires**
+- [x] **Step 1: Explain the rule inside the form, before the refusal fires**
 
 A staff member should learn the constraint while filling the form, not from a 422.
 Add an inline notice to the front-desk booking create and edit screens:
@@ -1188,19 +1202,19 @@ Pass `cutoff_hours` from the controller into the page via the existing Inertia
 props. The server remains the authority — this notice is guidance, and the guard
 in Task 3 is the enforcement.
 
-- [ ] **Step 2: Make the front desk see the cutoff without guessing**
+- [x] **Step 2: Make the front desk see the cutoff without guessing**
 
 Show the window end date on the bookings index, so a staff member looking at the
 list knows at a glance which arrivals belong to the desk.
 
-- [ ] **Step 3: Make the cutoff adjustable without a deploy**
+- [x] **Step 3: Make the cutoff adjustable without a deploy**
 
 The setting is Class 5, pushed down from the cloud. Add it to the booking section
 of `resources/js/js/Pages/Admin/Settings/Index.vue` with a numeric input and a
 clear label. A property with a long drive from the airport may want 24 hours; one
 across town may want 48. Requiring a code change for that is wrong.
 
-- [ ] **Step 4: Write the operator note**
+- [x] **Step 4: Write the operator note**
 
 `docs/FRONT_DESK_CUTOFF.md` covers, in the words the owner would use with staff:
 

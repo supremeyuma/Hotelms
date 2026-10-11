@@ -18,6 +18,10 @@ const props = defineProps({
     type: Object,
     default: () => ({ enabled: false, requires_approval: false }),
   },
+  cutoffHours: {
+    type: Number,
+    default: null,
+  },
 })
 
 const form = useForm({
@@ -74,6 +78,33 @@ const overrideTotal = computed(() => {
   return Number(form.override_amount || 0)
 })
 
+// Mirrors BookingAuthority::isLocalWindow: an arrival stays on the desk while
+// its end of day is within now + cutoffHours.
+const windowEndDate = computed(() => {
+  if (!props.cutoffHours) return null
+
+  const date = new Date()
+  date.setHours(date.getHours() + props.cutoffHours)
+  date.setHours(0, 0, 0, 0)
+
+  return date
+})
+
+const showCutoffNotice = computed(() => {
+  if (!windowEndDate.value || !form.check_in) return false
+
+  const arrival = new Date(`${form.check_in}T00:00:00`)
+  arrival.setHours(23, 59, 59, 999)
+
+  return arrival > windowEndDate.value
+})
+
+const cutoffEndLabel = computed(() =>
+  windowEndDate.value
+    ? windowEndDate.value.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+    : ''
+)
+
 function isSelected(roomId) {
   return form.selected_room_ids.includes(roomId)
 }
@@ -123,6 +154,22 @@ function submit() {
         <h1 class="mt-4 text-3xl font-black tracking-tight text-slate-900">New reservation</h1>
         <p class="mt-2 text-sm text-slate-600">
           Create a front desk booking with the same guest details captured during the online booking flow.
+        </p>
+      </div>
+
+      <div
+        v-if="showCutoffNotice"
+        role="status"
+        class="rounded-2xl border border-amber-300 bg-amber-50 p-5 text-sm text-amber-900"
+      >
+        <p class="font-bold">This arrival is on the online channel.</p>
+        <p class="mt-1 font-medium">
+          The front desk books arrivals up to {{ cutoffEndLabel }}. Arrivals more than
+          {{ cutoffHours }} hours out are taken on the online booking channel.
+        </p>
+        <p class="mt-1">
+          Take the guest's details, then either help them complete the booking online, or take a
+          deposit and finalise it on the cloud.
         </p>
       </div>
 

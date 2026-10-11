@@ -1,12 +1,12 @@
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { router, Head } from '@inertiajs/vue3';
 import FrontDeskLayout from '@/Layouts/Staff/FrontDeskLayout.vue'
 import BookingTable from '@/Components/FrontDesk/BookingTable.vue';
 import FilterSearch from '@/Components/FrontDesk/FilterSearch.vue';
 import Pagination from '@/Components/Pagination.vue';
 import CheckInModal from '@/Components/FrontDesk/CheckInModal.vue';
-import { CalendarDays, Filter, Plus, Search } from 'lucide-vue-next';
+import { CalendarDays, Clock, Filter, Plus, Search } from 'lucide-vue-next';
 
 const props = defineProps({
   bookings: Object,
@@ -14,6 +14,17 @@ const props = defineProps({
   filter: String,
   date: String,
   dateType: String,
+  cutoffHours: Number,
+});
+
+const windowEndLabel = computed(() => {
+  if (!props.cutoffHours) return '';
+
+  const date = new Date();
+  date.setHours(date.getHours() + props.cutoffHours);
+  date.setHours(0, 0, 0, 0);
+
+  return date.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 });
 
 const search = ref(props.search || '');
@@ -94,6 +105,20 @@ watch(dateType, () => {
           <Plus class="w-5 h-5" />
           New Reservation
         </button>
+      </div>
+
+      <div
+        v-if="cutoffHours"
+        class="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900"
+      >
+        <p class="font-bold">
+          <Clock class="mr-2 inline h-4 w-4" />
+          Front desk arrivals: today through {{ windowEndLabel }}
+        </p>
+        <p class="mt-1">
+          Arrivals more than {{ cutoffHours }} hours out are taken on the online booking channel.
+          Existing bookings in this list can still be edited here.
+        </p>
       </div>
 
       <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">

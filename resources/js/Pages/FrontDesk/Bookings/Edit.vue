@@ -9,6 +9,7 @@ const props = defineProps({
   booking: { type: Object, required: true },
   rooms: { type: Array, required: true },
   preCheckIn: { type: Object, default: null },
+  cutoffHours: { type: Number, default: null },
 })
 
 const form = useForm({
@@ -66,6 +67,34 @@ const nights = computed(() => {
 })
 
 const invalidStay = computed(() => Boolean(form.check_in && form.check_out && !nights.value))
+
+// Mirrors BookingAuthority::isLocalWindow. Only warn when the arrival is moved
+// past the window on this screen; an unchanged arrival is never flagged.
+const windowEndDate = computed(() => {
+  if (!props.cutoffHours) return null
+
+  const date = new Date()
+  date.setHours(date.getHours() + props.cutoffHours)
+  date.setHours(0, 0, 0, 0)
+
+  return date
+})
+
+const showCutoffNotice = computed(() => {
+  if (!windowEndDate.value || !form.check_in) return false
+  if (form.check_in === props.booking.check_in) return false
+
+  const arrival = new Date(`${form.check_in}T00:00:00`)
+  arrival.setHours(23, 59, 59, 999)
+
+  return arrival > windowEndDate.value
+})
+
+const cutoffEndLabel = computed(() =>
+  windowEndDate.value
+    ? windowEndDate.value.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+    : ''
+)
 
 const estimatedTotal = computed(() => {
   if (!selectedRooms.value.length || !nights.value) return 0
@@ -149,6 +178,19 @@ function formatPreCheckInDate(value) {
             Update guest details, stay information, and room allocation before arrival or while the booking is active.
           </p>
         </div>
+      </div>
+
+      <div
+        v-if="showCutoffNotice"
+        role="status"
+        class="rounded-2xl border border-amber-300 bg-amber-50 p-5 text-sm text-amber-900"
+      >
+        <p class="font-bold">This new arrival date is on the online channel.</p>
+        <p class="mt-1 font-medium">
+          The front desk books arrivals up to {{ cutoffEndLabel }}. Moving an arrival more than
+          {{ cutoffHours }} hours out will be refused here — take the guest's details and complete
+          the change online.
+        </p>
       </div>
 
       <form @submit.prevent="submit" class="grid gap-8 xl:grid-cols-[minmax(0,1fr)_360px]">

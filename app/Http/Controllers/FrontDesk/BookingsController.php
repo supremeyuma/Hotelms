@@ -87,6 +87,7 @@ class BookingsController extends Controller
             'filter' => $filter,
             'date' => $request->check_in_date ?? $request->check_out_date,
             'dateType' => $request->filled('check_out_date') ? 'check_out' : 'check_in',
+            'cutoffHours' => $this->authority->cutoffHours(),
         ]);
     }
 

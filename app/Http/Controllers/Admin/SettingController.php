@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Mail\ManagerSettingsTestMail;
 use App\Models\Setting;
 use App\Services\AuditLoggerService;
+use App\Services\Booking\BookingAuthority;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
@@ -68,8 +69,10 @@ class SettingController extends Controller
         $settings['service_charge_enabled'] = filter_var(
             $settings['service_charge_enabled'] ?? config('tax.enabled', false),
             FILTER_VALIDATE_BOOLEAN
-        );
+);
         $settings['service_charge_rate'] = round(((float) ($settings['service_charge_rate'] ?? config('tax.service_charge_rate', 0.0))) * 100, 2);
+        $settings['booking_local_authority_cutoff_hours'] = (int) ($settings['booking_local_authority_cutoff_hours']
+            ?? Setting::get(BookingAuthority::SETTING_KEY, BookingAuthority::DEFAULT_CUTOFF_HOURS));
         $settings['active_mailer'] = config('mail.default');
         $settings['mail_from_address'] = config('mail.from.address');
         $settings['mail_from_name'] = config('mail.from.name');
@@ -97,9 +100,10 @@ class SettingController extends Controller
 'frontdesk_price_override_enabled' => 'sometimes|boolean',
             'frontdesk_price_override_requires_approval' => 'sometimes|boolean',
             'tax_enabled' => 'required|boolean',
-            'tax_rate' => 'required|numeric|min:0|max:100',
+'tax_rate' => 'required|numeric|min:0|max:100',
             'service_charge_enabled' => 'required|boolean',
             'service_charge_rate' => 'required|numeric|min:0|max:100',
+            'booking_local_authority_cutoff_hours' => 'sometimes|integer|min:1|max:720',
         ]);
 
         if (!$data['payment_provider_flutterwave_enabled'] && !$data['payment_provider_paystack_enabled']) {
@@ -146,9 +150,11 @@ class SettingController extends Controller
                 FILTER_VALIDATE_BOOLEAN
             ),
             'tax_enabled' => $data['tax_enabled'],
-            'tax_rate' => round(((float) $data['tax_rate']) / 100, 4),
+'tax_rate' => round(((float) $data['tax_rate']) / 100, 4),
             'service_charge_enabled' => $data['service_charge_enabled'],
             'service_charge_rate' => round(((float) $data['service_charge_rate']) / 100, 4),
+            'booking_local_authority_cutoff_hours' => (int) ($data['booking_local_authority_cutoff_hours']
+                ?? Setting::get(BookingAuthority::SETTING_KEY, BookingAuthority::DEFAULT_CUTOFF_HOURS)),
         ];
 
         foreach ($simpleSettings as $key => $value) {
@@ -156,6 +162,8 @@ class SettingController extends Controller
                 Setting::updateOrCreate(['key' => $key], ['value' => $value]);
             }
         }
+
+        app(BookingAuthority::class)->forget();
 
         if ($request->hasFile('logo')) {
             $path = $request->file('logo')->store('settings', 'public');
