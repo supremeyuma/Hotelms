@@ -12,5 +12,6 @@ class SyncCursor extends Model
 
     protected $casts = [
         'last_synced_at' => 'datetime',
+        'last_applied_change_id' => 'integer',
     ];
 }

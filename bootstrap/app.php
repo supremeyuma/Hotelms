@@ -33,6 +33,7 @@ return Application::configure(basePath: dirname(__DIR__))
         'cleaning.staff' => \App\Http\Middleware\CleaningStaffOnly::class,
         'validate.room.token' => \App\Http\Middleware\ValidateRoomToken::class,
         'resolve.guest.room' => \App\Http\Middleware\ResolveGuestRoom::class,
+        'sync.node' => \App\Http\Middleware\AuthenticateSyncNode::class,
 
          ]);
 
