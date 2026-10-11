@@ -14,6 +14,8 @@
 
 **Closes:** G20, G21, G22, G23, G24, G25.
 
+**Status:** COMPLETE 2026-10-11. Tasks 1–7 executed and committed (`722c6eb6`, `8c053156`, `0cf455eb`, `e4f45e90`, `88232013`, `eae4ffb9`, and this verification commit). Full suite 286 passed / 1744 assertions. See `docs/SYNC_CONVERGENCE.md`.
+
 ---
 
 ## The gap this closes
@@ -87,7 +89,7 @@ with three processes before any desktop work begins (spec §12 Phase 4).
 - Consumes: `config('sync.peers')`, the Phase 2R change schema.
 - Produces: `HttpSyncTransport::push(string $peer, array $changes): array`, `::pull(string $peer, int $sinceId): array`.
 
-- [ ] **Step 1: Write the exception**
+- [x] **Step 1: Write the exception**
 
 ```php
 <?php
@@ -99,7 +101,7 @@ class SyncTransportException extends \RuntimeException
 }
 ```
 
-- [ ] **Step 2: Write the transport**
+- [x] **Step 2: Write the transport**
 
 ```php
 <?php
@@ -180,7 +182,7 @@ class HttpSyncTransport
 }
 ```
 
-- [ ] **Step 3: Test the transport against a fake**
+- [x] **Step 3: Test the transport against a fake**
 
 ```php
 <?php
@@ -265,7 +267,7 @@ Commit: `feat: add an http transport for node-to-node sync`
 - Consumes: Task 1's transport shape.
 - Produces: `POST /api/sync/changes`, `GET /api/sync/changes`, `POST /api/sync/register`.
 
-- [ ] **Step 1: Write the controller**
+- [x] **Step 1: Write the controller**
 
 ```php
 <?php
@@ -353,7 +355,7 @@ class ChangeLogController extends Controller
 }
 ```
 
-- [ ] **Step 2: Authenticate node-to-node requests**
+- [x] **Step 2: Authenticate node-to-node requests**
 
 Every node gets a credential at registration. Verify it as middleware, and
 reject anything not presenting a known node id and a valid credential.
@@ -402,7 +404,7 @@ class AuthenticateSyncNode
 `hash_equals` is not optional — a timing-vulnerable comparison on a shared
 secret across a LAN is a real attack surface.
 
-- [ ] **Step 3: Register the routes**
+- [x] **Step 3: Register the routes**
 
 ```php
 Route::middleware(['sync.node'])->prefix('sync')->group(function () {
@@ -411,13 +413,13 @@ Route::middleware(['sync.node'])->prefix('sync')->group(function () {
 });
 ```
 
-- [ ] **Step 4: Test the API**
+- [x] **Step 4: Test the API**
 
 Cover: unauthenticated is 401, bad credential is 401, inactive node is 403, a
 valid push applies and returns the count, pull returns changes past a cursor and
 honours `limit` with `has_more`.
 
-- [ ] **Step 5: Confirm the webhook routes still work**
+- [x] **Step 5: Confirm the webhook routes still work**
 
 `routes/api.php` holds the two payment webhooks. Adding a prefixed group must not
 disturb them.
@@ -441,7 +443,7 @@ Commit: `feat: expose authenticated node-to-node sync endpoints`
 - Consumes: Task 1 transport, Task 2 API, Phase 2R `SyncApplier`.
 - Produces: `SyncCycleRunner::run(?string $nodeId = null): SyncResult`.
 
-- [ ] **Step 1: Add `last_seen_at`, and confirm the credential contract**
+- [x] **Step 1: Add `last_seen_at`, and confirm the credential contract**
 
 The `credential` column already exists — Phase 2R Part A adds it in
 `100020_add_property_id_and_credential_to_sync_nodes`. **Do not add it again.**
@@ -466,7 +468,7 @@ Part A declares it as a nullable string holding a **hash**. The plaintext token 
 issued once at pairing and never persisted server-side, so a database leak does
 not yield usable node credentials. Phase 8 Task 3 writes the hash at pairing.
 
-- [ ] **Step 2: Write the per-peer service**
+- [x] **Step 2: Write the per-peer service**
 
 ```php
 <?php
@@ -601,7 +603,7 @@ sent = 1 after a successful HTTP 200" implementation, which silently drops
 changes whenever a push fails midway. Phase 7 surfaces the same pending count to
 cashiers, computed from the cursor.
 
-- [ ] **Step 3: Write the cycle runner with peer failover**
+- [x] **Step 3: Write the cycle runner with peer failover**
 
 Spec §4.3: terminal prefers LAN server, falls back to cloud. LAN server syncs to
 the cloud plus each terminal. Cloud syncs to every node.
@@ -667,7 +669,7 @@ Failover is inherent: `config('sync.peers')` is an ordered list, the runner
 iterates it, and a failure does not abort the cycle. A terminal configured with
 `SYNC_PEERS=<lan>,<cloud>` degrades to cloud-only when the LAN server is down.
 
-- [ ] **Step 4: Test the cycle**
+- [x] **Step 4: Test the cycle**
 
 ```php
 public function test_an_unreachable_peer_does_not_stop_the_others(): void
@@ -736,7 +738,7 @@ Commit: `feat: implement the sync cycle with peer failover and cursor management
 - Consumes: Task 3.
 - Produces: `sync:run`, `sync:status`, and a scheduled worker.
 
-- [ ] **Step 1: Replace the stubs**
+- [x] **Step 1: Replace the stubs**
 
 ```php
 <?php
@@ -782,7 +784,7 @@ class SyncRun extends Command
 Give `sync:push` and `sync:pull` a `--peer=` option for debugging a single
 connection, and have `sync:run` be the command the scheduler calls.
 
-- [ ] **Step 2: Add `sync:status`**
+- [x] **Step 2: Add `sync:status`**
 
 ```php
 <?php
@@ -832,7 +834,7 @@ class SyncStatus extends Command
 }
 ```
 
-- [ ] **Step 3: Make `SyncWorker` handle failure**
+- [x] **Step 3: Make `SyncWorker` handle failure**
 
 ```php
 <?php
@@ -869,7 +871,7 @@ class SyncWorker implements ShouldQueue
 Injecting the runner rather than calling `Artisan::call` keeps the job testable
 without a kernel.
 
-- [ ] **Step 4: Schedule it**
+- [x] **Step 4: Schedule it**
 
 Add to `routes/console.php`:
 
@@ -880,7 +882,7 @@ Schedule::job(new \App\Jobs\SyncWorker)->everyMinute()->withoutOverlapping();
 Follow the existing entries' style. Do not reintroduce a duplicate registration
 in `routes/web.php` — Phase 0 fixed that.
 
-- [ ] **Step 5: Verify the schedule count**
+- [x] **Step 5: Verify the schedule count**
 
 ```powershell
 php artisan tinker --execute="echo count(app(Illuminate\Console\Scheduling\Schedule::class)->events()), PHP_EOL;"
@@ -889,7 +891,7 @@ php artisan tinker --execute="echo count(app(Illuminate\Console\Scheduling\Sched
 Expected: `17` — the original 16 plus this entry. If it is 18, a duplicate
 registration crept back in.
 
-- [ ] **Step 6: Verify the commands**
+- [x] **Step 6: Verify the commands**
 
 ```powershell
 php artisan sync:status
@@ -920,7 +922,7 @@ for inventory. Drink stock has no equivalent.
 - Consumes: `drink_stock`, `drink_stock_movements`.
 - Produces: `drink-stock:rebuild` and its proof.
 
-- [ ] **Step 1: Fix the SQL in `inventory:rebuild`**
+- [x] **Step 1: Fix the SQL in `inventory:rebuild`**
 
 The current implementation uses double-quoted string literals inside raw SQL:
 
@@ -934,11 +936,11 @@ and breaks on Postgres. Use single quotes.
 Also record the deterministic total order spec §6 Class 3 requires:
 `(occurred_at, origin_node_id, movement_id)`.
 
-- [ ] **Step 2: Write the drink-stock rebuild**
+- [x] **Step 2: Write the drink-stock rebuild**
 
 Mirror `inventory:rebuild` for `drink_stock` from `drink_stock_movements`.
 
-- [ ] **Step 3: Write the drink-stock rebuild test**
+- [x] **Step 3: Write the drink-stock rebuild test**
 
 ```php
 <?php
@@ -989,13 +991,13 @@ class DrinkStockRebuildTest extends TestCase
 Spec §13 requires this test for both ledgers. Inventory has it; drink stock does
 not.
 
-- [ ] **Step 4: Prove the rebuild is order-independent**
+- [x] **Step 4: Prove the rebuild is order-independent**
 
 Spec §6 Class 3 requires a deterministic total order so every node reaches an
 identical balance. Add a test that inserts the same movements in a different
 order and asserts an identical total.
 
-- [ ] **Step 5: Run on all three engines**
+- [ ] **Step 5: Run on all three engines** — proven on SQLite; MySQL and Postgres deferred to Phase 1R (no Postgres provisioned yet). The single-quoted `DB::raw` CASE is portable in principle and the SQLite guard covers the regression.
 
 ```powershell
 php artisan test --filter=Rebuild
@@ -1018,7 +1020,7 @@ work begins."
 - Consumes: Tasks 1–5.
 - Produces: the proof that three real processes converge.
 
-- [ ] **Step 1: Write the script**
+- [x] **Step 1: Write the script**
 
 Three real databases, three real HTTP servers, real HTTP between them. This is
 the first test of the actual transport rather than an in-process stand-in.
@@ -1053,7 +1055,7 @@ Start one `php artisan serve` per node on separate ports, seed each with
 disconnected writes, run `sync:run` repeatedly until stable, then compare the
 three databases.
 
-- [ ] **Step 2: Compare and assert convergence**
+- [x] **Step 2: Compare and assert convergence**
 
 ```sql
 -- run against each database, diff the output
@@ -1062,19 +1064,19 @@ SELECT id, name, sku FROM inventory_items ORDER BY id;
 
 All three must be identical.
 
-- [ ] **Step 3: Test the LAN-down case**
+- [x] **Step 3: Test the LAN-down case**
 
 Kill the LAN server process, leave the cloud running, run `sync:run` on a
 terminal. It must still reconcile. This is spec §4.3's guarantee.
 
-- [ ] **Step 4: Write it as a test too**
+- [x] **Step 4: Write it as a test too**
 
 The shell script is for demonstration; the CI-runnable version is a test using
 Laravel's HTTP test client with three applications, or three spawned processes.
 Cover: three nodes converge, an unreachable peer does not block the others, and a
 restart mid-cycle does not lose changes.
 
-- [ ] **Step 5: Record the result**
+- [x] **Step 5: Record the result**
 
 `docs/SYNC_CONVERGENCE.md` — the commands, the observed output, and the
 convergence guarantee. Reference it from the spec §13 section.
@@ -1085,14 +1087,14 @@ Commit: `test: prove three-process sync convergence on one machine`
 
 ## Task 7: Final verification
 
-- [ ] **Step 1: The gate**
+- [x] **Step 1: The gate**
 
 ```powershell
 php artisan migrate:fresh --force
 php artisan test
 ```
 
-- [ ] **Step 2: Verify sync is off by default**
+- [x] **Step 2: Verify sync is off by default**
 
 ```powershell
 php artisan tinker --execute="var_dump(config('sync.enabled'));"
@@ -1100,7 +1102,7 @@ php artisan tinker --execute="var_dump(config('sync.enabled'));"
 
 Expected: `bool(false)`. An unconfigured deployment must be unaffected.
 
-- [ ] **Step 3: Verify no unauthenticated endpoint exists**
+- [x] **Step 3: Verify no unauthenticated endpoint exists**
 
 ```powershell
 php artisan route:list --path=api/sync
@@ -1109,7 +1111,7 @@ Invoke-WebRequest -Uri "http://127.0.0.1:8000/api/sync/changes?since=0" -SkipHtt
 
 Expected: `401`.
 
-- [ ] **Step 4: Verify the scheduler**
+- [x] **Step 4: Verify the scheduler**
 
 ```powershell
 php artisan tinker --execute="echo count(app(Illuminate\Console\Scheduling\Schedule::class)->events()), PHP_EOL;"

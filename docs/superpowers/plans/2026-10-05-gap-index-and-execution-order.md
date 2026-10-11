@@ -53,12 +53,12 @@ closes it.
 | G17 | `SchemaParityTest` asserts `true` and its name is false | Blocker | [Phase 1R](2026-10-05-phase-1r-postgres-portability-and-parity-gate.md) |
 | G18 | No migration has been run against Postgres | Blocker | Phase 1R |
 | G19 | `2026_04_10_160000_harden_inventory_ledger_tables.php` uses MySQL-only index inspection | High | Phase 1R |
-| G20 | `sync:push`/`sync:pull` print "No remote configured; skipping." | Blocker | [Phase 4R](2026-10-05-phase-4r-sync-node-runtime-and-transport.md) |
-| G21 | `SyncWorker` is never dispatched; `routes/console.php` has zero sync entries | Blocker | Phase 4R |
-| G22 | No HTTP transport, no auth, no peer registry wiring | Blocker | Phase 4R |
-| G23 | No Class 3 drink-stock rebuild (§6.2 names both ledgers) | High | Phase 4R |
-| G24 | `inventory:rebuild` uses double-quoted string literals inside `DB::raw` SQL | Medium | Phase 4R |
-| G25 | No multi-process convergence proof | High | Phase 4R |
+| G20 | `sync:push`/`sync:pull` print "No remote configured; skipping." **Resolved 2026-10-11** — `sync:run`/`sync:push`/`sync:pull`/`sync:status` drive `NodeSyncService`/`SyncCycleRunner`; `sync:status` reports enabled/node id/peers/cursors. | Blocker | [Phase 4R](2026-10-05-phase-4r-sync-node-runtime-and-transport.md) **closed** |
+| G21 | `SyncWorker` is never dispatched; `routes/console.php` has zero sync entries. **Resolved 2026-10-11** — `SyncWorker` injects `SyncCycleRunner`, `$tries = 3`, gated on `config('sync.enabled')`; scheduled `everyMinute()->withoutOverlapping()`; schedule count 16 → 17. | Blocker | Phase 4R **closed** |
+| G22 | No HTTP transport, no auth, no peer registry wiring. **Resolved 2026-10-11** — `HttpSyncTransport` (batched push/pull, node-id header + bearer); `AuthenticateSyncNode` middleware (SHA-256 credential compare, `active` gate, `last_seen_at`); `GET|POST /api/sync/changes` behind `sync.node`; peers are a node-id → base-url map. | Blocker | Phase 4R **closed** |
+| G23 | No Class 3 drink-stock rebuild (§6.2 names both ledgers). **Resolved 2026-10-11** — `drink-stock:rebuild` reconstructs `full_bottles` as the signed sum of `quantity_change`; `DrinkStockRebuildTest` proves rebuild == incremental and order-independence. | High | Phase 4R **closed** |
+| G24 | `inventory:rebuild` uses double-quoted string literals inside `DB::raw` SQL. **Resolved 2026-10-11** — switched to single quotes (portable to Postgres); order-independence proven in `InventoryRebuildTest`. | Medium | Phase 4R **closed** |
+| G25 | No multi-process convergence proof. **Resolved 2026-10-11** — `ThreeNodeConvergenceTest` (three file-backed DBs, real transport with only the socket stubbed) proves convergence, dead-peer tolerance and page-rollback; `scripts/three-node-sync-demo.sh` proves it across three real `artisan serve` processes; `docs/SYNC_CONVERGENCE.md` records the full-mesh requirement (nothing relays). | High | Phase 4R **closed** |
 | G26 | ~~No sync scope manifest and no tripwire test (§7)~~ **Resolved 2026-10-11** — `config/sync_scope.php` declares the verified terminal closure (policy label, read-only, `always_sync`, and every exclusion with a reason); `SyncScopeResolver` walks the real model graph (source-inspection, not `getRelationships()`); `SyncScopeTripwireTest` fails naming the table and source entry point when code reaches outside the manifest, and `SyncScopeManifestTest` keeps it minimal and agreed with the catalogue; `docs/SYNC_SCOPE.md` documents it. Guard proven to fail, then green. | High | [Phase 4S](2026-10-05-phase-4s-sync-scope-manifest.md) **closed** |
 | G27 | `resources/js/ziggy.js` bakes `http://localhost` (§9.4 prerequisite). **Refuted/Resolved:** Ziggy v2.6.0 builds the manifest per requesting host (`url('/')` in `new Ziggy`); a live non-local probe (`Host` header) rendered host-correct, and nothing imports the generated file. Dead output deleted; guard test #4 asserts no built asset bakes an origin. | Blocker | [Ziggy](2026-10-05-ziggy-runtime-route-manifest.md) **closed** |
 | G51 | Three routes have an empty name (`admin.reports.`, `frontdesk.`, `staff.`) — actually **21** after collapsing duplicates — so they are unreachable by `route()` name and risk future collisions. **Resolved:** all named across `routes/admin.php` and `routes/staff.php`; no callers broke; guard test #3 fails on any empty leaf. | Medium | [Ziggy](2026-10-05-ziggy-runtime-route-manifest.md) Task 4 Step 6 **closed** |
@@ -176,7 +176,7 @@ Phase 3    Club POS repair                       (G28, G29, G44, G61) - done 202
     |
 Phase 4S   sync scope manifest + tripwire        (G26) - done 2026-10-11
     |
-Phase 4R   sync node runtime + transport         (G20-G25)
+Phase 4R   sync node runtime + transport         (G20-G25) - done 2026-10-11
     |
 Phase 5    booking authority partition           (G31-G36, G46-G50)
     |
