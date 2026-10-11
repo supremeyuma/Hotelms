@@ -21,7 +21,7 @@ class DashboardRedirectController extends Controller
 
         // Guard against a self-redirect: a user with no resolvable role lands
         // back on the login screen rather than looping on this route.
-        if ($destination === route('dashboard', absolute: false)) {
+        if ($destination === route('dashboard')) {
             return redirect()->route('login');
         }
 

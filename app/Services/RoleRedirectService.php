@@ -46,6 +46,10 @@ class RoleRedirectService
             return route('staff.bar.dashboard');
         }
 
+        if ($user->hasAnyRole(['club_staff', 'club_supervisor'])) {
+            return route('club.pos.dashboard');
+        }
+
         // Users without a resolvable role are sent to the canonical dashboard
         // route, which decides what to do with them.
         return route('dashboard');
