@@ -88,7 +88,7 @@ function roomLabel(row) {
   const assignedRoom = row.rooms?.[0]
   const room = assignedRoom ?? row.room
   const type = assignedRoom?.room_type?.title ?? row.room_type?.title ?? row.room?.room_type?.title
-  const name = room?.name ?? room?.room_number
+  const name = room?.name ?? room?.code
 
   return [type, name].filter(Boolean).join(' - ') || 'Unassigned'
 }

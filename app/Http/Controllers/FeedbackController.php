@@ -44,7 +44,7 @@ class FeedbackController extends Controller
             action: route('guest.feedback.store', ['token' => $token->token]),
             audience: 'guest',
             context: [
-                'room_name' => $room?->display_name ?: $room?->name ?: $room?->room_number,
+                'room_name' => $room?->display_name ?: $room?->name ?: $room?->code,
                 'guest_name' => $booking?->guest_name,
             ],
             request: $request,

@@ -31,7 +31,7 @@ class BillingController extends Controller
                     'id' => $room->id,
                     'label' => trim(collect([
                         $room->roomType?->title,
-                        $room->name ?: $room->room_number,
+                        $room->name ?: $room->code,
                     ])->filter()->implode(' - ')),
                 ])->values(),
                 'has_multiple_rooms' => $booking->rooms->count() > 1,

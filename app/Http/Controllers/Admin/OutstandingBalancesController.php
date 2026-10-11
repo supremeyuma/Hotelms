@@ -49,7 +49,7 @@ class OutstandingBalancesController extends Controller
 
         if ($search) {
             $query->where(function ($q) use ($search) {
-                $q->where('room_number', 'like', "%{$search}%")
+                $q->where('code', 'like', "%{$search}%")
                   ->orWhere('name', 'like', "%{$search}%")
                   ->orWhereHas('bookings', function ($bq) use ($search) {
                       $bq->where('booking_code', 'like', "%{$search}%")
@@ -85,7 +85,7 @@ class OutstandingBalancesController extends Controller
 
                 return [
                     'room_id' => $room->id,
-                    'room_number' => $room->room_number,
+                    'room_number' => $room->code,
                     'room_name' => $room->name,
                     'booking' => [
                         'id' => $booking->id,
@@ -162,7 +162,7 @@ class OutstandingBalancesController extends Controller
                         $roomOutstanding = $this->billingService->outstanding($room);
                         return [
                             'id' => $room->id,
-                            'number' => $room->room_number,
+                            'number' => $room->code,
                             'name' => $room->name,
                             'outstanding' => round($roomOutstanding, 2),
                             'status' => $room->status,

@@ -65,7 +65,7 @@ class RoomSchedulingController extends Controller
                 'is_unavailable' => (bool) $schedule->is_unavailable,
                 'notes' => $schedule->notes,
                 'label' => $schedule->room
-                    ? ($schedule->room->display_name ?? $schedule->room->name ?? $schedule->room->room_number)
+                    ? ($schedule->room->display_name ?? $schedule->room->name ?? $schedule->room->code)
                     : ($schedule->roomType?->title ? "All {$schedule->roomType->title} rooms" : 'All rooms'),
                 'property_name' => $schedule->property?->name,
                 'is_past' => optional($schedule->end_date)?->lt($today) ?? false,
@@ -87,7 +87,7 @@ class RoomSchedulingController extends Controller
             ->get()
             ->map(fn (Room $room) => [
                 'id' => $room->id,
-                'label' => $room->display_name ?? $room->name ?? $room->room_number,
+                'label' => $room->display_name ?? $room->name ?? $room->code,
                 'room_type_id' => $room->room_type_id,
                 'property_id' => $room->property_id,
                 'room_type_title' => $room->roomType?->title,

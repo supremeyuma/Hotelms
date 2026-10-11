@@ -991,13 +991,25 @@ Commit: `feat: refuse online bookings inside the front desk arrival window`
 
 ## Task 5: Repair the booking write paths this phase exercises
 
+> **Status:** COMPLETE 2026-10-11 (`php artisan test` = 319 passed, 1831 assertions).
+> `cancelBooking` is wired to a signed route and switched to the injected
+> `$bookingService` property; `Booking::isEditable()`/`scopeEditable()` added and
+> used by `extendStay`/`updateBooking`; `room_number` removed from `Room::$fillable`
+> and every remaining consumer migrated to `code` (admin room create/edit, seeder,
+> searches, selects, payload keys, Vue); `bookings.checked_in_at`/`checked_out_at`
+> writes removed (the pivot holds the authoritative timestamps). 7 new tests in
+> `tests/Feature/Bookings/BookingWritePathRepairTest.php` (21 assertions).
+> Note: guest self-cancel stays blocked - `BookingPolicy::delete` allows only
+> md/manager, so the signed route is exercised by a manager in tests. Enabling
+> guest cancellation would be a separate authorization decision.
+
 Three pre-existing defects sit directly on the paths a local terminal will use.
 Each is a fatal error, not a style problem.
 
 **Files:**
 - Modify: `app/Http/Controllers/BookingController.php`, `app/Services/BookingService.php`
 
-- [ ] **Step 1: `BookingController::cancelBooking` fatal (L685-693)**
+- [x] **Step 1: `BookingController::cancelBooking` fatal (L685-693)**
 
 ```powershell
 rg -n "this->service" app/Http/Controllers/BookingController.php
@@ -1022,7 +1034,7 @@ Signed, because the guest has no session, and the guest must not cancel another
 guest's booking by guessing an id. Add the rule and keep the existing
 `$this->authorize('delete', $booking)` check at L687.
 
-- [ ] **Step 2: `BookingService::extendStay` fatal (L715-719)**
+- [x] **Step 2: `BookingService::extendStay` fatal (L715-719)**
 
 ```powershell
 rg -n "isEditable" app/Models/Booking.php app/Services/BookingService.php
@@ -1049,7 +1061,7 @@ public function scopeEditable(Builder $query): Builder
 }
 ```
 
-- [ ] **Step 3: `Room::$fillable` references a dropped column**
+- [x] **Step 3: `Room::$fillable` references a dropped column**
 
 ```powershell
 rg -n "room_number" app/ database/migrations/
@@ -1063,7 +1075,7 @@ of `room_number` now writes a column that does not exist.
 `Room` uses `code` and `name`. Replace the three references with `code`, and
 remove `room_number` from `$fillable`. Verify no other consumer reads it.
 
-- [ ] **Step 4: `bookings.checked_in_at` is written but has no column**
+- [x] **Step 4: `bookings.checked_in_at` is written but has no column**
 
 ```powershell
 rg -n "checked_in_at|checked_out_at" database/migrations/
@@ -1085,7 +1097,7 @@ rg -n "bookings.checked_in_at|->checked_in_at" app/Reporting/ app/Http/Controlle
 If nothing reads them, delete the writes and add a test asserting check-in
 succeeds on Postgres.
 
-- [ ] **Step 5: Test each repair**
+- [x] **Step 5: Test each repair**
 
 ```php
 public function test_extending_a_stay_works(): void

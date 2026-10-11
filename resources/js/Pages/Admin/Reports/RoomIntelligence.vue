@@ -2,7 +2,7 @@
   <AdminLayout>
     <div class="space-y-6">
       <div class="flex justify-between items-center">
-        <h1 class="text-3xl font-bold">Room {{ room.room_number }} Intelligence</h1>
+        <h1 class="text-3xl font-bold">Room {{ room.code }} Intelligence</h1>
         <Link :href="route('admin.rooms.index')" class="text-blue-600 hover:text-blue-800">
           Back to Rooms
         </Link>

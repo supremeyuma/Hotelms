@@ -156,7 +156,7 @@ protected RoomServiceService $roomService;
                     'room_id' => $room->id,
                     'payment_type' => 'room_bill',
                 ],
-                'description' => "Room Bill Payment - Room {$room->room_number}",
+                'description' => 'Room Bill Payment - Room ' . ($room->name ?: $room->code),
                 'callbackUrl' => route('guest.bill.payment.callback', [
                     'room' => $room->id,
                     'reference' => $reference,
@@ -217,9 +217,9 @@ protected RoomServiceService $roomService;
                     'room_id' => $room->id,
                     'payment_type' => 'room_bill',
                     'guest_name' => $booking->guest_name,
-                    'room_number' => $room->room_number,
+                    'room_number' => $room->code,
                 ],
-                'description' => "Room Bill Payment - Room {$room->room_number}",
+                'description' => 'Room Bill Payment - Room ' . ($room->name ?: $room->code),
             ]);
 
             if (!$paymentInitiation['success']) {
@@ -254,7 +254,7 @@ protected RoomServiceService $roomService;
                     'booking_id' => $booking->id,
                     'room_id' => $room->id,
                     'guest_name' => $booking->guest_name,
-                    'room_number' => $room->room_number,
+                    'room_number' => $room->code,
                 ],
             ]);
 
@@ -275,7 +275,7 @@ protected RoomServiceService $roomService;
                 'provider' => $provider,
                 'amount' => $amount,
                 'currency' => 'NGN',
-                'description' => "Room Bill Payment - Room {$room->room_number}",
+                'description' => 'Room Bill Payment - Room ' . ($room->name ?: $room->code),
                 'customer' => [
                     'email' => $booking->guest_email,
                     'name' => $booking->guest_name,

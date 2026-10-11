@@ -31,7 +31,7 @@ use App\Services\Booking\BookingAuthority;
 
 class BookingController extends Controller
 {
-    protected BookingService $service;
+    protected BookingService $bookingService;
     protected RoomAvailabilityService $availability;
     protected PricingService $pricingService;
     protected PaymentProviderManager $paymentManager;
@@ -729,7 +729,7 @@ public function payment(Booking $booking)
     {
         $this->authorize('delete', $booking);
 
-        $this->service->cancelBooking($booking);
+        $this->bookingService->cancelBooking($booking);
 
         AuditLogger::log('booking_cancelled', 'Booking', $booking->id);
 

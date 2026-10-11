@@ -88,7 +88,7 @@ function cardHref(key) {
               </td>
               <td class="px-5 py-4 text-slate-600">
                 <div>{{ ticket.guest_name || 'Guest not captured' }}</div>
-                <div class="mt-1">{{ ticket.room?.name || ticket.room?.room_number || 'No room linked' }}</div>
+                <div class="mt-1">{{ ticket.room?.name || ticket.room?.code || 'No room linked' }}</div>
               </td>
               <td class="px-5 py-4 text-slate-600">
                 {{ ticket.staff?.name || 'Unassigned' }}

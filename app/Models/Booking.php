@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Sync\Syncable;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -94,6 +95,23 @@ class Booking extends Model
     public function scopeUpcoming($query)
     {
         return $query->where($this->qualifyColumn('check_in'), '>', now());
+    }
+
+    /**
+     * A booking may be edited (extended, reassigned) while it has not been
+     * checked out or cancelled and its stay has not already ended.
+     */
+    public function isEditable(): bool
+    {
+        return ! in_array($this->status, ['checked_out', 'cancelled'], true)
+            && $this->check_out !== null
+            && $this->check_out->isFuture();
+    }
+
+    public function scopeEditable(Builder $query): Builder
+    {
+        return $query->whereNotIn($this->qualifyColumn('status'), ['checked_out', 'cancelled'])
+            ->whereDate($this->qualifyColumn('check_out'), '>', now()->toDateString());
     }
 
     public function rooms()

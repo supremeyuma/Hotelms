@@ -74,7 +74,7 @@ function photoUrl(path) {
                 </span>
               </div>
               <p class="text-sm text-slate-500">
-                {{ ticket.room?.name || ticket.room?.room_number || 'No room linked' }}
+                {{ ticket.room?.name || ticket.room?.code || 'No room linked' }}
                 <span v-if="ticket.guest_name"> • {{ ticket.guest_name }}</span>
                 <span v-if="ticket.issue_type"> • {{ ticket.issue_type }}</span>
               </p>

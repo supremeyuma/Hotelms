@@ -515,7 +515,7 @@ class ReportDashboardController extends Controller
             ->values();
 
         $recentCharges = Charge::query()
-            ->with(['booking:id,booking_code,guest_name,guest_email', 'room:id,name,room_number'])
+            ->with(['booking:id,booking_code,guest_name,guest_email', 'room:id,name,code'])
             ->latest('created_at')
             ->limit(12)
             ->get()
@@ -526,14 +526,14 @@ class ReportDashboardController extends Controller
                     'label' => $charge->description ?: 'Charge posted',
                     'booking_code' => $charge->booking?->booking_code,
                     'guest' => $charge->booking?->guest_name ?: $charge->booking?->guest_email ?: 'Guest',
-                    'room' => $charge->room?->name ?: $charge->room?->room_number ?: 'Unassigned room',
+                    'room' => $charge->room?->name ?: $charge->room?->code ?: 'Unassigned room',
                     'amount' => round((float) $charge->amount, 2),
                     'occurred_at' => optional($charge->created_at)?->toIso8601String(),
                 ];
             });
 
         $recentPayments = $this->successfulPaymentsQuery()
-            ->with(['booking:id,booking_code,guest_name,guest_email', 'room:id,name,room_number'])
+            ->with(['booking:id,booking_code,guest_name,guest_email', 'room:id,name,code'])
             ->latest(DB::raw('COALESCE(paid_at, created_at)'))
             ->limit(12)
             ->get()
@@ -544,7 +544,7 @@ class ReportDashboardController extends Controller
                     'label' => 'Payment received',
                     'booking_code' => $payment->booking?->booking_code,
                     'guest' => $payment->booking?->guest_name ?: $payment->booking?->guest_email ?: 'Guest',
-                    'room' => $payment->room?->name ?: $payment->room?->room_number ?: 'Unassigned room',
+                    'room' => $payment->room?->name ?: $payment->room?->code ?: 'Unassigned room',
                     'amount' => round((float) ($payment->amount_paid ?? $payment->amount ?? 0), 2),
                     'occurred_at' => optional($payment->paid_at ?? $payment->created_at)?->toIso8601String(),
                 ];
@@ -615,7 +615,7 @@ class ReportDashboardController extends Controller
         return trim(collect([
             $room->roomType?->title,
             $room->display_name,
-            $room->name ?: $room->room_number ?: $room->code,
+            $room->name ?: $room->code,
         ])->filter()->implode(' - '));
     }
 

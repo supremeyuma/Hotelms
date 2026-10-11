@@ -18,7 +18,6 @@ const form = useForm({
   property_id: props.room.property_id,
   room_type_id: props.room.room_type_id,
   name: props.room.name,
-  room_number: props.room.room_number ?? '',
   code: props.room.code ?? '',
   floor: props.room.floor ?? '',
   status: props.room.status,
@@ -120,12 +119,6 @@ function submit() {
             </label>
 
             <label class="space-y-2">
-              <span class="text-sm font-bold text-slate-700">Room number</span>
-              <input v-model="form.room_number" type="text" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100" />
-              <InputError :message="form.errors.room_number" />
-            </label>
-
-            <label class="space-y-2">
               <span class="text-sm font-bold text-slate-700">Internal code</span>
               <input v-model="form.code" type="text" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100" />
               <InputError :message="form.errors.code" />
@@ -224,7 +217,7 @@ function submit() {
             <h2 class="mt-3 text-2xl font-black tracking-tight">{{ form.name || room.name }}</h2>
             <p class="mt-2 text-sm text-slate-300">
               {{ selectedType?.title || 'Room type' }}
-              <span v-if="form.room_number">· Room {{ form.room_number }}</span>
+              <span v-if="form.code">· Room {{ form.code }}</span>
               <span v-if="form.floor !== '' && form.floor !== null">· Floor {{ form.floor }}</span>
             </p>
             <p class="mt-4 text-sm text-slate-300">If you set a new primary image here, it becomes the lead image for guest room selection.</p>

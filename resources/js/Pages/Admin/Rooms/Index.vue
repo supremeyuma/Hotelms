@@ -316,7 +316,7 @@ function invalidateQr(room) {
                   </p>
                   <h2 class="mt-2 text-2xl font-black tracking-tight text-slate-900">{{ room.name }}</h2>
                   <p class="mt-2 text-sm text-slate-500">
-                    Room {{ room.room_number || 'N/A' }}
+                    Room {{ room.code || 'N/A' }}
                     <span v-if="room.code">· {{ room.code }}</span>
                     <span v-if="room.floor !== null">· Floor {{ room.floor }}</span>
                   </p>

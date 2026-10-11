@@ -261,7 +261,7 @@ function roomLabel(roomId) {
               >
                 <div>
                   <p class="text-sm font-black text-slate-900">{{ room.room_label }}</p>
-                  <p class="mt-1 text-xs uppercase tracking-[0.18em] text-slate-400">Room reference #{{ room.room_number || room.id }}</p>
+                  <p class="mt-1 text-xs uppercase tracking-[0.18em] text-slate-400">Room reference #{{ room.code || room.id }}</p>
                 </div>
                 <div class="text-sm text-slate-600">
                   <p class="font-bold text-slate-900">Checked in</p>

@@ -21,7 +21,7 @@ class MaintenanceService
 
         $ticketData = [
             'room_id' => $room->id,
-            'title' => $this->makeTitle($type, $room->name ?? $room->room_number),
+            'title' => $this->makeTitle($type, $room->name ?? $room->code),
             'description' => $description,
             'status' => 'open',
             'meta' => [

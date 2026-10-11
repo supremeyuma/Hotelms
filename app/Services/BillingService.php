@@ -198,7 +198,7 @@ class BillingService
 
         return trim(collect([
             $room->roomType?->title,
-            $room->name ?: $room->room_number,
+            $room->name ?: $room->code,
         ])->filter()->implode(' - '));
     }
 

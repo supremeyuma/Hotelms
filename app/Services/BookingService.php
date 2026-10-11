@@ -658,9 +658,10 @@ class BookingService
             $booking->generateRoomAccessTokens();
 
             if ($booking->rooms()->count() === $booking->quantity) {
+                // Per-room check-in timestamps live on booking_rooms; the
+                // bookings table has no checked_in_at column.
                 $booking->update([
-                    'status'        => 'checked_in',
-                    'checked_in_at' => now(),
+                    'status' => 'checked_in',
                 ]);
             }
 
@@ -743,10 +744,11 @@ class BookingService
                     $r->update(['status' => 'dirty']);
                 }
 
-                // Mark booking checked out only when all rooms pass
+                // Mark booking checked out only when all rooms pass.
+                // Per-room check-out timestamps live on booking_rooms; the
+                // bookings table has no checked_out_at column.
                 $booking->update([
-                    'status'         => 'checked_out',
-                    'checked_out_at' => now(),
+                    'status' => 'checked_out',
                 ]);
             }
 

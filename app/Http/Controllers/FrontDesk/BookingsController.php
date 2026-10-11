@@ -99,7 +99,7 @@ class BookingsController extends Controller
                 return [
                     'id' => $room->id,
                     'name' => $room->name,
-                    'room_number' => $room->room_number,
+                    'code' => $room->code,
                     'room_type' => [
                         'id' => $room->roomType?->id,
                         'title' => $room->roomType?->title,
@@ -239,7 +239,7 @@ class BookingsController extends Controller
                 return [
                     'id' => $room->id,
                     'name' => $room->name,
-                    'room_number' => $room->room_number,
+                    'code' => $room->code,
                     'status' => $room->status,
                     'room_type' => [
                         'id' => $room->roomType?->id,
@@ -369,10 +369,10 @@ class BookingsController extends Controller
                     return [
                         'id' => $room->id,
                         'name' => $room->name,
-                        'room_number' => $room->room_number,
+                        'code' => $room->code,
                         'room_label' => trim(collect([
                             $room->roomType?->title,
-                            $room->name ?: $room->room_number,
+                            $room->name ?: $room->code,
                         ])->filter()->implode(' - ')),
                         'pivot' => [
                             'checked_in_at' => optional($room->pivot->checked_in_at)?->toIso8601String(),
@@ -397,7 +397,7 @@ class BookingsController extends Controller
                         'id' => $room->id,
                         'label' => trim(collect([
                             $room->roomType?->title,
-                            $room->name ?: $room->room_number,
+                            $room->name ?: $room->code,
                         ])->filter()->implode(' - ')),
                     ];
                 })->values(),
@@ -483,7 +483,7 @@ class BookingsController extends Controller
                     'id' => $room->id,
                     'label' => trim(collect([
                         $room->roomType?->title,
-                        $room->name ?: $room->room_number,
+                        $room->name ?: $room->code,
                     ])->filter()->implode(' - ')),
                 ];
             })->values()->all(),

@@ -19,7 +19,7 @@ class FeedbackController extends Controller
         $anonymousOnly = $request->boolean('anonymous');
 
         $query = Feedback::query()
-            ->with(['submitter:id,name,email', 'reviewer:id,name', 'booking:id,booking_code,guest_name', 'room:id,name,display_name,room_number'])
+            ->with(['submitter:id,name,email', 'reviewer:id,name', 'booking:id,booking_code,guest_name', 'room:id,name,display_name,code'])
             ->latest();
 
         if ($status !== '') {
@@ -68,7 +68,7 @@ class FeedbackController extends Controller
                     ] : null,
                     'room' => $feedback->room ? [
                         'id' => $feedback->room->id,
-                        'name' => $feedback->room->display_name ?: $feedback->room->name ?: $feedback->room->room_number,
+                        'name' => $feedback->room->display_name ?: $feedback->room->name ?: $feedback->room->code,
                     ] : null,
                     'internal_notes' => $feedback->internal_notes,
                     'reviewed_at' => $feedback->reviewed_at?->toDateTimeString(),

@@ -43,7 +43,7 @@ function submit() {
             </div>
             <div>
               <dt class="font-medium text-slate-900">Room</dt>
-              <dd class="mt-1">{{ ticket.room?.name || ticket.room?.room_number || 'No room linked' }}</dd>
+              <dd class="mt-1">{{ ticket.room?.name || ticket.room?.code || 'No room linked' }}</dd>
             </div>
             <div>
               <dt class="font-medium text-slate-900">Issue Type</dt>

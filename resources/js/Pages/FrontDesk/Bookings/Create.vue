@@ -152,7 +152,7 @@ function submit() {
                   <div class="flex items-start justify-between gap-3">
                     <div>
                       <p class="text-sm font-black text-slate-900">{{ room.room_type?.title }}</p>
-                      <p class="mt-1 text-sm font-medium text-slate-600">{{ room.name || room.room_number }}</p>
+                      <p class="mt-1 text-sm font-medium text-slate-600">{{ room.name || room.code }}</p>
                       <p class="mt-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
                         Rate: NGN {{ Number(room.room_type?.base_price || 0).toLocaleString() }} / night
                       </p>
@@ -323,7 +323,7 @@ function submit() {
                     {{ selectedRooms.length ? `${selectedRooms.length} ${selectedRoomTypeName || 'room'} selected` : 'Select room(s)' }}
                   </p>
                   <p class="mt-1 text-xs text-slate-300">
-                    <span v-if="selectedRooms.length">{{ selectedRooms.map((room) => room.name || room.room_number).join(', ') }}</span>
+                    <span v-if="selectedRooms.length">{{ selectedRooms.map((room) => room.name || room.code).join(', ') }}</span>
                     <span v-else>Select one or more rooms to continue</span>
                   </p>
                   <p class="mt-2 text-xs text-slate-300">

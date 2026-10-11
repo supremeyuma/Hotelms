@@ -58,13 +58,13 @@ class BookingAdminController extends Controller
                         })
                         ->orWhereHas('rooms', function ($roomQuery) use ($search) {
                             $roomQuery->where('name', 'like', "%{$search}%")
-                                ->orWhere('room_number', 'like', "%{$search}%")
+                                ->orWhere('code', 'like', "%{$search}%")
                                 ->orWhere('display_name', 'like', "%{$search}%")
                                 ->orWhere('code', 'like', "%{$search}%");
                         })
                         ->orWhereHas('room', function ($roomQuery) use ($search) {
                             $roomQuery->where('name', 'like', "%{$search}%")
-                                ->orWhere('room_number', 'like', "%{$search}%")
+                                ->orWhere('code', 'like', "%{$search}%")
                                 ->orWhere('display_name', 'like', "%{$search}%")
                                 ->orWhere('code', 'like', "%{$search}%");
                         });
@@ -103,7 +103,7 @@ class BookingAdminController extends Controller
 
                         return trim(collect([
                             $roomTypeTitle,
-                            $room->name ?: $room->room_number,
+                            $room->name ?: $room->code,
                         ])->filter()->implode(' - '));
                     })
                     ->filter()
@@ -112,7 +112,7 @@ class BookingAdminController extends Controller
                 $primaryRoomLabel = $assignedRooms->first()
                     ?: trim(collect([
                         $booking->roomType?->title ?: $booking->room?->roomType?->title,
-                        $booking->room?->name ?: $booking->room?->room_number,
+                        $booking->room?->name ?: $booking->room?->code,
                     ])->filter()->implode(' - '))
                     ?: 'Unassigned';
 
@@ -197,7 +197,7 @@ class BookingAdminController extends Controller
                 return [
                     'id' => $room->id,
                     'name' => $room->name,
-                    'room_number' => $room->room_number,
+                    'room_number' => $room->code,
                     'status' => $room->status,
                     'room_type' => [
                         'title' => $room->roomType?->title,
@@ -456,13 +456,13 @@ class BookingAdminController extends Controller
             'special_requests' => $booking->special_requests,
             'room_label' => trim(collect([
                 $booking->roomType?->title ?: $booking->room?->roomType?->title,
-                $booking->room?->name ?: $booking->room?->room_number,
+                $booking->room?->name ?: $booking->room?->code,
             ])->filter()->implode(' - ')) ?: 'Unassigned',
             'assigned_rooms' => $booking->rooms
                 ->map(function (Room $room) {
                     return trim(collect([
                         $room->roomType?->title,
-                        $room->name ?: $room->room_number,
+                        $room->name ?: $room->code,
                     ])->filter()->implode(' - '));
                 })
                 ->filter()
@@ -474,7 +474,7 @@ class BookingAdminController extends Controller
                         'id' => $room->id,
                         'label' => trim(collect([
                             $room->roomType?->title,
-                            $room->name ?: $room->room_number,
+                            $room->name ?: $room->code,
                         ])->filter()->implode(' - ')),
                     ];
                 })

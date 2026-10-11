@@ -142,7 +142,7 @@ class MaintenanceAdminController extends Controller
             'room' => $ticket->room ? [
                 'id' => $ticket->room->id,
                 'name' => $ticket->room->name,
-                'room_number' => $ticket->room->room_number,
+                'room_number' => $ticket->room->code,
             ] : null,
             'staff' => $ticket->staff ? [
                 'id' => $ticket->staff->id,

@@ -69,6 +69,7 @@ Route::prefix('booking')->name('booking.')->group(function () {
     Route::get('/confirmation/{booking}', [BookingController::class, 'confirmation'])->name('confirmation');
     Route::get('/pre-check-in/{booking}', [BookingController::class, 'preCheckIn'])->middleware('signed')->name('precheck.show');
     Route::post('/pre-check-in/{booking}', [BookingController::class, 'submitPreCheckIn'])->middleware('signed')->name('precheck.submit');
+    Route::delete('/{booking}', [BookingController::class, 'cancelBooking'])->middleware('signed')->name('cancel');
 });
 
 // Public menu routes - Online ordering (prepaid)

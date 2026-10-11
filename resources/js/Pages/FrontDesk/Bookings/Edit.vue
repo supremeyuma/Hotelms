@@ -31,7 +31,7 @@ const roomOptions = computed(() => {
   const current = (props.booking.assigned_room_options ?? []).map((room) => ({
     id: room.id,
     name: room.label,
-    room_number: room.label,
+    code: room.label,
     status: 'currently_assigned',
     room_type: {
       id: props.booking.room_type_id ?? null,
@@ -42,7 +42,7 @@ const roomOptions = computed(() => {
 
   const available = props.rooms.map((room) => ({
     ...room,
-    room_number: room.room_number ?? room.name,
+    code: room.code ?? room.name,
   }))
 
   return [...current, ...available].filter(
@@ -177,7 +177,7 @@ function formatPreCheckInDate(value) {
                   <div class="flex items-start justify-between gap-3">
                     <div>
                       <p class="text-sm font-black text-slate-900">{{ room.room_type?.title || 'Room' }}</p>
-                      <p class="mt-1 text-sm font-medium text-slate-600">{{ room.name || room.room_number }}</p>
+                      <p class="mt-1 text-sm font-medium text-slate-600">{{ room.name || room.code }}</p>
                       <p class="mt-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
                         <span v-if="room.status === 'currently_assigned'">Currently assigned</span>
                         <span v-else>{{ String(room.status || 'available').replaceAll('_', ' ') }}</span>
@@ -371,7 +371,7 @@ function formatPreCheckInDate(value) {
                     {{ selectedRooms.length ? `${selectedRooms.length} ${selectedRoomTypeName || 'room'} selected` : 'Select room(s)' }}
                   </p>
                   <p class="mt-1 text-xs text-slate-300">
-                    <span v-if="selectedRooms.length">{{ selectedRooms.map((room) => room.name || room.room_number).join(', ') }}</span>
+                    <span v-if="selectedRooms.length">{{ selectedRooms.map((room) => room.name || room.code).join(', ') }}</span>
                     <span v-else>Select one or more rooms to continue</span>
                   </p>
                   <p class="mt-2 text-xs text-slate-300">

@@ -14,7 +14,6 @@ const form = useForm({
   property_id: props.properties?.[0]?.id ?? '',
   room_type_id: props.types?.[0]?.id ?? '',
   name: '',
-  room_number: '',
   code: '',
   floor: '',
   status: 'available',
@@ -104,12 +103,6 @@ function submit() {
             </label>
 
             <label class="space-y-2">
-              <span class="text-sm font-bold text-slate-700">Room number</span>
-              <input v-model="form.room_number" type="text" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100" placeholder="201" />
-              <InputError :message="form.errors.room_number" />
-            </label>
-
-            <label class="space-y-2">
               <span class="text-sm font-bold text-slate-700">Internal code</span>
               <input v-model="form.code" type="text" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100" placeholder="AMB201" />
               <InputError :message="form.errors.code" />
@@ -185,7 +178,7 @@ function submit() {
             <h2 class="mt-3 text-2xl font-black tracking-tight">{{ form.name || 'Untitled room' }}</h2>
             <p class="mt-2 text-sm text-slate-300">
               {{ selectedType?.title || 'Room type pending' }}
-              <span v-if="form.room_number">· Room {{ form.room_number }}</span>
+              <span v-if="form.code">· Room {{ form.code }}</span>
               <span v-if="form.floor !== ''">· Floor {{ form.floor }}</span>
             </p>
             <p class="mt-4 text-sm text-slate-300">

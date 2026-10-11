@@ -24,7 +24,8 @@ class RoomsSeeder extends Seeder
             $rooms[] = [
                 'property_id' => $property->id,
                 'room_type_id' => $type->id,
-                'room_number' => (string)$n,
+                'name' => (string)$n,
+                'code' => 'R'.$n,
                 'status' => 'available',
                 'meta' => json_encode(['floor' => intval(floor(($n - 100) / 10) + 1)]),
                 'created_at' => $now,
