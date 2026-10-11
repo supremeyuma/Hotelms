@@ -33,7 +33,6 @@ function confirmVoid() {
   if (!reason) { voiding.value = false; return }
   router.post(route('club.pos.dockets.void', { docket: props.docket.id }), {
     reason,
-    _method: 'PUT',
   }, {
     onFinish: () => { voiding.value = false },
   })

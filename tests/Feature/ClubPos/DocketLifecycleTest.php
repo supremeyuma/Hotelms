@@ -121,6 +121,43 @@ class DocketLifecycleTest extends TestCase
             ->assertStatus(422);
     }
 
+    public function test_inertia_docket_actions_return_a_redirect_not_json(): void
+    {
+        $this->actingAs($this->staff)
+            ->post(route('club.pos.dockets.store'), ['session_id' => $this->session->id], ['X-Inertia' => 'true'])
+            ->assertStatus(302);
+
+        $docketId = $this->openDocket();
+
+        $this->actingAs($this->staff)
+            ->post(route('club.pos.dockets.items.store', $docketId), [
+                'menu_item_id' => $this->item->id,
+                'quantity' => 1,
+            ], ['X-Inertia' => 'true'])
+            ->assertStatus(302);
+    }
+
+    public function test_a_docket_item_cannot_be_removed_from_a_different_docket(): void
+    {
+        $otherDocketId = $this->openDocket();
+
+        $this->actingAs($this->staff)->postJson(
+            route('club.pos.dockets.items.store', $otherDocketId),
+            ['menu_item_id' => $this->item->id, 'quantity' => 1],
+        )->assertOk();
+
+        $otherItemId = PosDocket::find($otherDocketId)->items()->first()->id;
+
+        $targetDocketId = $this->openDocket();
+
+        $this->actingAs($this->staff)
+            ->deleteJson(route('club.pos.dockets.items.destroy', [
+                'docket' => $targetDocketId,
+                'item' => $otherItemId,
+            ]))
+            ->assertNotFound();
+    }
+
     private function openDocket(): string
     {
         return $this->actingAs($this->staff)

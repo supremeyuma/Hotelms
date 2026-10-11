@@ -9,7 +9,6 @@ use App\Models\MenuItem;
 use App\Models\PosSession;
 use App\Services\ClubPosService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cookie;
 
 class DocketController extends Controller
 {
@@ -32,11 +31,9 @@ class DocketController extends Controller
             $session = PosSession::findOrFail($validated["session_id"]);
         } else {
             $identity = $request->cookie(config('pos.devices.identity_cookie'));
-            $device = $this->clubPos->resolveDevice($identity);
-
-            if (config('pos.devices.auto_register') && $identity !== $device->device_code) {
-                Cookie::queue(cookie()->forever(config('pos.devices.identity_cookie'), $device->device_code));
-            }
+            $device = (config('pos.devices.auto_register') && $identity)
+                ? $this->clubPos->resolveDevice($identity)
+                : $this->clubPos->defaultDevice();
 
             $session = $this->clubPos->getOrCreateSession($device, $request->user());
         }
@@ -50,7 +47,7 @@ class DocketController extends Controller
             $validated["room_id"] ?? null,
         );
 
-        return response()->json($docket->load("items", "payments", "staff"), 201);
+        return $this->respond($request, $docket->load("items", "payments", "staff"), 201);
     }
 
     public function show(PosDocket $docket)
@@ -72,21 +69,23 @@ class DocketController extends Controller
         try {
             $docket = $this->clubPos->addItem($docket, $menuItem, (int) $validated["quantity"], $request->user());
         } catch (\RuntimeException $e) {
-            return response()->json(["error" => $e->getMessage()], 422);
+            return $this->respondError($request, $e->getMessage());
         }
 
-        return response()->json($docket->load("items", "payments"));
+        return $this->respond($request, $docket->load("items", "payments"));
     }
 
     public function removeItem(Request $request, PosDocket $docket, PosDocketItem $item)
     {
+        abort_unless($item->docket_id === $docket->id, 404);
+
         try {
             $docket = $this->clubPos->removeItem($docket, $item, $request->user());
         } catch (\RuntimeException $e) {
-            return response()->json(["error" => $e->getMessage()], 422);
+            return $this->respondError($request, $e->getMessage());
         }
 
-        return response()->json($docket->load("items", "payments"));
+        return $this->respond($request, $docket->load("items", "payments"));
     }
 
     public function pay(Request $request, PosDocket $docket)
@@ -103,10 +102,10 @@ class DocketController extends Controller
         try {
             $docket = $this->clubPos->closeDocket($docket, $validated["payments"], $request->user());
         } catch (\RuntimeException $e) {
-            return response()->json(["error" => $e->getMessage()], 422);
+            return $this->respondError($request, $e->getMessage());
         }
 
-        return response()->json($docket->load("items", "payments"));
+        return $this->respond($request, $docket->load("items", "payments"));
     }
 
     public function void(Request $request, PosDocket $docket)
@@ -118,9 +117,27 @@ class DocketController extends Controller
         try {
             $docket = $this->clubPos->voidDocket($docket, $validated["reason"], $request->user());
         } catch (\RuntimeException $e) {
-            return response()->json(["error" => $e->getMessage()], 422);
+            return $this->respondError($request, $e->getMessage());
         }
 
-        return response()->json($docket->load("items", "payments"));
+        return $this->respond($request, $docket->load("items", "payments"));
+    }
+
+    private function respond(Request $request, $payload, int $status = 200)
+    {
+        if ($request->header('X-Inertia')) {
+            return redirect()->back();
+        }
+
+        return response()->json($payload, $status);
+    }
+
+    private function respondError(Request $request, string $message)
+    {
+        if ($request->header('X-Inertia')) {
+            return redirect()->back()->withErrors(['docket' => $message]);
+        }
+
+        return response()->json(['error' => $message], 422);
     }
 }
