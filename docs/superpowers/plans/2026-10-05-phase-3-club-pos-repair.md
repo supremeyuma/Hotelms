@@ -721,7 +721,9 @@ php artisan migrate:fresh --force
 php artisan test
 ```
 
-Expected: zero failures, zero skips.
+Expected: zero failures, zero skips. **Result (2026-10-11):** 251 passed,
+1542 assertions, 0 failures, 0 skips. G58 (the `TwoNodeConvergenceTest` timing
+flake) did not recur this run.
 
 - [x] **Step 3: Confirm the §2.3 table is fully closed**
 
