@@ -100,7 +100,7 @@ class Booking extends Model
     {
         return $this->belongsToMany(Room::class, 'booking_rooms')
         ->using(BookingRoom::class)
-        ->withPivot('checked_in_at', 'checked_out_at', 'rate_override', 'booking_rooms.status')
+        ->withPivot('checked_in_at', 'checked_out_at', 'rate_override', 'status')
         ->withTimestamps();
     }
     public function roomType()

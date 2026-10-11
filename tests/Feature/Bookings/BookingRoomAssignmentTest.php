@@ -90,12 +90,18 @@ class BookingRoomAssignmentTest extends TestCase
 
         $pivot = $booking->refresh()->rooms()->first()->pivot;
 
-        $this->assertDatabaseHas('booking_rooms', [
-            'booking_id' => $booking->id,
-            'room_id'    => $roomA->id,
-            'status'     => 'active',
-        ]);
+        $this->assertSame('active', $pivot->status);
         $this->assertNotNull($pivot->checked_in_at);
+    }
+
+    public function test_pivot_status_is_readable_through_the_rooms_relation(): void
+    {
+        [$property, $roomType, $room] = $this->roomFixture('Alpha 101');
+
+        $booking = $this->bookingFixture($property, $roomType, $room);
+        $booking->rooms()->updateExistingPivot($room->id, ['status' => 'active']);
+
+        $this->assertSame('active', $booking->refresh()->rooms->first()->pivot->status);
     }
 
     protected function roomFixture(string $name, ?Property $property = null, ?RoomType $roomType = null): array
