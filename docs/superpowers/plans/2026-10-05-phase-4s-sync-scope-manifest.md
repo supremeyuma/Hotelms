@@ -61,14 +61,14 @@ Start from what the terminal actually does, not from the table list.
 - Consumes: `ClubPosService`, `InventoryService`, `DrinkStockService`, POS controllers.
 - Produces: the verified closure, before any code is written.
 
-- [ ] **Step 1: Identify the entry points**
+- [x] **Step 1: Identify the entry points**
 
 ```powershell
 rg -n "use App\\Models" app/Services/ClubPosService.php app/Services/InventoryService.php app/Services/DrinkStockService.php
 rg -n "use App\\Models" app/Http/Controllers/ClubPos/
 ```
 
-- [ ] **Step 2: Walk relationships transitively**
+- [x] **Step 2: Walk relationships transitively**
 
 For each entry model, follow `belongsTo`, `hasMany`, `hasOne`, `belongsToMany`
 until the closure stops growing. Record table names, not class names.
@@ -96,7 +96,7 @@ Two findings to verify: the spec says "folio/ledger tables" but the ledger is
 `charges` plus `journal_entries`/`journal_lines`; and it says "permission tables"
 but there is no `permissions` table — `roles` is the entire authorization model.
 
-- [ ] **Step 3: Check what each table actually reads**
+- [x] **Step 3: Check what each table actually reads**
 
 A table in the closure that is only ever read for a label does not need sync — a
 terminal can cache static reference data at install time. But `settings`, `menu_items`
@@ -107,7 +107,7 @@ The read-only set is a correctness requirement, not documentation — see the
 manifest sample for why an ungated terminal can overwrite cloud configuration
 with a stale clock and no conflict record.
 
-- [ ] **Step 4: Verify `room_charge` specifically**
+- [x] **Step 4: Verify `room_charge` specifically**
 
 Spec §7 names this as the reason bookings must sync. Confirm the exact tables the
 path touches:
@@ -134,7 +134,7 @@ Commit: `docs: document the real terminal sync closure before implementing it`
   - Phase 4R consumes `tables` when building a scope-filtered push query.
   - The tripwire consumes `tables`.
 
-- [ ] **Step 1: Write the manifest**
+- [x] **Step 1: Write the manifest**
 
 ```php
 <?php
@@ -264,7 +264,7 @@ return [
 ];
 ```
 
-- [ ] **Step 2: Cross-check against the Phase 2R policy catalogue**
+- [x] **Step 2: Cross-check against the Phase 2R policy catalogue**
 
 Every table in the manifest must have a policy in `SyncScope::CATALOGUE`, and the
 policy must agree. `charges` is the one addition Phase 2R did not cover — add it
@@ -275,7 +275,7 @@ already shipped.
 rg -n "'charges'" app/Sync/SyncScope.php config/sync_scope.php
 ```
 
-- [ ] **Step 3: Verify the manifest agrees with the catalogue**
+- [x] **Step 3: Verify the manifest agrees with the catalogue**
 
 ```php
 public function test_every_manifest_table_has_a_matching_policy(): void
@@ -322,7 +322,7 @@ A hand-written manifest drifts from the code. Walk the real graph.
 - Consumes: `config('sync_scope.tables')`, Eloquent relationships.
 - Produces: `SyncScopeResolver::resolve(string $entryPoint): array` returning the transitive table set.
 
-- [ ] **Step 1: Write the graph walker**
+- [x] **Step 1: Write the graph walker**
 
 ```php
 <?php
@@ -420,7 +420,7 @@ class SyncScopeResolver
 }
 ```
 
-- [ ] **Step 2: Choose the entry points and depth**
+- [x] **Step 2: Choose the entry points and depth**
 
 Depth 3 from `PosDocket`, `Booking` and `InventoryItem` is enough to reach
 everything POS touches. Confirm by printing the closure and checking it against
@@ -434,7 +434,7 @@ foreach ([PosDocket::class, Booking::class, InventoryItem::class, MenuItem::clas
 }
 ```
 
-- [ ] **Step 3: Reconcile the closure against the manifest**
+- [x] **Step 3: Reconcile the closure against the manifest**
 
 Anything the closure reaches that the manifest omits is a gap. Decide per table:
 add it, or record why it is deliberately excluded.
@@ -457,7 +457,7 @@ This is the deliverable spec §7 asks for.
 - Consumes: Task 2's manifest, Task 3's resolver.
 - Produces: a failing test whenever code reaches outside the manifest.
 
-- [ ] **Step 1: Write the tripwire**
+- [x] **Step 1: Write the tripwire**
 
 ```php
 <?php
@@ -512,7 +512,7 @@ class SyncScopeTripwireTest extends TestCase
 }
 ```
 
-- [ ] **Step 2: Verify it fails when a dependency is added**
+- [x] **Step 2: Verify it fails when a dependency is added**
 
 A tripwire that has never failed is not a guard. Add a relationship temporarily
 and confirm the test fails.
@@ -527,7 +527,7 @@ public function images()
 
 Expected: the test fails naming the table. Remove it and confirm green.
 
-- [ ] **Step 3: Verify the manifest has no dead entries**
+- [x] **Step 3: Verify the manifest has no dead entries**
 
 The inverse check: a table in the manifest that nothing reaches is bandwidth
 wasted on every sync.
@@ -559,7 +559,7 @@ public function test_the_manifest_lists_no_unreachable_tables(): void
 non-relationship path. Either widen the resolver's entry points or move them to
 an explicit `always_sync` list rather than leaving a false failure.
 
-- [ ] **Step 4: Run**
+- [x] **Step 4: Run**
 
 ```powershell
 php artisan test --filter=SyncScope
@@ -574,7 +574,7 @@ Commit: `test: add a tripwire for the terminal sync scope manifest`
 **Files:**
 - Create: `docs/SYNC_SCOPE.md`
 
-- [ ] **Step 1: Write the document**
+- [x] **Step 1: Write the document**
 
 Cover: what a terminal syncs and why, what it does not and why, the policy class
 per table, which side is authoritative, and how to add a table (update the
@@ -583,7 +583,7 @@ manifest, the catalogue, and this document in one commit).
 State plainly that reporting projections are excluded deliberately, and why:
 importing them would import projection drift.
 
-- [ ] **Step 2: Link it from the spec**
+- [x] **Step 2: Link it from the spec**
 
 Add a reference from spec §7 to this document so the two do not drift apart.
 
@@ -598,5 +598,32 @@ Commit: `docs: document the terminal synchronization scope`
 - The tripwire fails on an added dependency and has been proven to do so.
 - The inverse check passes, so the manifest has no dead entries.
 - `docs/SYNC_SCOPE.md` matches the manifest.
+
+## Execution notes (2026-10-11)
+
+Deviations from the samples above, all deliberate:
+
+- **`SyncScopeResolver` uses source inspection, not `Model::getRelationships()`.**
+  Eloquent has no such method, and invoking every public no-argument method
+  would run mutating accessors such as `Booking::generateRoomAccessTokens()`.
+  A method is treated as a relationship only when its own body constructs a
+  relation off `$this`/`$model`.
+- **Read-only `images`, not `gallery_media`.** The closure reaches `images` and
+  `menu_item_images`; the exclusion table records both.
+- **The "prove it fails" example.** `PosDocket::hasMany(Image::class)` would
+  **not** fail, because `images` is already excluded. The proof adds
+  `PosDocket::hasMany(GuestRequest::class)` instead, which is reported as
+  `guest_requests (from PosDocket)`.
+- **`roles` is Class 5 (`push_down`), not `lww`** as in the sample; spec §6
+  Class 5 wins. The test map therefore includes `push_down => MergePolicy`.
+- **`pos_devices` added** — reached via `pos_sessions`.
+- **`always_sync` introduced** for in-scope tables the resolver cannot reach by
+  relation (`pos_print_logs`, `drink_stock`, `drink_stock_movements`,
+  `menu_inventory_recipes`, `staff_profiles`, `roles`, `settings`,
+  `booking_rooms`), so the inverse check stays honest.
+- **Split into two test files** as the File Structure lists:
+  `SyncScopeTripwireTest` (forward guard + proof) and `SyncScopeManifestTest`
+  (agreement + inverse). The manifest-agreement checks in Task 2 Step 3 live in
+  `SyncScopeManifestTest`.
 
 Next: [Phase 4R — sync node runtime and transport](2026-10-05-phase-4r-sync-node-runtime-and-transport.md).

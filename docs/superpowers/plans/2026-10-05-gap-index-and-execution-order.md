@@ -59,7 +59,7 @@ closes it.
 | G23 | No Class 3 drink-stock rebuild (§6.2 names both ledgers) | High | Phase 4R |
 | G24 | `inventory:rebuild` uses double-quoted string literals inside `DB::raw` SQL | Medium | Phase 4R |
 | G25 | No multi-process convergence proof | High | Phase 4R |
-| G26 | No sync scope manifest and no tripwire test (§7) | High | [Phase 4S](2026-10-05-phase-4s-sync-scope-manifest.md) |
+| G26 | ~~No sync scope manifest and no tripwire test (§7)~~ **Resolved 2026-10-11** — `config/sync_scope.php` declares the verified terminal closure (policy label, read-only, `always_sync`, and every exclusion with a reason); `SyncScopeResolver` walks the real model graph (source-inspection, not `getRelationships()`); `SyncScopeTripwireTest` fails naming the table and source entry point when code reaches outside the manifest, and `SyncScopeManifestTest` keeps it minimal and agreed with the catalogue; `docs/SYNC_SCOPE.md` documents it. Guard proven to fail, then green. | High | [Phase 4S](2026-10-05-phase-4s-sync-scope-manifest.md) **closed** |
 | G27 | `resources/js/ziggy.js` bakes `http://localhost` (§9.4 prerequisite). **Refuted/Resolved:** Ziggy v2.6.0 builds the manifest per requesting host (`url('/')` in `new Ziggy`); a live non-local probe (`Host` header) rendered host-correct, and nothing imports the generated file. Dead output deleted; guard test #4 asserts no built asset bakes an origin. | Blocker | [Ziggy](2026-10-05-ziggy-runtime-route-manifest.md) **closed** |
 | G51 | Three routes have an empty name (`admin.reports.`, `frontdesk.`, `staff.`) — actually **21** after collapsing duplicates — so they are unreachable by `route()` name and risk future collisions. **Resolved:** all named across `routes/admin.php` and `routes/staff.php`; no callers broke; guard test #3 fails on any empty leaf. | Medium | [Ziggy](2026-10-05-ziggy-runtime-route-manifest.md) Task 4 Step 6 **closed** |
 | G52 | `resources/js/ziggy.js` is tracked in git but imported by nothing; `@routes` in `app.blade.php` is the actual runtime source. Anyone editing the file fixes nothing. **Resolved:** deleted and gitignored. | Medium | [Ziggy](2026-10-05-ziggy-runtime-route-manifest.md) **closed** |
@@ -174,7 +174,7 @@ Ziggy      runtime route manifest                (G27, G51, G52) - done 2026-10-
     |
 Phase 3    Club POS repair                       (G28, G29, G44, G61) - done 2026-10-11
     |
-Phase 4S   sync scope manifest + tripwire        (G26)
+Phase 4S   sync scope manifest + tripwire        (G26) - done 2026-10-11
     |
 Phase 4R   sync node runtime + transport         (G20-G25)
     |
