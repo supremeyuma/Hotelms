@@ -25,18 +25,21 @@ class ClubPosService
 
     public function resolveDevice(?string $identity = null): PosDevice
     {
-        if (!config('pos.devices.auto_register', true)) {
-            return $this->defaultDevice();
+        if ($identity) {
+            return PosDevice::firstOrCreate(
+                ['device_code' => $identity],
+                $this->newDeviceAttributes()
+            );
         }
 
+        return $this->defaultDevice();
+    }
+
+    public function registerDevice(): PosDevice
+    {
         return PosDevice::firstOrCreate(
-            ['device_code' => $identity ?? 'POS-' . strtoupper(Str::random(8))],
-            [
-                'device_name' => 'Web POS',
-                'device_type' => 'club_terminal',
-                'is_active' => true,
-                'metadata' => ['registered_via' => 'pos_access'],
-            ]
+            ['device_code' => 'POS-' . strtoupper(Str::random(8))],
+            $this->newDeviceAttributes()
         );
     }
 
@@ -53,6 +56,16 @@ class ClubPosService
                 'metadata' => ['registered_via' => 'seeder'],
             ]
         );
+    }
+
+    private function newDeviceAttributes(): array
+    {
+        return [
+            'device_name' => 'Web POS',
+            'device_type' => 'club_terminal',
+            'is_active' => true,
+            'metadata' => ['registered_via' => 'pos_access'],
+        ];
     }
 
     public function getOrCreateSession(PosDevice $device, User $user): PosSession

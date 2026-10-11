@@ -22,11 +22,16 @@ class DashboardController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        $identity = $request->cookie(config('pos.devices.identity_cookie'));
-        $device = $this->clubPos->resolveDevice($identity);
+        $cookieName = config('pos.devices.identity_cookie');
+        $identity = $request->cookie($cookieName);
 
-        if (config('pos.devices.auto_register') && $identity !== $device->device_code) {
-            Cookie::queue(cookie()->forever(config('pos.devices.identity_cookie'), $device->device_code));
+        if (!config('pos.devices.auto_register')) {
+            $device = $this->clubPos->defaultDevice();
+        } elseif ($identity) {
+            $device = $this->clubPos->resolveDevice($identity);
+        } else {
+            $device = $this->clubPos->registerDevice();
+            Cookie::queue(cookie()->forever($cookieName, $device->device_code));
         }
 
         $currentSession = PosSession::where("device_id", $device->id)
@@ -59,10 +64,21 @@ class DashboardController extends Controller
                 ->with("category")
                 ->orderBy("name")
                 ->get(),
-            "drinkStock" => DrinkStock::with("menuItem")
-                ->orderBy("quantity")
-                ->get(),
+            "lowStockCount" => $this->lowStockCount(),
         ]);
+    }
+
+    private function lowStockCount(): int
+    {
+        $barItemIds = MenuItem::where("service_area", "bar")
+            ->where("is_available", true)
+            ->pluck("id");
+
+        $healthyStock = DrinkStock::whereIn("menu_item_id", $barItemIds)
+            ->whereColumn("full_bottles", ">", "low_stock_threshold")
+            ->count();
+
+        return $barItemIds->count() - $healthyStock;
     }
 
     public function posData()
