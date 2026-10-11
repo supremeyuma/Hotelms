@@ -3,6 +3,12 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 >
 > **Prerequisites:** [Phase 4R](2026-10-05-phase-4r-sync-node-runtime-and-transport.md) complete.
+>
+> **Status:** COMPLETE 2026-10-11. Tasks 1–7 executed and committed; full suite
+> 329 passed (1894 assertions). Follow-ups: the local MySQL app database still
+> needs `php artisan migrate` (33 pending sync migrations from phases 2R–4R);
+> guest self-cancel via the signed link is enabled, but a guest-facing cancel
+> page/email link is not built yet.
 
 **Goal:** Make one component decide which node owns a booking, and make every booking write path obey that decision.
 
@@ -1252,10 +1258,22 @@ Commit: `feat: communicate the arrival cutoff to front desk staff`
 
 ## Task 7: Prove authority end to end
 
+> **Status:** COMPLETE 2026-10-11. Three cross-node tests added to
+> `BookingAuthorityTest` (13 tests, 31 assertions): a lan_server booking is not
+> contested by the cloud, the cloud refuses inside the window, and beyond the
+> window the online path is authoritative. `php artisan test --filter=Booking`
+> = 73 passed; full suite = 329 passed (1894 assertions).
+> **Deviation (Step 3):** `php artisan migrate:fresh --force` was **not** run
+> against the local MySQL app database, which is `APP_ENV=production` and holds
+> 33 pending migrations — that command would wipe it. A fresh schema-from-zero
+> migration was instead proven on a throwaway SQLite file (`migrate:fresh
+> --force`, exit 0), and the suite rebuilds the schema fresh in-memory each run.
+> The local MySQL database still needs `php artisan migrate` before the app runs.
+
 **Files:**
 - Modify: `tests/Feature/Bookings/BookingAuthorityTest.php`
 
-- [ ] **Step 1: Write the cross-node test**
+- [x] **Step 1: Write the cross-node test**
 
 Two nodes, one authority decision, no conflict:
 
@@ -1289,7 +1307,7 @@ public function test_beyond_the_window_the_online_path_is_authoritative(): void
 }
 ```
 
-- [ ] **Step 2: Verify existing booking tests still pass**
+- [x] **Step 2: Verify existing booking tests still pass**
 
 ```powershell
 php artisan test --filter=Booking
@@ -1300,7 +1318,7 @@ All of `tests/Feature/Bookings/`, `tests/Feature/FrontDesk/`,
 change in Task 1 is the highest-risk edit in this phase; these tests are the
 safety net.
 
-- [ ] **Step 3: Verify the suite**
+- [x] **Step 3: Verify the suite**
 
 ```powershell
 php artisan migrate:fresh --force

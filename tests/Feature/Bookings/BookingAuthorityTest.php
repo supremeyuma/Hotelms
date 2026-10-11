@@ -4,6 +4,10 @@ namespace Tests\Feature\Bookings;
 
 use App\Exceptions\ArrivalInsideLocalWindow;
 use App\Exceptions\ArrivalOutsideLocalWindow;
+use App\Models\Booking;
+use App\Models\Property;
+use App\Models\Room;
+use App\Models\RoomType;
 use App\Models\Setting;
 use App\Services\Booking\BookingAuthority;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -126,5 +130,93 @@ class BookingAuthorityTest extends TestCase
         app(BookingAuthority::class)->assertOnlineBookable(now());
 
         $this->assertTrue(true);
+    }
+
+    public function test_a_booking_created_on_the_lan_server_is_not_contested_by_the_cloud(): void
+    {
+        config(['sync.node_type' => 'lan_server']);
+        $booking = $this->createBooking([
+            'check_in' => now()->addDay()->toDateString(),
+            'check_out' => now()->addDays(2)->toDateString(),
+        ]);
+
+        config(['sync.node_type' => 'cloud']);
+
+        $this->assertSame('local', app(BookingAuthority::class)->authorityFor($booking->check_in));
+    }
+
+    public function test_the_cloud_refuses_to_sell_inside_a_window_the_lan_server_owns(): void
+    {
+        config(['sync.node_type' => 'cloud']);
+
+        $this->expectException(ArrivalInsideLocalWindow::class);
+
+        app(BookingAuthority::class)->assertOnlineBookable(now()->addDay());
+    }
+
+    public function test_beyond_the_window_the_online_path_is_authoritative(): void
+    {
+        config(['sync.node_type' => 'cloud']);
+
+        $booking = $this->createBooking([
+            'check_in' => now()->addDays(10)->toDateString(),
+            'check_out' => now()->addDays(12)->toDateString(),
+        ]);
+
+        $this->assertSame('cloud', app(BookingAuthority::class)->authorityFor($booking->check_in));
+    }
+
+    protected function createBooking(array $overrides = []): Booking
+    {
+        $room = $this->roomFixture();
+
+        $booking = Booking::create(array_merge([
+            'property_id' => $room->property_id,
+            'room_id' => $room->id,
+            'room_type_id' => $room->room_type_id,
+            'booking_code' => 'AUTH-' . strtoupper(substr(md5(uniqid('', true)), 0, 8)),
+            'check_in' => now()->addDay()->toDateString(),
+            'check_out' => now()->addDays(2)->toDateString(),
+            'guest_name' => 'Authority Guest',
+            'guest_email' => 'authority@example.com',
+            'guest_phone' => '08030007777',
+            'quantity' => 1,
+            'adults' => 2,
+            'children' => 0,
+            'nightly_rate' => 80000,
+            'total_amount' => 80000,
+            'status' => 'confirmed',
+            'payment_status' => 'pending',
+        ], $overrides));
+
+        $booking->rooms()->attach($room->id, ['status' => 'reserved']);
+
+        return $booking;
+    }
+
+    protected function roomFixture(): Room
+    {
+        $property = Property::create([
+            'name' => 'Authority Hotel',
+            'location' => 'Lagos',
+            'amenities' => [],
+        ]);
+
+        $roomType = RoomType::create([
+            'property_id' => $property->id,
+            'title' => 'Executive',
+            'max_occupancy' => 2,
+            'base_price' => 80000,
+            'features' => [],
+        ]);
+
+        return Room::create([
+            'property_id' => $property->id,
+            'room_type_id' => $roomType->id,
+            'name' => 'Executive 201',
+            'code' => 'EXEC-201',
+            'status' => 'available',
+            'meta' => [],
+        ]);
     }
 }
