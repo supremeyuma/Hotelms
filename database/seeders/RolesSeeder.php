@@ -69,6 +69,12 @@ class RolesSeeder extends Seeder
             ],
         ];
 
-        DB::table('roles')->insert($roles);
+        // slug is NOT NULL in the roles migration. Every other seeder sets it
+        // explicitly; this one inserts plain DB rows and used to omit it, which
+        // makes `migrate:fresh --seed` fail the moment RolesSeeder runs.
+        foreach ($roles as $role) {
+            $role['slug'] = Str::slug($role['name']);
+            DB::table('roles')->insert($role);
+        }
     }
 }
