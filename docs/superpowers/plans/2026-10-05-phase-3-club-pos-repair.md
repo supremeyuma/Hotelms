@@ -16,6 +16,45 @@
 
 ---
 
+## Implementation status (2026-10-11)
+
+Tasks 1–5 executed. Commits on top of `3a50b3b4`:
+
+- `a71764c1` … `3a50b3b4` — Tasks 1–4 (see git log).
+- `c6ef059b` fix: load the club pos dashboard reliably.
+- `32c279d8` fix: return inertia responses for club pos docket actions.
+- `4f91244f` feat: add club pos stock and reports screens.
+- `9a0d90d0` chore: rebuild frontend assets for club pos stock and reports.
+
+Defects found beyond the §2.3 list (all fixed in the commits above):
+
+- `DocketController` was missing `addItem`/`removeItem`/`pay`/`void`; the Vue
+  panel called routes that did not exist.
+- `PosSession`/`PosDocket` relationship foreign keys were guessed wrong
+  (`pos_session_id`/`pos_device_id`) vs. the real `session_id`/`device_id`.
+- `menu_items.service_area` is enum `['kitchen','bar']`; club POS filters used
+  `'club'` — aligned to `'bar'`.
+- `DashboardController` ordered `drink_stock` by a non-existent `quantity`
+  column, so the dashboard 500'd on load.
+- Docket actions returned plain JSON to the Inertia router → invalid-response
+  error modal; now Inertia-aware (G57).
+- `resolveDevice(null)` minted a random device per request; now one device per
+  browser identity, default device otherwise.
+
+**Task 5 route decision (adapts Step 3).** The staff sidebar already linked
+`club.pos.stock.index` and `club.pos.reports.sales` as pages, so those exact
+route names now render Inertia pages and the JSON payloads moved to new
+`*.data` routes (`club.pos.stock.data`, `club.pos.reports.sales.data`,
+`club.pos.reports.trends.data`). `club.pos.reports.stock` stays JSON. Payload
+shapes are unchanged. New pages live under `Pages/ClubPos/` and use
+`ClubPosLayout`, matching `Dashboard.vue`.
+
+**Deferred:** the sidebar's "Shift History" link (`club.pos.shifts.current`)
+still returns JSON; recorded as G56. Browser walkthrough (Task 1 Step 2, Task 5
+Step 5, Task 7) not yet performed.
+
+---
+
 ## The gap this closes
 
 Spec §2.3 enumerates eight defects. Re-measured against the tree at `5326df2d`,
@@ -77,7 +116,7 @@ So this phase is mostly verification plus three real pieces of work. Treat the
 - Consumes: the existing POS code.
 - Produces: a verified defect list. Everything after this task depends on it.
 
-- [ ] **Step 1: Confirm each §2.3 row against the code**
+- [x] **Step 1: Confirm each §2.3 row against the code**
 
 ```powershell
 rg -n "openDockets|currentSession|\$device" app/Http/Controllers/ClubPos/DashboardController.php
@@ -96,12 +135,16 @@ Follow the skill `workflow-test`, not a checklist. Actually drive the UI:
 
 Record the first point where it fails, if any. That is the real defect list.
 
-- [ ] **Step 3: Fix whatever actually breaks**
+- [x] **Step 3: Fix whatever actually breaks**
 
 One commit per fix. If nothing breaks, say so and commit the verification tests
 from Task 2 — a POS with no tests regresses silently.
 
-Commit: `fix: club pos <specific defect found in the walkthrough>`
+Commit: `fix: club pos <specific defect found in the walkthrough>` (see the
+Implementation status commits; the §2.3 "fixed" rows were verified and the
+remaining defects — missing docket endpoints, wrong relationship keys, the
+`service_area` mismatch, the room-charge fallback, and the broken dashboard
+query — were fixed.)
 
 ---
 
@@ -116,7 +159,7 @@ Commit: `fix: club pos <specific defect found in the walkthrough>`
 - Consumes: `ShiftController`, `ClubPosService::getOrCreateSession()`.
 - Produces: a regression guard on the shift lifecycle.
 
-- [ ] **Step 1: Write the lifecycle test**
+- [x] **Step 1: Write the lifecycle test**
 
 ```php
 <?php
@@ -215,7 +258,7 @@ rg -n "class PosSessionFactory|class PosDeviceFactory" database/factories/
 rg -n "club.pos.access|shifts.open" database/seeders/ app/
 ```
 
-- [ ] **Step 2: Run and fix**
+- [x] **Step 2: Run and fix**
 
 ```powershell
 php artisan test --filter=PosSessionLifecycleTest
@@ -225,6 +268,10 @@ If `PosDeviceFactory` or `PosSessionFactory` does not exist, create it first —
 `PosDevice` currently has no seeder or factory at all, which is Task 3.
 
 Commit: `test: cover the pos session lifecycle`
+
+Note: the draft above asserts a second shift open is refused (422). The agreed
+behaviour is **idempotent 200 returning the same session id**; the shipped test
+asserts that instead. Open returns 201.
 
 ---
 
@@ -243,14 +290,14 @@ nothing creates the rows.
 - Consumes: `PosDevice`, the `pos_devices` table.
 - Produces: a real device registration path. Phase 6's setup wizard depends on this.
 
-- [ ] **Step 1: Inspect the model and table**
+- [x] **Step 1: Inspect the model and table**
 
 ```powershell
 Get-Content app/Models/PosDevice.php
 Get-Content database/migrations/*create_pos_devices_table.php
 ```
 
-- [ ] **Step 2: Create the factory**
+- [x] **Step 2: Create the factory**
 
 Follow the existing factory conventions in `database/factories/`.
 
@@ -280,22 +327,25 @@ class PosDeviceFactory extends Factory
 
 Use the real column names from the migration.
 
-- [ ] **Step 3: Create the seeder**
+- [x] **Step 3: Create the seeder**
 
 A terminal needs at least one device before a shift can open. Register one in the
 demo and production seeders.
 
-- [ ] **Step 4: Add a registration path**
+- [x] **Step 4: Add a registration path**
 
 Decide with the user whether registration is admin-only via a settings screen, or
 automatic on first authenticated POS use. Automatic is fewer moving parts for a
 staff member who installs the app; admin-only gives better device inventory
 control.
 
-Do not build a settings screen without asking. If unclear, implement automatic
-registration behind a config flag and record the decision.
+**Decision (agreed): automatic, per browser identity, behind a config flag.**
+`config/pos.php` (`devices.auto_register`, default true) registers one device per
+unique browser identity on first POS access via a `pos_device_code` cookie, and
+falls back to a seeded default device otherwise. The seeder provides the default
+demo terminal. No settings screen.
 
-- [ ] **Step 5: Test registration**
+- [x] **Step 5: Test registration**
 
 ```php
 public function test_a_device_is_registered_on_first_pos_access(): void
@@ -318,7 +368,7 @@ public function test_repeat_access_does_not_create_duplicate_devices(): void
 
 The second test matters: a naive implementation creates a device per request.
 
-- [ ] **Step 6: Run**
+- [x] **Step 6: Run**
 
 ```powershell
 php artisan migrate:fresh --seed --force
@@ -338,7 +388,7 @@ Commit: `feat: register pos devices on first access`
 - Consumes: `DocketController`, `ClubPosService`.
 - Produces: a regression guard on create, add item, pay, void.
 
-- [ ] **Step 1: Cover the whole lifecycle**
+- [x] **Step 1: Cover the whole lifecycle**
 
 ```php
 <?php
@@ -479,13 +529,18 @@ Note `ClubPosService` calls `BillingService` via `app(BillingService::class)` at
 line 144 without a `use` import. That resolves at runtime through the container
 so it works, but add the import for clarity while you are in the file.
 
-- [ ] **Step 2: Run and fix**
+- [x] **Step 2: Run and fix**
 
 ```powershell
 php artisan test --filter=DocketLifecycleTest
 ```
 
 Commit: `test: cover the pos docket lifecycle including room charge`
+
+Note: drafted against `'paid'`/200, but the shipped model uses the `'closed'`
+status and `store` returns **201**; the test asserts the real behaviour. Added
+two further guards: Inertia docket actions return a redirect (not JSON), and a
+docket item cannot be removed through a different docket's route.
 
 ---
 
@@ -504,7 +559,7 @@ consumer. The routes exist; nothing renders them.
 - Consumes: existing `club.pos.stock.*` and `club.pos.reports.*` routes.
 - Produces: a navigable stock and reports surface.
 
-- [ ] **Step 1: Confirm the endpoints' response shapes**
+- [x] **Step 1: Confirm the endpoints' response shapes**
 
 ```powershell
 Get-Content app/Http/Controllers/ClubPos/StockController.php
@@ -512,9 +567,12 @@ Get-Content app/Http/Controllers/ClubPos/ReportController.php
 ```
 
 Build the Vue pages against the actual payloads. Do not reshape the endpoints
-to suit a guessed UI.
+to suit a guessed UI. (Confirmed: `stock.index` is a bare array of
+`{menu_item, stock, low_stock}`; `reports.sales` accepts a **nullable** date
+range and returns 200, not 422. The Step 4 drafts below were corrected to match
+the real shapes.)
 
-- [ ] **Step 2: Build the pages**
+- [x] **Step 2: Build the pages**
 
 Follow the existing Club POS visual conventions — look at `Dashboard.vue` for
 layout, table styling, and how Inertia components are used. The direction is
@@ -524,49 +582,20 @@ Per the project's UX rules: summary cards must link to the page containing the
 underlying records, and async actions must show a loading state and be protected
 against double submission.
 
-- [ ] **Step 3: Add navigation from the dashboard**
+- [x] **Step 3: Add navigation from the dashboard**
 
-```php
-Route::get('/pos/stock', [StockController::class, 'index'])->name('pos.stock.page');
-```
+Adapted: the existing `club.pos.stock.index` / `club.pos.reports.sales` route
+names now render the Inertia pages (the staff sidebar already treated them as
+pages); the JSON payloads moved to `*.data` routes. Navigation was added to
+`Components/ClubPos/TopBar.vue` rather than `Dashboard.vue`, so all POS screens
+share it.
 
-If a page route does not exist alongside the JSON data route, add one that returns
-the Inertia component.
+- [x] **Step 4: Test the endpoints**
 
-- [ ] **Step 4: Test the endpoints**
-
-```php
-public function test_stock_index_requires_permission(): void
-{
-    $this->actingAs(User::factory()->create())
-        ->getJson(route('club.pos.stock.index'))
-        ->assertForbidden();
-}
-
-public function test_stock_index_returns_item_quantities(): void
-{
-    $staff = User::factory()->create();
-    $staff->givePermissionTo('club.pos.access');
-
-    $response = $this->actingAs($staff)->getJson(route('club.pos.stock.index'));
-
-    $response->assertOk();
-    $response->assertJsonStructure(['data']);
-}
-
-public function test_sales_report_requires_a_date_range(): void
-{
-    $staff = User::factory()->create();
-    $staff->givePermissionTo('club.pos.access');
-
-    $this->actingAs($staff)
-        ->getJson(route('club.pos.reports.sales'))
-        ->assertStatus(422);
-}
-```
-
-The authorization test matters more than the shape test: an unscoped POS report
-endpoint leaks revenue.
+Tests were written against the real payloads (authorization 403/redirect plus
+200 shape checks on the `*.data` routes and the page routes). The draft
+`assertStatus(422)` for a missing date range was dropped — the endpoint treats
+the range as optional.
 
 - [ ] **Step 5: Walk the new pages**
 
