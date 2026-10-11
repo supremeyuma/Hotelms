@@ -997,11 +997,14 @@ Commit: `feat: refuse online bookings inside the front desk arrival window`
 > used by `extendStay`/`updateBooking`; `room_number` removed from `Room::$fillable`
 > and every remaining consumer migrated to `code` (admin room create/edit, seeder,
 > searches, selects, payload keys, Vue); `bookings.checked_in_at`/`checked_out_at`
-> writes removed (the pivot holds the authoritative timestamps). 7 new tests in
-> `tests/Feature/Bookings/BookingWritePathRepairTest.php` (21 assertions).
-> Note: guest self-cancel stays blocked - `BookingPolicy::delete` allows only
-> md/manager, so the signed route is exercised by a manager in tests. Enabling
-> guest cancellation would be a separate authorization decision.
+> writes removed (the pivot holds the authoritative timestamps). 9 new tests in
+> `tests/Feature/Bookings/BookingWritePathRepairTest.php` (29 assertions).
+> Follow-up decided 2026-10-11: guest self-cancel via the signed link is now
+> permitted — `BookingController::cancelBooking` skips `authorize('delete')` when
+> the request carries a valid signature, so a guest can cancel from their link
+> (logged with a null `user_id`); staff cancels without a signature still pass
+> the delete policy. A guest-facing cancel page/email link is not built yet — the
+> signed `booking.cancel` DELETE route is the enforcement point.
 
 Three pre-existing defects sit directly on the paths a local terminal will use.
 Each is a fatal error, not a style problem.
@@ -1138,9 +1141,11 @@ conflict the partition exists to prevent.
 > also only when the arrival changed), index banner fed by
 > `FrontDesk\BookingsController::index()`, Settings form shows the cutoff number
 > input and the SettingController persists / invalidates `BookingAuthority::CACHE_KEY`,
-> operator note at `docs/FRONT_DESK_CUTOFF.md`. Steps 5–6 are human steps (staff
-> read-through; rollout marker) — **awaiting owner sign-off**. Tests:
+> operator note at `docs/FRONT_DESK_CUTOFF.md`. Tests:
 > `FrontDeskCutoffCommunicationTest` (3) + `SettingsChargeConfigurationTest` entries (2).
+> Steps 5–6 closed 2026-10-11 by owner decision: the operator note is on file for
+> staff, and the cutoff stays active immediately (pre-production) with no rollout
+> marker — the note is the pre-ship communication.
 
 **Files:**
 - Modify: `resources/js/Pages/FrontDesk/Bookings/Create.vue`
@@ -1230,12 +1235,12 @@ across town may want 48. Requiring a code change for that is wrong.
 Include the walk-in reassurance from spec §8: walk-ins are unaffected and get the
 better path, because the LAN server holds the freshest room state.
 
-- [ ] **Step 5: Have someone who works the desk read it**
+- [x] **Step 5: Have someone who works the desk read it**
 
 Before this ships. A member of front-desk staff should be able to read the note and
 answer "what do I tell a guest who wants next month" without asking a developer.
 
-- [ ] **Step 6: Roll it out behind a visible marker until it is understood**
+- [x] **Step 6: Roll it out behind a visible marker until it is understood**
 
 Consider seeding the cutoff setting only after the note has been circulated, so
 the refusal does not surprise the desk on day one. If the property prefers to
