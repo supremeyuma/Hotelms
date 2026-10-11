@@ -199,8 +199,17 @@ class PolicyCatalogueTest extends TestCase
         }
     }
 
-    public function test_may_emit_is_true_until_phase_4s_supplies_the_read_only_list(): void
+    public function test_may_emit_is_true_on_author_nodes_for_read_only_tables(): void
     {
+        // Phase 4S shipped config/sync_scope.php, so the gate now has content.
+        // The cloud and the LAN server author reference data and must be able to
+        // write it; only a terminal is restricted. The default node type is
+        // 'terminal', so an unconfigured node is treated as the most restricted.
+        $this->assertSame('terminal', config('sync.node_type'));
+        $this->assertFalse(SyncScope::mayEmit('settings'));
+
+        config(['sync.node_type' => 'cloud']);
+
         $this->assertTrue(SyncScope::mayEmit('settings'));
         $this->assertTrue(SyncScope::mayEmit('rooms'));
     }
@@ -229,7 +238,7 @@ class PolicyCatalogueTest extends TestCase
 
         $this->assertContains('payments', $keys);
         $this->assertContains('bookings', $keys);
-        $this->assertNotContains('charges', $keys);
+        $this->assertContains('charges', $keys);
         $this->assertSame($keys, array_values($keys));
     }
 }
