@@ -12,9 +12,10 @@ Route::middleware('auth')->post('/pos/staff/switch', function (Illuminate\Http\R
 
     $user = \App\Models\User::whereHas('roles', function ($q) {
         $q->whereIn('name', ['club_staff', 'club_supervisor']);
-    })->whereHas('staffProfile', function ($q) use ($validated) {
-        $q->where('action_code', $validated['pin']);
-    })->first();
+    })->with('staffProfile')->get()->first(function ($candidate) use ($validated) {
+        return $candidate->staffProfile
+            && $candidate->staffProfile->matchesActionCode($validated['pin']);
+    });
 
     if (!$user) {
         return response()->json(['error' => 'Invalid PIN.'], 422);
@@ -25,7 +26,7 @@ Route::middleware('auth')->post('/pos/staff/switch', function (Illuminate\Http\R
     session()->put('pos_pin_verified', true);
 
     return response()->json(['success' => true]);
-})->name('pos.staff.switch');
+})->middleware('throttle:10,1')->name('pos.staff.switch');
 
 Route::middleware(['auth', 'permission:club.pos.access'])->prefix('club')->name('club.')->group(function () {
 

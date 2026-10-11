@@ -52,6 +52,9 @@ class DashboardController extends Controller
             "device" => $device,
             "openDockets" => $openDockets,
             "currentSession" => $currentSession,
+            "club_pos" => [
+                "pin_verified" => (bool) $request->session()->get("pos_pin_verified", false),
+            ],
             "categories" => MenuCategory::where("type", "bar")
                 ->where("is_active", true)
                 ->orderBy("sort_order")
