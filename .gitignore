@@ -26,3 +26,15 @@ Thumbs.db
 # serves the live manifest per request. Regenerating would reintroduce a stale,
 # host-bound file that future readers may mistake for authoritative.
 resources/js/ziggy.js
+
+# Vendored desktop runtime binaries (FrankenPHP per target triple). Downloaded,
+# never committed; keep checksums.txt beside them so a bad download is caught.
+/resources/bin/**
+!/resources/bin/.gitkeep
+!/resources/bin/checksums.txt
+
+# Vendored Postgres archives for the LAN-server role (per platform). Downloaded,
+# never committed; VERSION records the pinned release.
+/resources/postgres/**
+!/resources/postgres/.gitkeep
+!/resources/postgres/VERSION
