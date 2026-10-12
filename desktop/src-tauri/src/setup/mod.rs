@@ -195,6 +195,10 @@ pub struct TerminalOptions {
     pub property_code: String,
     pub pairing_code: String,
     pub http_port: u16,
+    /// The server this terminal will pair with, found by discovery (Task 6).
+    /// Stored so the pairing relationship survives a restart even before the
+    /// snapshot pull exists.
+    pub server_url: Option<String>,
 }
 
 pub struct TerminalBoot {
@@ -434,7 +438,10 @@ pub fn run_terminal(
 
     // --- Create the local SQLite file and the role environment. ---
     report(STEP_CREATE_DATABASE, StepStatus::Started, None);
-    let rendered = envfile::render(&Role::Terminal, &paths.data_dir)?;
+    let mut rendered = envfile::render(&Role::Terminal, &paths.data_dir)?;
+    if let Some(server_url) = &options.server_url {
+        rendered.push_str(&format!("\nLAN_SERVER_URL={server_url}\n"));
+    }
     let db_file = paths.data_dir.join("hotelms.sqlite");
     fs::write(&db_file, "").with_context(|| format!("failed to create {}", db_file.display()))?;
     let env_file = paths.data_dir.join(".env");

@@ -1,4 +1,5 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
+pub mod discovery;
 pub mod envfile;
 pub mod postgres;
 pub mod runtime;
@@ -7,10 +8,12 @@ pub mod setup;
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, Manager, State};
 
+use crate::discovery::DiscoveredServer;
 use crate::setup::state::SetupState;
 use crate::setup::{AdminCredentials, ClientOptions, ServerBoot, ServerOptions, TerminalOptions};
 
@@ -155,6 +158,9 @@ fn setup_run_server(
         match result {
             Ok(boot) => {
                 *handle.active.lock().expect("setup state poisoned") = Some(boot);
+                // A booted server must answer discovery probes so other roles
+                // can find it without typing an address.
+                let _ = discovery::respond("MooreLife", env!("CARGO_PKG_VERSION"), port);
                 emit_done(&app, Ok(serde_json::json!({ "ok": true, "port": port })));
             }
             Err(error) => emit_done(&app, Err(error.to_string())),
@@ -171,6 +177,7 @@ struct TerminalSetupInput {
     property_code: String,
     pairing_code: String,
     http_port: Option<u16>,
+    server_url: Option<String>,
 }
 
 /// Create and migrate a terminal's local SQLite database in the background.
@@ -196,6 +203,7 @@ fn setup_run_terminal(
         property_code: input.property_code,
         pairing_code: input.pairing_code,
         http_port: input.http_port.unwrap_or(setup::DEFAULT_HTTP_PORT),
+        server_url: input.server_url,
     };
 
     let handle = Arc::clone(&state);
@@ -273,6 +281,84 @@ fn emit_done(app: &AppHandle, result: Result<serde_json::Value, String>) {
     let _ = app.emit(EVT_DONE, payload);
 }
 
+/// One server found by the broadcast probe.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct DiscoveredServerView {
+    address: String,
+    name: String,
+    version: String,
+    http_port: u16,
+}
+
+/// Broadcast the discovery probe and return every server that answered. The
+/// wizard uses this to fill in the server address; when broadcast is blocked,
+/// it falls back to manual entry or the pairing QR code.
+#[tauri::command]
+fn discovery_probe() -> Result<Vec<DiscoveredServerView>, String> {
+    let found = discovery::probe(Duration::from_secs(2)).map_err(|error| error.to_string())?;
+    Ok(found.into_iter().map(Into::into).collect())
+}
+
+impl From<DiscoveredServer> for DiscoveredServerView {
+    fn from(server: DiscoveredServer) -> Self {
+        Self {
+            address: server.address.to_string(),
+            name: server.name,
+            version: server.version,
+            http_port: server.http_port,
+        }
+    }
+}
+
+/// Everything the server wizard renders as the pairing fallback: the LAN
+/// addresses and the pairing URIs each one encodes.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct PairingView {
+    addresses: Vec<String>,
+    uris: Vec<String>,
+    name: String,
+    version: String,
+    port: u16,
+}
+
+#[tauri::command]
+fn discovery_pairing(state: State<'_, Arc<SetupHandle>>) -> Result<PairingView, String> {
+    let port = state
+        .active
+        .lock()
+        .expect("setup state poisoned")
+        .as_ref()
+        .and_then(server_http_port)
+        .ok_or_else(|| "no server is booted".to_string())?;
+
+    let addresses = discovery::lan_addresses().map_err(|error| error.to_string())?;
+    let name = "MooreLife".to_string();
+    let version = env!("CARGO_PKG_VERSION").to_string();
+    let uris = addresses
+        .iter()
+        .map(|ip| discovery::pairing_uri(*ip, &name, &version, port))
+        .collect();
+
+    Ok(PairingView {
+        addresses: addresses.iter().map(ToString::to_string).collect(),
+        uris,
+        name,
+        version,
+        port,
+    })
+}
+
+/// The port the booted server serves HTTP on, as written into its own
+/// environment (`FRANKENPHP_PORT`, set by the server env profile).
+fn server_http_port(boot: &ServerBoot) -> Option<u16> {
+    boot.env
+        .iter()
+        .find(|(key, _)| key == "FRANKENPHP_PORT")
+        .and_then(|(_, value)| value.parse().ok())
+}
+
 /// Resolve the engine's `Paths` from the app: the bundled resource dir when the
 /// runtime and application are packaged (Task 7), the repository otherwise.
 fn resolve_paths(app: &AppHandle) -> Result<setup::Paths, String> {
@@ -341,7 +427,9 @@ pub fn run() {
             setup_status,
             setup_run_server,
             setup_run_terminal,
-            setup_run_staff_client
+            setup_run_staff_client,
+            discovery_probe,
+            discovery_pairing
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
