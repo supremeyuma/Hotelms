@@ -4,8 +4,9 @@
 //! differ, so a terminal and a LAN server run identical application code.
 //!
 //! The CLI surface was verified against FrankenPHP 1.13.0:
-//!   frankenphp php-server --listen=127.0.0.1:<port> --root=<app>/public
-//! The address is a flag, not a positional argument.
+//!   frankenphp php-server --listen=<host>:<port> --root=<app>/public
+//! The address is a flag, not a positional argument. `<host>` is `127.0.0.1`
+//! for a private terminal and `0.0.0.0` for the LAN server role.
 
 use std::fs::{self, File, OpenOptions};
 use std::io::{Read, Seek, SeekFrom};
@@ -13,7 +14,7 @@ use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use std::time::{Duration, Instant};
 
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 
 /// A running FrankenPHP child process.
 ///
@@ -22,6 +23,7 @@ use anyhow::{bail, Context, Result};
 pub struct Runtime {
     child: Child,
     pub port: u16,
+    host: String,
     binary: PathBuf,
     app_root: PathBuf,
     extra_env: Vec<(String, String)>,
@@ -29,13 +31,16 @@ pub struct Runtime {
 }
 
 impl Runtime {
-    /// Start FrankenPHP serving `app_root/public` on `127.0.0.1:port`.
+    /// Start FrankenPHP serving `app_root/public` on `host:port`.
     ///
+    /// `host` is `127.0.0.1` for a terminal that is not shared, and `0.0.0.0`
+    /// for the LAN server role, which must be reachable from other devices.
     /// `extra_env` is applied on top of the defaults, so the caller can supply
     /// the role's `APP_KEY`, database settings and sync configuration.
     pub fn start(
         app_root: &Path,
         binary: &Path,
+        host: &str,
         port: u16,
         extra_env: &[(String, String)],
         log_path: &Path,
@@ -53,11 +58,12 @@ impl Runtime {
                 .with_context(|| format!("failed to create log dir {}", parent.display()))?;
         }
 
-        let child = Self::spawn_child(binary, app_root, port, extra_env, log_path)?;
+        let child = Self::spawn_child(binary, app_root, host, port, extra_env, log_path)?;
 
         Ok(Self {
             child,
             port,
+            host: host.to_string(),
             binary: binary.to_path_buf(),
             app_root: app_root.to_path_buf(),
             extra_env: extra_env.to_vec(),
@@ -68,6 +74,7 @@ impl Runtime {
     fn spawn_child(
         binary: &Path,
         app_root: &Path,
+        host: &str,
         port: u16,
         extra_env: &[(String, String)],
         log_path: &Path,
@@ -84,7 +91,7 @@ impl Runtime {
         let mut command = Command::new(binary);
         command
             .arg("php-server")
-            .arg(format!("--listen=127.0.0.1:{port}"))
+            .arg(format!("--listen={host}:{port}"))
             .arg(format!("--root={}", public.display()))
             .current_dir(app_root)
             .env("APP_ENV", "production")
@@ -109,6 +116,7 @@ impl Runtime {
         self.child = Self::spawn_child(
             &self.binary,
             &self.app_root,
+            &self.host,
             self.port,
             &self.extra_env,
             &self.log_path,
