@@ -4,7 +4,6 @@
     "resources": {
       "../../resources/bin/x86_64-pc-windows-msvc/": "runtime/",
       "../../resources/postgres-runtime/x86_64-pc-windows-msvc/pgsql/": "postgres/",
-      "../../resources/runtime/php.ini": "runtime/php.ini",
       "../../resources/app/": "app/"
     }
   }
