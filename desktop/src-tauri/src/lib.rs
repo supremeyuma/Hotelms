@@ -387,6 +387,9 @@ fn resolve_paths(app: &AppHandle) -> Result<setup::Paths, String> {
         dev_runtime
     };
 
+    let php_ini = resource.join("runtime").join("php.ini");
+    let php_ini = if php_ini.exists() { php_ini } else { dev_ini };
+
     let app_root = resource.join("app");
     let app_root = if app_root.join("artisan").exists() {
         app_root
@@ -410,7 +413,7 @@ fn resolve_paths(app: &AppHandle) -> Result<setup::Paths, String> {
         data_dir,
         app_root,
         runtime_dir,
-        php_ini: dev_ini,
+        php_ini,
         postgres_bundle,
     })
 }
