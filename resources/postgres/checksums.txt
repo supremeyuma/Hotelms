@@ -1,0 +1,6 @@
+# Vendored Postgres archives for the LAN-server role. Verify downloads against
+# these hashes. The VERSION file pins the release; this records the exact asset.
+#
+# source: EnterpriseDB binaries, postgresql-16.6-1-windows-x64-binaries.zip
+# layout: extracts to pgsql/ (bin/, lib/, share/); point postgres::start at pgsql/
+6a1bfb6435b13d9563ae481445c70ac2a19846bd8a430b12903b408eec300f9b  postgresql-16.6-1-windows-x64-binaries.zip

@@ -32,6 +32,23 @@ rejected: a Rust crate that downloads binaries at setup adds a network
 dependency during installation, and requiring a system Postgres reintroduces the
 installer requirement the embedded runtime exists to remove.
 
+**Vendored build:** EnterpriseDB `postgresql-16.6-1-windows-x64-binaries.zip`
+(PostgreSQL 16.6), pinned in `resources/postgres/VERSION` and hashed in
+`resources/postgres/checksums.txt`. It extracts to `pgsql/`; `postgres::start`
+takes that directory and finds `bin/postgres[.exe]` beneath it.
+
+**Supervision caveat (verified):** the supervisor runs `postgres[.exe]`
+*directly*, not `pg_ctl start`. `pg_ctl start` daemonises and exits, so its
+child handle is not the running server and cannot be waited on, restarted, or
+killed. Holding the real server process is what makes restart and crash
+detection meaningful. Cluster creation uses `initdb -U hotelms` with
+scram-sha-256 and a `--pwfile`, matching the `hotelms`/`hotelms` credentials the
+server wizard writes into `.env`. `ensure_database` creates the application
+database (the superuser role already exists from `initdb`).
+
+The unpack-archive-into-the-data-directory step belongs to the server wizard;
+the archive is bundled as a resource in the packaging task, not committed here.
+
 ### Gate C — FrankenPHP Windows extensions: PASS
 
 Verified against **FrankenPHP 1.13.0** (`frankenphp-windows-x86_64.zip`), PHP

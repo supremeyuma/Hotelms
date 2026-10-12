@@ -38,3 +38,4 @@ resources/js/ziggy.js
 /resources/postgres/**
 !/resources/postgres/.gitkeep
 !/resources/postgres/VERSION
+!/resources/postgres/checksums.txt
