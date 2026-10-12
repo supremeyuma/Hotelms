@@ -80,7 +80,8 @@ pub struct Step {
     pub title: &'static str,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub enum StepStatus {
     Started,
     Succeeded,
@@ -90,7 +91,8 @@ pub enum StepStatus {
 
 /// Progress for one step. `message` carries the failure cause, a skip reason,
 /// or an informational note (for example, the cloud step's no-op explanation).
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct StepEvent {
     pub id: &'static str,
     pub title: &'static str,
@@ -184,6 +186,29 @@ pub struct ServerBoot {
     pub postgres: EmbeddedPostgres,
     pub env: Vec<(String, String)>,
     pub property_id: Option<i64>,
+}
+
+/// What the wizard collected on the terminal path (spec 9.2). Pairing remains
+/// part of the flow; the snapshot pull and node registration that use it land
+/// with discovery (Task 6).
+pub struct TerminalOptions {
+    pub property_code: String,
+    pub pairing_code: String,
+    pub http_port: u16,
+}
+
+pub struct TerminalBoot {
+    pub env: Vec<(String, String)>,
+}
+
+/// A staff client needs no database; the address is all it points at.
+pub struct ClientOptions {
+    pub server_url: String,
+}
+
+pub struct ClientBoot {
+    pub env: Vec<(String, String)>,
+    pub server_url: String,
 }
 
 /// Run the server path end to end, reporting each step as it goes.
@@ -386,6 +411,121 @@ pub fn run_server(
     })
 }
 
+/// Run the terminal path (spec 9.2): create the local SQLite file, generate the
+/// environment, and migrate. The snapshot pull and node registration follow
+/// once discovery/pairing exist (Task 6); until then they are reported as
+/// deferred rather than silently skipped.
+pub fn run_terminal(
+    paths: &Paths,
+    options: &TerminalOptions,
+    mut progress: impl FnMut(StepEvent),
+) -> Result<TerminalBoot> {
+    let role = SetupRole::Terminal;
+    let mut state = SetupState::load(&paths.data_dir)?;
+    let mut report = |id: &'static str, status: StepStatus, message: Option<String>| {
+        progress(StepEvent {
+            id,
+            title: title_of(role, id),
+            status,
+            message,
+        });
+    };
+    let _ = options.http_port; // reserved for the offline serving phase.
+
+    // --- Create the local SQLite file and the role environment. ---
+    report(STEP_CREATE_DATABASE, StepStatus::Started, None);
+    let rendered = envfile::render(&Role::Terminal, &paths.data_dir)?;
+    let db_file = paths.data_dir.join("hotelms.sqlite");
+    fs::write(&db_file, "").with_context(|| format!("failed to create {}", db_file.display()))?;
+    let env_file = paths.data_dir.join(".env");
+    fs::write(&env_file, &rendered)
+        .with_context(|| format!("failed to write {}", env_file.display()))?;
+    let env = parse_env(&rendered);
+    state.mark_complete(STEP_CREATE_DATABASE)?;
+    report(STEP_CREATE_DATABASE, StepStatus::Succeeded, None);
+
+    // --- Migrations against the local file. ---
+    report(STEP_MIGRATE, StepStatus::Started, None);
+    let php = PhpCli::new(&paths.runtime_dir, &paths.php_ini)?;
+    if let Err(error) = php.artisan(&paths.app_root, &["migrate", "--force"], &env) {
+        report(STEP_MIGRATE, StepStatus::Failed, Some(error.to_string()));
+        return Err(error);
+    }
+    state.mark_complete(STEP_MIGRATE)?;
+    report(STEP_MIGRATE, StepStatus::Succeeded, None);
+
+    // --- Deferred to discovery/pairing (Task 6). ---
+    report(
+        STEP_SNAPSHOT,
+        StepStatus::Skipped,
+        Some(
+            "the initial snapshot is pulled from the LAN server once discovery lands (Task 6)"
+                .to_string(),
+        ),
+    );
+    report(
+        STEP_REGISTER_NODE,
+        StepStatus::Skipped,
+        Some(format!(
+            "node registration pairs property '{}' with pairing code '{}' and lands with discovery (Task 6)",
+            options.property_code, options.pairing_code
+        )),
+    );
+
+    Ok(TerminalBoot { env })
+}
+
+/// Prepare a staff client: no database, no migrations — just an environment
+/// that points the window at the chosen server. Auto-discovery replaces the
+/// typed address in Task 6; the address given here is used until then.
+pub fn run_staff_client(
+    paths: &Paths,
+    options: &ClientOptions,
+    mut progress: impl FnMut(StepEvent),
+) -> Result<ClientBoot> {
+    let role = SetupRole::StaffClient;
+    let mut report = |id: &'static str, status: StepStatus, message: Option<String>| {
+        progress(StepEvent {
+            id,
+            title: title_of(role, id),
+            status,
+            message,
+        });
+    };
+
+    report(
+        STEP_DISCOVER,
+        StepStatus::Skipped,
+        Some("LAN auto-discovery lands in Task 6; the address you entered is used".to_string()),
+    );
+
+    let rendered = envfile::render(
+        &Role::StaffClient {
+            server_url: options.server_url.clone(),
+        },
+        &paths.data_dir,
+    )?;
+    let env_file = paths.data_dir.join(".env");
+    fs::write(&env_file, &rendered)
+        .with_context(|| format!("failed to write {}", env_file.display()))?;
+    let env = parse_env(&rendered);
+
+    report(STEP_OPEN_WINDOW, StepStatus::Started, None);
+    report(
+        STEP_OPEN_WINDOW,
+        StepStatus::Succeeded,
+        Some(format!(
+            "the application window connects to {}",
+            options.server_url
+        )),
+    );
+
+    Ok(ClientBoot {
+        env,
+        server_url: options.server_url.clone(),
+    })
+}
+
 /// Install (if needed) and start the embedded Postgres cluster.
 fn start_embedded_postgres(paths: &Paths, db_port: u16) -> Result<EmbeddedPostgres> {
     let binaries = ensure_postgres_installed(&paths.postgres_bundle, &paths.data_dir)?;
@@ -566,6 +706,23 @@ fn ensure_firewall_rule(port: u16) -> Result<()> {
 mod tests {
     use super::*;
 
+    fn temp_dir(tag: &str) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!(
+            "hotelms-setup-{tag}-{}-{:?}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let _ = fs::remove_dir_all(&dir);
+        dir
+    }
+
+    fn env_pair<'a>(env: &'a [(String, String)], key: &str) -> Option<&'a str> {
+        env.iter().find_map(|(k, v)| (k == key).then(|| v.as_str()))
+    }
+
     #[test]
     fn server_plan_matches_the_spec_order() {
         let ids: Vec<&str> = plan_for(SetupRole::Server).iter().map(|s| s.id).collect();
@@ -620,5 +777,46 @@ mod tests {
         assert_eq!(env.len(), 2);
         assert_eq!(env[0], ("APP_KEY".to_string(), "base64:abc==".to_string()));
         assert_eq!(env[1], ("DB_PORT".to_string(), "5432".to_string()));
+    }
+
+    #[test]
+    fn staff_client_boot_writes_a_pointer_environment() {
+        let dir = temp_dir("client");
+        let paths = Paths {
+            data_dir: dir.clone(),
+            app_root: dir.clone(),
+            runtime_dir: dir.clone(),
+            php_ini: dir.join("php.ini"),
+            postgres_bundle: dir.join("pg"),
+        };
+
+        let mut events = Vec::new();
+        let boot = run_staff_client(
+            &paths,
+            &ClientOptions {
+                server_url: "http://10.0.0.5:8000".into(),
+            },
+            |event| events.push(event),
+        )
+        .expect("a staff client boots without touching a database");
+
+        assert_eq!(boot.server_url, "http://10.0.0.5:8000");
+        assert_eq!(
+            env_pair(&boot.env, "LAN_SERVER_URL"),
+            Some("http://10.0.0.5:8000")
+        );
+        assert_eq!(env_pair(&boot.env, "DB_USERNAME"), None);
+        assert!(dir.join(".env").exists());
+
+        assert!(
+            events
+                .iter()
+                .any(|e| e.id == STEP_DISCOVER && e.status == StepStatus::Skipped)
+        );
+        assert!(
+            events
+                .iter()
+                .any(|e| e.id == STEP_OPEN_WINDOW && e.status == StepStatus::Succeeded)
+        );
     }
 }
