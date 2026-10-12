@@ -50,11 +50,14 @@ class ConnectivityMonitor
      * LAN server and falls back to the cloud, so one dead peer degrades
      * throughput rather than making the terminal offline.
      *
+     * A node with no configured peers has nothing to be offline from, so it is
+     * treated as online rather than showing a false-alarm banner.
+     *
      * @param  array{peers: int, failed: list<string>}  $result
      */
     private function isOnline(array $result): bool
     {
-        return $result['peers'] > 0 && count($result['failed']) < $result['peers'];
+        return $result['peers'] === 0 || count($result['failed']) < $result['peers'];
     }
 
     /**

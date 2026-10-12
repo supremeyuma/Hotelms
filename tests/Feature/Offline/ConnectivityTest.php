@@ -38,6 +38,16 @@ class ConnectivityTest extends TestCase
             ->assertJson(['online' => true, 'peers' => 0, 'failed' => []]);
     }
 
+    public function test_connectivity_is_reported_as_online_when_sync_is_enabled_with_no_peers(): void
+    {
+        config(['sync.enabled' => true, 'sync.peers' => []]);
+
+        $this->actingAs($this->staff)
+            ->getJson(route('club.pos.connectivity'))
+            ->assertOk()
+            ->assertJson(['online' => true, 'peers' => 0, 'failed' => []]);
+    }
+
     public function test_connectivity_is_reported_as_offline_when_every_peer_fails(): void
     {
         config([
