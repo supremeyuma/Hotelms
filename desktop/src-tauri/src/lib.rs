@@ -11,7 +11,9 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Emitter, Manager, State};
+use tauri::menu::{MenuBuilder, MenuItemBuilder};
+use tauri::tray::{TrayIconBuilder, TrayIconEvent};
+use tauri::{AppHandle, Emitter, Manager, State, WindowEvent};
 
 use crate::discovery::DiscoveredServer;
 use crate::setup::state::SetupState;
@@ -423,6 +425,46 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .manage(Arc::new(SetupHandle::default()))
+        .setup(|app| {
+            // The server role serves the LAN, so the app must be able to keep
+            // running with its window closed: create a tray icon (Task 7).
+            let quit = MenuItemBuilder::with_id("quit", "Quit").build(app)?;
+            let menu = MenuBuilder::new(app).item(&quit).build()?;
+
+            if let Some(icon) = app.default_window_icon() {
+                TrayIconBuilder::with_id("main")
+                    .tooltip("MooreLife")
+                    .icon(icon.clone())
+                    .menu(&menu)
+                    .on_tray_icon_event(|tray, event| {
+                        if let TrayIconEvent::DoubleClick { .. } = event {
+                            if let Some(window) = tray.app_handle().get_webview_window("main") {
+                                let _ = window.show();
+                                let _ = window.set_focus();
+                            }
+                        }
+                    })
+                    .build(app)?;
+            }
+
+            Ok(())
+        })
+        .on_window_event(|window, event| {
+            // While a server is booted, closing the window must not kill the
+            // LAN service: hide to tray instead. A Quit menu item exits.
+            if let WindowEvent::CloseRequested { api, .. } = event {
+                let state = window.state::<Arc<SetupHandle>>();
+                if server_active(&state) {
+                    api.prevent_close();
+                    let _ = window.hide();
+                }
+            }
+        })
+        .on_menu_event(|app, event| {
+            if event.id().as_ref() == "quit" {
+                app.exit(0);
+            }
+        })
         .invoke_handler(tauri::generate_handler![
             greet,
             setup_plan,

@@ -400,12 +400,28 @@ pub fn run_server(
         Some("Cloud registration is not configured yet; retryable, and local operation is unaffected.".into()),
     );
 
-    // --- Tray/autostart is deferred to packaging (Task 7). ---
-    report(
-        STEP_TRAY,
-        StepStatus::Skipped,
-        Some("tray/autostart is installed at packaging (Task 7)".into()),
-    );
+    // --- Tray/autostart: register this executable to run at login so the LAN
+    // server stays reachable without a manual start. The tray icon itself is
+    // owned by the app shell (lib.rs). Like the firewall rule, a failure is
+    // reported and never aborts the run. ---
+    if state.is_complete(STEP_TRAY) {
+        report(
+            STEP_TRAY,
+            StepStatus::Skipped,
+            Some("already installed".into()),
+        );
+    } else {
+        report(STEP_TRAY, StepStatus::Started, None);
+        match ensure_autostart() {
+            Ok(()) => {
+                state.mark_complete(STEP_TRAY)?;
+                report(STEP_TRAY, StepStatus::Succeeded, None);
+            }
+            Err(error) => {
+                report(STEP_TRAY, StepStatus::Failed, Some(error.to_string()));
+            }
+        }
+    }
 
     Ok(ServerBoot {
         runtime,
@@ -667,6 +683,48 @@ fn append_env(path: &Path, key: &str, value: &str) -> Result<()> {
 
     fs::write(path, updated).with_context(|| format!("failed to write {}", path.display()))?;
     Ok(())
+}
+
+/// Register this executable to start at login via the Windows "Run" key. This
+/// is the durable half of "install tray application": the icon itself is the
+/// app shell's, this is what keeps the server guardian alive across reboots.
+/// Reported like the firewall rule — a failure names the step but does not undo
+/// a booted server.
+fn ensure_autostart() -> Result<()> {
+    #[cfg(windows)]
+    {
+        let exe = std::env::current_exe().context("failed to locate the current executable")?;
+        let value = format!("\"{}\"", exe.display());
+
+        let output = Command::new("reg")
+            .args([
+                "add",
+                "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+                "/v",
+                "MooreLife",
+                "/t",
+                "REG_SZ",
+                "/d",
+                &value,
+                "/f",
+            ])
+            .output()
+            .context("failed to run reg")?;
+
+        if !output.status.success() {
+            bail!(
+                "reg add failed ({}): {}",
+                output.status,
+                String::from_utf8_lossy(&output.stderr).trim()
+            );
+        }
+
+        Ok(())
+    }
+    #[cfg(not(windows))]
+    {
+        bail!("autostart registration is available only on Windows")
+    }
 }
 
 /// Add an inbound TCP rule for the server port. Requires elevation.
