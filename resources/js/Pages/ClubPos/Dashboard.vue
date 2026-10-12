@@ -3,6 +3,7 @@ import { ref, computed, watch } from 'vue'
 import { router, usePage } from '@inertiajs/vue3'
 import ClubPosLayout from '@/Layouts/ClubPosLayout.vue'
 import TopBar from '@/Components/ClubPos/TopBar.vue'
+import OfflineBanner from '@/Components/ClubPos/OfflineBanner.vue'
 import ProductCatalog from '@/Components/ClubPos/ProductCatalog.vue'
 import DocketPanel from '@/Components/ClubPos/DocketPanel.vue'
 import PaymentModal from '@/Components/ClubPos/PaymentModal.vue'
@@ -160,6 +161,8 @@ watch(showPinModal, (val) => {
 
 <template>
   <div class="h-full flex flex-col">
+    <OfflineBanner />
+
     <TopBar :staff="currentStaff || authUser" :session="session" :device="device"
       @lock="handleLock" @switch-staff="showPinModal = true"
       @close-shift="showCloseShift = true" />

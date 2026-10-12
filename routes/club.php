@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ClubPos\ConnectivityController;
 use App\Http\Controllers\ClubPos\DashboardController;
 use App\Http\Controllers\ClubPos\DocketController;
 use App\Http\Controllers\ClubPos\BookingSearchController;
@@ -36,6 +37,11 @@ Route::middleware(['auth', 'permission:club.pos.access'])->prefix('club')->name(
      |==============================*/
     Route::get('/pos', [DashboardController::class, 'index'])->name('pos.dashboard');
     Route::get('/pos/data', [DashboardController::class, 'posData'])->name('pos.data');
+
+    /* ==============================
+     | CONNECTIVITY
+     |==============================*/
+    Route::get('/pos/connectivity', [ConnectivityController::class, 'show'])->name('pos.connectivity');
 
     /* ==============================
      | DOCKETS
