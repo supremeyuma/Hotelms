@@ -8,9 +8,10 @@ use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, Manager, State};
 
+use crate::setup::state::SetupState;
 use crate::setup::{AdminCredentials, ClientOptions, ServerBoot, ServerOptions, TerminalOptions};
 
 /// The desktop app's own bundle layout is under `resources/` in development,
@@ -59,11 +60,40 @@ fn setup_plan(role: &str) -> Result<Vec<setup::StepView>, String> {
 /// Whether a LAN server is currently booted and being served.
 #[tauri::command]
 fn setup_server_active(state: State<'_, Arc<SetupHandle>>) -> bool {
+    server_active(&state)
+}
+
+fn server_active(state: &Arc<SetupHandle>) -> bool {
     state
         .active
         .lock()
         .map(|active| active.is_some())
         .unwrap_or(false)
+}
+
+/// Everything the wizard needs to render resume state: whether a run is in
+/// flight, whether a server is already booted, and which steps have completed.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct SetupStatusView {
+    running: bool,
+    server_active: bool,
+    completed: Vec<String>,
+}
+
+#[tauri::command]
+fn setup_status(app: AppHandle, state: State<'_, Arc<SetupHandle>>) -> SetupStatusView {
+    let completed = resolve_paths(&app)
+        .ok()
+        .and_then(|paths| SetupState::load(&paths.data_dir).ok())
+        .map(|record| record.completed())
+        .unwrap_or_default();
+
+    SetupStatusView {
+        running: state.running.load(Ordering::SeqCst),
+        server_active: server_active(&state),
+        completed,
+    }
 }
 
 #[derive(Deserialize)]
@@ -308,6 +338,7 @@ pub fn run() {
             greet,
             setup_plan,
             setup_server_active,
+            setup_status,
             setup_run_server,
             setup_run_terminal,
             setup_run_staff_client

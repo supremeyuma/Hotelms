@@ -1,22 +1,443 @@
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 
-let greetInputEl: HTMLInputElement | null;
-let greetMsgEl: HTMLElement | null;
+// The three shapes an installation can take (spec 9.2). An explicit answer —
+// never a guess from configuration or hostname — decides what this PC becomes.
+type Role = "server" | "terminal" | "staff_client";
 
-async function greet() {
-  if (greetMsgEl && greetInputEl) {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    greetMsgEl.textContent = await invoke("greet", {
-      name: greetInputEl.value,
-    });
+interface StepView {
+  id: string;
+  title: string;
+}
+
+interface StepStatusView {
+  running: boolean;
+  serverActive: boolean;
+  completed: string[];
+}
+
+interface StepEvent {
+  id: string;
+  title: string;
+  status: "started" | "succeeded" | "skipped" | "failed";
+  message: string | null;
+}
+
+interface DoneEvent {
+  ok: boolean;
+  error?: string;
+  port?: number;
+  serverUrl?: string;
+}
+
+interface RoleDef {
+  title: string;
+  blurb: string;
+  formHeading: string;
+  submitLabel: string;
+}
+
+const ROLE_DEFS: Record<Role, RoleDef> = {
+  server: {
+    title: "Set up this PC as server",
+    blurb: "Runs the database and serves other devices on your network.",
+    formHeading: "Server setup",
+    submitLabel: "Start server setup",
+  },
+  terminal: {
+    title: "Set up as POS terminal",
+    blurb: "Works offline and syncs with your server.",
+    formHeading: "Terminal setup",
+    submitLabel: "Start terminal setup",
+  },
+  staff_client: {
+    title: "Connect to a server",
+    blurb: "No installation; just sign in.",
+    formHeading: "Connect to a server",
+    submitLabel: "Connect",
+  },
+};
+
+// Step ids that only belong to one role, used to infer a role mid-run.
+const SERVER_STEPS = new Set([
+  "unpack_postgres",
+  "generate_env",
+  "create_admin",
+  "bind_network",
+  "register_firewall",
+  "register_cloud",
+  "install_tray",
+]);
+const TERMINAL_STEPS = new Set(["create_database", "pull_snapshot", "register_node"]);
+
+let currentRole: Role | null = null;
+let steps: StepView[] = [];
+let completedIds = new Set<string>();
+let running = false;
+let lastFailure: { step: string; message: string } | null = null;
+
+function el(html: string): HTMLElement {
+  const template = document.createElement("template");
+  template.innerHTML = html.trim();
+  return template.content.firstElementChild as HTMLElement;
+}
+
+function inject(root: Element, node: Node): void {
+  root.replaceChildren(node);
+}
+
+function statusBadge(status: StepEvent["status"] | "pending"): string {
+  switch (status) {
+    case "started":
+      return `<span class="badge badge--pending">running</span>`;
+    case "succeeded":
+      return `<span class="badge badge--ok">done</span>`;
+    case "skipped":
+      return `<span class="badge badge--muted">skipped</span>`;
+    case "failed":
+      return `<span class="badge badge--err">failed</span>`;
+    case "pending":
+      return `<span class="badge badge--idle">pending</span>`;
   }
 }
 
-window.addEventListener("DOMContentLoaded", () => {
-  greetInputEl = document.querySelector("#greet-input");
-  greetMsgEl = document.querySelector("#greet-msg");
-  document.querySelector("#greet-form")?.addEventListener("submit", (e) => {
-    e.preventDefault();
-    greet();
+// --- Screens -----------------------------------------------------------------
+
+function renderRoleSelect(): void {
+  const root = document.getElementById("root")!;
+  const choices = (Object.keys(ROLE_DEFS) as Role[])
+    .map(
+      (role) => `
+        <button class="role-card" data-role="${role}" type="button">
+          <span class="role-card__title">${ROLE_DEFS[role].title}</span>
+          <span class="role-card__blurb">${ROLE_DEFS[role].blurb}</span>
+        </button>`,
+    )
+    .join("");
+
+  inject(
+    root,
+    el(`
+      <section class="panel">
+        <h2>How will this PC be used?</h2>
+        <p class="panel__intro">Pick one — the choice cannot be inferred, and it decides everything that happens next.</p>
+        <div class="role-grid">${choices}</div>
+      </section>`),
+  );
+
+  root.querySelectorAll<HTMLButtonElement>("[data-role]").forEach((button) => {
+    button.addEventListener("click", () => renderWizard(button.dataset.role as Role));
   });
-});
+}
+
+async function renderWizard(role: Role): Promise<void> {
+  currentRole = role;
+  steps = await invoke<StepView[]>("setup_plan", { role });
+  const status = await invoke<StepStatusView>("setup_status", {});
+  completedIds = new Set(status.completed);
+  running = status.running;
+  lastFailure = null;
+  renderWizardDom();
+}
+
+function renderWizardDom(): void {
+  if (!currentRole) return;
+  const def = ROLE_DEFS[currentRole];
+  const root = document.getElementById("root")!;
+
+  inject(
+    root,
+    el(`<section class="panel">
+      <button class="link-button" data-back type="button">← Change my choice</button>
+      <h2>${def.formHeading}</h2>
+      ${formHtml(currentRole)}
+      <h3 class="steps-title">Steps</h3>
+      <ol class="steps">${stepsHtml()}</ol>
+      ${running ? runningNoteHtml() : ""}
+    </section>`),
+  );
+
+  bindForm();
+  root.querySelector<HTMLButtonElement>("[data-back]")?.addEventListener("click", renderRoleSelect);
+}
+
+function stepsHtml(): string {
+  return steps
+    .map((step) => {
+      const done = completedIds.has(step.id);
+      const badge = done
+        ? statusBadge("succeeded")
+        : `<span class="badge badge--idle">pending</span>`;
+      return `<li class="step" data-step="${step.id}">
+        <span class="step__title">${step.title}</span>
+        <span class="step__badge">${badge}</span>
+        <span class="step__message" hidden></span>
+      </li>`;
+    })
+    .join("");
+}
+
+function formHtml(role: Role): string {
+  const def = ROLE_DEFS[role];
+  const submit = `<button class="btn" type="submit"${running ? " data-disabled" : ""}>${def.submitLabel}</button>`;
+  let fields = "";
+  switch (role) {
+    case "server":
+      fields = `
+        <div class="field">
+          <label for="admin-name">Administrator name</label>
+          <input id="admin-name" name="adminName" type="text" autocomplete="name" required />
+        </div>
+        <div class="field">
+          <label for="admin-email">Login email</label>
+          <input id="admin-email" name="adminEmail" type="email" autocomplete="email" required />
+        </div>
+        <div class="field">
+          <label for="admin-password">Initial password</label>
+          <input id="admin-password" name="adminPassword" type="password" autocomplete="new-password" required />
+        </div>
+        <div class="field">
+          <label for="property-name">Property name <span class="optional">(optional)</span></label>
+          <input id="property-name" name="propertyName" type="text" />
+        </div>`;
+      break;
+    case "terminal":
+      fields = `
+        <div class="field">
+          <label for="property-code">Property code</label>
+          <input id="property-code" name="propertyCode" type="text" autocomplete="off" required />
+        </div>
+        <div class="field">
+          <label for="pairing-code">Pairing code</label>
+          <input id="pairing-code" name="pairingCode" type="text" autocomplete="off" required />
+        </div>`;
+      break;
+    case "staff_client":
+      fields = `
+        <div class="field">
+          <label for="server-url">Server address</label>
+          <input id="server-url" name="serverUrl" type="url" placeholder="http://192.168.1.20:8000" required />
+        </div>
+        <p class="hint">LAN auto-discovery is coming; until then, ask the server host for this address.</p>`;
+      break;
+  }
+  return `<form>${fields}${submit}</form>`;
+}
+
+function runningNoteHtml(): string {
+  return `<p class="note">${lastFailure ? "Something failed below; you can retry once you fix it." : "Setup is running — it may take a few minutes on a fresh machine."}</p>`;
+}
+
+// --- Running setup -----------------------------------------------------------
+
+function bindForm(): void {
+  const root = document.getElementById("root")!;
+  const form = root.querySelector<HTMLFormElement>("form");
+  if (!form) return;
+
+  const submit = root.querySelector<HTMLButtonElement>('button[type="submit"]');
+  const disable = () => {
+    submit?.setAttribute("data-disabled", "true");
+    form.setAttribute("data-running", "true");
+  };
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (running || submit?.hasAttribute("data-disabled")) return;
+
+    const data = new FormData(form);
+    const value = (name: string) => (data.get(name) as string | null)?.trim() ?? "";
+
+    const payload: Record<string, unknown> = {};
+    let command: string;
+    switch (currentRole) {
+      case "server": {
+        command = "setup_run_server";
+        payload.adminName = value("adminName");
+        payload.adminEmail = value("adminEmail");
+        payload.adminPassword = value("adminPassword");
+        payload.propertyName = value("propertyName") || null;
+        break;
+      }
+      case "terminal": {
+        command = "setup_run_terminal";
+        payload.propertyCode = value("propertyCode");
+        payload.pairingCode = value("pairingCode");
+        break;
+      }
+      case "staff_client": {
+        command = "setup_run_staff_client";
+        payload.serverUrl = value("serverUrl");
+        break;
+      }
+      default:
+        return;
+    }
+
+    running = true;
+    lastFailure = null;
+    steps.forEach((step) => completedIds.delete(step.id));
+    disable();
+    renderStepStates();
+
+    try {
+      await invoke(command, payload);
+    } catch (error) {
+      running = false;
+      renderWizard(currentRole);
+      const note = form.querySelector<HTMLElement>(".note");
+      if (note) note.textContent = String(error);
+    }
+  });
+}
+
+// Refresh the step rows against the live model without rebuilding the form.
+function renderStepStates(): void {
+  const root = document.getElementById("root")!;
+  for (const step of steps) {
+    const row = root.querySelector<HTMLElement>(`[data-step="${step.id}"]`);
+    if (!row) continue;
+    const done = completedIds.has(step.id);
+    const badge = row.querySelector<HTMLElement>(".step__badge");
+    if (badge) badge.innerHTML = done ? statusBadge("succeeded") : statusBadge("pending");
+  }
+}
+
+function setStep(stepId: string, status: StepEvent["status"], message: string | null): void {
+  const root = document.getElementById("root")!;
+  const row = root.querySelector<HTMLElement>(`[data-step="${stepId}"]`);
+  if (!row) return;
+
+  const badge = row.querySelector<HTMLElement>(".step__badge");
+  if (badge) badge.innerHTML = statusBadge(status);
+
+  const messageEl = row.querySelector<HTMLElement>(".step__message");
+  if (messageEl) {
+    messageEl.textContent =
+      status === "failed" && message ? `Cause: ${message}` : message ?? "";
+    messageEl.hidden = !message;
+    messageEl.className =
+      "step__message " + (status === "failed" ? "step__message--err" : "");
+  }
+
+  if (status === "failed") {
+    lastFailure = { step: stepId, message: message ?? "unknown cause" };
+  }
+}
+
+// --- Events from the engine --------------------------------------------------
+
+function applyStep(event: StepEvent): void {
+  setStep(event.id, event.status, event.message);
+  if (event.status === "succeeded") {
+    completedIds.add(event.id);
+  }
+}
+
+function finish(done: DoneEvent): void {
+  running = false;
+  if (!currentRole) return;
+
+  if (done.ok) {
+    renderDone(done);
+  } else {
+    const message = lastFailure
+      ? `Step “${lastFailure.step}” failed. ${lastFailure.message}`
+      : done.error ?? "Setup failed for an unknown reason.";
+
+    const panel = el(`<section class="panel panel--err">
+      <h2>Setup did not complete</h2>
+      <p>${escapeHtml(message)}</p>
+      <p class="hint">You can retry — already-completed steps are not repeated.</p>
+      <button class="btn" type="button" data-retry>Try again</button>
+    </section>`);
+    panel
+      .querySelector<HTMLButtonElement>("[data-retry]")
+      ?.addEventListener("click", () => renderWizard(currentRole!));
+    inject(document.getElementById("root")!, panel);
+  }
+}
+
+function renderDone(done: DoneEvent): void {
+  const root = document.getElementById("root")!;
+  const target = launchTarget(done);
+  const panel = el(`<section class="panel panel--ok">
+    <h2>${doneHeading()}</h2>
+    <p>${doneBody(done)}</p>
+    ${target ? `<button class="btn" type="button" data-open>Open the application</button>` : ""}
+  </section>`);
+  inject(root, panel);
+
+  root.querySelector<HTMLButtonElement>("[data-open]")?.addEventListener("click", () => {
+    window.location.href = target ?? "about:blank";
+  });
+}
+
+function launchTarget(done: DoneEvent): string | null {
+  switch (currentRole) {
+    case "server":
+      return `http://127.0.0.1:${done.port ?? 8000}`;
+    case "staff_client":
+      return done.serverUrl ?? null;
+    default:
+      return null;
+  }
+}
+
+function doneHeading(): string {
+  switch (currentRole) {
+    case "server":
+      return "Your server is ready";
+    case "terminal":
+      return "Terminal is ready";
+    case "staff_client":
+      return "Connected";
+    default:
+      return "Setup is ready";
+  }
+}
+
+function doneBody(done: DoneEvent): string {
+  switch (currentRole) {
+    case "server":
+      return `The database is migrated, seeded, and the administrator account is created. The server is listening on your network and other devices can connect to it.`;
+    case "terminal":
+      return `The local database is created and migrated. Offline selling and the initial snapshot will arrive in the next phase.`;
+    case "staff_client":
+      return `This PC points at ${escapeHtml(done.serverUrl ?? "")}. You can open the application and sign in.`;
+    default:
+      return "";
+  }
+}
+
+function escapeHtml(value: string): string {
+  const div = document.createElement("div");
+  div.textContent = value;
+  return div.innerHTML;
+}
+
+// --- Startup ----------------------------------------------------------------
+
+async function boot(): Promise<void> {
+  await listen<StepEvent>("setup://step", (event) => applyStep(event.payload));
+  await listen<DoneEvent>("setup://done", (event) => finish(event.payload));
+
+  const status = await invoke<StepStatusView>("setup_status", {});
+
+  if (status.running) {
+    const role = inferRole(status.completed);
+    if (role) {
+      await renderWizard(role);
+      return;
+    }
+  }
+  renderRoleSelect();
+}
+
+function inferRole(completed: string[]): Role | null {
+  if (completed.some((id) => SERVER_STEPS.has(id))) return "server";
+  if (completed.some((id) => TERMINAL_STEPS.has(id))) return "terminal";
+  return null;
+}
+
+window.addEventListener("DOMContentLoaded", () => void boot());
