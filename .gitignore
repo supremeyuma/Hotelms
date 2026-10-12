@@ -43,3 +43,6 @@ resources/js/ziggy.js
 # Staged Laravel app for the desktop installer (see scripts/stage-app.ps1).
 /resources/app/**
 !/resources/app/README.md
+
+# Trimmed Postgres runtime for the desktop installer (see scripts/stage-app.ps1).
+/resources/postgres-runtime/**

@@ -368,7 +368,7 @@ fn resolve_paths(app: &AppHandle) -> Result<setup::Paths, String> {
     let repo_root = manifest.join("..").join("..");
 
     let dev_runtime = repo_root.join(format!("resources/bin/{DEV_TRIPLE}"));
-    let dev_postgres = repo_root.join(format!("resources/postgres/{DEV_TRIPLE}/pgsql"));
+    let dev_postgres = repo_root.join(format!("resources/postgres-runtime/{DEV_TRIPLE}/pgsql"));
     let dev_ini = repo_root.join("resources/runtime/php.ini");
 
     let frankenphp = if cfg!(windows) {

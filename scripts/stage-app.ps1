@@ -154,3 +154,43 @@ if (Test-Path $nested) {
 
 $size = (Get-ChildItem -LiteralPath $Dest -Recurse -File | Measure-Object -Property Length -Sum).Sum
 Write-Host "Staged app: $([math]::Round(($size / 1MB), 1)) MB at $Dest"
+
+# --- Postgres runtime (server role). The vendored EDB tree ships pgAdmin 4
+# (628 MB of GUI/web assets), docs and StackBuilder that the engine never runs.
+# Staging a trimmed copy keeps the installer small and, more importantly, keeps
+# every MSI source path under WiX's ~255-character ceiling (WiX fails to find
+# files whose path edges past MAX_PATH). The full tree stays in
+# resources/postgres/ as the pristine download. ---
+function Wait-Stage-Postgres {
+    $triple = "x86_64-pc-windows-msvc"
+    $pgSrc = Join-Path $Repo "resources\postgres\$triple\pgsql"
+    $pgDest = Join-Path $Repo "resources\postgres-runtime\$triple\pgsql"
+
+    if (Test-Path $pgDest) {
+        Write-Host "Clearing previous postgres staging at $pgDest"
+        Remove-Item -LiteralPath $pgDest -Recurse -Force
+    }
+    New-Item -ItemType Directory -Path $pgDest -Force | Out-Null
+
+    $exclude = @(
+        (Join-Path $pgSrc "pgAdmin 4"),
+        (Join-Path $pgSrc "doc"),
+        (Join-Path $pgSrc "StackBuilder")
+    )
+    $args = @($pgSrc, $pgDest, "/E", "/MT:16", "/XD")
+    $args += $exclude
+    $args += @("/NFL", "/NDL", "/NJH", "/NJS")
+    & robocopy @args | Out-Null
+    if ($LASTEXITCODE -ge 8) {
+        throw "robocopy failed (exit $LASTEXITCODE): $pgSrc -> $pgDest"
+    }
+
+    $pgSize = (Get-ChildItem -LiteralPath $pgDest -Recurse -File | Measure-Object -Property Length -Sum).Sum
+    Write-Host "Staged postgres runtime: $([math]::Round(($pgSize / 1MB), 1)) MB at $pgDest"
+
+    $longest = Get-ChildItem -LiteralPath $pgDest -Recurse -File |
+        Sort-Object { $_.FullName.Length } -Descending | Select-Object -First 1
+    Write-Host "Longest postgres path: $($longest.FullName.Length) chars"
+}
+
+Wait-Stage-Postgres
