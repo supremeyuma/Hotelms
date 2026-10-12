@@ -694,3 +694,43 @@ Commit: `build: package the desktop application for all target platforms`
 - Each artefact is verified on a clean machine.
 
 Next: [Phase 7 — offline terminal](2026-10-05-phase-7-offline-terminal.md).
+
+---
+
+## Execution record
+
+### Task 5 — complete (commit `86f9f18e`)
+
+The three-path wizard ships the first screen, all three role paths, resume for
+interrupted runs, per-step progress, named failure causes and no double
+submission. The engine layer (commits `35c197bd`, `8fa89203`) runs the setup
+steps before the UI consumed them, so the UI is a thin consumer of
+`setup_plan` / `setup_run_*` / `setup://step` / `setup://done`.
+
+One deviation from the plan's step-2 sketch: the plan pseudo-codes migrations as
+`frankenphp php-cli artisan migrate`. Gate C found `php-cli` is unavailable in
+the bundled runtime below PHP 8.6 (bundle is 8.5.11 ZTS), so the engine runs
+`php.exe artisan ...` instead — see the Gate C record.
+
+### Task 6 — Steps 1–3 complete (commits `7c1c6b7b`, `e7b052c7`)
+
+- `discovery.rs`: fixed `PROBE_PORT` 48211, constant `HOTELMS_DISCOVER_V1` probe,
+  server answers with a magic-prefixed JSON line (name, version, http port).
+  Verified end-to-end on loopback in unit tests.
+- The server role starts the probe responder when it boots.
+- QR pairing codes render in the server wizard (one per LAN address, plus the
+  plain `moorelife://pair` URIs); the terminal and staff-client wizards gained
+  "Find my server" (broadcast probe) with the manual address field as fallback.
+- The terminal now persists the discovered/manual server URL into its `.env` for
+  the Phase 7 snapshot pull; the pull and node registration themselves remain
+  deferred (still reported `Skipped` with the Phase 7 reason).
+
+### Task 6 — Step 4 outstanding: real-network test (owner to run)
+
+Discovery Step 4 needs two machines and cannot be run in this environment. When
+a build is available, verify at least:
+
+1. Same subnet, firewall on: terminal and staff client discover the booted
+   server (probe + reply), and the QR code / manual entry path works.
+2. Different subnets where broadcast does not cross: the manual address path
+   still connects (this is why the fallbacks are required, not optional).
