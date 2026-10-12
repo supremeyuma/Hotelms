@@ -16,14 +16,22 @@ class SuperUserSeeder extends Seeder
         $hasUserRoleIdColumn = Schema::hasColumn('users', 'role_id');
         $hasUserSuspendedAtColumn = Schema::hasColumn('users', 'suspended_at');
 
-        $mdRole = Role::findOrCreate('md', 'web');
+        // `roles.slug` is NOT NULL. Spatie's findOrCreate() accepts only name and
+        // guard_name and ignores the slug, so firstOrCreate() is used to supply it.
+        $mdRole = Role::firstOrCreate(
+            ['name' => 'md', 'guard_name' => 'web'],
+            ['slug' => 'md']
+        );
 
         if ($hasRoleSlugColumn && blank($mdRole->slug)) {
             $mdRole->slug = 'md';
             $mdRole->save();
         }
 
-        $superUserRole = Role::findOrCreate('superuser', 'web');
+        $superUserRole = Role::firstOrCreate(
+            ['name' => 'superuser', 'guard_name' => 'web'],
+            ['slug' => 'superuser']
+        );
 
         if ($hasRoleSlugColumn && blank($superUserRole->slug)) {
             $superUserRole->slug = 'superuser';

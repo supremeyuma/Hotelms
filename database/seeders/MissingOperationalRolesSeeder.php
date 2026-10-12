@@ -17,7 +17,16 @@ class MissingOperationalRolesSeeder extends Seeder
             'hr',
             'staff',
         ] as $roleName) {
-            Role::findOrCreate($roleName, 'web');
+            // `roles.slug` is NOT NULL; Spatie's findOrCreate() ignores it.
+            $role = Role::firstOrCreate(
+                ['name' => $roleName, 'guard_name' => 'web'],
+                ['slug' => $roleName]
+            );
+
+            if (blank($role->slug)) {
+                $role->slug = $roleName;
+                $role->save();
+            }
         }
     }
 }
