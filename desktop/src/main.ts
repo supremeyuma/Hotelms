@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import QRCode from "qrcode";
 
 // The three shapes an installation can take (spec 9.2). An explicit answer —
 // never a guess from configuration or hostname — decides what this PC becomes.
@@ -28,6 +29,21 @@ interface DoneEvent {
   error?: string;
   port?: number;
   serverUrl?: string;
+}
+
+interface DiscoveredServer {
+  address: string;
+  name: string;
+  version: string;
+  httpPort: number;
+}
+
+interface PairingView {
+  addresses: string[];
+  uris: string[];
+  name: string;
+  version: string;
+  port: number;
 }
 
 interface RoleDef {
@@ -210,15 +226,25 @@ function formHtml(role: Role): string {
         <div class="field">
           <label for="pairing-code">Pairing code</label>
           <input id="pairing-code" name="pairingCode" type="text" autocomplete="off" required />
+        </div>
+        <div class="field">
+          <label>Server <span class="optional">(pair with your LAN server)</span></label>
+          <input name="serverUrl" type="text" placeholder="Auto-detect, or type its address" />
+          <button class="btn btn--ghost" type="button" data-find>Find my server</button>
+          <div data-results hidden></div>
         </div>`;
       break;
     case "staff_client":
       fields = `
         <div class="field">
           <label for="server-url">Server address</label>
-          <input id="server-url" name="serverUrl" type="url" placeholder="http://192.168.1.20:8000" required />
+          <div class="field-row">
+            <input id="server-url" name="serverUrl" type="url" placeholder="http://192.168.1.20:8000" required />
+            <button class="btn btn--ghost" type="button" data-find>Find my server</button>
+          </div>
+          <div data-results hidden></div>
         </div>
-        <p class="hint">LAN auto-discovery is coming; until then, ask the server host for this address.</p>`;
+        <p class="hint">Broadcast is often blocked; if discovery finds nothing, type the address the server host shows you.</p>`;
       break;
   }
   return `<form>${fields}${submit}</form>`;
@@ -240,6 +266,8 @@ function bindForm(): void {
     submit?.setAttribute("data-disabled", "true");
     form.setAttribute("data-running", "true");
   };
+
+  bindFinder(form);
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -263,6 +291,7 @@ function bindForm(): void {
         command = "setup_run_terminal";
         payload.propertyCode = value("propertyCode");
         payload.pairingCode = value("pairingCode");
+        payload.serverUrl = value("serverUrl") || null;
         break;
       }
       case "staff_client": {
@@ -287,6 +316,57 @@ function bindForm(): void {
       renderWizard(currentRole);
       const note = form.querySelector<HTMLElement>(".note");
       if (note) note.textContent = String(error);
+    }
+  });
+}
+
+// Broadcast the discovery probe and offer the found servers. Selecting one
+// fills the form's server address — the manual field remains the fallback.
+async function bindFinder(form: HTMLFormElement): Promise<void> {
+  const button = form.querySelector<HTMLButtonElement>("[data-find]");
+  const results = form.querySelector<HTMLElement>("[data-results]");
+  const input = form.querySelector<HTMLInputElement>('input[name="serverUrl"]');
+  if (!button || !results) return;
+
+  button.addEventListener("click", async () => {
+    button.disabled = true;
+    button.textContent = "Searching…";
+    results.hidden = false;
+
+    try {
+      const servers = await invoke<DiscoveredServer[]>("discovery_probe", {});
+      if (servers.length === 0) {
+        results.replaceChildren(
+          el(
+            `<p class="hint">No server answered. If it is running, type its address above or ask the host for the pairing code.</p>`,
+          ),
+        );
+        return;
+      }
+
+      results.replaceChildren();
+      for (const server of servers) {
+        const host = server.address.slice(0, server.address.lastIndexOf(":"));
+        const url = `http://${host}:${server.httpPort}`;
+        const result = el(
+          `<button class="finder-result" type="button">
+            <span class="finder-result__name">${escapeHtml(server.name)}</span>
+            <span class="finder-result__meta">${escapeHtml(url)} · v${escapeHtml(server.version)}</span>
+          </button>`,
+        );
+        result.addEventListener("click", () => {
+          if (input) input.value = url;
+          results.hidden = true;
+        });
+        results.appendChild(result);
+      }
+    } catch (error) {
+      results.replaceChildren(
+        el(`<p class="hint">Discovery failed: ${escapeHtml(String(error))}</p>`),
+      );
+    } finally {
+      button.disabled = false;
+      button.textContent = "Find my server";
     }
   });
 }
@@ -370,6 +450,42 @@ function renderDone(done: DoneEvent): void {
 
   root.querySelector<HTMLButtonElement>("[data-open]")?.addEventListener("click", () => {
     window.location.href = target ?? "about:blank";
+  });
+
+  if (currentRole === "server") {
+    void appendServerPairing(panel);
+  }
+}
+
+// Render the pairing fallbacks on the server: a QR code per LAN address, plus
+// the plain pairing URIs a person can read out loud or paste.
+async function appendServerPairing(panel: HTMLElement): Promise<void> {
+  let pairing: PairingView;
+  try {
+    pairing = await invoke<PairingView>("discovery_pairing", {});
+  } catch {
+    return;
+  }
+
+  const section = el(`<div class="pairing">
+    <h3>Pair other devices</h3>
+    <p class="hint">Show a code or share an address. A terminal or staff client scans or pastes it to reach this server when broadcast is blocked.</p>
+    <div class="pairing__list"></div>
+  </div>`);
+  panel.appendChild(section);
+  const list = section.querySelector<HTMLElement>(".pairing__list")!;
+
+  pairing.uris.forEach((uri) => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 150;
+    canvas.height = 150;
+    const text = document.createElement("code");
+    text.textContent = uri;
+    const row = document.createElement("div");
+    row.className = "pairing__row";
+    row.append(canvas, text);
+    list.appendChild(row);
+    void QRCode.toCanvas(canvas, uri, { width: 150, margin: 1 }).catch(() => {});
   });
 }
 
