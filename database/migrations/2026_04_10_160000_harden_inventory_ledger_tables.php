@@ -36,11 +36,13 @@ return new class extends Migration
             } else {
                 $table->decimal('quantity', 12, 2)->default(0)->change();
             }
-
-            if (Schema::hasColumn('inventory_stocks', 'type')) {
-                $table->string('type')->nullable()->default('adjustment')->change();
-            }
         });
+
+        // `type` is an enum column. Laravel cannot emit a valid enum change for
+        // Postgres, so it is handled explicitly per driver below.
+        if (Schema::hasColumn('inventory_stocks', 'type')) {
+            $this->changeTypeColumn('inventory_stocks', [], true, 'adjustment', $driver);
+        }
 
         Schema::table('inventory_movements', function (Blueprint $table) {
             if (! Schema::hasColumn('inventory_movements', 'staff_id')) {
@@ -67,12 +69,18 @@ return new class extends Migration
                 $table->json('meta')->nullable()->after('reference_id');
             }
 
-            if (Schema::hasColumn('inventory_movements', 'type')) {
-                $table->enum('type', ['in', 'out', 'transfer_in', 'transfer_out', 'adjustment'])->change();
-            }
-
             $table->decimal('quantity', 12, 2)->default(0)->change();
         });
+
+        if (Schema::hasColumn('inventory_movements', 'type')) {
+            $this->changeTypeColumn(
+                'inventory_movements',
+                ['in', 'out', 'transfer_in', 'transfer_out', 'adjustment'],
+                false,
+                null,
+                $driver
+            );
+        }
 
         $stockIndexes = [];
         if ($driver === 'mysql') {
@@ -110,5 +118,98 @@ return new class extends Migration
 
     public function down(): void
     {
+    }
+
+    /**
+     * Change the enum-backed `type` column without relying on Laravel's
+     * broken enum change support for Postgres.
+     *
+     * @param  array<int, string>  $allowed  Allowed values; empty = plain string column.
+     */
+    private function changeTypeColumn(string $table, array $allowed, bool $nullable, ?string $default, string $driver): void
+    {
+        if ($driver === 'pgsql') {
+            $this->dropTypeCheckConstraints($table);
+
+            DB::statement(sprintf('ALTER TABLE "%s" ALTER COLUMN "type" TYPE varchar(255)', $table));
+            DB::statement(sprintf('ALTER TABLE "%s" ALTER COLUMN "type" %s NOT NULL', $table, $nullable ? 'DROP' : 'SET'));
+
+            if ($default === null) {
+                DB::statement(sprintf('ALTER TABLE "%s" ALTER COLUMN "type" DROP DEFAULT', $table));
+            } else {
+                DB::statement(sprintf("ALTER TABLE \"%s\" ALTER COLUMN \"type\" SET DEFAULT '%s'", $table, $default));
+            }
+
+            if ($allowed !== []) {
+                $values = "'".implode("', '", $allowed)."'";
+                DB::statement(sprintf(
+                    'ALTER TABLE "%s" ADD CONSTRAINT "%s_type_check" CHECK ("type" in (%s))',
+                    $table,
+                    $table,
+                    $values
+                ));
+            }
+
+            return;
+        }
+
+        if ($driver === 'mysql') {
+            $definition = $allowed === []
+                ? sprintf('VARCHAR(255) %s', $nullable ? 'NULL' : 'NOT NULL')
+                : sprintf("ENUM(%s) %s", "'".implode("', '", $allowed)."'", $nullable ? 'NULL' : 'NOT NULL');
+
+            if ($default !== null) {
+                $definition .= sprintf(" DEFAULT '%s'", $default);
+            }
+
+            DB::statement(sprintf('ALTER TABLE `%s` MODIFY COLUMN `type` %s', $table, $definition));
+
+            return;
+        }
+
+        // sqlite and other drivers: rebuild the column via the schema builder.
+        Schema::table($table, function (Blueprint $blueprint) use ($allowed, $nullable, $default) {
+            $column = $allowed === []
+                ? $blueprint->string('type')
+                : $blueprint->enum('type', $allowed);
+
+            if ($nullable) {
+                $column->nullable();
+            }
+
+            if ($default !== null) {
+                $column->default($default);
+            }
+
+            $column->change();
+        });
+    }
+
+    /**
+     * Drop the CHECK constraints backing an enum `type` column on Postgres.
+     *
+     * Constraint names are not updated when a table is renamed, so the
+     * constraint is located by table + column rather than by its name.
+     */
+    private function dropTypeCheckConstraints(string $table): void
+    {
+        // Postgres may deparse the identifier as `(type)` or `("type")`, so the
+        // column is matched as a standalone word rather than a quoted literal.
+        $sql = sprintf(<<<'SQL'
+            SELECT con.conname AS name
+            FROM pg_constraint con
+            JOIN pg_class rel ON rel.oid = con.conrelid
+            JOIN pg_namespace ns ON ns.oid = rel.relnamespace
+            WHERE con.contype = 'c'
+              AND rel.relname = '%s'
+              AND ns.nspname = current_schema()
+              AND pg_get_constraintdef(con.oid) ~ '(^|[^a-zA-Z0-9_])type([^a-zA-Z0-9_]|$)'
+            SQL, $table);
+
+        $constraints = DB::select($sql);
+
+        foreach ($constraints as $constraint) {
+            DB::statement(sprintf('ALTER TABLE "%s" DROP CONSTRAINT "%s"', $table, $constraint->name));
+        }
     }
 };
