@@ -87,4 +87,34 @@ npm install
 npm run tauri dev
 ```
 
-Build a bundle: `npm run tauri build`.
+### Building installer bundles
+
+Staged resources come first. `scripts/stage-app.ps1` copies a minimal Laravel
+app (`resources/app/`) from the working tree and a trimmed Postgres runtime
+(`resources/postgres-runtime/`, `pgAdmin 4`, docs and StackBuilder excluded to
+keep every MSI path inside WiX's path limits) from the vendored archive at
+`resources/postgres/`:
+
+```
+powershell -File scripts/stage-app.ps1
+```
+
+Then build the bundles:
+
+```
+cd desktop
+npm run tauri build
+```
+
+Artifacts land in `desktop/src-tauri/target/release/bundle/` (`.msi` and
+NSIS `.exe` on Windows).
+
+### What CI does and does not build
+
+`.github/workflows/desktop-build.yml` runs the wizard frontend build, the
+desktop crate's tests and release compile, and the runtime gate
+(`scripts/verify-runtime.ps1` against the official FrankenPHP Windows archive),
+so a missing PHP extension fails a pull request rather than a customer's first
+run. Full installer bundles are *not* produced in CI: the ~900 MB vendored
+platform archives (Postgres, PHP runtime, PHP project) are gitignored and exist
+only on the maintainer machine.

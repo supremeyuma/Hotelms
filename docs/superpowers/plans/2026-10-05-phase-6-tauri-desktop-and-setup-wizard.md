@@ -655,26 +655,29 @@ Commit: `feat: add lan discovery with qr and manual fallbacks`
 - Modify: `desktop/src-tauri/tauri.conf.json`
 - Create: `.github/workflows/desktop-build.yml`
 
-- [ ] **Step 1: Configure per-target bundles**
+- [x] **Step 1: Configure per-target bundles**
 
-Windows `.msi` and `.exe`, macOS `.dmg` and `.app`, Linux `.deb` and `.AppImage`.
-Each target's runtime archive is a bundle resource.
+Windows `.msi` and `.exe` are configured and build (see the execution record);
+macOS `.dmg`/`.app` and Linux `.deb`/`.AppImage` wait on their vendored runtime
+archives.
 
 - [ ] **Step 2: Verify each artefact on a clean machine**
 
 An installer that has only been tested on the build machine proves nothing.
 Install on a clean VM with no PHP, no Postgres, and no .NET, then run each of the
-three roles.
+three roles. Outstanding — requires owner's VM infrastructure.
 
-- [ ] **Step 3: Add CI**
+- [x] **Step 3: Add CI**
 
-Build per platform. Run `scripts/verify-runtime.ps1` against each FrankenPHP
-binary so a missing extension fails the build rather than a customer's first run.
+`.github/workflows/desktop-build.yml` builds the wizard frontend, tests and
+release-compiles the desktop crate, and runs `scripts/verify-runtime.ps1`
+against the official FrankenPHP Windows archive so a missing extension fails the
+build rather than a customer's first run.
 
-- [ ] **Step 4: Document the unsigned state**
+- [x] **Step 4: Document the unsigned state**
 
-No code signing certificate is available. Record in `desktop/README.md` that
-Windows SmartScreen and Gatekeeper will warn, and why.
+No code signing certificate is available. `desktop/README.md` "Unsigned builds"
+records that Windows SmartScreen and Gatekeeper will warn, and why.
 
 Commit: `build: package the desktop application for all target platforms`
 
@@ -734,3 +737,36 @@ a build is available, verify at least:
    server (probe + reply), and the QR code / manual entry path works.
 2. Different subnets where broadcast does not cross: the manual address path
    still connects (this is why the fallbacks are required, not optional).
+
+### Task 7 — Windows bundles + CI committed (`2b185be6`, `28de0733`, more)
+
+Task 7 Step 1 (per-target bundles) is complete **for Windows** — macOS/Linux
+remain until their vendored runtimes land. Owner decisions (question dialog):
+stage the app as a bundle resource, attempt the real Windows build now, and
+fold tray + autostart into Task 7.
+
+- `scripts/stage-app.ps1` stages `resources/app/` (minimal Laravel app, secrets
+  and dev tooling excluded) and `resources/postgres-runtime/` (EDB Postgres
+  trimmed of `pgAdmin 4`, `doc`, `StackBuilder`) before bundling. Trim is
+  required: the pristine `resources/postgres/` tree (777 MB, 628 MB pgAdmin)
+  pushed MSI source paths past WiX's ~255-character limit (`light.exe`
+  LGHT0103, exit 103). Trimmed runtime: 132.8 MB, longest bundled path 150
+  chars.
+- `tauri.windows.conf.json` maps `runtime/` (FrankenPHP + php.ini), `postgres/`,
+  and `app/` into the installer. A duplicate `runtime/php.ini` mapping tripped
+  WiX ICE30 (same target file in two components) and was removed.
+- Tray + autostart (owner-scoped into Task 7): `tray-icon` feature, tray with
+  quit menu, double-click restores, close hides to tray while the server runs,
+  and `HKCU\...\Run` registration via `reg.exe`.
+- **Verified local build:** `npm run tauri build` produces both
+  `MooreLife_0.1.0_x64_en-US.msi` (143 MB) and `MooreLife_0.1.0_x64-setup.exe`
+  (98 MB). 17 Rust tests green.
+- `.github/workflows/desktop-build.yml` — `build` job (wizard frontend,
+  `cargo test`, release compile) and a `runtime-gate` job that downloads the
+  pinned FrankenPHP 1.13.0 Windows archive and runs
+  `scripts/verify-runtime.ps1`, so a missing PHP extension fails CI. Full
+  bundles are not built in CI because the vendored archives are gitignored.
+- Task 7 Step 2 (clean-machine verification) is outstanding — owner to install
+  the `.msi`/`.exe` on a VM with no PHP/Postgres/.NET and run all three roles.
+  Step 4 (unsigned state) predates this commit; the note lives in
+  `desktop/README.md` under "Unsigned builds".

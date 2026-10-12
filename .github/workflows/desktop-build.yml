@@ -1,0 +1,58 @@
+name: desktop-build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: desktop
+        run: npm ci
+
+      - name: Build the wizard frontend
+        working-directory: desktop
+        run: npm run build
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: desktop/src-tauri
+
+      - name: Test the desktop crate
+        working-directory: desktop/src-tauri
+        run: cargo test
+
+      - name: Build the desktop release binary
+        working-directory: desktop/src-tauri
+        run: cargo build --release
+
+  runtime-gate:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download FrankenPHP v1.13.0 for Windows x86_64
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/dunglas/frankenphp/releases/download/v1.13.0/frankenphp-windows-x86_64.zip" -OutFile "$env:RUNNER_TEMP\frankenphp.zip"
+          Expand-Archive -LiteralPath "$env:RUNNER_TEMP\frankenphp.zip" -DestinationPath "$env:RUNNER_TEMP\frankenphp"
+
+      - name: Verify required PHP extensions are present
+        run: scripts/verify-runtime.ps1 -RuntimeDir "$env:RUNNER_TEMP\frankenphp"
