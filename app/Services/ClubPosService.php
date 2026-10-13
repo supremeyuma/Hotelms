@@ -277,7 +277,7 @@ class ClubPosService
 
         return [
             'docket' => $closed,
-            'queued_for_sync' => ! $this->connectivity->status()['online'],
+            'queued_for_sync' => ! $this->connectivity->status(true)['online'],
         ];
     }
 
