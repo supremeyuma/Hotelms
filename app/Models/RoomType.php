@@ -2,15 +2,14 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\SoftDeletes;
-
 use App\Sync\Syncable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class RoomType extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, Syncable;
 
     protected $fillable = [
         'property_id',
@@ -37,8 +36,6 @@ class RoomType extends Model
         return $this->hasMany(Room::class);
     }
 
-
-
     public function images()
     {
         return $this->morphMany(Image::class, 'imageable')->orderByDesc('is_primary')->orderBy('created_at');
@@ -55,8 +52,11 @@ class RoomType extends Model
     public function getPrimaryImageUrlAttribute(): ?string
     {
         $img = $this->images()->where('is_primary', true)->first();
-        if ($img) return $img->url;
+        if ($img) {
+            return $img->url;
+        }
         $first = $this->images()->first();
+
         return $first?->url;
     }
 

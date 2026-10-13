@@ -2,34 +2,35 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\Facades\Vite;
-use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\Gate;
-use Inertia\Inertia;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Auth;
 use App\Models\Booking;
-use App\Observers\BookingObserver;
-use App\Models\Order;
-use App\Observers\OrderObserver;
-use App\Models\LaundryOrder;
-use App\Observers\LaundryOrderObserver;
-use App\Models\MaintenanceTicket;
-use App\Observers\MaintenanceTicketObserver;
 use App\Models\Charge;
-use App\Observers\ChargeObserver;
+use App\Models\LaundryOrder;
+use App\Models\MaintenanceTicket;
+use App\Models\Order;
 use App\Models\Payment;
+use App\Observers\BookingObserver;
+use App\Observers\ChargeObserver;
+use App\Observers\LaundryOrderObserver;
+use App\Observers\MaintenanceTicketObserver;
+use App\Observers\OrderObserver;
 use App\Observers\PaymentObserver;
-use App\Services\ContentService;
 use App\Services\Accounting\TaxService;
 use App\Services\AccountingService;
-use App\Services\PricingService;
+use App\Services\AuditLoggerService;
+use App\Services\ClubPosService;
+use App\Services\Connectivity\ConnectivityMonitor;
+use App\Services\ContentService;
+use App\Services\DrinkStockService;
+use App\Services\FlutterwaveService;
 use App\Services\PaymentProviderManager;
 use App\Services\PaystackService;
-use App\Services\FlutterwaveService;
-use App\Services\ClubPosService;
-use App\Services\DrinkStockService;
-use App\Services\AuditLoggerService;
+use App\Services\PricingService;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Vite;
+use Illuminate\Support\ServiceProvider;
+use Inertia\Inertia;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -50,11 +51,11 @@ class AppServiceProvider extends ServiceProvider
 
         // Register payment providers
         $this->app->singleton(FlutterwaveService::class, function ($app) {
-            return new FlutterwaveService();
+            return new FlutterwaveService;
         });
 
         $this->app->singleton(PaystackService::class, function ($app) {
-            return new PaystackService();
+            return new PaystackService;
         });
 
         // Register payment provider manager
@@ -77,6 +78,7 @@ class AppServiceProvider extends ServiceProvider
                 $app->make(PricingService::class),
                 $app->make(AuditLoggerService::class),
                 $app->make(DrinkStockService::class),
+                $app->make(ConnectivityMonitor::class),
             );
         });
     }
@@ -110,7 +112,7 @@ class AppServiceProvider extends ServiceProvider
 
         Inertia::share('content', function () {
             // Avoid querying the `contents` table when it doesn't exist yet
-            if (!Schema::hasTable('contents')) {
+            if (! Schema::hasTable('contents')) {
                 return [];
             }
 
@@ -122,13 +124,12 @@ class AppServiceProvider extends ServiceProvider
             }
         });
 
-
         Booking::observe(BookingObserver::class);
         Order::observe(OrderObserver::class);
         LaundryOrder::observe(LaundryOrderObserver::class);
         MaintenanceTicket::observe(MaintenanceTicketObserver::class);
         Charge::observe(ChargeObserver::class);
         Payment::observe(PaymentObserver::class);
-        
+
     }
 }

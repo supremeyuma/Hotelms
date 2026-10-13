@@ -1,18 +1,24 @@
 <?php
+
 // app/Models/InventoryMovement.php
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-
 use App\Sync\Syncable;
+use Illuminate\Database\Eloquent\Model;
 
 class InventoryMovement extends Model
 {
+    use Syncable;
+
     public const TYPE_IN = 'in';
+
     public const TYPE_OUT = 'out';
+
     public const TYPE_TRANSFER_IN = 'transfer_in';
+
     public const TYPE_TRANSFER_OUT = 'transfer_out';
+
     public const TYPE_ADJUSTMENT = 'adjustment';
 
     protected $fillable = [
@@ -24,12 +30,12 @@ class InventoryMovement extends Model
         'reason',
         'reference_type',
         'reference_id',
-        'meta'
+        'meta',
     ];
 
     protected $casts = [
         'quantity' => 'decimal:2',
-        'meta' => 'array'
+        'meta' => 'array',
     ];
 
     public function item()
@@ -54,5 +60,4 @@ class InventoryMovement extends Model
     {
         return $this->morphTo();
     }
-
 }

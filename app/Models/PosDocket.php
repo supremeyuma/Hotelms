@@ -2,15 +2,14 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Sync\Syncable;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-
-use App\Sync\Syncable;
+use Illuminate\Database\Eloquent\Model;
 
 class PosDocket extends Model
 {
-    use HasFactory, HasUlids;
+    use HasFactory, HasUlids, Syncable;
 
     protected $fillable = [
         'device_id',

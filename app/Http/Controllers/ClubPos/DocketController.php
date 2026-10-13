@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\ClubPos;
 
 use App\Http\Controllers\Controller;
+use App\Models\Booking;
+use App\Models\MenuItem;
 use App\Models\PosDocket;
 use App\Models\PosDocketItem;
-use App\Models\MenuItem;
 use App\Models\PosSession;
-use App\Models\Booking;
 use App\Services\ClubPosService;
 use Illuminate\Http\Request;
 
@@ -20,16 +20,16 @@ class DocketController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            "session_id" => "nullable|exists:pos_sessions,id",
-            "table_identifier" => "nullable|string|max:50",
-            "customer_name" => "nullable|string|max:100",
-            "booking_id" => "nullable|exists:bookings,id",
-            "room_id" => "nullable|exists:rooms,id",
+            'session_id' => 'nullable|exists:pos_sessions,id',
+            'table_identifier' => 'nullable|string|max:50',
+            'customer_name' => 'nullable|string|max:100',
+            'booking_id' => 'nullable|exists:bookings,id',
+            'room_id' => 'nullable|exists:rooms,id',
         ]);
 
         $session = null;
-        if (!empty($validated["session_id"])) {
-            $session = PosSession::findOrFail($validated["session_id"]);
+        if (! empty($validated['session_id'])) {
+            $session = PosSession::findOrFail($validated['session_id']);
         } else {
             $identity = $request->cookie(config('pos.devices.identity_cookie'));
             $device = (config('pos.devices.auto_register') && $identity)
@@ -42,22 +42,22 @@ class DocketController extends Controller
         $docket = $this->clubPos->openDocket(
             $session,
             $request->user(),
-            $validated["table_identifier"] ?? null,
-            $validated["customer_name"] ?? null,
-            $validated["booking_id"] ?? null,
-            $validated["room_id"] ?? null,
+            $validated['table_identifier'] ?? null,
+            $validated['customer_name'] ?? null,
+            $validated['booking_id'] ?? null,
+            $validated['room_id'] ?? null,
         );
 
-        return $this->respond($request, $docket->load("items", "payments", "staff", "booking", "room"), 201);
+        return $this->respond($request, $docket->load('items', 'payments', 'staff', 'booking', 'room'), 201);
     }
 
     public function attachBooking(Request $request, PosDocket $docket)
     {
         $validated = $request->validate([
-            "booking_id" => "required|exists:bookings,id",
+            'booking_id' => 'required|exists:bookings,id',
         ]);
 
-        $booking = Booking::findOrFail($validated["booking_id"]);
+        $booking = Booking::findOrFail($validated['booking_id']);
 
         try {
             $docket = $this->clubPos->attachBooking($docket, $booking, $request->user());
@@ -65,32 +65,32 @@ class DocketController extends Controller
             return $this->respondError($request, $e->getMessage());
         }
 
-        return $this->respond($request, $docket->load("items", "payments", "booking", "room"));
+        return $this->respond($request, $docket->load('items', 'payments', 'booking', 'room'));
     }
 
     public function show(PosDocket $docket)
     {
         return response()->json(
-            $docket->load(["items", "items.menuItem", "payments", "staff", "session"])
+            $docket->load(['items', 'items.menuItem', 'payments', 'staff', 'session'])
         );
     }
 
     public function addItem(Request $request, PosDocket $docket)
     {
         $validated = $request->validate([
-            "menu_item_id" => "required|exists:menu_items,id",
-            "quantity" => "required|integer|min:1|max:9999",
+            'menu_item_id' => 'required|exists:menu_items,id',
+            'quantity' => 'required|integer|min:1|max:9999',
         ]);
 
-        $menuItem = MenuItem::findOrFail($validated["menu_item_id"]);
+        $menuItem = MenuItem::findOrFail($validated['menu_item_id']);
 
         try {
-            $docket = $this->clubPos->addItem($docket, $menuItem, (int) $validated["quantity"], $request->user());
+            $docket = $this->clubPos->addItem($docket, $menuItem, (int) $validated['quantity'], $request->user());
         } catch (\RuntimeException $e) {
             return $this->respondError($request, $e->getMessage());
         }
 
-        return $this->respond($request, $docket->load("items", "payments"));
+        return $this->respond($request, $docket->load('items', 'payments'));
     }
 
     public function removeItem(Request $request, PosDocket $docket, PosDocketItem $item)
@@ -103,42 +103,49 @@ class DocketController extends Controller
             return $this->respondError($request, $e->getMessage());
         }
 
-        return $this->respond($request, $docket->load("items", "payments"));
+        return $this->respond($request, $docket->load('items', 'payments'));
     }
 
     public function pay(Request $request, PosDocket $docket)
     {
         $validated = $request->validate([
-            "payments" => "required|array|min:1",
-            "payments.*.method" => "required|in:cash,card,room_charge,mobile_money,voucher",
-            "payments.*.amount" => "required|numeric|min:0",
-            "payments.*.reference" => "nullable|string|max:100",
-            "payments.*.change_given" => "nullable|numeric|min:0",
-            "payments.*.meta" => "nullable|array",
+            'payments' => 'required|array|min:1',
+            'payments.*.method' => 'required|in:cash,card,room_charge,mobile_money,voucher',
+            'payments.*.amount' => 'required|numeric|min:0',
+            'payments.*.reference' => 'nullable|string|max:100',
+            'payments.*.change_given' => 'nullable|numeric|min:0',
+            'payments.*.meta' => 'nullable|array',
         ]);
 
         try {
-            $docket = $this->clubPos->closeDocket($docket, $validated["payments"], $request->user());
+            $ack = $this->clubPos->completeSale($docket, $validated['payments'], $request->user());
         } catch (\RuntimeException $e) {
             return $this->respondError($request, $e->getMessage());
         }
 
-        return $this->respond($request, $docket->load("items", "payments"));
+        if ($request->header('X-Inertia')) {
+            return redirect()->back()->with('queued_for_sync', $ack['queued_for_sync']);
+        }
+
+        return response()->json([
+            'docket' => $ack['docket'],
+            'queued_for_sync' => $ack['queued_for_sync'],
+        ]);
     }
 
     public function void(Request $request, PosDocket $docket)
     {
         $validated = $request->validate([
-            "reason" => "required|string|max:500",
+            'reason' => 'required|string|max:500',
         ]);
 
         try {
-            $docket = $this->clubPos->voidDocket($docket, $validated["reason"], $request->user());
+            $docket = $this->clubPos->voidDocket($docket, $validated['reason'], $request->user());
         } catch (\RuntimeException $e) {
             return $this->respondError($request, $e->getMessage());
         }
 
-        return $this->respond($request, $docket->load("items", "payments"));
+        return $this->respond($request, $docket->load('items', 'payments'));
     }
 
     private function respond(Request $request, $payload, int $status = 200)

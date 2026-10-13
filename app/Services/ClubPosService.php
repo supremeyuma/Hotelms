@@ -2,16 +2,15 @@
 
 namespace App\Services;
 
+use App\Models\Booking;
+use App\Models\MenuItem;
 use App\Models\PosDevice;
-use App\Models\PosSession;
 use App\Models\PosDocket;
 use App\Models\PosDocketItem;
 use App\Models\PosDocketPayment;
-use App\Models\MenuItem;
+use App\Models\PosSession;
 use App\Models\User;
-use App\Models\Booking;
-use App\Services\AuditLoggerService;
-use App\Services\PricingService;
+use App\Services\Connectivity\ConnectivityMonitor;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -21,6 +20,7 @@ class ClubPosService
         private PricingService $pricing,
         private AuditLoggerService $audit,
         private DrinkStockService $stock,
+        private ConnectivityMonitor $connectivity,
     ) {}
 
     public function resolveDevice(?string $identity = null): PosDevice
@@ -38,7 +38,7 @@ class ClubPosService
     public function registerDevice(): PosDevice
     {
         return PosDevice::firstOrCreate(
-            ['device_code' => 'POS-' . strtoupper(Str::random(8))],
+            ['device_code' => 'POS-'.strtoupper(Str::random(8))],
             $this->newDeviceAttributes()
         );
     }
@@ -155,7 +155,7 @@ class ClubPosService
             throw new \RuntimeException('Cannot add items to a closed docket.');
         }
 
-        return DB::transaction(function () use ($docket, $menuItem, $quantity, $staff) {
+        return DB::transaction(function () use ($docket, $menuItem, $quantity) {
             $subtotal = $menuItem->price * $quantity;
 
             PosDocketItem::create([
@@ -259,13 +259,35 @@ class ClubPosService
         });
     }
 
+    /**
+     * Complete a sale and return the acknowledgement the terminal UI needs.
+     *
+     * The write is identical whether or not a peer is reachable: closeDocket
+     * runs the same business rules inside the same transaction, so the local
+     * sale always commits. Connectivity only decides what the caller is told --
+     * a sale written while offline is queued for sync rather than already on
+     * its way. Nothing in the business rules branches on connectivity.
+     *
+     * @param  array<int, array<string, mixed>>  $payments
+     * @return array{docket: PosDocket, queued_for_sync: bool}
+     */
+    public function completeSale(PosDocket $docket, array $payments, ?User $closedBy = null): array
+    {
+        $closed = $this->closeDocket($docket, $payments, $closedBy);
+
+        return [
+            'docket' => $closed,
+            'queued_for_sync' => ! $this->connectivity->status()['online'],
+        ];
+    }
+
     public function removeItem(PosDocket $docket, PosDocketItem $item, User $staff): PosDocket
     {
         if ($docket->status !== 'open') {
             throw new \RuntimeException('Cannot remove items from a closed docket.');
         }
 
-        return DB::transaction(function () use ($docket, $item, $staff) {
+        return DB::transaction(function () use ($docket, $item) {
             $docket->subtotal -= $item->subtotal;
             $pricing = $this->pricing->calculatePricing(max(0, $docket->subtotal));
             $docket->vat = $pricing['vat'];

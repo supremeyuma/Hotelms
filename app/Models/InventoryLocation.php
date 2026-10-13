@@ -1,21 +1,25 @@
 <?php
+
 // app/Models/InventoryLocation.php
 
 namespace App\Models;
 
+use App\Sync\Syncable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-use App\Sync\Syncable;
-
 class InventoryLocation extends Model
 {
-    use HasFactory;
+    use HasFactory, Syncable;
 
     public const TYPE_MAIN_STORE = 'main_store';
+
     public const TYPE_KITCHEN = 'kitchen';
+
     public const TYPE_BAR = 'bar';
+
     public const TYPE_LAUNDRY = 'laundry';
+
     public const TYPE_HOUSEKEEPING = 'housekeeping';
 
     public const TYPES = [
