@@ -151,12 +151,12 @@ class SyncApplier
         }
 
         SyncConflict::create([
-            'table_name'    => $table,
-            'row_id'        => $uid,
-            'local_change'  => $result->local,
+            'table_name' => $table,
+            'row_id' => $uid,
+            'local_change' => $result->local,
             'remote_change' => $remote,
-            'reason'        => $result->reason,
-            'status'        => 'open',
+            'reason' => $result->reason,
+            'status' => 'open',
         ]);
     }
 
@@ -187,10 +187,19 @@ class SyncApplier
 
         $attributes = Arr::only($payload, $columns);
 
-        // The origin's primary key is meaningless here. Keeping it would
-        // collide with an existing row on insert and, on update, would
-        // silently repoint this node's own identifiers.
-        unset($attributes['id']);
+        // The origin's auto-increment primary key is meaningless here: keeping
+        // it would collide with an unrelated local row on insert and, on
+        // update, would silently repoint this node's own identifiers.
+        //
+        // A ULID primary key is different. It is minted once, at the origin,
+        // and is what every child row references through its foreign keys.
+        // Dropping it and letting HasUlids mint a fresh one on adoption would
+        // orphan those children on the node doing the adopting - a docket
+        // whose session_id no longer matches any session, for example. The
+        // shared ULID survives; only the local auto-increment key is discarded.
+        if ($instance->getKeyType() !== 'string') {
+            unset($attributes['id']);
+        }
 
         $attributes['sync_uid'] = $uid;
 
