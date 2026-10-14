@@ -37,7 +37,12 @@ class RebuildDrinkStock extends Command
                 ->pluck('total', 'drink_stock_id');
 
             foreach (DrinkStock::all() as $stock) {
-                $stock->full_bottles = max(0, (int) ($totals[$stock->id] ?? 0));
+                // The ledger is the truth: a signed sum, written as it stands.
+                // Clamping here would silently rewrite an oversale back to
+                // zero and hide exactly the event an operator needs to see.
+                // A negative balance is permitted and surfaced by the model's
+                // low-stock flag, not corrected away.
+                $stock->full_bottles = (int) ($totals[$stock->id] ?? 0);
                 $stock->save();
             }
         });
