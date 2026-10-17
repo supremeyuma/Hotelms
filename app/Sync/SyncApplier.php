@@ -24,6 +24,20 @@ class SyncApplier
     private static array $columns = [];
 
     /**
+     * The casts Eloquent treats as dates, in the normalised form getCastType()
+     * reports. A column cast to one of these is a date to the model even though
+     * Model::getDates() does not list it.
+     */
+    private const DATE_CASTS = [
+        'date',
+        'datetime',
+        'immutable_date',
+        'immutable_datetime',
+        'custom_datetime',
+        'immutable_custom_datetime',
+    ];
+
+    /**
      * Apply one remote change locally.
      *
      * Wrapped in a transaction and run inside applyingRemote() so the write
@@ -222,7 +236,7 @@ class SyncApplier
      */
     private function localiseDates(Model $instance, array $attributes): array
     {
-        foreach ($instance->getDates() as $dateAttribute) {
+        foreach ($this->dateAttributes($instance) as $dateAttribute) {
             $value = $attributes[$dateAttribute] ?? null;
 
             if (! is_string($value) || $value === '') {
@@ -235,5 +249,30 @@ class SyncApplier
         }
 
         return $attributes;
+    }
+
+    /**
+     * Every attribute this model treats as a date.
+     *
+     * Model::getDates() reports only the timestamp columns, so reading it alone
+     * misses a `date` or `datetime` cast such as bookings.check_in. Leaving such
+     * a column out means its payload arrives as an ISO-8601 UTC instant and is
+     * written back verbatim, which Eloquent then re-reads in `app.timezone`.
+     * On a UTC+1 node a reservation for the 19th lands on the 18th, one day
+     * earlier, and the desk sees the guest arriving on the wrong night.
+     *
+     * @return list<string>
+     */
+    private function dateAttributes(Model $instance): array
+    {
+        $attributes = $instance->getDates();
+
+        foreach (array_keys($instance->getCasts()) as $key) {
+            if ($instance->hasCast($key, self::DATE_CASTS)) {
+                $attributes[] = $key;
+            }
+        }
+
+        return array_values(array_unique($attributes));
     }
 }
