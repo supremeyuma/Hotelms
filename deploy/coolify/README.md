@@ -72,7 +72,18 @@ placeholders. The stability rules that must never be violated:
 cloud is a node others connect to; it never dials out. `SyncWorker` iterates
 `sync.peers`, so an empty list means no outbound cycles (Phase 8 decision,
 ruling R6 Option A — no cloud push worker; the worker's empty-peer path is
-guarded). Peering is bidirectional and pairwise: a star does **not** converge,
+guarded).
+
+**Do not remove the guard.** The guard is a `->when(fn () => ! empty(config('sync.peers')))`
+filter on the `SyncWorker` entry in `routes/console.php`; registration stays
+unconditional so `schedule:list` still shows the worker on every node, and the
+filter decides at run time whether there is anywhere to sync to. An
+unconditional loop restored on the cloud would iterate an empty peer list
+every minute — a wasted schedule slot and a misleading green dashboard, which
+is exactly what Option A rejected. Covered by
+`tests/Feature/Sync/SyncScheduleGuardTest`.
+
+Peering is bidirectional and pairwise: a star does **not** converge,
 and there is no relay — every pair of nodes that must exchange changes has to
 be peered directly (triangle for three nodes). See `docs/SYNC_CONVERGENCE.md`.
 
@@ -99,7 +110,9 @@ before moving on.
 5. **Start scheduler and queue worker**; confirm with
    `php artisan schedule:list` that the sync/queue entries are scheduled.
    *[acceptance]* `schedule:list` includes `queue:work --once` (every minute)
-   and `SyncWorker`; jobs pushed to the `database` queue reach a worker.
+   and `SyncWorker`; jobs pushed to the `database` queue reach a worker. On the
+   cloud the `SyncWorker` entry is listed but filtered out at run time by the
+   empty-peers guard (ruling R6 Option A — see “Sync topology on the cloud”).
 6. **Smoke-check sync identity**: `php artisan sync:status`
    *[acceptance]* Prints the configured node id (matching the Coolify env
    value), `SYNC_NODE_TYPE=cloud`, and zero outbound peers.
@@ -117,8 +130,12 @@ environment that holds real data.
   peer) and `direction = 'out'` (how far it has pushed its own log to that
   peer). Cursors are keyed by peer node id, not address, so repointing a peer
   at a new base_url loses no progress.
-- `php artisan sync:health` — last-seen timestamps per peer; a dead peer is
-  logged and skipped, the cycle continues against the rest.
+- `php artisan sync:health` — one table of active/inactive nodes, recorded
+  changes, changes older than 24h, unresolved conflicts and cursors, plus a
+  warning line when conflicts are unresolved or nodes are not active.
+  Output-only (there is deliberately no public health endpoint) and **not
+  scheduled**: this deployment has no monitoring to alert on it, so run it by
+  hand.
 - `php artisan sync:run` — one full cycle by hand (also push/pull
   individually). The scheduled `SyncWorker` runs a cycle every minute.
 
