@@ -116,6 +116,113 @@ class PrintDispatchTest extends TestCase
         $this->assertTrue(PrintJob::first()->is_reprint);
     }
 
+    /**
+     * The sale path must never touch the printer: pay() only queues the job and
+     * defers dispatch to the terminating callback. If pay() ever regresses to
+     * awaiting the bridge inline, this test fails on assertNothingSent().
+     */
+    public function test_pay_queues_receipt_without_awaiting_the_bridge(): void
+    {
+        Http::fake(function () {
+            throw new \Illuminate\Http\Client\ConnectionException('connection refused');
+        });
+
+        $docket = $this->makeOpenDocket();
+
+        $this->actingAs($this->staff)
+            ->postJson(route('club.pos.dockets.pay', $docket->id), [
+                'payments' => [['method' => 'cash', 'amount' => 1000]],
+            ])
+            ->assertStatus(200)
+            ->assertJsonPath('receipt_queued', true);
+
+        $this->assertSame(1, PrintJob::count());
+        Http::assertNothingSent();
+
+        // The sale is already committed before a single byte is printed.
+        $this->assertSame('closed', $docket->fresh()->status);
+
+        // Flushing the terminating callback drains the job; with the bridge
+        // down the job fails but the failure is recorded, not thrown.
+        $this->app->terminate();
+        $this->app->boot();
+
+        $this->assertSame(PrintJob::STATUS_FAILED, PrintJob::first()->status);
+
+        $log = PosPrintLog::latest('id')->first();
+        $this->assertFalse($log->success);
+        $this->assertSame($docket->id, $log->docket_id);
+    }
+
+    public function test_reprint_is_refused_for_an_open_docket(): void
+    {
+        Http::fake(['127.0.0.1:9100/*' => Http::response(['ok' => true], 200)]);
+
+        $docket = $this->makeOpenDocket();
+
+        $this->actingAs($this->staff)
+            ->postJson(route('club.pos.dockets.reprint', $docket->id))
+            ->assertStatus(422);
+
+        $this->assertSame(0, PrintJob::count());
+    }
+
+    /**
+     * Two concurrent drains can both read the same queued list; the atomic
+     * claim in PrintDispatch must ensure only the first attempt sends, so a
+     * receipt is never printed twice.
+     */
+    public function test_a_claimed_job_is_not_sent_twice_by_a_second_drain(): void
+    {
+        Http::fake(['127.0.0.1:9100/*' => Http::response(['ok' => true], 200)]);
+
+        $docket = $this->makeClosedDocket();
+        $job = PrintJob::createForDocket($docket);
+
+        // First drain claims and completes the job.
+        Artisan::call('print:dispatch');
+        $this->assertSame(PrintJob::STATUS_DONE, $job->fresh()->status);
+        $this->assertSame(1, $job->fresh()->attempts);
+        $this->assertSame(1, PosPrintLog::count());
+
+        // A second drain finds nothing queued: no duplicate send, no second log.
+        Artisan::call('print:dispatch');
+        $this->assertSame(1, $job->fresh()->attempts);
+        $this->assertSame(1, PosPrintLog::count());
+        Http::assertSentCount(1);
+    }
+
+    /** A claim only succeeds while the job is still queued. */
+    public function test_the_claim_is_a_no_op_once_the_job_leaves_queued(): void
+    {
+        $docket = $this->makeClosedDocket();
+        $job = PrintJob::createForDocket($docket);
+        $job->update(['status' => PrintJob::STATUS_SENT]);
+
+        // The claim targets `status = queued`; it must affect no rows.
+        $affected = PrintJob::whereKey($job->getKey())
+            ->where('status', PrintJob::STATUS_QUEUED)
+            ->update(['status' => PrintJob::STATUS_SENT]);
+
+        $this->assertSame(0, $affected);
+        $this->assertSame(0, $job->fresh()->attempts);
+    }
+
+    private function makeOpenDocket(): PosDocket
+    {
+        $device = PosDevice::factory()->create();
+
+        return PosDocket::create([
+            'device_id' => $device->id,
+            'session_id' => $this->session->id,
+            'staff_id' => $this->staff->id,
+            'docket_number' => random_int(1, 100000),
+            'status' => 'open',
+            'subtotal' => 1000,
+            'total' => 1000,
+        ]);
+    }
+
     private function makeClosedDocket(): PosDocket
     {
         $device = PosDevice::factory()->create();

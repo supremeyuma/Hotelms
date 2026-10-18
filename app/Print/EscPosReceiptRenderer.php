@@ -52,7 +52,9 @@ final class EscPosReceiptRenderer
         $out .= self::CMD_BOLD_OFF;
         $out .= self::CMD_ALIGN_LEFT;
 
-        $out .= $this->line('Date: '.$docket->opened_at?->format('Y-m-d H:i'));
+        // The receipt must show when the sale happened, not when the tab was
+        // opened: a tab opened at 18:00 and paid at 23:30 is a 23:30 sale.
+        $out .= $this->line('Date: '.($docket->closed_at ?? $docket->opened_at)?->format('Y-m-d H:i'));
         $out .= $this->line('Staff: '.($docket->staff?->name ?? '—'));
 
         if ($docket->customer_name) {

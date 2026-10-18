@@ -239,7 +239,10 @@ mod tests {
         let path = dir.path().join("tty");
         std::fs::write(&path, b"").unwrap();
 
-        let mut sink = from_target(&format!("file:{}", path.display())).unwrap();
+        // Uses the `serial:` prefix specifically (not `file:`) so a broken
+        // `serial_sink()` cannot pass by exercising the file sink instead.
+        let mut sink = from_target(&format!("serial:{}", path.display())).unwrap();
+        assert!(sink.describe().starts_with("serial:"));
         assert!(sink.write(b"\x1b\x40").is_ok());
     }
 }

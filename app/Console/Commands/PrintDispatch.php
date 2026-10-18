@@ -7,6 +7,7 @@ use App\Print\EscPosReceiptRenderer;
 use App\Print\PrintBridgeClient;
 use App\Print\PrintJob;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Drains queued print jobs to the local print bridge.
@@ -42,9 +43,24 @@ class PrintDispatch extends Command
 
     private function dispatchJob(PrintJob $job, EscPosReceiptRenderer $renderer, PrintBridgeClient $bridge): void
     {
-        $job->attempts = $job->attempts + 1;
-        $job->status = PrintJob::STATUS_SENT;
-        $job->save();
+        // Claim atomically before sending. Two concurrent terminations (two
+        // FPM workers) can both fetch the same queued list; only the worker
+        // whose conditional update affects a row may send, so a job can never
+        // be printed twice. `attempts` is bumped here, at claim time.
+        $claimed = PrintJob::whereKey($job->getKey())
+            ->where('status', PrintJob::STATUS_QUEUED)
+            ->update([
+                'status' => PrintJob::STATUS_SENT,
+                'attempts' => DB::raw('attempts + 1'),
+                'updated_at' => now(),
+            ]);
+
+        if ($claimed === 0) {
+            // Another worker claimed it first; skip silently.
+            return;
+        }
+
+        $job->refresh();
 
         try {
             $escpos = $renderer->render($job->docket);
