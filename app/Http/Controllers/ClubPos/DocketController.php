@@ -8,7 +8,9 @@ use App\Models\MenuItem;
 use App\Models\PosDocket;
 use App\Models\PosDocketItem;
 use App\Models\PosSession;
+use App\Print\PrintJob;
 use App\Services\ClubPosService;
+use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Http\Request;
 
 class DocketController extends Controller
@@ -123,6 +125,10 @@ class DocketController extends Controller
             return $this->respondError($request, $e->getMessage());
         }
 
+        // The receipt is queued, never awaited: a sale must not fail or hang
+        // because the printer is out of paper or the bridge is down.
+        $this->queueReceipt($ack['docket']);
+
         if ($request->header('X-Inertia')) {
             return redirect()->back()->with('queued_for_sync', $ack['queued_for_sync']);
         }
@@ -130,7 +136,43 @@ class DocketController extends Controller
         return response()->json([
             'docket' => $ack['docket'],
             'queued_for_sync' => $ack['queued_for_sync'],
+            'receipt_queued' => true,
         ]);
+    }
+
+    /**
+     * Reprint a closed docket's receipt. This is the recovery path when the
+     * bridge is down or the paper jams — not how a guest normally gets served.
+     */
+    public function reprint(Request $request, PosDocket $docket)
+    {
+        if (! in_array($docket->status, ['closed', 'voided'], true)) {
+            return $this->respondError($request, 'Only a closed docket can be reprinted.');
+        }
+
+        $this->queueReceipt($docket, isReprint: true);
+
+        if ($request->header('X-Inertia')) {
+            return redirect()->back()->with('receipt_queued', true);
+        }
+
+        return response()->json(['receipt_queued' => true], 202);
+    }
+
+    /**
+     * Enqueue the receipt now and drain queued jobs once the response has been
+     * sent, so printing can never block or fail the request that sold the
+     * goods.
+     */
+    private function queueReceipt(PosDocket $docket, bool $isReprint = false): PrintJob
+    {
+        $job = PrintJob::createForDocket($docket, $isReprint);
+
+        app()->terminating(function (): void {
+            app()->make(Kernel::class)->call('print:dispatch');
+        });
+
+        return $job;
     }
 
     public function void(Request $request, PosDocket $docket)

@@ -1,13 +1,13 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ClubPos\BookingSearchController;
 use App\Http\Controllers\ClubPos\ConnectivityController;
 use App\Http\Controllers\ClubPos\DashboardController;
 use App\Http\Controllers\ClubPos\DocketController;
-use App\Http\Controllers\ClubPos\BookingSearchController;
+use App\Http\Controllers\ClubPos\ReportController;
 use App\Http\Controllers\ClubPos\ShiftController;
 use App\Http\Controllers\ClubPos\StockController;
-use App\Http\Controllers\ClubPos\ReportController;
+use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->post('/pos/staff/switch', function (Illuminate\Http\Request $request) {
     $validated = $request->validate(['pin' => 'required|string|min:4|max:10']);
@@ -19,7 +19,7 @@ Route::middleware('auth')->post('/pos/staff/switch', function (Illuminate\Http\R
             && $candidate->staffProfile->matchesActionCode($validated['pin']);
     });
 
-    if (!$user) {
+    if (! $user) {
         return response()->json(['error' => 'Invalid PIN.'], 422);
     }
 
@@ -51,6 +51,7 @@ Route::middleware(['auth', 'permission:club.pos.access'])->prefix('club')->name(
     Route::post('/pos/dockets/{docket}/items', [DocketController::class, 'addItem'])->name('pos.dockets.items.store');
     Route::delete('/pos/dockets/{docket}/items/{item}', [DocketController::class, 'removeItem'])->name('pos.dockets.items.destroy');
     Route::post('/pos/dockets/{docket}/pay', [DocketController::class, 'pay'])->name('pos.dockets.pay');
+    Route::post('/pos/dockets/{docket}/reprint', [DocketController::class, 'reprint'])->name('pos.dockets.reprint');
     Route::post('/pos/dockets/{docket}/void', [DocketController::class, 'void'])->name('pos.dockets.void');
     Route::post('/pos/dockets/{docket}/booking', [DocketController::class, 'attachBooking'])->name('pos.dockets.booking');
     Route::get('/pos/bookings/search', [BookingSearchController::class, 'index'])->name('pos.bookings.search');
