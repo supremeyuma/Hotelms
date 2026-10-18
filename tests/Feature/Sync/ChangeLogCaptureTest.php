@@ -2,10 +2,16 @@
 
 namespace Tests\Feature\Sync;
 
+use App\Models\Booking;
 use App\Models\InventoryItem;
+use App\Models\Property;
+use App\Models\Room;
+use App\Models\RoomType;
 use App\Models\Sync\SyncChange;
+use App\Models\User;
 use App\Sync\SyncLogger;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class ChangeLogCaptureTest extends TestCase
@@ -145,5 +151,79 @@ class ChangeLogCaptureTest extends TestCase
         $this->assertNotNull($change);
         $this->assertSame('inventory_items', $change->table_name);
         $this->assertNull($change->sync_uid ?? null);
+    }
+
+    /**
+     * Phase 8 step 2: a booking taken over the web must be captured, because
+     * the cloud never pushes (ruling R6, Option A) - terminals pick web-side
+     * writes up on their next pull, and that only works if the write reached
+     * sync_changes in the first place.
+     *
+     * row_id is the booking's sync_uid, not its integer id: the integer
+     * primary key is local to this engine and diverges across nodes.
+     */
+    public function test_a_booking_created_on_the_web_is_captured_for_terminals(): void
+    {
+        $booking = $this->createBookingViaWeb();
+
+        $this->assertDatabaseHas('sync_changes', [
+            'table_name' => 'bookings',
+            'row_id' => $booking->sync_uid,
+            'operation' => 'create',
+            'node_id' => 'node-a',
+        ]);
+    }
+
+    /**
+     * Walk a real front-desk booking through the HTTP layer, not Eloquent:
+     * controllers, services, gates and the booking authority all run exactly
+     * as they do in production, and capture has to fire on the other side of
+     * that whole stack.
+     */
+    private function createBookingViaWeb(): Booking
+    {
+        $frontdesk = User::factory()->create();
+        $frontdesk->assignRole(Role::firstOrCreate(
+            ['name' => 'frontdesk', 'guard_name' => 'web'],
+            ['slug' => 'frontdesk'],
+        ));
+
+        $property = Property::create([
+            'name' => 'Capture Hotel',
+            'location' => 'Lagos',
+            'amenities' => [],
+        ]);
+
+        $roomType = RoomType::create([
+            'property_id' => $property->id,
+            'title' => 'Executive',
+            'max_occupancy' => 2,
+            'base_price' => 80000,
+            'features' => [],
+        ]);
+
+        $room = Room::create([
+            'property_id' => $property->id,
+            'room_type_id' => $roomType->id,
+            'name' => 'Executive 201',
+            'code' => 'CAP-201',
+            'status' => 'available',
+            'meta' => [],
+        ]);
+
+        // Tomorrow sits inside the front desk's local booking window even
+        // with sync enabled (Phase 5 booking-authority cutoff).
+        $this->actingAs($frontdesk)->post(route('frontdesk.bookings.store'), [
+            'guest_name' => 'Web Guest',
+            'guest_email' => 'web.guest@example.test',
+            'guest_phone' => '08030000001',
+            'selected_room_ids' => [$room->id],
+            'check_in' => now()->addDay()->toDateString(),
+            'check_out' => now()->addDays(3)->toDateString(),
+            'adults' => 1,
+            'children' => 0,
+        ])->assertRedirect();
+
+        return Booking::latest('id')->firstOrFail();
     }
 }
