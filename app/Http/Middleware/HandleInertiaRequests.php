@@ -2,10 +2,10 @@
 
 namespace App\Http\Middleware;
 
-use Illuminate\Http\Request;
-use Inertia\Middleware;
 use App\Models\Content;
 use App\Models\Setting;
+use Illuminate\Http\Request;
+use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -36,6 +36,12 @@ class HandleInertiaRequests extends Middleware
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
+                // Task 2 acknowledgement: true when the sale is queued locally
+                // because no peer acknowledged it, false when a peer already
+                // has it. The POS screen confirms either outcome to the cashier.
+                'queued_for_sync' => fn () => $request->session()->get('queued_for_sync'),
+                // Set when a receipt reprint was queued for the print bridge.
+                'receipt_queued' => fn () => $request->session()->get('receipt_queued'),
             ],
             'auth' => [
                 'user' => fn () => $request->user()?->loadMissing('roles', 'department'),

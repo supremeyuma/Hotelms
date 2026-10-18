@@ -8,6 +8,7 @@ const props = defineProps({
 const emit = defineEmits(['close', 'done'])
 
 const loading = ref(false)
+const error = ref(null)
 const payments = ref([
   { method: 'cash', amount: '', reference: '', change_given: '' },
 ])
@@ -39,6 +40,9 @@ function removePayment(index) {
 }
 
 function submit() {
+  if (loading.value) return
+  error.value = null
+
   const clean = payments.value.map(p => ({
     method: p.method,
     amount: Number(p.amount),
@@ -48,7 +52,7 @@ function submit() {
 
   const totalPaid = clean.reduce((s, p) => s + p.amount, 0)
   if (Math.abs(totalPaid - Number(props.docket.total)) > 0.01) {
-    alert('Payment total must match the docket total.')
+    error.value = 'Payment total must match the docket total.'
     return
   }
 
@@ -58,6 +62,11 @@ function submit() {
   }, {
     preserveScroll: true,
     onSuccess: () => { emit('done') },
+    onError: (errors) => {
+      error.value = typeof errors.docket === 'string' && errors.docket
+        ? errors.docket
+        : 'Could not complete the payment.'
+    },
     onFinish: () => { loading.value = false },
   })
 }
@@ -139,9 +148,13 @@ const methodColors = {
         Charge a room to this docket before using Room Charge.
       </p>
 
+      <p v-if="error" role="alert" class="text-sm text-red-400">
+        {{ error }}
+      </p>
+
       <div class="flex gap-2 pt-1">
-        <button @click="$emit('close')"
-          class="flex-1 py-3 rounded-xl bg-slate-700 text-slate-300 font-medium hover:bg-slate-600 transition-all active:scale-95 min-h-[48px]">
+        <button @click="$emit('close')" :disabled="loading"
+          class="flex-1 py-3 rounded-xl bg-slate-700 text-slate-300 font-medium hover:bg-slate-600 transition-all active:scale-95 min-h-[48px] disabled:opacity-50 disabled:cursor-not-allowed">
           Back
         </button>
         <button @click="submit" :disabled="loading || remainingTotal > 0 || roomChargeBlocked"

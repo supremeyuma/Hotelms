@@ -1,9 +1,10 @@
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onUnmounted, nextTick } from 'vue'
 import { router, usePage } from '@inertiajs/vue3'
 import ClubPosLayout from '@/Layouts/ClubPosLayout.vue'
 import TopBar from '@/Components/ClubPos/TopBar.vue'
 import OfflineBanner from '@/Components/ClubPos/OfflineBanner.vue'
+import PosToast from '@/Components/ClubPos/PosToast.vue'
 import ProductCatalog from '@/Components/ClubPos/ProductCatalog.vue'
 import DocketPanel from '@/Components/ClubPos/DocketPanel.vue'
 import PaymentModal from '@/Components/ClubPos/PaymentModal.vue'
@@ -37,6 +38,22 @@ const creatingDocket = ref(false)
 const showCloseShift = ref(false)
 const showBookingSearch = ref(false)
 const staffPinRef = ref(null)
+const addingItem = ref(false)
+const addingItemId = ref(null)
+const notice = ref(null)
+let noticeTimer = null
+
+function showNotice(message, type = 'info', ttl = 5000) {
+  notice.value = { message, type }
+  clearTimeout(noticeTimer)
+  noticeTimer = setTimeout(() => { notice.value = null }, ttl)
+}
+
+function showError(message) {
+  showNotice(message, 'error', 6000)
+}
+
+onUnmounted(() => clearTimeout(noticeTimer))
 
 const activeDocket = computed(() => {
   if (!activeDocketId.value) return null
@@ -71,43 +88,73 @@ function handleLock() {
 }
 
 function handleAddItem(item) {
+  if (addingItem.value) return
+
+  addingItemId.value = item.id
+
   if (!activeDocketId.value) {
-    createDocket().then(() => {
-      router.post(route('club.pos.dockets.items.store', { docket: activeDocketId.value }), {
-        menu_item_id: item.id,
-        quantity: 1,
-      }, {
-        preserveScroll: true,
-        onSuccess: () => refreshDockets(),
-      })
+    createDocket().then((created) => {
+      if (!created) {
+        addingItemId.value = null
+        return
+      }
+      addItem(item)
     })
     return
   }
+
+  addItem(item)
+}
+
+function addItem(item) {
+  if (addingItem.value || !activeDocketId.value) return
+  addingItem.value = true
+  addingItemId.value = item.id
   router.post(route('club.pos.dockets.items.store', { docket: activeDocketId.value }), {
     menu_item_id: item.id,
     quantity: 1,
   }, {
     preserveScroll: true,
     onSuccess: () => refreshDockets(),
+    onError: (errors) => {
+      showError(errors.docket || errors.menu_item_id || 'Could not add item to the docket.')
+    },
+    onFinish: () => {
+      addingItem.value = false
+      addingItemId.value = null
+    },
   })
 }
 
+let createPromise = null
+
 function createDocket() {
+  if (createPromise) return createPromise
   creatingDocket.value = true
-  return new Promise((resolve, reject) => {
+  createPromise = new Promise((resolve) => {
     router.post(route('club.pos.dockets.store'), {
       table_identifier: null,
       customer_name: null,
     }, {
       preserveScroll: true,
-      onSuccess: (resp) => {
+      onSuccess: async () => {
         refreshDockets()
-        resolve()
+        // Wait for the openDockets watcher to assign activeDocketId before
+        // the caller posts an item to the docket it just opened.
+        await nextTick()
+        resolve(true)
       },
-      onError: () => reject(),
-      onFinish: () => { creatingDocket.value = false },
+      onError: (errors) => {
+        showError(errors.docket || 'Could not open a docket.')
+        resolve(false)
+      },
+      onFinish: () => {
+        creatingDocket.value = false
+        createPromise = null
+      },
     })
   })
+  return createPromise
 }
 
 function handleSelectDocket(id) {
@@ -157,11 +204,24 @@ watch(showPinModal, (val) => {
     currentStaff.value = props.currentStaff
   }
 })
+
+// Task 2 acknowledgement surfaced by DocketController::pay: tells the cashier
+// whether the sale only queued locally (no peer has it yet) or already synced.
+watch(() => page.props.flash?.queued_for_sync, (val) => {
+  if (val === true) {
+    showNotice('Sale recorded — will sync automatically.', 'queued')
+  } else if (val === false) {
+    showNotice('Sale recorded and synced.', 'success')
+  }
+}, { immediate: true })
 </script>
 
 <template>
   <div class="h-full flex flex-col">
     <OfflineBanner />
+    <PosToast
+      :message="notice?.message"
+      :type="notice?.type" />
 
     <TopBar :staff="currentStaff || authUser" :session="session" :device="device"
       @lock="handleLock" @switch-staff="showPinModal = true"
@@ -181,6 +241,8 @@ watch(showPinModal, (val) => {
           <ProductCatalog
             :menuItems="menuItems"
             :categories="categories"
+            :busy="addingItem || creatingDocket"
+            :busyItemId="addingItemId"
             @add-item="handleAddItem" />
         </div>
 
@@ -203,6 +265,7 @@ watch(showPinModal, (val) => {
       <OpenDocketsBar
         :dockets="dockets"
         :activeDocketId="activeDocketId"
+        :creating="creatingDocket"
         @select="handleSelectDocket"
         @create="createDocket" />
     </div>

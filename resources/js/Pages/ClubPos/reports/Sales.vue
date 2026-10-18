@@ -1,10 +1,14 @@
 <script setup>
-import { ref, computed } from 'vue'
-import { router, Link } from '@inertiajs/vue3'
+import { ref, computed, watch, onUnmounted } from 'vue'
+import { router, Link, usePage } from '@inertiajs/vue3'
 import ClubPosLayout from '@/Layouts/ClubPosLayout.vue'
 import TopBar from '@/Components/ClubPos/TopBar.vue'
+import OfflineBanner from '@/Components/ClubPos/OfflineBanner.vue'
+import PosToast from '@/Components/ClubPos/PosToast.vue'
 
 defineOptions({ layout: ClubPosLayout })
+
+const page = usePage()
 
 const props = defineProps({
   staff: { type: Object, default: null },
@@ -20,10 +24,27 @@ const props = defineProps({
 const dateFrom = ref(props.summary.date_from)
 const dateTo = ref(props.summary.date_to)
 const loading = ref(false)
+const filterError = ref(null)
+const reprintingId = ref(null)
+const notice = ref(null)
+let noticeTimer = null
+
+function showNotice(message, type = 'info', ttl = 5000) {
+  notice.value = { message, type }
+  clearTimeout(noticeTimer)
+  noticeTimer = setTimeout(() => { notice.value = null }, ttl)
+}
+
+watch(() => page.props.flash?.receipt_queued, (val) => {
+  if (val) showNotice('Receipt queued for printing.', 'success')
+}, { immediate: true })
+
+onUnmounted(() => clearTimeout(noticeTimer))
 
 function applyFilters() {
   if (loading.value) return
   loading.value = true
+  filterError.value = null
   router.get(route('club.pos.reports.sales'), {
     date_from: dateFrom.value,
     date_to: dateTo.value,
@@ -31,7 +52,27 @@ function applyFilters() {
     preserveState: true,
     preserveScroll: true,
     replace: true,
+    onError: () => {
+      filterError.value = 'Could not load the report. Check the date range and try again.'
+    },
     onFinish: () => { loading.value = false },
+  })
+}
+
+function reprint(d) {
+  if (reprintingId.value) return
+  reprintingId.value = d.id
+  showNotice('Queueing receipt…', 'info', 8000)
+  router.post(route('club.pos.dockets.reprint', { docket: d.id }), {}, {
+    preserveScroll: true,
+    onError: (errors) => {
+      showNotice(
+        typeof errors.docket === 'string' && errors.docket ? errors.docket : 'Could not queue the receipt.',
+        'error',
+        6000,
+      )
+    },
+    onFinish: () => { reprintingId.value = null },
   })
 }
 
@@ -63,6 +104,10 @@ function handleLock() {
 
 <template>
   <div class="h-full flex flex-col">
+    <OfflineBanner />
+    <PosToast
+      :message="notice?.message"
+      :type="notice?.type" />
     <TopBar :staff="staff" :session="currentSession" :device="null"
       @lock="handleLock" @switch-staff="handleLock" />
 
@@ -94,6 +139,10 @@ function handleLock() {
             </button>
           </div>
         </div>
+
+        <p v-if="filterError" role="alert" class="text-sm text-red-400 -mt-2">
+          {{ filterError }}
+        </p>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div class="rounded-xl border border-slate-700 bg-slate-800 p-5">
@@ -184,6 +233,7 @@ function handleLock() {
                 <th class="px-5 py-3 font-medium">Closed</th>
                 <th class="px-5 py-3 font-medium">Staff</th>
                 <th class="px-5 py-3 font-medium text-right">Total</th>
+                <th class="px-5 py-3 font-medium text-right">Receipt</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-700/60">
@@ -192,9 +242,19 @@ function handleLock() {
                 <td class="px-5 py-3 text-slate-400">{{ formatTime(d.closed_at) }}</td>
                 <td class="px-5 py-3 text-slate-400">{{ d.staff?.name || '—' }}</td>
                 <td class="px-5 py-3 text-right text-emerald-400 tabular-nums">{{ money(d.total) }}</td>
+                <td class="px-5 py-3 text-right">
+                  <button type="button" @click="reprint(d)" :disabled="reprintingId !== null"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-medium transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <svg v-if="reprintingId === d.id" class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                    </svg>
+                    {{ reprintingId === d.id ? 'Queueing…' : 'Reprint' }}
+                  </button>
+                </td>
               </tr>
               <tr v-if="!dockets.length">
-                <td colspan="4" class="px-5 py-10 text-center text-slate-500">No closed dockets in this period.</td>
+                <td colspan="5" class="px-5 py-10 text-center text-slate-500">No closed dockets in this period.</td>
               </tr>
             </tbody>
           </table>

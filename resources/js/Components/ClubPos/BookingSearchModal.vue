@@ -12,6 +12,7 @@ const query = ref('')
 const results = ref([])
 const loading = ref(false)
 const submitting = ref(false)
+const submittingId = ref(null)
 const error = ref('')
 
 let timer = null
@@ -51,6 +52,7 @@ function onInput() {
 function select(booking) {
   if (submitting.value) return
   submitting.value = true
+  submittingId.value = booking.id
   error.value = ''
 
   router.post(
@@ -62,8 +64,12 @@ function select(booking) {
       onError: (errors) => {
         error.value = errors.booking || errors.booking_id || 'Could not attach the booking.'
         submitting.value = false
+        submittingId.value = null
       },
-      onFinish: () => { submitting.value = false },
+      onFinish: () => {
+        submitting.value = false
+        submittingId.value = null
+      },
     },
   )
 }
@@ -100,7 +106,14 @@ onBeforeUnmount(() => {
         class="w-full text-left px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 hover:border-indigo-500 hover:bg-slate-700/60 transition-all active:scale-[0.99] disabled:opacity-50">
         <div class="flex items-center justify-between">
           <span class="font-semibold text-white">{{ booking.room_label || 'Unassigned room' }}</span>
-          <span class="text-xs text-slate-400 capitalize">{{ (booking.status || '').replace('_', ' ') }}</span>
+          <span v-if="submitting && submittingId === booking.id" class="inline-flex items-center gap-1.5 text-xs text-indigo-300">
+            <svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+            </svg>
+            Attaching…
+          </span>
+          <span v-else class="text-xs text-slate-400 capitalize">{{ (booking.status || '').replace('_', ' ') }}</span>
         </div>
         <div class="text-sm text-slate-400 mt-0.5">
           {{ booking.guest_name || 'Walk-in' }} · {{ booking.booking_code }}

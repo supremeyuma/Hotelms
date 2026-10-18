@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { router, Link } from '@inertiajs/vue3'
 import ClubPosLayout from '@/Layouts/ClubPosLayout.vue'
 import TopBar from '@/Components/ClubPos/TopBar.vue'
+import OfflineBanner from '@/Components/ClubPos/OfflineBanner.vue'
 
 defineOptions({ layout: ClubPosLayout })
 
@@ -18,14 +19,19 @@ const props = defineProps({
 
 const days = ref(props.period_days)
 const loading = ref(false)
+const filterError = ref(null)
 
 function applyRange() {
   if (loading.value) return
   loading.value = true
+  filterError.value = null
   router.get(route('club.pos.reports.trends'), { days: days.value }, {
     preserveState: true,
     preserveScroll: true,
     replace: true,
+    onError: () => {
+      filterError.value = 'Could not load the report. Try again.'
+    },
     onFinish: () => { loading.value = false },
   })
 }
@@ -59,6 +65,7 @@ function handleLock() {
 
 <template>
   <div class="h-full flex flex-col">
+    <OfflineBanner />
     <TopBar :staff="staff" :session="currentSession" :device="null"
       @lock="handleLock" @switch-staff="handleLock" />
 
@@ -93,6 +100,10 @@ function handleLock() {
             </Link>
           </div>
         </div>
+
+        <p v-if="filterError" role="alert" class="text-sm text-red-400 -mt-2">
+          {{ filterError }}
+        </p>
 
         <div class="rounded-xl border border-slate-700 bg-slate-800 p-5">
           <h2 class="font-semibold text-white mb-4">Daily Sales</h2>

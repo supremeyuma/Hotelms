@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { router } from '@inertiajs/vue3'
 
 const props = defineProps({
@@ -10,6 +10,7 @@ const emit = defineEmits(['pay', 'void', 'close', 'attach-room'])
 
 const loading = ref(false)
 const voiding = ref(false)
+const error = ref(null)
 
 const subtotal = computed(() => {
   if (!props.docket?.items) return 0
@@ -27,24 +28,40 @@ const roomLabel = computed(() => {
 const guestName = computed(() => props.docket?.booking?.guest_name || null)
 
 function removeItem(item) {
+  if (loading.value || voiding.value) return
+  error.value = null
   loading.value = true
   router.delete(route('club.pos.dockets.items.destroy', { docket: props.docket.id, item: item.id }), {
     preserveScroll: true,
+    onError: (errors) => {
+      error.value = typeof errors.docket === 'string' && errors.docket
+        ? errors.docket
+        : 'Could not remove the item.'
+    },
     onFinish: () => { loading.value = false },
   })
 }
 
 function confirmVoid() {
+  if (voiding.value || loading.value) return
   if (!confirm('Void this entire docket?')) return
-  voiding.value = true
   const reason = prompt('Void reason:')
-  if (!reason) { voiding.value = false; return }
+  if (!reason) return
+  error.value = null
+  voiding.value = true
   router.post(route('club.pos.dockets.void', { docket: props.docket.id }), {
     reason,
   }, {
+    onError: (errors) => {
+      error.value = typeof errors.docket === 'string' && errors.docket
+        ? errors.docket
+        : 'Could not void the docket.'
+    },
     onFinish: () => { voiding.value = false },
   })
 }
+
+watch(() => props.docket?.id, () => { error.value = null })
 </script>
 
 <template>
@@ -103,14 +120,22 @@ function confirmVoid() {
         <template v-else>Charge to Room</template>
       </button>
 
+      <p v-if="error" role="alert" class="text-sm text-red-400">
+        {{ error }}
+      </p>
+
       <div class="flex gap-2 pt-1">
-        <button @click="emit('pay', docket)" :disabled="!docket.items?.length || loading"
+        <button @click="emit('pay', docket)" :disabled="!docket.items?.length || loading || voiding"
           class="flex-1 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-lg transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed">
           Pay
         </button>
-        <button @click="confirmVoid" :disabled="voiding"
+        <button @click="confirmVoid" :disabled="voiding || loading" aria-label="Void docket"
           class="px-4 py-3 rounded-xl bg-slate-700 text-slate-400 hover:bg-red-600/20 hover:text-red-400 transition-all active:scale-95 disabled:opacity-40">
-          <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <svg v-if="voiding" class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+          </svg>
+          <svg v-else class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
           </svg>
         </button>

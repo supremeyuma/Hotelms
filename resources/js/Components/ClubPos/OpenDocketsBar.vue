@@ -4,6 +4,7 @@ import { computed } from 'vue'
 const props = defineProps({
   dockets: { type: Array, default: () => [] },
   activeDocketId: { type: [String, null], default: null },
+  creating: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['select', 'create'])
@@ -13,12 +14,16 @@ const totalOpen = computed(() => props.dockets.length)
 
 <template>
   <div class="flex items-center gap-2 px-4 py-2 bg-slate-800 border-t border-slate-700 overflow-x-auto shrink-0 min-h-[56px]" style="-webkit-overflow-scrolling: touch">
-    <button @click="$emit('create')"
-      class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition-all active:scale-95 whitespace-nowrap min-h-[40px]">
-      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+    <button @click="$emit('create')" :disabled="creating"
+      class="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition-all active:scale-95 whitespace-nowrap min-h-[40px] disabled:opacity-60 disabled:cursor-not-allowed">
+      <svg v-if="creating" class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+      </svg>
+      <svg v-else class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
         <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
       </svg>
-      New Docket
+      {{ creating ? 'Opening…' : 'New Docket' }}
     </button>
 
     <div class="h-6 w-px bg-slate-600" />

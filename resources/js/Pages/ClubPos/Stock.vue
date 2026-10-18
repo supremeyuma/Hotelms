@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { router } from '@inertiajs/vue3'
 import ClubPosLayout from '@/Layouts/ClubPosLayout.vue'
 import TopBar from '@/Components/ClubPos/TopBar.vue'
+import OfflineBanner from '@/Components/ClubPos/OfflineBanner.vue'
 
 defineOptions({ layout: ClubPosLayout })
 
@@ -104,6 +105,7 @@ function handleLock() {
 
 <template>
   <div class="h-full flex flex-col">
+    <OfflineBanner />
     <TopBar :staff="staff" :session="currentSession" :device="null"
       @lock="handleLock" @switch-staff="handleLock" />
 

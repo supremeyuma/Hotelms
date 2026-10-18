@@ -8,6 +8,8 @@ const props = defineProps({
   menuItems: { type: Array, default: () => [] },
   categories: { type: Array, default: () => [] },
   stockItems: { type: Array, default: () => [] },
+  busy: { type: Boolean, default: false },
+  busyItemId: { type: [Number, String], default: null },
 })
 const emit = defineEmits(['add-item'])
 
@@ -57,6 +59,8 @@ const stockMap = computed(() => {
       <ProductCard v-for="item in filteredItems" :key="item.id"
         :item="item"
         :stock="stockMap[item.id]"
+        :busy="busy"
+        :busyItemId="busyItemId"
         @add="emit('add-item', $event)" />
     </div>
 
