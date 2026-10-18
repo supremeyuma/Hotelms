@@ -17,6 +17,9 @@ class SyncHealth extends Command
     public function handle(): int
     {
         $changes = SyncChange::count();
+
+        // A stale change count is the operator's signal that something is
+        // wrong before a guest notices.
         $stale = SyncChange::where('created_at', '<', now()->subHours(24))->count();
         $conflicts = SyncConflict::whereNull('resolved_at')->count();
         $active = SyncNode::where('status', 'active')->count();
@@ -31,8 +34,6 @@ class SyncHealth extends Command
             ['cursors',                (string) SyncCursor::count()],
         ]);
 
-        // A stale change count is the operator's signal that something is
-        // wrong before a guest notices.
         if ($conflicts > 0) {
             $this->warn("{$conflicts} unresolved conflict(s) require a human. Inspect the sync_conflicts table (php artisan tinker).");
         }

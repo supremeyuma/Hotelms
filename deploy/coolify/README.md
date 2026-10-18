@@ -137,7 +137,9 @@ environment that holds real data.
   scheduled**: this deployment has no monitoring to alert on it, so run it by
   hand.
 - `php artisan sync:run` — one full cycle by hand (also push/pull
-  individually). The scheduled `SyncWorker` runs a cycle every minute.
+  individually). On a node with peers the scheduled `SyncWorker` runs a
+  cycle every minute; on the cloud the empty-peers guard filters it out
+  (see "Sync topology on the cloud").
 
 ## Adding a node
 
