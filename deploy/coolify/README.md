@@ -4,33 +4,35 @@ This directory documents how the HotelMS cloud node is deployed on Coolify
 against a managed PostgreSQL service. Nothing here is executed automatically;
 every step is run by the operator (OWNER-RUN).
 
-> ## ⛔ Known blocker before go-live on Postgres
+> ## ⚠️ Schema-parity finding on `orders.status` — FIXED (2026-10-18)
 >
 > A live schema-parity investigation (2026-10-18, see
 > `.superpowers/sdd/2026-10-05-phase-8-cloud-deployment/task-1-report.md`)
-> proved that `orders.status` is free-form `varchar(30)` on MySQL but carries
+> proved that `orders.status` is free-form `varchar(30)` on MySQL but carried
 > `orders_status_check` on PostgreSQL accepting only
 > `pending | preparing | ready | delivered | completed`.
 >
 > The application's `App\Enums\OrderStatus` also uses `processing`,
-> `confirmed` and `cancelled`. Each of those three values is rejected by
-> PostgreSQL with `SQLSTATE 23514` (check violation) and is accepted by the
-> current MySQL production database. Verified live against a real migrated
-> PostgreSQL 16 instance (full chain, rolled back):
->
-> - guest prepaid order creation (`status = confirmed`) — **fails**
-> - staff order state machine (`status = processing`) — **fails**
-> - guest order cancellation (`status = cancelled`) — **fails**
->
+> `confirmed` and `cancelled`. Each of those three values was rejected by
+> PostgreSQL with `SQLSTATE 23514` (check violation) and accepted by the
+> current MySQL production database, breaking guest prepaid order creation,
+> the staff order state machine, and guest order cancellation on a PG engine.
 > Root cause: `2026_01_06_184410_change_orders_status_to_string.php` converts
-> only MySQL to `varchar(30)`; PostgreSQL keeps the constrained check created
+> only MySQL to `varchar(30)`; PostgreSQL kept the constrained check created
 > by `2026_01_01_120003_update_orders_table_add_service_area_and_status.php`.
 >
-> **Do not point production traffic at Postgres until this is fixed** (either a
-> follow-up migration widening the check to the full enum set, or aligning the
-> enum with the check) and `tests/Feature/SchemaParityTest.php` becomes a real
-> gate. The migration commands below will succeed regardless — migrating
-> without erroring is not evidence the schemas match.
+> **Fixed** by `2026_10_18_093000_drop_orders_status_check_on_pgsql.php`,
+> which drops the contradicted check on pgsql (driver-gated no-op elsewhere;
+> free-form string with default `'pending'`, matching MySQL — data integrity
+> unchanged). Regression coverage:
+> `tests/Feature/OrderStatusPortabilityTest` persists one row per
+> `App\Enums\OrderStatus` case and reads it back; against a real PostgreSQL
+> 16.6 it failed with `SQLSTATE 23514` before the fix migration (4/7 values
+> storable) and passed after (7/7).
+>
+> Remaining caveat: `tests/Feature/SchemaParityTest.php` is still a
+> placeholder gate (Phase 1R deferred) — migrating cleanly is not evidence
+> the schemas match (spec §11 rule 3).
 
 ## Layout
 
@@ -92,7 +94,8 @@ before moving on.
    *[acceptance]* Exit code 0, no skipped migrations.
 4. **Verify**: `php artisan migrate:status`
    *[acceptance]* Every row shows `Ran`; on the 2026-10-18 baseline that is
-   **175/175** (175 migration files, none pending).
+   **176/176** (176 migration files, none pending — 175 at the parity
+   investigation plus the `orders.status` parity fix).
 5. **Start scheduler and queue worker**; confirm with
    `php artisan schedule:list` that the sync/queue entries are scheduled.
    *[acceptance]* `schedule:list` includes `queue:work --once` (every minute)
@@ -151,4 +154,8 @@ Two behaviours worth knowing before you run it:
 Until the real gate lands, evidence must be produced out-of-band (as the
 2026-10-18 investigation did: information-schema comparison of MySQL vs a
 fresh migrated Postgres, plus live write probes). Migrating cleanly is not
-parity evidence (spec §11 rule 3).
+parity evidence (spec §11 rule 3). The one write-path divergence that
+investigation found — `orders.status` on PostgreSQL — is now fixed by
+`2026_10_18_093000_drop_orders_status_check_on_pgsql.php`; no other
+engine-strictness divergences were found, but without the real gate that
+remains an out-of-band claim, not an enforced one.
