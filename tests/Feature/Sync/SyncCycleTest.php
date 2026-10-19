@@ -19,12 +19,12 @@ class SyncCycleTest extends TestCase
     {
         return SyncChange::create([
             'table_name' => 'inventory_items',
-            'row_id'     => '01J8Z00000000000000000' . $sequence,
-            'operation'  => 'create',
-            'node_id'    => 'node-a',
-            'hlc'        => '001:000000000' . $sequence . ':0000000000:node-a',
-            'sequence'   => $sequence,
-            'payload'    => ['sync_uid' => '01J8Z00000000000000000' . $sequence, 'name' => 'Row ' . $sequence],
+            'row_id' => '01J8Z00000000000000000'.$sequence,
+            'operation' => 'create',
+            'node_id' => 'node-a',
+            'hlc' => '001:000000000'.$sequence.':0000000000:node-a',
+            'sequence' => $sequence,
+            'payload' => ['sync_uid' => '01J8Z00000000000000000'.$sequence, 'name' => 'Row '.$sequence],
         ]);
     }
 
@@ -41,7 +41,7 @@ class SyncCycleTest extends TestCase
         config([
             'sync.enabled' => true,
             'sync.node_id' => 'node-a',
-            'sync.peers'   => ['http://lan-server.test', 'http://cloud.test'],
+            'sync.peers' => ['http://lan-server.test', 'http://cloud.test'],
         ]);
 
         $result = app(SyncCycleRunner::class)->run();
@@ -55,20 +55,20 @@ class SyncCycleTest extends TestCase
         Http::fake([
             '*' => Http::response([
                 'accepted' => 0,
-                'changes'  => [[
+                'changes' => [[
                     'table_name' => 'inventory_items',
-                    'row_id'     => '01J8Z0000000000000000000A',
-                    'operation'  => 'create',
-                    'node_id'    => 'node-b',
-                    'hlc'        => '001:0000000001:0000000000:node-b',
-                    'payload'    => [
+                    'row_id' => '01J8Z0000000000000000000A',
+                    'operation' => 'create',
+                    'node_id' => 'node-b',
+                    'hlc' => '001:0000000001:0000000000:node-b',
+                    'payload' => [
                         'sync_uid' => '01J8Z0000000000000000000A',
-                        'name'     => 'Rice',
-                        'sku'      => 'R-1',
-                        'unit'     => 'kg',
+                        'name' => 'Rice',
+                        'sku' => 'R-1',
+                        'unit' => 'kg',
                     ],
                 ]],
-                'cursor'   => 1,
+                'cursor' => 1,
                 'has_more' => false,
             ]),
         ]);
@@ -79,7 +79,7 @@ class SyncCycleTest extends TestCase
         config([
             'sync.enabled' => true,
             'sync.node_id' => 'node-a',
-            'sync.peers'   => ['node-b' => ['base_url' => 'http://peer']],
+            'sync.peers' => ['node-b' => ['base_url' => 'http://peer']],
         ]);
 
         $result = app(SyncCycleRunner::class)->run();
@@ -97,10 +97,10 @@ class SyncCycleTest extends TestCase
     public function test_push_advances_the_outbound_cursor_so_a_second_cycle_sends_nothing(): void
     {
         config([
-            'sync.enabled'    => true,
-            'sync.node_id'    => 'node-a',
+            'sync.enabled' => true,
+            'sync.node_id' => 'node-a',
             'sync.batch_size' => 500,
-            'sync.peers'      => ['node-b' => ['base_url' => 'http://peer']],
+            'sync.peers' => ['node-b' => ['base_url' => 'http://peer']],
         ]);
 
         $first = $this->localChange(1);
@@ -142,10 +142,10 @@ class SyncCycleTest extends TestCase
     public function test_push_pages_through_more_than_one_batch(): void
     {
         config([
-            'sync.enabled'    => true,
-            'sync.node_id'    => 'node-a',
+            'sync.enabled' => true,
+            'sync.node_id' => 'node-a',
             'sync.batch_size' => 1,
-            'sync.peers'      => ['node-b' => ['base_url' => 'http://peer']],
+            'sync.peers' => ['node-b' => ['base_url' => 'http://peer']],
         ]);
 
         $this->localChange(1);
@@ -165,5 +165,68 @@ class SyncCycleTest extends TestCase
             ->where('target_node_id', 'node-b')
             ->where('direction', 'out')
             ->value('last_applied_change_id'));
+    }
+
+    public function test_a_peer_whose_change_cannot_be_applied_does_not_stop_a_healthy_peer(): void
+    {
+        Http::fake(function (Request $request) {
+            if (str_contains($request->url(), 'poisoned.test')) {
+                return $request->method() === 'POST'
+                    ? Http::response(['accepted' => 0], 200)
+                    : Http::response([
+                        'changes' => [[
+                            'table_name' => 'definitely_not_a_registered_table',
+                            'row_id' => '01J8Z000000000000000000P1',
+                            'operation' => 'create',
+                            'node_id' => 'node-b',
+                            'hlc' => '001:0000000001:0000000000:node-b',
+                            'payload' => ['anything' => true],
+                        ]],
+                        'cursor' => 1,
+                        'has_more' => false,
+                    ], 200);
+            }
+
+            return $request->method() === 'POST'
+                ? Http::response(['accepted' => 0], 200)
+                : Http::response([
+                    'changes' => [[
+                        'table_name' => 'inventory_items',
+                        'row_id' => '01J8Z000000000000000000H1',
+                        'operation' => 'create',
+                        'node_id' => 'node-c',
+                        'hlc' => '001:0000000001:0000000000:node-c',
+                        'payload' => [
+                            'sync_uid' => '01J8Z000000000000000000H1',
+                            'name' => 'Healthy Rice',
+                            'sku' => 'H-1',
+                            'unit' => 'kg',
+                        ],
+                    ]],
+                    'cursor' => 1,
+                    'has_more' => false,
+                ], 200);
+        });
+
+        config([
+            'sync.enabled' => true,
+            'sync.node_id' => 'node-a',
+            'sync.peers' => [
+                'node-b' => ['base_url' => 'http://poisoned.test'],
+                'node-c' => ['base_url' => 'http://healthy.test'],
+            ],
+        ]);
+
+        $result = app(SyncCycleRunner::class)->run();
+
+        $this->assertSame(2, $result['peers']);
+        $this->assertSame(
+            ['node-b'],
+            $result['failed'],
+            'Only the peer whose change could not be applied is failed.',
+        );
+
+        // The healthy peer's change still applied, in the same cycle.
+        $this->assertDatabaseHas('inventory_items', ['sync_uid' => '01J8Z000000000000000000H1']);
     }
 }

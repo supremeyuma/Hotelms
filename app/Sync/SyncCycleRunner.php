@@ -2,22 +2,23 @@
 
 namespace App\Sync;
 
-use App\Sync\Exceptions\SyncTransportException;
 use Illuminate\Support\Facades\Log;
 
 /**
  * Run a synchronization cycle against every configured peer.
  *
- * A dead peer is logged and skipped. Reconciliation continues against the
- * remaining peers, because a terminal must always have somewhere to sync to
- * even when its LAN server is unreachable (spec section 4.3).
+ * A dead peer is logged and skipped. A peer that answers but whose response
+ * cannot be applied — a poisoned change, an unregistered table — is recorded
+ * as failed and skipped the same way, so one bad peer never aborts the cycle
+ * for the others. Reconciliation continues against the remaining peers,
+ * because a terminal must always have somewhere to sync to even when its LAN
+ * server is unreachable (spec section 4.3).
  */
 class SyncCycleRunner
 {
     public function __construct(
         private readonly NodeSyncService $sync,
-    ) {
-    }
+    ) {}
 
     /**
      * Push to and pull from every configured peer.
@@ -38,13 +39,13 @@ class SyncCycleRunner
 
                 $pushed += $result['pushed'];
                 $pulled += $result['pulled'];
-            } catch (SyncTransportException $e) {
+            } catch (\Throwable $e) {
                 $failed[] = $this->logFailure($peerId, $e);
             }
         }
 
         return [
-            'peers'  => count($peers),
+            'peers' => count($peers),
             'pushed' => $pushed,
             'pulled' => $pulled,
             'failed' => $failed,
@@ -94,13 +95,13 @@ class SyncCycleRunner
 
                 $pushed += $result['pushed'];
                 $pulled += $result['pulled'];
-            } catch (SyncTransportException $e) {
+            } catch (\Throwable $e) {
                 $failed[] = $this->logFailure($peerId, $e);
             }
         }
 
         return [
-            'peers'  => count($peers),
+            'peers' => count($peers),
             'pushed' => $pushed,
             'pulled' => $pulled,
             'failed' => $failed,
@@ -140,10 +141,11 @@ class SyncCycleRunner
         return $resolved;
     }
 
-    private function logFailure(string $peerId, SyncTransportException $e): string
+    private function logFailure(string $peerId, \Throwable $e): string
     {
-        Log::warning('Sync peer unreachable.', [
-            'peer'  => $peerId,
+        Log::warning('Sync peer failed.', [
+            'peer' => $peerId,
+            'exception' => $e::class,
             'error' => $e->getMessage(),
         ]);
 

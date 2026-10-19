@@ -2,8 +2,8 @@
 
 namespace App\Services\Connectivity;
 
-use App\Sync\Exceptions\SyncTransportException;
 use App\Sync\SyncCycleRunner;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Answers "can this terminal currently reach a peer", from evidence rather
@@ -65,6 +65,11 @@ class ConnectivityMonitor
      * failures, so its result carries both the configured peer count and the
      * peers that did not answer.
      *
+     * The catch is deliberately \Throwable: a peer whose response cannot be
+     * applied (a poisoned change, an unregistered table) is not online, and
+     * nothing may escape status(). A sync failure must never reach a sale the
+     * cashier has already committed (spec section 10).
+     *
      * @return array{peers: int, failed: list<string>}
      */
     private function probe(): array
@@ -73,8 +78,13 @@ class ConnectivityMonitor
             $result = $this->runner->run();
 
             return ['peers' => $result['peers'], 'failed' => $result['failed']];
-        } catch (SyncTransportException $e) {
-            return ['peers' => 0, 'failed' => [$e->getMessage()]];
+        } catch (\Throwable $e) {
+            Log::warning('Sync connectivity probe failed.', [
+                'exception' => $e::class,
+                'error' => $e->getMessage(),
+            ]);
+
+            return ['peers' => 1, 'failed' => [$e->getMessage()]];
         }
     }
 }

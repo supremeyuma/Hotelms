@@ -19,6 +19,7 @@ use App\Models\Setting;
 use App\Models\Sync\SyncChange;
 use App\Models\Sync\SyncNode;
 use App\Models\User;
+use App\Print\PrintJob;
 use App\Services\DrinkStockService;
 use App\Services\InventoryService;
 use App\Sync\SyncCycleRunner;
@@ -489,14 +490,11 @@ class CloudSyncIntegrationTest extends TestCase
 
     /**
      * When the applier itself throws during the connectivity probe, the sale
-     * must not be lost.
+     * must not be lost and the failure must stay invisible.
      *
-     * DEVIATION (reported, BLOCKED-level): the applier exception propagates out
-     * of ConnectivityMonitor/SyncCycleRunner (both catch only
-     * SyncTransportException) and DocketController maps the RuntimeException to
-     * a 422 — even though the sale was already committed by closeDocket. The
-     * sale survives, but the cashier is handed an error and the receipt is not
-     * queued. Spec section 10 requires a sync failure to be invisible.
+     * Spec section 10: a sync failure must never surface as a web error. A peer
+     * whose change cannot be applied is a failed peer, not a 500/422 on the
+     * sale the cashier already committed.
      */
     public function test_a_poisoned_peer_change_does_not_lose_the_sale(): void
     {
@@ -523,11 +521,16 @@ class CloudSyncIntegrationTest extends TestCase
         $this->peersReachable = true;
         [$docketId, $response] = $this->sellOnTerminal();
 
-        // DEVIATION: a sync failure is surfaced as a 422 to the cashier even
-        // though the sale below committed.
-        $response->assertStatus(
-            422,
-            'DEVIATION (reported): the applier exception surfaces as a web error.',
+        // A sync failure is invisible to the cashier: the sale request returns
+        // its normal success response, the receipt is queued, and the sale is
+        // reported as waiting for sync.
+        $response->assertOk(
+            'A sync failure must never surface as a web error.',
+        );
+        $this->assertTrue($response->json('receipt_queued'), 'The receipt must be queued.');
+        $this->assertTrue(
+            $response->json('queued_for_sync'),
+            'A peer whose change cannot be applied is a failed peer, so the sale is queued.',
         );
 
         $this->actAsNode('a');
@@ -535,6 +538,12 @@ class CloudSyncIntegrationTest extends TestCase
             'closed',
             PosDocket::findOrFail($docketId)->status,
             'The sale must be committed regardless of the sync failure.',
+        );
+
+        $this->assertSame(
+            1,
+            PrintJob::where('docket_id', $docketId)->count(),
+            'A print job must be queued for the committed sale.',
         );
 
         // The public booking flow, which does not run sync, is unaffected.
