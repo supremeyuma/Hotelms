@@ -101,7 +101,7 @@ class BookingService
             }
 
             $booking = Booking::create([
-                'property_id'  => $data['property_id'] ?? 1,
+                'property_id'  => $data['property_id'] ?? $selectedRooms->first()->property_id,
                 'room_id'      => $selectedRooms->first()->id,
                 'user_id'      => $data['user_id'] ?? null,
                 'booking_code' => strtoupper('BKG-' . uniqid()),
