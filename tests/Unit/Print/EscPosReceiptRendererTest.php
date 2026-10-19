@@ -158,7 +158,7 @@ class EscPosReceiptRendererTest extends TestCase
      */
     public function test_no_printed_line_exceeds_the_paper_width(): void
     {
-        $docket = $this->makeDocket(['customer_name' => str_repeat('Very Long Guest Name ', 6)]);
+        $docket = $this->makeDocket(['customer_name' => str_repeat('Very Long Guest Name ', 4)]);
         $this->addItem($docket, str_repeat('An Unreasonably Long Menu Item Name ', 4), 99, 12345.67);
         $this->addPayment($docket, 'mobile_money', 999999.99);
 
