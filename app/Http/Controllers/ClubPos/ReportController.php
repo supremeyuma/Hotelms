@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers\ClubPos;
 
-use Inertia\Inertia;
 use App\Http\Controllers\Controller;
-use App\Models\PosDocket;
-use App\Models\PosSession;
 use App\Models\DrinkStock;
 use App\Models\MenuItem;
+use App\Models\PosDocket;
+use App\Models\PosSession;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class ReportController extends Controller
 {
@@ -60,6 +60,7 @@ class ReportController extends Controller
                         ->take(20)
                         ->get();
                 }
+
                 return [
                     'menu_item' => $item,
                     'stock' => $stock,
@@ -72,8 +73,8 @@ class ReportController extends Controller
         $summary = [
             'total_items' => $items->count(),
             'low_stock_items' => $items->where('is_low_stock', true)->count(),
-            'total_bottles' => $items->sum(fn($i) => $i['stock']?->full_bottles ?? 0),
-            'estimated_total_pours' => $items->sum(fn($i) => $i['estimated_pours'] ?? 0),
+            'total_bottles' => $items->sum(fn ($i) => $i['stock']?->full_bottles ?? 0),
+            'estimated_total_pours' => $items->sum(fn ($i) => $i['estimated_pours'] ?? 0),
         ];
 
         return response()->json([
@@ -93,7 +94,7 @@ class ReportController extends Controller
         $dateTo = $validated['date_to'] ?? now()->endOfDay()->toDateString();
 
         $dockets = PosDocket::where('status', 'closed')
-            ->whereBetween('closed_at', [$dateFrom . ' 00:00:00', $dateTo . ' 23:59:59'])
+            ->whereBetween('closed_at', [$dateFrom.' 00:00:00', $dateTo.' 23:59:59'])
             ->with(['items', 'payments', 'staff', 'session'])
             ->orderBy('closed_at', 'desc')
             ->get();
@@ -126,8 +127,8 @@ class ReportController extends Controller
 
         $hourlyBreakdown = DB::table('pos_dockets')
             ->where('status', 'closed')
-            ->whereBetween('closed_at', [$dateFrom . ' 00:00:00', $dateTo . ' 23:59:59'])
-            ->select(DB::raw($this->hourExpression('closed_at') . ' as hour'), DB::raw('COUNT(*) as count'), DB::raw('SUM(total) as total'))
+            ->whereBetween('closed_at', [$dateFrom.' 00:00:00', $dateTo.' 23:59:59'])
+            ->select(DB::raw($this->hourExpression('closed_at').' as hour'), DB::raw('COUNT(*) as count'), DB::raw('SUM(total) as total'))
             ->groupBy(DB::raw($this->hourExpression('closed_at')))
             ->orderBy('hour')
             ->get();
@@ -215,9 +216,15 @@ class ReportController extends Controller
 
     private function hourExpression(string $column): string
     {
-        return DB::connection()->getDriverName() === 'sqlite'
-            ? "CAST(strftime('%H', {$column}) AS INTEGER)"
-            : "HOUR({$column})";
+        // The hour-of-day of a timestamp is spelled differently on every engine
+        // the app can run on: SQLite has strftime, Postgres has EXTRACT, and
+        // MySQL has HOUR. MySQL is the deployment default, so it stays the
+        // fallback; Postgres is the cloud target and must not be left to HOUR.
+        return match (DB::connection()->getDriverName()) {
+            'sqlite' => "CAST(strftime('%H', {$column}) AS INTEGER)",
+            'pgsql' => "CAST(EXTRACT(HOUR FROM {$column}) AS INTEGER)",
+            default => "HOUR({$column})",
+        };
     }
 
     private function currentSession(Request $request): ?PosSession
