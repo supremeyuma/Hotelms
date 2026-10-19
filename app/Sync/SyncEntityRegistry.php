@@ -28,10 +28,14 @@ use Illuminate\Database\Eloquent\Model;
  * application.
  *
  * The fifteen entries are exactly the tables in SyncScope that carry sync
- * fields. The four catalogue entries with no model here - inventory_stocks,
- * drink_stock, settings and roles - have no capture path either, so no change
- * for them can be produced today. An unknown key failing loudly is the
- * intended behaviour of a whitelist, not a gap to paper over.
+ * fields, so they are the tables that can be captured and applied. Which other
+ * tables the manifest declares in scope but which have no capture path — and
+ * why — is recorded authoritatively in config('sync_scope.no_capture_path').
+ * SyncScopeManifestTest asserts the registry and that list together cover every
+ * declared table with no overlap, so a table added to the manifest without a
+ * capture path fails the suite instead of surfacing at run time. An unknown key
+ * failing loudly is the intended behaviour of a whitelist, not a gap to paper
+ * over.
  */
 final class SyncEntityRegistry
 {

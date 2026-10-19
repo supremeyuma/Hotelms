@@ -10,6 +10,7 @@ use App\Sync\Policies\AdditivePolicy;
 use App\Sync\Policies\ConflictPolicy;
 use App\Sync\Policies\LastWriteWinsPolicy;
 use App\Sync\Policies\MergePolicy;
+use App\Sync\SyncEntityRegistry;
 use App\Sync\SyncScope;
 use App\Sync\SyncScopeResolver;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -124,5 +125,54 @@ class SyncScopeManifestTest extends TestCase
     private function readOnlyTables(): array
     {
         return array_values((array) config('sync_scope.read_only'));
+    }
+
+    /**
+     * Every table the manifest declares in scope must either have a capture
+     * path (a model in SyncEntityRegistry) or be recorded in no_capture_path
+     * with a reason. A future manifest entry with neither fails here rather
+     * than surfacing at run time as a synced table that can never carry data.
+     */
+    public function test_every_manifest_table_has_a_capture_path_or_a_recorded_reason(): void
+    {
+        $registry = SyncEntityRegistry::keys();
+        $noCapture = (array) config('sync_scope.no_capture_path', []);
+
+        $unaccounted = [];
+
+        foreach (array_keys(config('sync_scope.tables')) as $table) {
+            if (in_array($table, $registry, true)) {
+                continue;
+            }
+
+            if (! isset($noCapture[$table]) || trim((string) $noCapture[$table]) === '') {
+                $unaccounted[] = $table;
+            }
+        }
+
+        $this->assertSame(
+            [],
+            $unaccounted,
+            'Manifest tables with no capture path and no recorded reason: ['
+            .implode(', ', $unaccounted).']. Every manifest table must be in SyncEntityRegistry::keys() '
+            .'or in sync_scope.no_capture_path with a non-empty reason.'
+        );
+    }
+
+    /**
+     * A table with a capture path must not also be recorded as having none:
+     * the two lists are disjoint by construction.
+     */
+    public function test_no_capture_path_does_not_overlap_the_registry(): void
+    {
+        $registry = SyncEntityRegistry::keys();
+
+        foreach (array_keys((array) config('sync_scope.no_capture_path', [])) as $table) {
+            $this->assertNotContains(
+                $table,
+                $registry,
+                "Table [{$table}] has a capture path but is also recorded in no_capture_path."
+            );
+        }
     }
 }
