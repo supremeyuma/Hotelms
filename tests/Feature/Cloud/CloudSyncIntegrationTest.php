@@ -333,9 +333,10 @@ class CloudSyncIntegrationTest extends TestCase
     /**
      * A malformed change is handled at the boundary without harming the app.
      *
-     * Each shape violation is a 422; an unregistered table or a which-cannot-
-     * be-inserted payload throws and rolls the whole batch back with a 500; an
-     * unparseable HLC is accepted (deviation from the brief — see the report).
+     * Each shape violation is a 422; an unregistered table is a 422 that names
+     * the table; a payload which cannot be inserted still throws and rolls the
+     * whole batch back with a 500; an unparseable HLC is accepted (deviation
+     * from the brief — see the report).
      */
     public function test_a_malformed_change_cannot_error_the_app(): void
     {
@@ -376,9 +377,9 @@ class CloudSyncIntegrationTest extends TestCase
             ->where('direction', 'in')
             ->value('last_applied_change_id');
 
-        // --- Table not in the manifest: the applier throws, the whole batch
-        // (including an otherwise-valid change) rolls back, and the caller sees
-        // a 500 rather than a per-change rejection.
+        // --- Table not in the registry: the batch is rejected at the boundary
+        // with a 422 that names the offending table, and the otherwise-valid
+        // change in the same batch rolls back with it.
         $validSku = 'R-BND-ROLLBACK';
         $this->pushBatch([
             $this->change([
@@ -393,7 +394,7 @@ class CloudSyncIntegrationTest extends TestCase
                 'table_name' => 'definitely_not_a_registered_table',
                 'payload' => ['anything' => true],
             ]),
-        ])->assertStatus(500);
+        ])->assertStatus(422);
 
         $this->assertSame(
             0,

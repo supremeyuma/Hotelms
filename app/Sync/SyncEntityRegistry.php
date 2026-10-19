@@ -17,6 +17,7 @@ use App\Models\PosSession;
 use App\Models\Room;
 use App\Models\RoomType;
 use App\Models\StaffProfile;
+use App\Sync\Exceptions\UnknownSyncEntityException;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -56,12 +57,12 @@ final class SyncEntityRegistry
     /**
      * @return class-string<Model>
      *
-     * @throws \RuntimeException when the key has no registered model
+     * @throws UnknownSyncEntityException when the key has no registered model
      */
     public static function modelFor(string $entityKey): string
     {
         return self::MAP[$entityKey]
-            ?? throw new \RuntimeException("No model registered for sync entity [{$entityKey}].");
+            ?? throw new UnknownSyncEntityException("No model registered for sync entity [{$entityKey}].");
     }
 
     /**

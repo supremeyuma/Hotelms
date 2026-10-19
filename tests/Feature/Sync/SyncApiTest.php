@@ -20,10 +20,10 @@ class SyncApiTest extends TestCase
     private function authenticate(string $nodeId = self::CALLER, string $token = self::TOKEN, string $status = 'active'): void
     {
         SyncNode::create([
-            'node_id'    => $nodeId,
-            'name'       => $nodeId,
-            'type'       => 'terminal',
-            'status'     => $status,
+            'node_id' => $nodeId,
+            'name' => $nodeId,
+            'type' => 'terminal',
+            'status' => $status,
             'credential' => hash('sha256', $token),
         ]);
     }
@@ -32,7 +32,7 @@ class SyncApiTest extends TestCase
     {
         return [
             'X-Sync-Node-Id' => self::CALLER,
-            'Authorization'  => 'Bearer ' . self::TOKEN,
+            'Authorization' => 'Bearer '.self::TOKEN,
         ];
     }
 
@@ -47,7 +47,7 @@ class SyncApiTest extends TestCase
 
         $this->getJson('/api/sync/changes?since=0', [
             'X-Sync-Node-Id' => self::CALLER,
-            'Authorization'  => 'Bearer wrong',
+            'Authorization' => 'Bearer wrong',
         ])->assertStatus(401);
     }
 
@@ -65,17 +65,17 @@ class SyncApiTest extends TestCase
 
         $this->postJson('/api/sync/changes', [
             'changes' => [[
-                'change_id'  => 1,
+                'change_id' => 1,
                 'table_name' => 'inventory_items',
-                'row_id'     => '01J8Z000000000000000000PA',
-                'operation'  => 'create',
-                'node_id'    => self::CALLER,
-                'hlc'        => '001:0000000001:0000000000:' . self::CALLER,
-                'payload'    => [
+                'row_id' => '01J8Z000000000000000000PA',
+                'operation' => 'create',
+                'node_id' => self::CALLER,
+                'hlc' => '001:0000000001:0000000000:'.self::CALLER,
+                'payload' => [
                     'sync_uid' => '01J8Z000000000000000000PA',
-                    'name'     => 'Rice',
-                    'sku'      => 'R-1',
-                    'unit'     => 'kg',
+                    'name' => 'Rice',
+                    'sku' => 'R-1',
+                    'unit' => 'kg',
                 ],
             ]],
         ], $this->headers())->assertOk()->assertJson(['accepted' => 1]);
@@ -97,12 +97,12 @@ class SyncApiTest extends TestCase
         foreach ([1, 2, 3] as $sequence) {
             $change = SyncChange::create([
                 'table_name' => 'inventory_items',
-                'row_id'     => '01J8Z0000000000000000000' . $sequence,
-                'operation'  => 'create',
-                'node_id'    => 'node-self',
-                'hlc'        => '001:000000000' . $sequence . ':0000000000:node-self',
-                'sequence'   => $sequence,
-                'payload'    => ['sync_uid' => '01J8Z0000000000000000000' . $sequence],
+                'row_id' => '01J8Z0000000000000000000'.$sequence,
+                'operation' => 'create',
+                'node_id' => 'node-self',
+                'hlc' => '001:000000000'.$sequence.':0000000000:node-self',
+                'sequence' => $sequence,
+                'payload' => ['sync_uid' => '01J8Z0000000000000000000'.$sequence],
             ]);
             $ids[] = $change->id;
         }
@@ -115,7 +115,7 @@ class SyncApiTest extends TestCase
         $this->assertCount(2, $first['changes']);
         $this->assertSame($ids[1], $first['cursor']);
 
-        $second = $this->getJson('/api/sync/changes?since=' . $first['cursor'] . '&limit=2', $this->headers())
+        $second = $this->getJson('/api/sync/changes?since='.$first['cursor'].'&limit=2', $this->headers())
             ->assertOk()
             ->assertJson(['has_more' => false])
             ->json();
@@ -131,16 +131,93 @@ class SyncApiTest extends TestCase
 
         SyncChange::create([
             'table_name' => 'inventory_items',
-            'row_id'     => 'other',
-            'operation'  => 'create',
-            'node_id'    => 'node-other',
-            'hlc'        => '001:0000000001:0000000000:node-other',
-            'sequence'   => 1,
-            'payload'    => ['sync_uid' => 'other'],
+            'row_id' => 'other',
+            'operation' => 'create',
+            'node_id' => 'node-other',
+            'hlc' => '001:0000000001:0000000000:node-other',
+            'sequence' => 1,
+            'payload' => ['sync_uid' => 'other'],
         ]);
 
         $this->getJson('/api/sync/changes?since=0', $this->headers())
             ->assertOk()
             ->assertJson(['changes' => [], 'has_more' => false]);
+    }
+
+    public function test_an_unregistered_table_is_rejected_with_a_reason_and_rolls_the_batch_back(): void
+    {
+        config(['sync.node_id' => 'node-self']);
+        $this->authenticate();
+
+        $validUid = '01J8Z000000000000000000RA';
+
+        $response = $this->postJson('/api/sync/changes', [
+            'changes' => [
+                [
+                    'change_id' => 1,
+                    'table_name' => 'inventory_items',
+                    'row_id' => $validUid,
+                    'operation' => 'create',
+                    'node_id' => self::CALLER,
+                    'hlc' => '001:0000000001:0000000000:'.self::CALLER,
+                    'payload' => [
+                        'sync_uid' => $validUid,
+                        'name' => 'Rollback Rice',
+                        'sku' => 'R-ROLLBACK',
+                        'unit' => 'kg',
+                    ],
+                ],
+                [
+                    'change_id' => 2,
+                    'table_name' => 'definitely_not_a_registered_table',
+                    'row_id' => '01J8Z000000000000000000RB',
+                    'operation' => 'create',
+                    'node_id' => self::CALLER,
+                    'hlc' => '001:0000000002:0000000000:'.self::CALLER,
+                    'payload' => ['anything' => true],
+                ],
+            ],
+        ], $this->headers());
+
+        $response->assertStatus(422)
+            ->assertJsonPath('table', 'definitely_not_a_registered_table');
+
+        $this->assertStringContainsString(
+            'definitely_not_a_registered_table',
+            (string) $response->json('reason'),
+            'The rejection reason must name the offending table.',
+        );
+
+        $this->assertSame(0, InventoryItem::count(), 'The whole batch must roll back.');
+
+        $this->assertFalse(
+            SyncCursor::where('node_id', 'node-self')
+                ->where('target_node_id', self::CALLER)
+                ->where('direction', 'in')
+                ->exists(),
+            'A rejected batch must not create the inbound cursor row.'
+        );
+
+        // The receiver is not poisoned: a later legitimate push still applies.
+        $laterUid = '01J8Z000000000000000000RC';
+
+        $this->postJson('/api/sync/changes', [
+            'changes' => [[
+                'change_id' => 3,
+                'table_name' => 'inventory_items',
+                'row_id' => $laterUid,
+                'operation' => 'create',
+                'node_id' => self::CALLER,
+                'hlc' => '001:0000000003:0000000000:'.self::CALLER,
+                'payload' => [
+                    'sync_uid' => $laterUid,
+                    'name' => 'Later Rice',
+                    'sku' => 'R-LATER',
+                    'unit' => 'kg',
+                ],
+            ]],
+        ], $this->headers())->assertOk()->assertJson(['accepted' => 1]);
+
+        $this->assertTrue(InventoryItem::where('sync_uid', $laterUid)->exists());
     }
 }
