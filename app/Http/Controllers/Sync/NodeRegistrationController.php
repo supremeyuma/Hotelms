@@ -36,6 +36,12 @@ class NodeRegistrationController extends Controller
             'node_type' => ['required', 'in:lan_server,terminal'],
         ]);
 
+        // Codes are read aloud at the terminal and minted uppercase A-Z0-9.
+        // Normalize what a human typed so the lookup matches on every engine:
+        // MySQL's ci collation would accept lower-case while sqlite and
+        // Postgres reject it - an engine-divergent answer for the same input.
+        $validated['pairing_code'] = strtoupper(trim($validated['pairing_code']));
+
         return DB::transaction(function () use ($validated): JsonResponse {
             $pairing = DB::table('sync_pairing_codes')
                 ->where('code', $validated['pairing_code'])

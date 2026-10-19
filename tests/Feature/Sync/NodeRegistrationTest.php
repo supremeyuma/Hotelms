@@ -78,6 +78,19 @@ class NodeRegistrationTest extends TestCase
         );
     }
 
+    public function test_a_hand_typed_code_is_normalized_before_lookup(): void
+    {
+        $code = $this->mintCode();
+
+        // A lower-case, space-padded entry must redeem on every engine:
+        // MySQL's ci collation accepts it while sqlite and Postgres would
+        // otherwise reject the identical human input.
+        $this->postJson('/api/sync/register', $this->payload('  '.strtolower($code).'  '))
+            ->assertCreated();
+
+        $this->assertSame(1, SyncNode::count());
+    }
+
     public function test_an_expired_pairing_code_is_rejected(): void
     {
         $code = $this->mintCode(expiresAt: now()->subMinute());
