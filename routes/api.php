@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Sync\ChangeLogController;
 use App\Http\Controllers\Sync\NodeRegistrationController;
+use App\Http\Controllers\Sync\ReferenceSnapshotController;
 use App\Http\Controllers\WebhookController;
 
 Route::post('/webhooks/paystack', [WebhookController::class, 'handlePaystackWebhook']);
@@ -17,4 +18,5 @@ Route::post('/sync/register', [NodeRegistrationController::class, 'store'])
 Route::middleware(['sync.node'])->prefix('sync')->group(function () {
     Route::get('/changes', [ChangeLogController::class, 'index']);
     Route::post('/changes', [ChangeLogController::class, 'store']);
+    Route::get('/reference', ReferenceSnapshotController::class);
 });
