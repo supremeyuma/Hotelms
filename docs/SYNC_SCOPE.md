@@ -187,6 +187,47 @@ php artisan test --filter='SyncScope'
 If the resolver reaches the new table, the tripwire fails until step 1 is done.
 That failure is the feature.
 
+## The reference snapshot
+
+Sync deliberately moves the tables above and nothing else. That leaves the
+terminal without the data it must already hold the moment it is installed: the
+staff accounts it authenticates, the roles and permissions those accounts
+carry, the menu it sells from, and the settings and property it binds to.
+`config('sync_scope.reference_snapshot')` is the second transport for exactly
+that data. A newly installed terminal pulls it over `GET /api/sync/reference`
+and re-pulls it with `php artisan sync:refresh-reference` when staff or menu
+change later.
+
+**It is a curated list, not a derivation of `no_capture_path`.** The two look
+similar but answer different questions. `no_capture_path` records every
+in-scope table that has no capture path, which includes transactional and
+derived tables — `charges`, `booking_rooms`, `inventory_stocks`,
+`drink_stock` — that must never be snapshotted, because replaying a balance or
+a folio across installs is wrong. `reference_snapshot` is the subset that is
+safe and necessary to copy whole, and each entry carries its own reason.
+
+**The list is ordered for foreign keys.** The pull writes into a database where
+SQLite enforces them, so every insert must find its parent already written.
+`departments` is the worked example: it was missing from the first draft, and
+without it — since `users.department_id` references it — a snapshotted user who
+carries a department cannot be written at all. The applier walks the list in
+declaration order, so the order is load-bearing rather than cosmetic.
+
+**The payload carries password hashes, and that is accepted.** Login has to
+work immediately after an install, with no password reset and no cloud
+round-trip, so the `users` rows travel whole and a terminal authenticates
+against its own copy. The consequence — a stolen terminal exposes hashes for
+offline cracking — is a stated, accepted risk, mitigated by physical control of
+floor machines; it is recorded in the deployment runbook, not hidden.
+
+**`menu_inventory_recipes` fails on a first pull, by design.** It is declared
+last on purpose: its `inventory_item_id` parent arrives by *sync*, not by
+snapshot, so on a first pull into an empty database the table's transaction
+rolls back while every other table lands. It completes on the next
+`sync:refresh-reference`, once the synced inventory items are present. A
+transaction-per-table applier makes this a clean, re-runnable partial rather
+than a corrupt one.
+
 ## Known decisions and deviations
 
 - **`model_has_roles` pivot is not included.** Spec §7 says "users and roles".

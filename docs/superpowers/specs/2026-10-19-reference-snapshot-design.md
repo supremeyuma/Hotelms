@@ -82,11 +82,15 @@ the LAN server when present, otherwise the cloud.
 A new curated list, `config('sync_scope.reference_snapshot')`:
 
 ```
-properties, users, roles, permissions, role_has_permissions,
-model_has_roles, model_has_permissions, settings,
-menu_categories, menu_subcategories, menu_items,
-menu_inventory_recipes, pos_devices
+properties, departments, roles, permissions, menu_categories,
+menu_subcategories, menu_items, users, model_has_roles,
+model_has_permissions, role_has_permissions, settings, pos_devices,
+menu_inventory_recipes
 ```
+
+`departments` was missing from the first draft; it is the foreign-key parent of
+`users.department_id`, which SQLite enforces, so without it a user carrying a
+department cannot be written.
 
 It is deliberately **not** derived from `no_capture_path`: that list also holds
 `charges`, `booking_rooms`, `inventory_stocks` and `drink_stock`, which are
@@ -101,8 +105,10 @@ Two tests guard the list:
   renamed table fails the suite instead of silently shipping nothing.
 
 `properties` is pulled into `sync_scope` coverage by this work. It is currently
-invisible to `SyncScopeManifestTest` because it is not declared at all, which is
-also why a synced `room` can arrive at a node whose `properties` table is empty.
+invisible to `SyncScopeManifestTest` because it is recorded only under `excluded`
+(`config/sync_scope.php:242`), which `SyncScopeManifestTest` does not read, and
+that is why a synced `room` can arrive at a node whose `properties` table is
+empty.
 
 ### Endpoint
 
