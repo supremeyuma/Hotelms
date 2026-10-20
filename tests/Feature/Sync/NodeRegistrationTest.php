@@ -6,6 +6,7 @@ use App\Models\Property;
 use App\Models\Sync\SyncNode;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 /**
@@ -223,6 +224,67 @@ class NodeRegistrationTest extends TestCase
 
         $this->postJson('/api/sync/register', $this->payload('GUESS11'))
             ->assertStatus(429);
+
+        $this->assertSame(0, SyncNode::count());
+    }
+
+    public function test_the_desktop_can_register_with_the_node_id_it_already_persisted(): void
+    {
+        $nodeId = (string) Str::ulid();
+
+        $payload = $this->payload($this->mintCode());
+        $payload['node_id'] = $nodeId;
+
+        $response = $this->postJson('/api/sync/register', $payload);
+        $response->assertCreated();
+
+        // The registry entry must carry the identity the desktop already
+        // persisted (envfile.rs mints SYNC_NODE_ID once, beside the data);
+        // re-minting here would leave the two identities disagreeing for the
+        // life of the install.
+        $this->assertSame($nodeId, $response->json('node_id'));
+        $this->assertSame($nodeId, SyncNode::sole()->node_id);
+    }
+
+    public function test_a_node_id_already_issued_is_rejected_without_spending_the_code(): void
+    {
+        $nodeId = (string) Str::ulid();
+
+        $first = $this->payload($this->mintCode());
+        $first['node_id'] = $nodeId;
+        $this->postJson('/api/sync/register', $first)->assertCreated();
+
+        // A second, untouched code: taking a node id this registry already
+        // issued would let a caller mint the credential belonging to an
+        // existing peer, so the duplicate must be rejected with the same
+        // uniform answer as any other failed exchange.
+        $second = $this->payload($this->mintCode());
+        $second['node_id'] = $nodeId;
+        $this->postJson('/api/sync/register', $second)
+            ->assertStatus(422)
+            ->assertJson(['message' => 'Invalid or expired pairing code.']);
+
+        $this->assertSame(1, SyncNode::count());
+
+        // Checked before the code is spent: the rejection must not burn the
+        // second code, so the very same redemption succeeds with a fresh id.
+        $retry = $this->payload($second['pairing_code']);
+        $retry['node_id'] = (string) Str::ulid();
+        $this->postJson('/api/sync/register', $retry)->assertCreated();
+
+        $this->assertSame(2, SyncNode::count());
+    }
+
+    public function test_a_malformed_node_id_is_rejected(): void
+    {
+        $payload = $this->payload($this->mintCode());
+        $payload['node_id'] = 'not-a-ulid';
+
+        // A malformed id never reaches the duplicate check: Laravel's
+        // validation answers with a field error, not the uniform message.
+        $this->postJson('/api/sync/register', $payload)
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['node_id']);
 
         $this->assertSame(0, SyncNode::count());
     }

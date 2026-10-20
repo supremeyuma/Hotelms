@@ -34,6 +34,12 @@ class NodeRegistrationController extends Controller
             'pairing_code' => ['required', 'string', 'max:64'],
             'node_name' => ['required', 'string', 'max:120'],
             'node_type' => ['required', 'in:lan_server,terminal'],
+            // The desktop has already minted and persisted a node id (envfile.rs mints
+            // it once, beside the data, and it must never change); re-minting here
+            // would leave the two identities disagreeing for the life of the install.
+            // Optional, so `sync:register` — an operator approving a node by hand —
+            // keeps working unchanged.
+            'node_id' => ['sometimes', 'string', 'regex:/^[0-9A-HJKMNP-TV-Z]{26}$/'],
         ]);
 
         // Codes are read aloud at the terminal and minted uppercase A-Z0-9.
@@ -54,6 +60,14 @@ class NodeRegistrationController extends Controller
                 return $this->rejected();
             }
 
+            if (isset($validated['node_id'])
+                && SyncNode::where('node_id', $validated['node_id'])->exists()) {
+                // Checked before the code is spent: a rejected redemption must not burn
+                // the single-use code, and taking an id this node already issued would
+                // let a caller mint the credential belonging to an existing peer.
+                return $this->rejected();
+            }
+
             // Single use, consumed atomically: whoever flips used_at first
             // wins. A concurrent redemption blocks on this row, then matches
             // nothing - 0 rows affected means another request already spent
@@ -70,7 +84,7 @@ class NodeRegistrationController extends Controller
             $secret = Str::random(64);
 
             $node = SyncNode::create([
-                'node_id' => (string) Str::ulid(),
+                'node_id' => $validated['node_id'] ?? (string) Str::ulid(),
                 'name' => $validated['node_name'],
                 'type' => $validated['node_type'],
                 'status' => 'active',
