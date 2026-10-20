@@ -230,11 +230,12 @@ than a corrupt one.
 
 ## Known decisions and deviations
 
-- **`model_has_roles` pivot is not included.** Spec §7 says "users and roles".
-  Role assignments live in Spatie's `model_has_roles` pivot, which is not
-  enumerated here. A terminal reads a user's roles for authorization (`hasRole`
-  / `hasAnyRole`); it does not author them. If role assignment must travel to a
-  terminal it is a deliberate follow-up, not an omission.
+- **`model_has_roles` pivot is not in the sync scope.** Role assignments live in
+  Spatie's `model_has_roles` pivot, which is not enumerated in the class tables
+  above, so sync never moves it. The reference snapshot carries it instead —
+  alongside `role_has_permissions` and `model_has_permissions` — so a terminal
+  does receive role assignments at install and `hasRole`/`hasAnyRole` work
+  immediately; the terminal reads a user's roles, it does not author them.
 - **`roles` is Class 5, not Class 2.** The Phase 4S plan's manifest sample
   labelled `roles` as `lww`; spec §6 Class 5 lists it as cloud-authoritative.
   The spec wins: `roles` is `push_down`.
