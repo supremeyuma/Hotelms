@@ -117,8 +117,8 @@ pub fn plan_for(role: SetupRole) -> Vec<Step> {
         SetupRole::Terminal => vec![
             step(STEP_CREATE_DATABASE, "Create local database"),
             step(STEP_MIGRATE, "Run database migrations"),
-            step(STEP_SNAPSHOT, "Pull initial snapshot"),
             step(STEP_REGISTER_NODE, "Register as a node"),
+            step(STEP_SNAPSHOT, "Pull initial snapshot"),
         ],
         SetupRole::StaffClient => vec![
             step(STEP_DISCOVER, "Discover the server"),
@@ -188,16 +188,17 @@ pub struct ServerBoot {
     pub property_id: Option<i64>,
 }
 
-/// What the wizard collected on the terminal path (spec 9.2). Pairing remains
-/// part of the flow; the snapshot pull and node registration that use it land
-/// with discovery (Task 6).
+/// What the wizard collected on the terminal path (spec 9.2): the property and
+/// pairing code to register with, and the server address to register against.
+/// `run_terminal` registers first — the pairing-code exchange mints the node
+/// credential — then pulls the reference snapshot with that credential.
 pub struct TerminalOptions {
     pub property_code: String,
     pub pairing_code: String,
     pub http_port: u16,
-    /// The server this terminal will pair with, found by discovery (Task 6).
-    /// Stored so the pairing relationship survives a restart even before the
-    /// snapshot pull exists.
+    /// The server this terminal pairs with, found by discovery. Registration
+    /// posts to it and the snapshot pull reads it back as `SYNC_PEERS`, so the
+    /// pairing relationship is what makes the pull possible.
     pub server_url: Option<String>,
 }
 
@@ -431,10 +432,10 @@ pub fn run_server(
     })
 }
 
-/// Run the terminal path (spec 9.2): create the local SQLite file, generate the
-/// environment, and migrate. The snapshot pull and node registration follow
-/// once discovery/pairing exist (Task 6); until then they are reported as
-/// deferred rather than silently skipped.
+/// Run the terminal path (spec 9.2): create the local SQLite file, migrate it,
+/// register with the server to mint a credential, then pull the reference
+/// snapshot the sync engine deliberately does not move. Registration comes
+/// first because it is what issues the credential the pull authenticates with.
 pub fn run_terminal(
     paths: &Paths,
     options: &TerminalOptions,
@@ -477,23 +478,138 @@ pub fn run_terminal(
     state.mark_complete(STEP_MIGRATE)?;
     report(STEP_MIGRATE, StepStatus::Succeeded, None);
 
-    // --- Deferred to discovery/pairing (Task 6). ---
-    report(
-        STEP_SNAPSHOT,
-        StepStatus::Skipped,
-        Some(
-            "the initial snapshot is pulled from the LAN server once discovery lands (Task 6)"
-                .to_string(),
-        ),
-    );
-    report(
-        STEP_REGISTER_NODE,
-        StepStatus::Skipped,
-        Some(format!(
-            "node registration pairs property '{}' with pairing code '{}' and lands with discovery (Task 6)",
-            options.property_code, options.pairing_code
-        )),
-    );
+    // --- Register with the server. This is what mints the credential the pull
+    // authenticates with, so it runs before the snapshot step. ---
+    report(STEP_REGISTER_NODE, StepStatus::Started, None);
+
+    // Resolve the server URL: the same value the environment carries as
+    // `LAN_SERVER_URL`, trimmed, with a trailing slash dropped so the endpoint
+    // is built exactly once.
+    let server_url = match options
+        .server_url
+        .as_deref()
+        .map(str::trim)
+        .filter(|url| !url.is_empty())
+    {
+        Some(url) => url.trim_end_matches('/').to_string(),
+        None => {
+            let error = anyhow::anyhow!(
+                "no server address was configured; a terminal cannot register without one"
+            );
+            report(
+                STEP_REGISTER_NODE,
+                StepStatus::Failed,
+                Some(error.to_string()),
+            );
+            report(
+                STEP_SNAPSHOT,
+                StepStatus::Skipped,
+                Some(
+                    "registration did not complete, so there is no credential to pull with".into(),
+                ),
+            );
+            return Err(error);
+        }
+    };
+
+    // The node id is minted once by `envfile.rs` and persisted beside the data;
+    // re-minting it here would leave the two identities disagreeing forever.
+    let node_id = match env_value(&env, "SYNC_NODE_ID") {
+        Some(node_id) => node_id,
+        None => {
+            let error = anyhow::anyhow!("this install has no persisted node id to register");
+            report(
+                STEP_REGISTER_NODE,
+                StepStatus::Failed,
+                Some(error.to_string()),
+            );
+            report(
+                STEP_SNAPSHOT,
+                StepStatus::Skipped,
+                Some(
+                    "registration did not complete, so there is no credential to pull with".into(),
+                ),
+            );
+            return Err(error);
+        }
+    };
+
+    let body = match registration_body(
+        &node_id,
+        &default_node_name(),
+        &options.property_code,
+        &options.pairing_code,
+    ) {
+        Ok(body) => body,
+        Err(error) => {
+            report(
+                STEP_REGISTER_NODE,
+                StepStatus::Failed,
+                Some(error.to_string()),
+            );
+            report(
+                STEP_SNAPSHOT,
+                StepStatus::Skipped,
+                Some(
+                    "registration did not complete, so there is no credential to pull with".into(),
+                ),
+            );
+            return Err(error);
+        }
+    };
+
+    let credential = match register_with(&server_url, &body) {
+        Ok(credential) => {
+            state.mark_complete(STEP_REGISTER_NODE)?;
+            report(
+                STEP_REGISTER_NODE,
+                StepStatus::Succeeded,
+                Some(format!("paired with {server_url}")),
+            );
+            credential
+        }
+        Err(error) => {
+            report(
+                STEP_REGISTER_NODE,
+                StepStatus::Failed,
+                Some(error.to_string()),
+            );
+            report(
+                STEP_SNAPSHOT,
+                StepStatus::Skipped,
+                Some(
+                    "registration did not complete, so there is no credential to pull with".into(),
+                ),
+            );
+            return Err(error);
+        }
+    };
+
+    // --- The environment the pull runs with. `.env` was written before
+    // migrate; the credential only exists now, so it is appended a second time
+    // and the process environment re-parsed — that environment is what
+    // `PhpCli::artisan` passes through to the child process. ---
+    rendered.push_str(&registration_env(&credential, &server_url));
+    fs::write(&env_file, &rendered)
+        .with_context(|| format!("failed to write {}", env_file.display()))?;
+    let env = parse_env(&rendered);
+
+    // --- Pull the reference snapshot. The credential and peer are in `env`. ---
+    report(STEP_SNAPSHOT, StepStatus::Started, None);
+    match php.artisan(&paths.app_root, &["sync:refresh-reference"], &env) {
+        Ok(output) => {
+            state.mark_complete(STEP_SNAPSHOT)?;
+            report(
+                STEP_SNAPSHOT,
+                StepStatus::Succeeded,
+                Some(snapshot_summary(&output)),
+            );
+        }
+        Err(error) => {
+            report(STEP_SNAPSHOT, StepStatus::Failed, Some(error.to_string()));
+            return Err(error);
+        }
+    }
 
     Ok(TerminalBoot { env })
 }
@@ -663,6 +779,117 @@ fn parse_env(rendered: &str) -> Vec<(String, String)> {
         .collect()
 }
 
+/// Look up a single `KEY=VALUE` pair in a parsed environment, trimmed. A later
+/// value wins, because that is what the child process sees: `registration_env`
+/// appends `SYNC_PEERS` over the empty placeholder `envfile::render` writes, and
+/// `PhpCli::artisan` applies the pairs in order.
+fn env_value(env: &[(String, String)], key: &str) -> Option<String> {
+    env.iter()
+        .rev()
+        .find_map(|(k, v)| (k == key).then(|| v.trim().to_string()))
+        .filter(|v| !v.is_empty())
+}
+
+/// A recognisable node name for the registry. A terminal collects no name, so
+/// derive one from the machine; `"terminal"` is the honest last resort because
+/// a real name in the registry beats the literal role string.
+fn default_node_name() -> String {
+    for key in ["COMPUTERNAME", "HOSTNAME"] {
+        if let Ok(value) = std::env::var(key) {
+            let trimmed = value.trim();
+            if !trimmed.is_empty() {
+                return trimmed.to_string();
+            }
+        }
+    }
+
+    "terminal".to_string()
+}
+
+/// The JSON body for `POST /api/sync/register`.
+///
+/// `property_code` is the property id the pairing code was minted for, so it
+/// must parse as an integer — a non-numeric code fails here, before any network
+/// call, which is why this is a separate testable helper. `node_id` is the id
+/// the desktop already minted and persisted; sending it keeps the two
+/// identities in agreement (the server accepts an honest node id).
+fn registration_body(
+    node_id: &str,
+    node_name: &str,
+    property_code: &str,
+    pairing_code: &str,
+) -> Result<serde_json::Value> {
+    let property_code: i64 = property_code
+        .trim()
+        .parse()
+        .with_context(|| format!("property code '{property_code}' is not a number"))?;
+
+    Ok(serde_json::json!({
+        "property_code": property_code,
+        "pairing_code": pairing_code,
+        "node_name": node_name,
+        "node_type": "terminal",
+        "node_id": node_id,
+    }))
+}
+
+/// The environment a terminal pulls its snapshot with, appended once the server
+/// has issued the credential. `SYNC_PEERS` is what `config/sync.php` reads, and
+/// a bare URL is normalised into a one-entry peer map.
+fn registration_env(credential: &str, server_url: &str) -> String {
+    format!("\nSYNC_CREDENTIAL={credential}\nSYNC_PEERS={server_url}\n")
+}
+
+/// A one-line summary of the pull, taken from stdout. Falls back to a neutral
+/// phrase rather than claiming rows landed when the command printed nothing.
+fn snapshot_summary(output: &std::process::Output) -> String {
+    String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .map(str::trim)
+        .find(|line| line.starts_with("Pulled "))
+        .map(str::to_string)
+        .unwrap_or_else(|| "snapshot pull finished".to_string())
+}
+
+/// Exchange the pairing code for a node credential at `POST {server_url}/api/sync/register`.
+///
+/// `reqwest` is built without the JSON feature (`default-features = false`), so
+/// the body is parsed with `serde_json::from_str`. A non-2xx response carries
+/// both the status and the body: a 422 is *the pairing code was refused*, and
+/// the operator needs to read that message, not a bare error code.
+fn register_with(server_url: &str, body: &serde_json::Value) -> Result<String> {
+    let client = reqwest::blocking::Client::builder()
+        .timeout(Duration::from_secs(30))
+        .build()
+        .context("failed to build the HTTP client for node registration")?;
+
+    let url = format!("{server_url}/api/sync/register");
+    let response = client
+        .post(&url)
+        .header(reqwest::header::CONTENT_TYPE, "application/json")
+        .body(body.to_string())
+        .send()
+        .with_context(|| format!("failed to reach {url}"))?;
+
+    let status = response.status();
+    let text = response
+        .text()
+        .with_context(|| format!("failed to read the response from {url}"))?;
+
+    if !status.is_success() {
+        bail!("node registration was refused ({status}): {text}");
+    }
+
+    let payload: serde_json::Value =
+        serde_json::from_str(&text).context("failed to parse the registration response")?;
+
+    payload
+        .get("credential")
+        .and_then(serde_json::Value::as_str)
+        .map(str::to_string)
+        .context("the registration response carried no credential")
+}
+
 /// Append a key to a `.env` file if it is not already present.
 fn append_env(path: &Path, key: &str, value: &str) -> Result<()> {
     let current =
@@ -815,8 +1042,8 @@ mod tests {
             vec![
                 STEP_CREATE_DATABASE,
                 STEP_MIGRATE,
-                STEP_SNAPSHOT,
-                STEP_REGISTER_NODE
+                STEP_REGISTER_NODE,
+                STEP_SNAPSHOT
             ]
         );
 
@@ -832,6 +1059,90 @@ mod tests {
         let views = plan_views(SetupRole::Server);
         assert_eq!(views[0].id, STEP_UNPACK_POSTGRES);
         assert!(!views[0].title.is_empty());
+    }
+
+    #[test]
+    fn registration_body_carries_the_terminal_identity() {
+        let body = registration_body("01ARZ3NDEKTSV4RRFFQ69G5FAV", "DESK-7", "1", "ABCD1234")
+            .expect("a numeric property code builds a body");
+
+        assert_eq!(body["property_code"], 1);
+        assert_eq!(body["pairing_code"], "ABCD1234");
+        assert_eq!(body["node_name"], "DESK-7");
+        assert_eq!(body["node_type"], "terminal");
+        assert_eq!(body["node_id"], "01ARZ3NDEKTSV4RRFFQ69G5FAV");
+    }
+
+    #[test]
+    fn registration_body_rejects_a_non_numeric_property_code() {
+        // Fails before any network call, with the offending value named.
+        let error = registration_body("01ARZ3NDEKTSV4RRFFQ69G5FAV", "DESK-7", "west-wing", "AB")
+            .expect_err("a non-numeric property code must not build a body");
+
+        assert!(error.to_string().contains("west-wing"));
+    }
+
+    #[test]
+    fn default_node_name_is_never_empty() {
+        assert!(!default_node_name().trim().is_empty());
+    }
+
+    #[test]
+    fn registration_env_carries_the_credential_into_the_process_env() {
+        let dir = temp_dir("terminal-env");
+        let rendered = envfile::render(&Role::Terminal, &dir).unwrap();
+        let node_id_before = env_value(&parse_env(&rendered), "SYNC_NODE_ID");
+
+        let mut rendered = rendered;
+        rendered.push_str(&registration_env(
+            "secret-credential",
+            "http://10.0.0.5:8000",
+        ));
+        let env = parse_env(&rendered);
+
+        assert_eq!(
+            env_value(&env, "SYNC_CREDENTIAL"),
+            Some("secret-credential".to_string())
+        );
+        assert_eq!(
+            env_value(&env, "SYNC_PEERS"),
+            Some("http://10.0.0.5:8000".to_string())
+        );
+        // The append must not disturb the persisted node id.
+        assert_eq!(env_value(&env, "SYNC_NODE_ID"), node_id_before);
+        assert!(node_id_before.is_some());
+    }
+
+    #[test]
+    fn snapshot_summary_finds_the_pulled_line_or_stays_neutral() {
+        use std::process::Output;
+
+        // A real exit status, so the test needs no platform-specific extension.
+        let status = std::process::Command::new(if cfg!(windows) { "cmd" } else { "true" })
+            .args(if cfg!(windows) {
+                vec!["/C", "exit 0"]
+            } else {
+                vec![]
+            })
+            .status()
+            .unwrap();
+
+        let with_line = Output {
+            status,
+            stdout: b"Connecting...\nPulled 120 rows across 6 tables from lan.\n".to_vec(),
+            stderr: Vec::new(),
+        };
+        assert_eq!(
+            snapshot_summary(&with_line),
+            "Pulled 120 rows across 6 tables from lan."
+        );
+
+        let silent = Output {
+            status,
+            stdout: b"".to_vec(),
+            stderr: Vec::new(),
+        };
+        assert_eq!(snapshot_summary(&silent), "snapshot pull finished");
     }
 
     #[test]
