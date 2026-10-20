@@ -131,6 +131,48 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Reference Snapshot
+    |--------------------------------------------------------------------------
+    |
+    | These tables are carried by GET /api/sync/reference when a newly
+    | installed terminal pulls its initial reference data. Sync cannot move
+    | any of them: none has a capture path in SyncEntityRegistry.
+    |
+    | The list is deliberately not derived from `no_capture_path`, which also
+    | holds transactional and derived tables (charges, booking_rooms,
+    | inventory_stocks, drink_stock) that must never be snapshotted. It is
+    | curated, and each entry records why it travels.
+    |
+    | Declared in dependency order because the pull writes into a database
+    | where foreign keys are enforced (DB_FOREIGN_KEYS defaults to true on
+    | sqlite), so each insert must find its parent already written.
+    |
+    | ReferenceSnapshotScopeTest proves this set is disjoint from
+    | SyncEntityRegistry — two transports must never race over one primary
+    | key — and that every foreign-key parent is available before its child
+    | is written.
+    |
+    */
+
+    'reference_snapshot' => [
+        'properties' => 'A synced room and room type reference it, and a terminal binds itself to one.',
+        'departments' => 'FK parent of users.department_id; without it a snapshotted user with a department cannot be written.',
+        'roles' => 'Authorization: the live path is Spatie HasRoles, so a user arrives without the role assigned to it.',
+        'permissions' => 'Authorization: role_has_permissions and model_has_permissions both reference it.',
+        'menu_categories' => 'Menu catalogue parent; menu_items.menu_category_id is a non-null FK.',
+        'menu_subcategories' => 'Menu catalogue parent; referenced by menu_items and itself FKs to menu_categories.',
+        'menu_items' => 'The menu a terminal sells from; depends on both catalogue tables above.',
+        'users' => 'Staff accounts; a terminal authenticates against its local copy, which is why the payload carries password hashes.',
+        'model_has_roles' => 'Spatie role assignment; without it a snapshotted user has no role.',
+        'model_has_permissions' => 'Spatie direct permission assignment.',
+        'role_has_permissions' => 'What each role is allowed to do.',
+        'settings' => 'Cloud-authoritative configuration, including the booking cutoff.',
+        'pos_devices' => 'POS device registry resolved by code; a terminal must resolve its own device.',
+        'menu_inventory_recipes' => 'Declared last on purpose: its inventory_item_id parent arrives by sync, so this table alone rolls back on a first pull and completes on the next.',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Node Types
     |--------------------------------------------------------------------------
     |
@@ -197,7 +239,7 @@ return [
         'discount_code_redemptions' => 'Promotions authored centrally; not a POS critical path.',
         'images' => 'Static media cached at install.',
         'menu_item_images' => 'Static media cached at install.',
-        'properties' => 'Single-property deployment; a node binds one property at setup (spec section 4.4).',
+        'properties' => 'Single-property deployment; a node binds one property at setup (spec section 4.4), so sync never moves it — but it is served by the reference snapshot because synced rooms and room types reference it.',
         'room_access_tokens' => 'Door access, not POS or Inventory.',
         'room_cleanings' => 'Housekeeping, not POS or Inventory.',
         'room_payments' => 'Room booking payments, not POS or Inventory.',
