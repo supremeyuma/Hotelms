@@ -56,6 +56,20 @@ class HttpSyncTransport
     }
 
     /**
+     * Fetch a peer's reference snapshot.
+     *
+     * Thin wrapper over send() so the snapshot pull reuses the same headers,
+     * timeout and SyncTransportException handling as change exchange. $peer is
+     * a base URL, exactly as for push() and pull().
+     *
+     * @return array{generated_at?: string, tables?: array<string, list<array<string, mixed>>>}
+     */
+    public function reference(string $peer): array
+    {
+        return $this->send($peer, 'GET', '/api/sync/reference', []);
+    }
+
+    /**
      * @param  array<string, mixed>  $payload
      * @return array<string, mixed>
      */
