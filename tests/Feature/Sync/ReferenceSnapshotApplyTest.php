@@ -7,9 +7,11 @@ use App\Models\User;
 use App\Sync\ReferenceSnapshotApplier;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use RuntimeException;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
@@ -78,6 +80,36 @@ class ReferenceSnapshotApplyTest extends TestCase
 
         $this->assertSame($hash, $user->password);
         $this->assertTrue(Hash::check('secret', $user->password));
+    }
+
+    /**
+     * The password assertion alone cannot tell a query-builder write from a
+     * model write: User::setPasswordAttribute already short-circuits an
+     * existing hash, and `users` has no capture path. This tripwire runs while
+     * the applier writes `users`: a model save fires `eloquent.saving` and
+     * fails the apply, while a query-builder upsert never fires it.
+     */
+    public function test_applying_users_does_not_raise_model_events(): void
+    {
+        Event::listen('eloquent.saving: '.User::class, function (): void {
+            throw new RuntimeException('The applier saved a User model; it must use the query builder.');
+        });
+
+        $result = $this->apply([
+            'users' => [
+                [
+                    'id' => 7,
+                    'uuid' => (string) Str::uuid(),
+                    'name' => 'Ada Okafor',
+                    'email' => 'ada@example.test',
+                    'password' => Hash::make('secret'),
+                ],
+            ],
+        ]);
+
+        $this->assertArrayHasKey('users', $result['applied']);
+        $this->assertArrayNotHasKey('users', $result['failed']);
+        $this->assertDatabaseHas('users', ['id' => 7, 'email' => 'ada@example.test']);
     }
 
     /**
@@ -195,6 +227,40 @@ class ReferenceSnapshotApplyTest extends TestCase
             'properties' => DB::table('properties')->orderBy('id')->pluck('id')->all(),
             'menu_categories' => DB::table('menu_categories')->orderBy('id')->pluck('id')->all(),
         ]);
+    }
+
+    /**
+     * role_has_permissions is entirely primary key, so the update list is empty
+     * and the applier's fallback (all columns) is the only thing that keeps the
+     * second apply from degrading to a duplicate insert.
+     */
+    public function test_a_key_only_pivot_survives_a_second_apply(): void
+    {
+        $this->apply([
+            'roles' => [
+                ['id' => 1, 'name' => 'Manager', 'slug' => 'manager', 'guard_name' => 'web'],
+            ],
+            'permissions' => [
+                ['id' => 1, 'name' => 'snapshot.permission', 'guard_name' => 'web'],
+            ],
+        ]);
+
+        $tables = [
+            'role_has_permissions' => [
+                ['permission_id' => 1, 'role_id' => 1],
+            ],
+        ];
+
+        $first = $this->apply($tables);
+
+        $this->assertSame(1, $first['applied']['role_has_permissions']);
+        $this->assertSame(1, DB::table('role_has_permissions')->count());
+
+        $second = $this->apply($tables);
+
+        $this->assertArrayNotHasKey('role_has_permissions', $second['failed']);
+        $this->assertSame(1, $second['applied']['role_has_permissions']);
+        $this->assertSame(1, DB::table('role_has_permissions')->count());
     }
 
     /**
