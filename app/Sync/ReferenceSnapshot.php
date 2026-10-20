@@ -12,6 +12,13 @@ use Illuminate\Support\Facades\DB;
  * order is not an agreement. Rows are ordered by every primary-key column so
  * the pulling applier can write them deterministically, parents before
  * children as declared in config/sync_scope.php.
+ *
+ * The whole read runs in one transaction. Reading a table at a time without
+ * one lets a write land between two reads, so a child row can be captured
+ * referencing a parent the same payload does not carry — the applier then
+ * fails that table on a foreign key and the operator sees a warning that
+ * describes a race rather than a real problem. One snapshot should describe
+ * one moment.
  */
 class ReferenceSnapshot
 {
@@ -20,16 +27,18 @@ class ReferenceSnapshot
      */
     public function build(): array
     {
-        $tables = [];
+        return DB::transaction(function (): array {
+            $tables = [];
 
-        foreach ($this->tables() as $table) {
-            $tables[$table] = $this->rowsFor($table);
-        }
+            foreach ($this->tables() as $table) {
+                $tables[$table] = $this->rowsFor($table);
+            }
 
-        return [
-            'generated_at' => now()->toIso8601String(),
-            'tables' => $tables,
-        ];
+            return [
+                'generated_at' => now()->toIso8601String(),
+                'tables' => $tables,
+            ];
+        });
     }
 
     /** @return list<string> */
