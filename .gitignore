@@ -1,5 +1,12 @@
 *.log
 .DS_Store
+
+# Dedicated throwaway database for the Playwright e2e suite. Migrated and seeded
+# from scratch on every run by the playwright.config.ts webServer; never commit it.
+/database/e2e.sqlite
+/database/e2e.sqlite-journal
+/database/e2e.sqlite-wal
+/database/e2e.sqlite-shm
 .env
 .env.backup
 .env.production
