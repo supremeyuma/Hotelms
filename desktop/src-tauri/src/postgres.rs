@@ -347,7 +347,16 @@ mod tests {
         let data = root.join("data");
         let log = root.join("postgres.log");
 
-        let mut pg = EmbeddedPostgres::start(&binaries, &data, 55432, &log)
+        // Deliberately NOT 5432 (the product default) so the test can never
+        // collide with a real embedded server a developer is running. The old
+        // value here was 55432, which falls inside a Windows *reserved* port
+        // range (Hyper-V/WSL/Docker dynamic exclusions — on the dev machine
+        // `netsh int ipv4 show excludedportrange protocol=tcp` reserves
+        // 55337-55436). Binding there fails with `could not bind IPv4 address
+        // "127.0.0.1": Permission denied`, which is a socket-permission error,
+        // not a port conflict, so it is baffling to diagnose. 55440 sits outside
+        // every range reserved on that machine and still away from 5432.
+        let mut pg = EmbeddedPostgres::start(&binaries, &data, 55440, &log)
             .expect("start embedded postgres");
         pg.ensure_database().expect("create application database");
         assert!(pg.is_running(), "server should be running");
