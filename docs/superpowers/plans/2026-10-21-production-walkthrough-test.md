@@ -34,8 +34,20 @@ runbook draft `2026-10-21-production-walkthrough-test.md`.
 | Desktop e2e depth | **Full setup, real Postgres + FrankenPHP boot** | Slow per run (real `initdb`, real migrations); highest fidelity; needs serial execution |
 | Web e2e target | **Local Laravel app on SQLite, fresh seed** | Fast, isolated, reproducible; independent of a desktop install |
 | Harness ownership | **Committed to the repo** | Reviewable, re-runnable in CI, grows with the product |
-| Desktop driver | **Embedded WebDriver provider** | No external `tauri-driver`/msedgedriver to install; drives the built binary |
+| Desktop driver (gate) | **Embedded WebDriver provider, native mode** | No external `tauri-driver`/msedgedriver; drives the built binary |
+| Desktop driver (fast loop) | **WDIO browser mode** — Vite + mocked IPC | No Rust build, no Postgres, seconds not minutes; renderer-only |
 | Web browser | **Playwright Chromium** (already cached at `%LOCALAPPDATA%\ms-playwright`) | No download gate on this machine |
+
+### Two desktop tiers, and which one gates the release
+
+| Tier | Config | Runs | Speed | Authority |
+|---|---|---|---|---|
+| **Fast loop** | `desktop/e2e/wdio.browser.conf.ts`, `mode: 'browser'` | The wizard frontend in Chrome against `vite dev`, with `invoke()` mocked | Seconds | Development only — catches renderer/state/selector regressions |
+| **Release gate** | `desktop/e2e/wdio.conf.ts`, native `embedded` provider | The built binary, real Postgres, real FrankenPHP | Minutes | The only run that can sign off a release |
+
+The fast loop is the day-to-day loop; the native suite is the pre-release proof.
+**A green fast loop never substitutes for the native run** — it proves the
+renderer, not the product.
 
 ### What this harness can and cannot prove
 
@@ -376,6 +388,101 @@ git commit -m "test: add the desktop e2e harness with a feature-gated WebDriver 
 
 ---
 
+## Task 2b: Desktop fast loop — WDIO browser mode
+
+**Files:**
+- Create: `desktop/e2e/wdio.browser.conf.ts`
+- Create: `desktop/e2e/specs-browser/wizard.spec.ts`
+- Create: `desktop/e2e/specs-browser/mocks.ts`
+- Modify: `desktop/package.json` (script `e2e:fast`)
+
+This tier runs the wizard frontend in **plain Chrome** against `vite dev`, with
+`window.__TAURI_INTERNALS__.invoke` patched so `invoke()` is intercepted in the
+renderer. No Rust build, no Postgres, no driver. It catches renderer, state, and
+selector regressions in seconds.
+
+- [ ] **Step 1: Write `desktop/e2e/wdio.browser.conf.ts`**
+
+```ts
+export const config = {
+  runner: 'local',
+  specs: ['./specs-browser/**/*.spec.ts'],
+  maxInstances: 1,
+  services: [['@wdio/tauri-service', {
+    mode: 'browser',
+    devServerUrl: 'http://localhost:1420',
+    devServer: { command: 'npm --prefix desktop run dev', reuseExistingServer: true },
+  }]],
+  capabilities: [{ browserName: 'tauri' }],
+  framework: 'mocha',
+  mochaOpts: { timeout: 20000 },
+};
+```
+
+Note the service name is the full package `'@wdio/tauri-service'`, and `mode` /
+`devServerUrl` may sit at the service level so capabilities inherit them. Letting
+the service auto-manage `devServer` is preferred — it waits for readiness and
+tears the tree down afterwards.
+
+- [ ] **Step 2: Register mocks before the app boots (the timing gotcha)**
+
+The injection script runs **after** `browser.url()` resolves, so `invoke()` calls
+made during module init are **not** intercepted. `main.ts` calls `listen()`,
+`setup_status` and (after a role click) `setup_plan` early — so a spec that
+navigates and immediately asserts will hit
+`"unmocked Tauri command in browser mode: setup_status"`.
+
+Handle it in `specs-browser/mocks.ts`:
+- Define a `registerWizardMocks(browser, { completed = [], running = false })`
+  helper that mocks `setup_status`, `setup_plan`, `discovery_pairing` and
+  `discovery_probe` with sensible defaults.
+- Call `browser.url(...)` **first**, then register the mocks, then reload
+  (`browser.url(...)` again) so `boot()` sees the mocks. Document this ordering in
+  a comment — it is the single most likely source of confusion for the next person.
+- Because `browser.tauri.mock(cmd)` **fully resets** the mock each call, set
+  implementations in `beforeEach`, never `beforeAll`.
+
+- [ ] **Step 3: Write the specs**
+
+Cover the renderer paths that do not need a real backend:
+- Role select: three cards present; heading text; clicking a card renders that
+  role's form heading and submit label from `ROLE_DEFS`.
+- Step list: mock `setup_plan` to return fixed steps and assert `[data-step="<id>"]`
+  rows render in order with pending badges.
+- **Event handling:** `browser.tauri.emitEvent('setup://step', {...})` drives
+  `applyStep` — assert badges flip to `done`/`failed` and `.step__message`
+  populates (including the `Cause:` prefix on failure).
+- **Done panel:** emit `setup://done` with `ok: true` for role `server`; assert the
+  heading, `[data-open]`, and that `.pairing__row` has a `canvas` + `code`
+  containing `moorelife://pair` (mock `discovery_pairing`).
+- **Failure panel:** emit `setup://done` with `ok: false`; assert `[data-retry]`
+  and the message.
+- **Double-submit guard:** submit twice fast; assert a single `invoke` and that
+  the button gained `data-disabled` immediately.
+- **IPC arguments:** assert `setup_run_server` is invoked with exactly the typed
+  form values (`adminName`, `adminEmail`, `adminPassword`, `propertyName`), and
+  that a blank property name sends `null` (see `main.ts`).
+
+- [ ] **Step 4: Wire the script**
+
+`desktop/package.json`: `"e2e:fast": "wdio run e2e/wdio.browser.conf.ts"`.
+
+- [ ] **Step 5: Run it**
+
+```
+npm --prefix desktop run e2e:fast
+```
+Expected: green in seconds. Then confirm the native gate still works:
+`npm --prefix desktop run e2e`.
+
+- [ ] **Step 6: Commit**
+
+```
+git commit -m "test: add the desktop browser-mode fast loop with mocked IPC"
+```
+
+---
+
 ## Task 3: Desktop — server role, real boot
 
 **Files:**
@@ -669,16 +776,20 @@ git commit -m "test: assert the cross-cutting UX and resilience standards"
 
 - [ ] **Step 1: Scripts**
 
-Root: `"test:e2e": "playwright test"`,
-`"test:e2e:desktop": "npm --prefix desktop run e2e"`.
-Desktop: `"e2e": "wdio run e2e/wdio.conf.ts"`.
+Root: `"test:e2e": "playwright test"`.
+Desktop: `"e2e": "wdio run e2e/wdio.conf.ts"` (release gate) and
+`"e2e:fast": "wdio run e2e/wdio.browser.conf.ts"` (fast loop).
 
 - [ ] **Step 2: `docs/E2E_TESTING.md`**
 
 Document: what each suite covers, how to run each, how to add a spec, the
-app-data isolation requirement, the slow-first-run expectation for the desktop
-suite, and the explicit **"cannot prove"** list (installer wrapper, signing,
-cloud, live payments, real printers).
+app-data isolation requirement, the slow-first-run expectation for the native
+desktop suite, and — in a prominent table — **which tier gates a release**
+(native + Playwright) versus which is the development loop (browser mode).
+Also record the browser-mode ordering constraint (navigate → register mocks →
+reload) and the native suite's app-data-wipe requirement.
+Finally, the explicit **"cannot prove"** list: installer wrapper, signing,
+cloud, live payments, real printers.
 
 - [ ] **Step 3: Commit**
 
@@ -718,6 +829,9 @@ must be updated deliberately.
 - [ ] `npm --prefix desktop run e2e` is green and covers Tasks 3–4, proving a
       real Postgres boot, a real FrankenPHP `/up` 200, a real terminal pull, and
       the staff client.
+- [ ] `npm --prefix desktop run e2e:fast` is green in seconds and covers the
+      renderer paths in Task 2b, including the `setup://step` / `setup://done`
+      event handling and the IPC argument shapes.
 - [ ] The release binary built **without** `--features e2e` contains no WebDriver
       server (Task 2 Step 2).
 - [ ] `cargo test` still 22 passing; no new clippy warning attributable to `lib.rs`.
