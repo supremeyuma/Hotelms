@@ -422,8 +422,20 @@ fn resolve_paths(app: &AppHandle) -> Result<setup::Paths, String> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
-        .plugin(tauri_plugin_opener::init())
+    let builder = tauri::Builder::default().plugin(tauri_plugin_opener::init());
+
+    // Test-only. `--features e2e` embeds a W3C WebDriver server and the
+    // WebdriverIO execute/mock command surface so `@wdio/tauri-service` can
+    // drive this binary (`desktop/e2e/wdio.conf.ts`). Neither plugin is in
+    // `default`, and the release build must never carry a WebDriver server,
+    // so this stays behind the feature gate (see Task 2 of the production
+    // walkthrough plan).
+    #[cfg(feature = "e2e")]
+    let builder = builder
+        .plugin(tauri_plugin_wdio_webdriver::init())
+        .plugin(tauri_plugin_wdio::init());
+
+    builder
         .manage(Arc::new(SetupHandle::default()))
         .setup(|app| {
             // The server role serves the LAN, so the app must be able to keep
