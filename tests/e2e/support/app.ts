@@ -36,19 +36,35 @@ export async function login(page: Page, email: string, password: string): Promis
 }
 
 /**
- * Sign out via the authenticated logout form (POST /logout).
- * The route lives in routes/auth.php behind the `auth` middleware.
+ * Sign out through whichever logout control the current layout renders.
+ *
+ * There is NO `<form action="/logout">` anywhere in this app, so a form-based
+ * selector matches nothing and a `toHaveCount(1)` guard on one would fail on
+ * every authenticated page. The real mechanisms and their labels are:
+ *
+ *  - AuthenticatedLayout.vue: Inertia `<Link href="/logout" method="post"
+ *    as="button">` labelled "Logout" (a bare `<button>`, inside no form)
+ *  - StaffSidebar.vue: a click handler calling `router.post(route('logout'))`,
+ *    labelled "Sign Out" — this is the admin/staff sidebar in use on the admin
+ *    dashboard, so "Logout" alone does not cover it
+ *  - VerifyEmail.vue: an Inertia `<Link :href="route('logout')">` labelled
+ *    "Sign Out & Exit"
+ *
+ * The guest in-room surface ("Checkout") is a different action and is
+ * deliberately NOT matched. Target by accessible name across both roles rather
+ * than by DOM shape. Route lives in routes/auth.php behind the `auth` middleware.
  */
 export async function logout(page: Page): Promise<void> {
-    // Logout is a POST form; submit the app's logout control if present.
-    const logoutForm = page.locator('form[action$="/logout"]');
-    await expect(logoutForm).toHaveCount(1);
+    const control = page
+        .getByRole('button', { name: /sign out|log ?out/i })
+        .or(page.getByRole('link', { name: /sign out|log ?out/i }));
+    await expect(control.first()).toBeVisible();
 
     await Promise.all([
         page.waitForURL((url) => url.pathname.endsWith('/login') || url.pathname === '/', {
             timeout: 15_000,
         }),
-        logoutForm.locator('button[type="submit"], input[type="submit"]').first().click(),
+        control.first().click(),
     ]);
 }
 
