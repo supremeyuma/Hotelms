@@ -146,19 +146,50 @@ production behaviour change beyond making role seeding correct.
 
 ---
 
-## Task 0: Make every seeded account log in (the blocker)
+## Task 0: Make every seeded account log in (the blocker) — DONE
 
-**Files:**
-- Modify: `database/seeders/RolesSeeder.php`
-- Modify: `database/seeders/UsersSeeder.php` (or add `database/seeders/DemoAccountsSeeder.php` and call it from `DatabaseSeeder`)
-- Modify: `database/seeders/DatabaseSeeder.php`
+**Status: complete.** Commits `b6b22ebb` (fix) and `9ead9aad` (phpunit memory limit).
+
+**Files (as actually changed):**
+- Modify: `database/seeders/RolesSeeder.php` — rewritten to the operational set
+- Modify: `database/seeders/UsersSeeder.php` — rewritten; writes both role stores
+- Modify: `database/seeders/StaffProfilesSeeder.php` — uses the `StaffProfile` model
+- Modify: `database/seeders/AccountantUserSeeder.php` — role name converged to `accountant`
+- Modify: `phpunit.xml` — `memory_limit=512M`; the 457-test suite exceeded CLI 128M
 - Test: `tests/Feature/Auth/SeededAccountLoginTest.php` (new)
 
-- [ ] **Step 1: Write the failing test first**
+**Two details differed from the plan as written:**
+1. `DatabaseSeeder` was **not** modified. The operational accounts were added to
+   `UsersSeeder` instead. User decision: a fresh install reaches every dashboard
+   without also running the optional `LocalHotelDemoSeeder`.
+2. The legacy `users.role_id` column **is still written**, alongside the Spatie
+   pivot. `BookingsSeeder`, `OrdersSeeder` and `StaffProfilesSeeder` join on
+   `roles.slug` through it; dropping it would have silently emptied them.
+
+**Adjacent bugs the fix unmasked** (both pre-existing, both invisible before
+because the lookups they depend on matched nothing):
+- `StaffProfilesSeeder` inserted `action_code_hash`, renamed to `action_code` by
+  `2025_12_28_032826_rename_action_code_hash_column`. Now uses
+  `StaffProfile::storeActionCode()`, which detects the column itself.
+- `StaffProfilesSeeder` also targeted emails (`*@lagosharborhotel.com`) from a
+  different seeder that produces no such accounts. Dead blocks removed.
+- `AccountantUserSeeder` created a second role named `Accountant` (capital A)
+  with the same slug as `accountant`, colliding on `roles.slug`.
+
+**Pre-existing bug found, NOT fixed (out of scope, unrelated to login):**
+`LocalHotelDemoSeeder` fails with `maintenance_tickets has no column named
+booking_id`. Reproduced on a clean tree with this task's changes stashed, so it
+predates Task 0. It seeds a self-contained demo hotel and is not on the
+`db:seed` path. Left alone deliberately — fix before relying on that seeder.
+
+- [x] **Step 1: Write the failing test first**
 
 Create `tests/Feature/Auth/SeededAccountLoginTest.php`. It should run the seeders
 and assert, for each account in the login matrix, that the user exists, has a
-Spatie role, and can reach its landing route.
+Spatie role, and can reach its landing route. The committed version uses PHPUnit
+class style (not Pest) to match the surrounding suite, asserts the seeded password
+hash really verifies, and adds a case proving the legacy `role_id` column stays
+populated for the three seeders that read it.
 
 ```php
 it('gives every seeded account a role that its landing route accepts', function () {
@@ -186,10 +217,10 @@ it('gives every seeded account a role that its landing route accepts', function 
 });
 ```
 
-- [ ] **Step 2: Run it and confirm RED**
+- [x] **Step 2: Run it and confirm RED**
 
 Run: `php artisan config:clear; php artisan test --filter=SeededAccountLoginTest`
-Expected: FAIL — accounts have no roles / routes 403.
+Expected: FAIL — accounts have no roles / routes 403. Confirmed: all 4 tests failed.
 
 - [ ] **Step 3: Fix `RolesSeeder` to define the operational role set**
 
@@ -213,20 +244,22 @@ stops being written before they are updated to use roles.
 one as authoritative for an installation and document the choice in the seeder's
 docblock. Do not leave two sources of truth.
 
-- [ ] **Step 6: Run the test until GREEN**
+- [x] **Step 6: Run the test until GREEN**
 
 Run: `php artisan config:clear; php artisan test --filter=SeededAccountLoginTest`
+Result: 4 passed (59 assertions).
 
-- [ ] **Step 7: Verify no other seeders broke**
+- [x] **Step 7: Verify no other seeders broke**
 
 Run: `php artisan config:clear; php artisan test`
-Expected: the full suite that was green at HEAD stays green (457 passed / 2663
-assertions at last record).
+Result: **461 passed / 2722 assertions** (previous baseline 457 + 4 new), no
+regressions. Also verified against a scratch SQLite DB that `db:seed` produces 15
+operational roles, 35 role assignments, 12 bookings and 15 staff profiles.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```
-git commit -m "fix: seed operational roles into the Spatie pivot so dashboards are reachable"
+git commit -m "fix: seed operational roles so every seeded account can log in"
 ```
 
 ---
