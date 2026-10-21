@@ -15,8 +15,13 @@ class AccountantUserSeeder extends Seeder
     {
         $department = Department::firstOrCreate(['name' => 'Accounts']);
 
+        // Name must match RolesSeeder's operational set. This seeder used to
+        // create a second role called "Accountant" (capital A) with the same
+        // slug, which collided on roles.slug and left two roles meaning one job.
+        // Route middleware still accepts `accountant|Accountant`; the canonical
+        // name is now the lowercase one.
         $role = Role::firstOrCreate(
-            ['name' => 'Accountant', 'guard_name' => 'web'],
+            ['name' => 'accountant', 'guard_name' => 'web'],
             ['slug' => 'accountant', 'permissions' => json_encode([
                 'view_financial_reports',
                 'manage_accounting_periods',

@@ -2,12 +2,18 @@
 
 namespace Database\Seeders;
 
+use App\Models\StaffProfile;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 
 /**
- * Adds staff_profiles for staff users (position, phone, action_code_hash)
+ * Adds staff_profiles for the seeded staff users (position, phone, action code).
+ *
+ * Uses the StaffProfile model rather than raw inserts because the action code is
+ * stored by the model (`storeActionCode()` encrypts it through ActionCodeService
+ * and detects whichever column the schema currently has). Raw inserts here went
+ * stale twice: the column was renamed `action_code_hash` -> `action_code`, and
+ * the inserts also targeted emails from a different seeder that never existed.
  */
 class StaffProfilesSeeder extends Seeder
 {
@@ -18,55 +24,13 @@ class StaffProfilesSeeder extends Seeder
         })->get();
 
         foreach ($staffUsers as $index => $u) {
-            DB::table('staff_profiles')->insert([
-                'user_id' => $u->id,
-                'position' => 'Staff',
-                'phone' => sprintf('+23480%07d', 1000000 + $index),
-                'meta' => json_encode(['shift' => ($index % 3 === 0) ? 'morning' : 'evening']),
-                'action_code_hash' => Hash::make('1234'), // default action code for demo
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-        }
+            $profile = StaffProfile::firstOrNew(['user_id' => $u->id]);
 
-        // Manager, MD and inventory manager profiles
-        $manager = DB::table('users')->where('email', 'manager@lagosharborhotel.com')->first();
-        if ($manager) {
-            DB::table('staff_profiles')->insert([
-                'user_id' => $manager->id,
-                'position' => 'General Manager',
-                'phone' => '+2348090000001',
-                'meta' => json_encode(['office' => 'Main']),
-                'action_code_hash' => Hash::make('4321'),
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-        }
-
-        $md = DB::table('users')->where('email', 'ceo@lagosharborhotel.com')->first();
-        if ($md) {
-            DB::table('staff_profiles')->insert([
-                'user_id' => $md->id,
-                'position' => 'Managing Director',
-                'phone' => '+2348090000000',
-                'meta' => json_encode(['office' => 'CEO Suite']),
-                'action_code_hash' => Hash::make('9999'),
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-        }
-
-        $inv = DB::table('users')->where('email', 'inventory@lagosharborhotel.com')->first();
-        if ($inv) {
-            DB::table('staff_profiles')->insert([
-                'user_id' => $inv->id,
-                'position' => 'Inventory Manager',
-                'phone' => '+2348090000002',
-                'meta' => json_encode(['office' => 'Stockroom']),
-                'action_code_hash' => Hash::make('7777'),
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+            $profile->position = 'Staff';
+            $profile->phone = sprintf('+23480%07d', 1000000 + $index);
+            $profile->meta = ['shift' => ($index % 3 === 0) ? 'morning' : 'evening'];
+            $profile->storeActionCode('1234'); // default action code for demo
+            $profile->save();
         }
     }
 }
