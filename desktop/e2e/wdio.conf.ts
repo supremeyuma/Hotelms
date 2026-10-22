@@ -113,6 +113,40 @@ export const config = {
 
   // Start the Vite dev server the debug binary loads, and stop it afterwards.
   async onPrepare() {
+    // --- SAFETY GUARD: a cached Laravel config would redirect the wizard's
+    // migrations to the developer's MySQL database. -----------------------
+    //
+    // In development the desktop app's `app_root` falls back to the REPOSITORY
+    // root (see `resolve_paths` in `desktop/src-tauri/src/lib.rs`), so the
+    // wizard runs `php artisan migrate --force` and `php artisan db:seed
+    // --force` inside this repo. The setup passes the role's database settings
+    // as PROCESS environment variables and relies on Laravel's Dotenv being
+    // immutable, so the process environment normally wins over the repo's
+    // `.env` (which points at the dev MySQL `hotelms` database).
+    //
+    // That reasoning holds ONLY while `bootstrap/cache/config.php` is absent.
+    // With a cached config, Laravel uses the cached array verbatim and ignores
+    // the environment entirely — the wizard would then migrate and seed the
+    // REAL dev MySQL database. This was reproduced directly: with a config
+    // cache in place, `DB_CONNECTION=pgsql` still resolved to `mysql`/3306.
+    //
+    // So refuse to run rather than risk it. Clearing the cache is the
+    // developer's call, not the suite's: `config:cache` bakes their local
+    // environment into the app, and silently deleting it would change their
+    // dev setup.
+    const cachedConfig = resolve(repoRoot, "bootstrap", "cache", "config.php");
+    if (existsSync(cachedConfig)) {
+      throw new Error(
+        "[wdio] Refusing to start: a cached Laravel config exists at\n" +
+          `       ${cachedConfig}\n` +
+          "       The desktop setup runs `php artisan migrate --force` and\n" +
+          "       `db:seed --force` against the repository root. With a cached\n" +
+          "       config Laravel ignores the process environment and would\n" +
+          "       migrate and seed the DEV MySQL database `hotelms`.\n" +
+          "       Fix: run `php artisan config:clear` and retry.",
+      );
+    }
+
     // Spawn Vite directly through the current Node binary rather than via
     // `npm run dev`. With npm we would get the shell's pid back and killing it
     // orphans Vite (Windows), leaving port 1420 bound for the next run. Spawning
