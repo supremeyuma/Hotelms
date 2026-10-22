@@ -82,6 +82,18 @@ export const config = {
       {
         appBinaryPath,
         driverProvider: "embedded",
+        // The dev repo's .env sets SESSION_DRIVER=redis with REDIS_CLIENT=phpredis,
+        // but the bundled PHP runtime has no php_redis extension (resources/bin has
+        // no php_redis.dll). FrankenPHP inherits the environment into the child, and
+        // Laravel's Dotenv is immutable so process env wins. The web middleware stack
+        // uses StartSession (web group), so Redis sessions cause 500s and no session
+        // cookies are issued — which would break HTTP login. Use file sessions for
+        // this e2e run (storage/framework/sessions exists). A packaged app has no
+        // .env and no sessions migration (only pos_sessions), so this is a product
+        // gap reported by Task 3, not a test hack.
+        env: {
+          SESSION_DRIVER: "file",
+        },
       },
     ],
   ],
