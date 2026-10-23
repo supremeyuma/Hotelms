@@ -22,22 +22,33 @@ import { join } from "node:path";
  * The Tauri app-data directory for this app.
  *
  * Derived from `productName`/`identifier` in `tauri.conf.json`
- * (`identifier = "com.moorelife.desktop"`). Tauri maps the identifier straight
- * onto the OS "local app data" location, which on Windows is `%LOCALAPPDATA%`.
- * We read `LOCALAPPDATA` from the environment rather than hardcoding the
- * username, so this works on any checkout/runner.
- *
- * NOTE: Local, not Roaming. (`%APPDATA%` would be wrong.)
+ * (`identifier = "com.moorelife.desktop"`). Tauri uses both Roaming and Local
+ * depending on API; check both to be safe.
  */
 export function appDataDir(): string {
+  const appData = process.env.APPDATA;
   const localAppData = process.env.LOCALAPPDATA;
-  if (!localAppData) {
-    throw new Error(
-      "LOCALAPPDATA is not set — appdata.ts can only locate the app data " +
-        "directory on Windows.",
-    );
+  
+  // Try Roaming first (app_data_dir in Tauri)
+  if (appData) {
+    const roamingDir = join(appData, "com.moorelife.desktop");
+    if (existsSync(roamingDir)) {
+      return roamingDir;
+    }
+    // If neither exists, prefer Roaming as it's the default for app_data_dir
+    if (!localAppData || !existsSync(join(localAppData, "com.moorelife.desktop"))) {
+      return roamingDir;
+    }
   }
-  return join(localAppData, "com.moorelife.desktop");
+  
+  if (localAppData) {
+    return join(localAppData, "com.moorelife.desktop");
+  }
+  
+  throw new Error(
+    "APPDATA/LOCALAPPDATA is not set — appdata.ts can only locate the app data " +
+      "directory on Windows.",
+  );
 }
 
 /**
