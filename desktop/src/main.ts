@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import QRCode from "qrcode";
 
 // The three shapes an installation can take (spec 9.2). An explicit answer —
@@ -461,8 +462,14 @@ function renderDone(done: DoneEvent): void {
   </section>`);
   inject(root, panel);
 
-  root.querySelector<HTMLButtonElement>("[data-open]")?.addEventListener("click", () => {
-    window.location.href = target ?? "about:blank";
+  root.querySelector<HTMLButtonElement>("[data-open]")?.addEventListener("click", async () => {
+    if (target) {
+      try {
+        await openUrl(target);
+      } catch {
+        window.location.href = target;
+      }
+    }
   });
 
   if (currentRole === "server") {
