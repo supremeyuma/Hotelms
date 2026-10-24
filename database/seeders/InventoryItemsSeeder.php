@@ -21,6 +21,11 @@ class InventoryItemsSeeder extends Seeder
             ['name'=>'Coffee Beans','sku'=>'COF-001','quantity'=>80,'unit'=>'kg','meta'=>json_encode([]),'created_at'=>$now,'updated_at'=>$now],
         ];
 
-        DB::table('inventory_items')->insert($items);
+        foreach ($items as $item) {
+            DB::table('inventory_items')->updateOrInsert(
+                ['sku' => $item['sku']],
+                $item
+            );
+        }
     }
 }
