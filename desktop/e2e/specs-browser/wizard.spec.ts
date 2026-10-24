@@ -192,14 +192,20 @@ describe("Desktop wizard fast loop (browser mode)", () => {
     expect(runServer.mock.calls.length).toBe(1);
 
     const args = runServer.mock.calls[0][0] as {
-      adminName: string;
-      adminEmail: string;
-      adminPassword: string;
-      propertyName: string | null;
+      input: {
+        adminName: string;
+        adminEmail: string;
+        adminPassword: string;
+        propertyName: string | null;
+      };
     };
-    expect(args.adminName).toBe("Alice");
-    expect(args.adminEmail).toBe("alice@example.com");
-    expect(args.adminPassword).toBe("secret");
-    expect(args.propertyName).toBeNull();
+    // The Rust command takes ONE `input` argument, and Tauri deserializes by
+    // parameter name. Asserting the wrapper is the point: passing the fields
+    // flat is rejected with "missing required key input" and no setup runs.
+    expect(args.input).toBeDefined();
+    expect(args.input.adminName).toBe("Alice");
+    expect(args.input.adminEmail).toBe("alice@example.com");
+    expect(args.input.adminPassword).toBe("secret");
+    expect(args.input.propertyName).toBeNull();
   });
 });

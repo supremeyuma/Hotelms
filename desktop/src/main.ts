@@ -310,12 +310,25 @@ function bindForm(): void {
     renderStepStates();
 
     try {
-      await invoke(command, payload);
+      // Tauri deserializes command arguments BY PARAMETER NAME, and every setup
+      // command declares a single `input: ...Input` argument. Passing the fields
+      // flat is rejected with "missing required key input" before any setup
+      // work runs, so the wrapper object is load-bearing.
+      await invoke(command, { input: payload });
     } catch (error) {
       running = false;
-      renderWizard(currentRole);
-      const note = form.querySelector<HTMLElement>(".note");
-      if (note) note.textContent = String(error);
+      // `renderWizard` is async and replaces `#root`, so the rejection has to be
+      // surfaced AFTER it resolves — and on the section, not the form: the note
+      // is a sibling of the form, never a descendant.
+      await renderWizard(currentRole);
+      const section = document
+        .getElementById("root")
+        ?.querySelector<HTMLElement>("section.panel");
+      section?.appendChild(
+        el(
+          `<p class="note">Setup could not start: ${escapeHtml(String(error))}</p>`,
+        ),
+      );
     }
   });
 }

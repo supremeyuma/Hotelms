@@ -123,7 +123,10 @@ pub fn render(role: &Role, data_dir: &Path) -> Result<String> {
              DB_PASSWORD=hotelms\n\
              SYNC_NODE_TYPE=lan_server\n\
              SYNC_PEERS=\n\
-             FRANKENPHP_PORT={port}\n"
+             FRANKENPHP_PORT={port}\n\
+             SESSION_DRIVER=file\n\
+             CACHE_STORE=file\n\
+             QUEUE_CONNECTION=sync\n"
         ),
         Role::Terminal => format!(
             "\nSYNC_ENABLED=true\n\
