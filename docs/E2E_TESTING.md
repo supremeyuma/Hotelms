@@ -86,16 +86,19 @@ log is truncated at start so specs never read a stale run.
 | `operations.spec.ts` | Front-desk check-in, kitchen order creation through prep to ready, housekeeping finish with the staff access code, laundry board — each asserted in the database |
 | `reports-finance.spec.ts` | Occupancy report data, linked summary cards and a real XLSX export; finance dashboard + revenue CSV; HR staff register; inventory list and stock locations; club POS landing |
 | `guest-room.spec.ts` | A checked-in guest's QR entry reaches their room dashboard; tampered and invented tokens are refused |
+| `inventory.spec.ts` | Receiving stock writes one movement and updates the balance |
+| `maintenance.spec.ts` | A ticket moved on the staff board is the same state the admin control room shows |
 | `authorization.spec.ts` | Five cross-role page requests are refused rather than served |
 | `cross-cutting.spec.ts` | A throttled double submit sends exactly one email and shows a disabled in-flight state; bad input never answers 5xx |
 
 ### Not yet covered (the remaining walkthrough work)
 
-CRUD mutations (inventory items/stock moves, menu catalogue, rooms/staff), the
-maintenance-ticket lifecycle across both views, the full laundry order
-lifecycle, every report page with a known cell and every export format,
-accounting periods, the Club POS docket/shift flow, and the guest ordering
-surface. `mobile` runs `smoke` and `guest-room`.
+Laundry items are not seeded, so the laundry lifecycle needs its own fixture
+(or a seeder) before it can be walked: create an item, request laundry from the
+guest surface, advance it on the staff board. Also outstanding: the Club POS
+docket/shift flow, accounting periods, every remaining report page with a known
+cell and every export format, menu-catalogue CRUD, and room/staff CRUD.
+`mobile` runs `smoke` and `guest-room`.
 
 ## Cannot prove (owner-run, unavoidable)
 
