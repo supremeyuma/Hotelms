@@ -345,7 +345,7 @@ pub fn run_server(
         &env,
         &runtime_log,
     )
-    .and_then(|r| {
+    .and_then(|mut r| {
         r.wait_until_ready(Duration::from_secs(60))?;
         Ok(r)
     }) {
@@ -454,9 +454,19 @@ pub fn run_terminal(
     let _ = options.http_port; // reserved for the offline serving phase.
 
     // --- Create the local SQLite file and the role environment. ---
+    // A pairing URI pasted from the server is converted here, before it is
+    // written into `.env`, so registration and the stored pointer agree.
+    let normalized = options
+        .server_url
+        .as_deref()
+        .map(str::trim)
+        .filter(|url| !url.is_empty())
+        .map(|url| normalize_server_url(url, "server address"))
+        .transpose()?;
+
     report(STEP_CREATE_DATABASE, StepStatus::Started, None);
     let mut rendered = envfile::render(&Role::Terminal, &paths.data_dir)?;
-    if let Some(server_url) = &options.server_url {
+    if let Some(server_url) = &normalized {
         rendered.push_str(&format!("\nLAN_SERVER_URL={server_url}\n"));
     }
     let db_file = paths.data_dir.join("hotelms.sqlite");
@@ -483,15 +493,10 @@ pub fn run_terminal(
     report(STEP_REGISTER_NODE, StepStatus::Started, None);
 
     // Resolve the server URL: the same value the environment carries as
-    // `LAN_SERVER_URL`, trimmed, with a trailing slash dropped so the endpoint
-    // is built exactly once.
-    let server_url = match options
-        .server_url
-        .as_deref()
-        .map(str::trim)
-        .filter(|url| !url.is_empty())
-    {
-        Some(url) => url.trim_end_matches('/').to_string(),
+    // `LAN_SERVER_URL`, already normalised (a trailing slash is gone, so the
+    // endpoint is built exactly once).
+    let server_url = match normalized {
+        Some(url) => url,
         None => {
             let error = anyhow::anyhow!(
                 "no server address was configured; a terminal cannot register without one"
@@ -638,9 +643,14 @@ pub fn run_staff_client(
         Some("LAN auto-discovery lands in Task 6; the address you entered is used".to_string()),
     );
 
+    // Accept the address the server actually hands out: a pairing URI is the
+    // documented fallback when broadcast discovery is blocked, and it must be
+    // turned into the HTTP base URL before it is stored or opened.
+    let server_url = normalize_server_url(&options.server_url, "server address")?;
+
     let rendered = envfile::render(
         &Role::StaffClient {
-            server_url: options.server_url.clone(),
+            server_url: server_url.clone(),
         },
         &paths.data_dir,
     )?;
@@ -653,16 +663,95 @@ pub fn run_staff_client(
     report(
         STEP_OPEN_WINDOW,
         StepStatus::Succeeded,
-        Some(format!(
-            "the application window connects to {}",
-            options.server_url
-        )),
+        Some(format!("the application window connects to {server_url}")),
     );
 
-    Ok(ClientBoot {
-        env,
-        server_url: options.server_url.clone(),
-    })
+    Ok(ClientBoot { env, server_url })
+}
+
+/// Normalise the address a terminal or staff client was given into the HTTP
+/// base URL the application is actually served at.
+///
+/// Three forms are accepted, because all three are things an operator can
+/// realistically end up with:
+///
+///   * `http://host:port` — what the address field's placeholder shows;
+///   * `moorelife://pair?v=1&host=…&port=…` — the pairing URI the server displays
+///     and that its QR code encodes, which the UI explicitly invites people to
+///     paste;
+///   * `host:port` / `host` — the same address without a scheme.
+///
+/// Anything else is refused by name rather than stored half-parsed: a stored
+/// `moorelife://` value would later be handed to the browser, which cannot open
+/// it, and would break the sync endpoints that append `/api/...` to it.
+fn normalize_server_url(input: &str, label: &str) -> Result<String> {
+    let raw = input.trim();
+    if raw.is_empty() {
+        bail!("{label} is empty");
+    }
+
+    if let Some(rest) = raw.strip_prefix("moorelife://") {
+        let query = rest.split_once('?').map(|(_, query)| query).unwrap_or("");
+        let mut host = None;
+        let mut port = None;
+
+        for pair in query.split('&') {
+            let Some((key, value)) = pair.split_once('=') else {
+                continue;
+            };
+            match key {
+                "host" if !value.trim().is_empty() => host = Some(value.trim().to_string()),
+                "port" if !value.trim().is_empty() => port = Some(value.trim().to_string()),
+                _ => {}
+            }
+        }
+
+        let Some(host) = host else {
+            bail!("{label} is a pairing link without a host; ask the server for a fresh code");
+        };
+
+        let port = match port {
+            Some(port) => port
+                .parse::<u16>()
+                .with_context(|| format!("{label} names an invalid port '{port}'"))?,
+            None => DEFAULT_HTTP_PORT,
+        };
+
+        // An IPv6 literal has to stay bracketed inside a URL authority.
+        let host = if host.contains(':') && !host.starts_with('[') {
+            format!("[{host}]")
+        } else {
+            host
+        };
+
+        return Ok(format!("http://{host}:{port}"));
+    }
+
+    let candidate = if raw.contains("://") {
+        raw.to_string()
+    } else {
+        format!("http://{raw}")
+    };
+
+    let parsed = reqwest::Url::parse(&candidate)
+        .with_context(|| format!("{label} '{raw}' is not a valid address"))?;
+
+    if !matches!(parsed.scheme(), "http" | "https") {
+        bail!(
+            "{label} '{raw}' uses '{}'; use an http:// address or the pairing link",
+            parsed.scheme()
+        );
+    }
+
+    if parsed.host_str().unwrap_or("").is_empty() {
+        bail!("{label} '{raw}' has no host");
+    }
+
+    if parsed.query().is_some() || parsed.fragment().is_some() {
+        bail!("{label} '{raw}' must not carry a query or fragment");
+    }
+
+    Ok(parsed.as_str().trim_end_matches('/').to_string())
 }
 
 /// Install (if needed) and start the embedded Postgres cluster.
@@ -1194,5 +1283,88 @@ mod tests {
                 .iter()
                 .any(|e| e.id == STEP_OPEN_WINDOW && e.status == StepStatus::Succeeded)
         );
+    }
+
+    #[test]
+    fn a_pairing_uri_becomes_the_http_base_url() {
+        let uri = "moorelife://pair?v=1&host=192.168.1.20&port=8000&name=MooreLife&version=0.1.0";
+        assert_eq!(
+            normalize_server_url(uri, "server address").unwrap(),
+            "http://192.168.1.20:8000"
+        );
+    }
+
+    #[test]
+    fn a_pairing_uri_without_a_port_uses_the_default() {
+        let uri = "moorelife://pair?v=1&host=127.0.0.1";
+        assert_eq!(
+            normalize_server_url(uri, "server address").unwrap(),
+            "http://127.0.0.1:8000"
+        );
+    }
+
+    #[test]
+    fn an_http_url_keeps_its_host_and_loses_a_trailing_slash() {
+        assert_eq!(
+            normalize_server_url(" http://10.0.0.5:8000/ ", "server address").unwrap(),
+            "http://10.0.0.5:8000"
+        );
+    }
+
+    #[test]
+    fn a_bare_host_port_is_treated_as_http() {
+        assert_eq!(
+            normalize_server_url("192.168.1.20:8000", "server address").unwrap(),
+            "http://192.168.1.20:8000"
+        );
+    }
+
+    #[test]
+    fn a_pairing_uri_without_a_host_is_refused_by_name() {
+        let error = normalize_server_url("moorelife://pair?v=1&port=8000", "server address")
+            .expect_err("a hostless pairing link must not be stored");
+        assert!(error.to_string().contains("host"));
+    }
+
+    #[test]
+    fn a_non_http_scheme_is_refused() {
+        let error = normalize_server_url("ftp://10.0.0.5:21", "server address")
+            .expect_err("only http and https can point the application at a server");
+        assert!(error.to_string().contains("ftp"));
+    }
+
+    #[test]
+    fn an_empty_address_is_refused() {
+        assert!(normalize_server_url("   ", "server address").is_err());
+    }
+
+    #[test]
+    fn a_staff_client_boot_stores_the_http_url_for_a_pairing_link() {
+        let dir = temp_dir("client-pairing");
+        let paths = Paths {
+            data_dir: dir.clone(),
+            app_root: dir.clone(),
+            runtime_dir: dir.clone(),
+            php_ini: dir.join("php.ini"),
+            postgres_bundle: dir.join("pg"),
+        };
+
+        let boot = run_staff_client(
+            &paths,
+            &ClientOptions {
+                server_url: "moorelife://pair?v=1&host=127.0.0.1&port=8000".into(),
+            },
+            |_| {},
+        )
+        .expect("a pairing link points the client at the server");
+
+        assert_eq!(boot.server_url, "http://127.0.0.1:8000");
+        assert_eq!(
+            env_pair(&boot.env, "LAN_SERVER_URL"),
+            Some("http://127.0.0.1:8000")
+        );
+        let stored = fs::read_to_string(dir.join(".env")).unwrap();
+        assert!(stored.contains("LAN_SERVER_URL=http://127.0.0.1:8000"));
+        assert!(!stored.contains("moorelife://"));
     }
 }
