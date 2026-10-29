@@ -117,6 +117,20 @@ class ReportingService
     }
 
     /**
+     * Limit the number of rows the next `get()` returns.
+     *
+     * Callers of this service chain `orderBy(...)->limit(...)->get()`, so the
+     * limit belongs here next to `orderBy`; without it the chain fails with
+     * "Call to undefined method ...::limit()" and the page returns a 500.
+     */
+    public function limit($value)
+    {
+        $this->baseQuery->limit($value);
+
+        return $this;
+    }
+
+    /**
      * Get base query for extension
      */
     public function getQuery(): Builder
