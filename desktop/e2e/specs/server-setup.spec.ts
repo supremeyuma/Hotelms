@@ -10,8 +10,9 @@
 // docs/superpowers/plans/2026-10-21-production-walkthrough-test.md Task 3.
 
 import { execFileSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { resetAppData, appDataDir } from "../helpers/appdata";
 import {
@@ -420,8 +421,16 @@ describe("desktop wizard — server role boots Postgres and FrankenPHP", functio
     expect(tableCount).toBeGreaterThan(0);
 
     const migrationsCount = psqlCount("SELECT count(*) FROM migrations;");
-    // 177 migrations exist in the repo; all should be applied
-    expect(migrationsCount).toBe(177);
+    // Count the repository's migrations instead of hardcoding a number: the
+    // suite must not fail (or pass) because a migration was added or removed.
+    const migrationsDir = fileURLToPath(
+      new URL("../../../database/migrations", import.meta.url),
+    );
+    const expectedMigrations = readdirSync(migrationsDir).filter((file) =>
+      file.endsWith(".php"),
+    ).length;
+    expect(expectedMigrations).toBeGreaterThan(0);
+    expect(migrationsCount).toBe(expectedMigrations);
 
     // Core tables must exist
     for (const table of ["users", "roles", "model_has_roles", "properties"]) {

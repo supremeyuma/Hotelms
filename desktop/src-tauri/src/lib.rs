@@ -397,19 +397,36 @@ fn resolve_paths(app: &AppHandle) -> Result<setup::Paths, String> {
     // actually present. An `artisan` file alone is not enough: a half-copied
     // resource tree would otherwise boot a server that answers every request
     // with "Failed opening required .../public/index.php".
-    let app_root = resource.join("app");
-    let app_root = if app_root.join("public").join("index.php").exists() {
-        app_root
-    } else {
-        repo_root
-    };
+    //
+    // A build that still lives in a Cargo output directory is a *development*
+    // build, and `target/<profile>/app` is a copy made at some earlier point.
+    // Preferring that copy over the repository silently serves stale code: the
+    // e2e suite saw an old tree with 174 migrations instead of the 177 in the
+    // repo, and the missing built assets made `/login` fail. A real installed
+    // app has no `.cargo-lock` beside the executable and no repository, so it
+    // keeps using its bundled tree.
+    let resource = paths::simplify(&resource);
+    let running_from_cargo_output = resource.join(".cargo-lock").exists()
+        || resource.join(".cargo-build-lock").exists();
 
-    if !app_root.join("public").join("index.php").exists() {
+    let bundled_app = resource.join("app");
+    let bundled_usable = bundled_app.join("public").join("index.php").exists();
+    let repo_usable = repo_root.join("public").join("index.php").exists()
+        && repo_root.join("vendor").join("autoload.php").exists();
+
+    let app_root = if running_from_cargo_output && repo_usable {
+        repo_root
+    } else if bundled_usable {
+        bundled_app
+    } else if repo_usable {
+        repo_root
+    } else {
         return Err(format!(
-            "the application is incomplete: {} is missing",
-            app_root.join("public").join("index.php").display()
+            "the application is incomplete: neither {} nor {} contains public/index.php",
+            bundled_app.display(),
+            repo_root.display()
         ));
-    }
+    };
 
     let postgres_bundle = resource.join("postgres");
     let postgres_bundle = if postgres_bundle.join("bin").exists() {
