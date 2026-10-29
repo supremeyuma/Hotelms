@@ -35,11 +35,17 @@ export default defineConfig({
             // Desktop surface: staff and admin dashboards.
             name: 'chromium',
             use: { ...devices['Desktop Chrome'] },
+            // The guest in-room surface is phone-shaped and runs in `mobile`.
+            testIgnore: /guest-room\.spec\.ts/,
         },
         {
-            // Guest in-room surface (QR ordering etc.) is phone-sized.
+            // Guest in-room surface (QR ordering etc.) is phone-sized. Only the
+            // specs written for it run here: the admin/auth screens have their
+            // own desktop chrome and their logout controls are not on a phone
+            // layout, so running them in this project proves nothing.
             name: 'mobile',
             use: { ...devices['Pixel 5'], viewport: { width: 390, height: 844 } },
+            testMatch: /(smoke|guest-room)\.spec\.ts/,
         },
     ],
 
