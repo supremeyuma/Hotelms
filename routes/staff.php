@@ -140,8 +140,10 @@ Route::middleware(['auth', 'role:laundry|frontdesk|md'])->prefix('staff')->name(
 //Cleaning Routes
 Route::middleware(['auth', 'role:staff|clean|md'])->prefix('clean')->name('clean.')->group(function () {
     Route::get('/', [CleaningDashboardController::class, 'index'])->name('dashboard');
-    //Route::patch('/clean/{cleaning}', [CleaningDashboardController::class, 'update'])->name('update');
-    Route::patch('/{cleaning}', [CleaningDashboardController::class, 'update'])->name('update');
+    // The payload carries `room_id`; the URL does not identify a cleaning. The
+    // old `/{cleaning}` segment only ever held an unused value, and the client's
+    // `/clean/create` fallback for a first-ever clean answered 404.
+    Route::patch('/', [CleaningDashboardController::class, 'update'])->name('update');
 });
 
 

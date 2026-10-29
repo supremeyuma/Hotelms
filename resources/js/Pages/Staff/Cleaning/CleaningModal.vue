@@ -28,8 +28,12 @@ const submit = () => {
   if (submitting.value) return
   error.value = null
   submitting.value = true
+  // The controller keys the update by `room_id` in the payload; the old
+  // `/clean/create` fallback matched the route but the follow-up 404 came from
+  // a room that had no cleaning record yet (every room on a fresh install), so
+  // housekeeping could never record the first clean.
   router.patch(
-    `/clean/${cleaningId.value ?? 'create'}`,
+    '/clean',
     {
       room_id: props.room.id,
       action: action.value,

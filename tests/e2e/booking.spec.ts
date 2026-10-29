@@ -9,13 +9,8 @@
  * branch hands off to Flutterwave/Paystack in the browser, which a suite must
  * never call. `confirmPayment()` is the real controller either way.
  */
-import { execFileSync } from 'node:child_process';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
 import { expect, test } from '@playwright/test';
-
-const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
+import { sqliteCount } from './support/db';
 
 /** A date `days` from today, as the `yyyy-mm-dd` an <input type="date"> wants. */
 function dayFromNow(days: number): string {
@@ -25,26 +20,9 @@ function dayFromNow(days: number): string {
 }
 
 function bookingCountFor(email: string): number {
-    // Read the e2e SQLite file directly: the web server owns it, and a
-    // read-only query cannot disturb the run in progress.
-    const script = [
-        "$pdo = new PDO('sqlite:' . $argv[1]);",
-        "$stmt = $pdo->prepare('SELECT count(*) FROM bookings WHERE guest_email = ?');",
-        "$stmt->execute([$argv[2]]);",
-        "echo (string) $stmt->fetchColumn();",
-    ].join('\n');
-
-    const output = execFileSync(
-        'php',
-        ['-r', script, resolve(REPO_ROOT, 'database', 'e2e.sqlite'), email],
-        { encoding: 'utf8', timeout: 60_000 },
+    return sqliteCount(
+        `SELECT count(*) FROM bookings WHERE guest_email = '${email.replace(/'/g, "''")}'`,
     );
-
-    const count = Number(output.trim());
-    if (!Number.isInteger(count)) {
-        throw new Error(`could not read a booking count from sqlite: ${JSON.stringify(output)}`);
-    }
-    return count;
 }
 
 test.describe('booking wizard', () => {
