@@ -1,6 +1,7 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 pub mod discovery;
 pub mod envfile;
+pub mod paths;
 pub mod postgres;
 pub mod runtime;
 pub mod setup;
@@ -392,12 +393,23 @@ fn resolve_paths(app: &AppHandle) -> Result<setup::Paths, String> {
     let php_ini = resource.join("runtime").join("php.ini");
     let php_ini = if php_ini.exists() { php_ini } else { dev_ini };
 
+    // A bundled application is only usable when the entry script PHP opens is
+    // actually present. An `artisan` file alone is not enough: a half-copied
+    // resource tree would otherwise boot a server that answers every request
+    // with "Failed opening required .../public/index.php".
     let app_root = resource.join("app");
-    let app_root = if app_root.join("artisan").exists() {
+    let app_root = if app_root.join("public").join("index.php").exists() {
         app_root
     } else {
         repo_root
     };
+
+    if !app_root.join("public").join("index.php").exists() {
+        return Err(format!(
+            "the application is incomplete: {} is missing",
+            app_root.join("public").join("index.php").display()
+        ));
+    }
 
     let postgres_bundle = resource.join("postgres");
     let postgres_bundle = if postgres_bundle.join("bin").exists() {
@@ -412,11 +424,11 @@ fn resolve_paths(app: &AppHandle) -> Result<setup::Paths, String> {
         .map_err(|error| format!("no app data dir: {error}"))?;
 
     Ok(setup::Paths {
-        data_dir,
-        app_root,
-        runtime_dir,
-        php_ini,
-        postgres_bundle,
+        data_dir: paths::simplify(&data_dir),
+        app_root: paths::simplify(&app_root),
+        runtime_dir: paths::simplify(&runtime_dir),
+        php_ini: paths::simplify(&php_ini),
+        postgres_bundle: paths::simplify(&postgres_bundle),
     })
 }
 

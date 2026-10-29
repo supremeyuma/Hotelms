@@ -29,6 +29,10 @@ impl PhpCli {
     /// Resolve the PHP binary under `runtime_dir` and make sure the curated
     /// `php_ini` is in place beside it so `extension_dir = "ext"` resolves.
     pub fn new(runtime_dir: &Path, php_ini: &Path) -> Result<Self> {
+        // PHP's CLI has the same trouble with verbatim Windows paths as the
+        // server does, so the runtime directory is simplified once here and
+        // every path this struct hands to the child is derived from it.
+        let runtime_dir = crate::paths::simplify(runtime_dir);
         let php = if cfg!(windows) {
             runtime_dir.join("php.exe")
         } else {
@@ -49,10 +53,7 @@ impl PhpCli {
                 .with_context(|| format!("failed to place php.ini at {}", target.display()))?;
         }
 
-        Ok(Self {
-            php,
-            runtime_dir: runtime_dir.to_path_buf(),
-        })
+        Ok(Self { php, runtime_dir })
     }
 
     /// Run `php artisan <args>` in `app_root`, returning the process output.
