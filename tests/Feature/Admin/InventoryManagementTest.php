@@ -37,7 +37,9 @@ class InventoryManagementTest extends TestCase
 
         $response->assertRedirect(route('admin.inventory-locations.index'));
 
-        $location = InventoryLocation::where('name', 'Kitchen Store')->firstOrFail();
+        // The default locations are seeded by migration, so a location with this
+        // name can already exist; take the one this request created.
+        $location = InventoryLocation::where('name', 'Kitchen Store')->latest('id')->firstOrFail();
 
         $this->assertDatabaseHas('inventory_stocks', [
             'inventory_item_id' => $item->id,

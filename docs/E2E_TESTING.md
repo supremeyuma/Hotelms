@@ -75,15 +75,21 @@ log is truncated at start so specs never read a stale run.
 | `smoke.spec.ts` | The public home renders (desktop and phone viewports) |
 | `auth.spec.ts` | Wrong password refused; every seeded account signs in and lands on its role's dashboard; logout ends the session; a deep link survives login; password reset is accepted and logged |
 | `admin-routes.spec.ts` | Every parameterless GET page under `admin/`, `reports/`, `finance/`, `hr/` renders without a 5xx or a new log exception |
-| `public-site.spec.ts` | Every public page renders; gallery images actually decode; contact form accepted; public menus render |
+| `public-site.spec.ts` | Every public page renders; gallery images actually decode; the contact form is accepted (exact flash); public menus render |
+| `booking.spec.ts` | The full wizard: search, room, guest details, review, pay-at-checkout, confirmation; the reservation is asserted in the database |
+| `operations.spec.ts` | Front-desk check-in, kitchen order creation through prep to ready, housekeeping finish with the staff access code, laundry board — each asserted in the database |
+| `reports-finance.spec.ts` | Occupancy report data, linked summary cards and a real XLSX export; finance dashboard + revenue CSV; HR staff register; inventory list and stock locations; club POS landing |
+| `guest-room.spec.ts` | A checked-in guest's QR entry reaches their room dashboard; tampered and invented tokens are refused |
+| `authorization.spec.ts` | Five cross-role page requests are refused rather than served |
+| `cross-cutting.spec.ts` | A throttled double submit sends exactly one email and shows a disabled in-flight state; bad input never answers 5xx |
 
 ### Not yet covered (the remaining walkthrough work)
 
-Booking wizard and payments, front desk, kitchen/bar ordering, back-of-house
-(cleaning, laundry, maintenance), reports with known cells, finance/HR
-workflows, Club POS, inventory, the guest in-room surface, and the cross-cutting
-standards (double-submit, loading feedback, authorization leaks, empty states).
-`mobile` runs only `smoke` (and `guest-room` once it exists).
+CRUD mutations (inventory items/stock moves, menu catalogue, rooms/staff), the
+maintenance-ticket lifecycle across both views, the full laundry order
+lifecycle, every report page with a known cell and every export format,
+accounting periods, the Club POS docket/shift flow, and the guest ordering
+surface. `mobile` runs `smoke` and `guest-room`.
 
 ## Cannot prove (owner-run, unavoidable)
 
