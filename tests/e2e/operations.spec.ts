@@ -71,8 +71,11 @@ test.describe('front desk, kitchen and housekeeping', () => {
 
         // A room order is created unpaid, and the kitchen is not allowed to
         // start prep until it is paid. Record the payment through the order
-        // modal first — that is the product's own rule.
-        await page.locator('[role="button"]').first().click();
+        // modal first — that is the product's own rule. Scope every click to
+        // this order's card: the board also shows orders created by other specs.
+        const card = page.locator('[role="button"]', { hasText: `Order #${orderId}` }).first();
+        await expect(card).toBeVisible({ timeout: 20_000 });
+        await card.click();
 
         const dialog = page.getByRole('dialog');
         await expect(dialog).toBeVisible({ timeout: 10_000 });
@@ -89,13 +92,15 @@ test.describe('front desk, kitchen and housekeeping', () => {
         // re-reads the paid state. This keeps the spec about the workflow, not
         // about dialog plumbing.
         await page.reload();
-        await page.getByRole('button', { name: 'Prep' }).first().waitFor({ timeout: 20_000 });
 
-        // The newest order is the first card. The card itself is a button whose
-        // accessible name contains "Prep", so scope to the card and require an
-        // exact name — otherwise the click opens the details modal instead.
-        const newestCard = page.locator('[role="button"]').first();
-        const prep = newestCard.getByRole('button', { name: 'Prep', exact: true });
+        // Scope to this order's card. The card is itself a button whose
+        // accessible name contains "Prep", so the inner control needs an exact
+        // name as well.
+        const reloadedCard = page
+            .locator('[role="button"]', { hasText: `Order #${orderId}` })
+            .first();
+        const prep = reloadedCard.getByRole('button', { name: 'Prep', exact: true });
+        await prep.waitFor({ timeout: 20_000 });
 
         const [prepResponse] = await Promise.all([
             page.waitForResponse(
@@ -113,7 +118,7 @@ test.describe('front desk, kitchen and housekeeping', () => {
             })
             .toBe('preparing');
 
-        await page.getByRole('button', { name: 'Ready', exact: true }).first().click();
+        await reloadedCard.getByRole('button', { name: 'Ready', exact: true }).click();
         await expect
             .poll(() => sqliteScalar(`SELECT status FROM orders WHERE id = ${orderId}`), {
                 timeout: 20_000,
