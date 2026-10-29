@@ -62,9 +62,23 @@ const activeDocket = computed(() => {
 
 async function handlePinConfirm(pin) {
   try {
+    // The meta CSRF token goes stale as soon as the session rotates (login,
+    // session regenerate, another tab). Laravel keeps the XSRF-TOKEN cookie
+    // current on every response, so the unlock must use that — sending the
+    // stale meta token answered 419 and locked the till.
+    const xsrfCookie = document.cookie.match(/XSRF-TOKEN=([^;]+)/)
+    const csrf = xsrfCookie
+      ? decodeURIComponent(xsrfCookie[1])
+      : (document.querySelector('meta[name=csrf-token]')?.content ?? '')
+
     const res = await fetch(route('pos.staff.switch'), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content },
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-XSRF-TOKEN': csrf,
+      },
       body: JSON.stringify({ pin }),
     })
     const data = await res.json()

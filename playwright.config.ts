@@ -8,7 +8,10 @@ import { defineConfig, devices } from '@playwright/test';
  * migrated and seeded from scratch on each run. The dev `.env` is never read
  * for these overrides: everything is injected through `webServer.env`.
  */
-const PORT = 8123;
+// A port chosen away from the common 8000/8080/8123 defaults: other Laravel
+// projects on a developer machine commonly sit on those, and a server started
+// for them answers `/up` exactly like ours.
+const PORT = 8137;
 const BASE_URL = `http://127.0.0.1:${PORT}`;
 
 export default defineConfig({
@@ -74,7 +77,11 @@ export default defineConfig({
             'php artisan db:seed --force && ' +
             `php artisan serve --port=${PORT}`,
         url: `${BASE_URL}/up`,
-        reuseExistingServer: !process.env.CI,
+        // Never adopt a server that is already listening. Another Laravel app on
+        // the same port answers `/up` too, and reusing it would run the entire
+        // suite against somebody else's application. If the port is busy, the
+        // run must stop and say so.
+        reuseExistingServer: false,
         timeout: 120_000,
         env: {
             APP_ENV: 'e2e',
