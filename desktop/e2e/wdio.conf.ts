@@ -70,7 +70,19 @@ async function waitForDevServer(timeoutMs = 60000): Promise<void> {
 export const config = {
   runner: "local",
 
-  specs: ["./specs/**/*.spec.ts"],
+  // One worker, one app instance. These specs reset the app-data directory,
+  // boot the same Postgres cluster and hold the same ports, so they must never
+  // overlap: a second worker's `after()` stopping "leftover" servers would kill
+  // the first worker's postgres mid-run, which is exactly what happened when
+  // WebdriverIO spread the spec files across workers. A nested array tells the
+  // runner to keep them in a single worker (and a single session).
+  specs: [
+    [
+      "./specs/smoke.spec.ts",
+      "./specs/server-setup.spec.ts",
+      "./specs/terminal-and-client.spec.ts",
+    ],
+  ],
 
   // One instance only. This drives a single window against a real Postgres
   // cluster and real ports; parallelism would collide on all of them.

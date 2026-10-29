@@ -16,9 +16,11 @@ import { existsSync } from "node:fs";
 
 import { resetAppData } from "../helpers/appdata";
 import {
+  DB_PORT,
   HTTP_PORT,
   logTails,
   stopLeftoverServers,
+  waitForPort,
 } from "../helpers/server";
 import {
   chooseRole,
@@ -63,6 +65,12 @@ describe("desktop wizard — terminal pairing and staff client", function () {
     await browser.refresh();
     await runServerSetup(admin);
     await expectNoFailurePanel();
+
+    if (!waitForPort(DB_PORT, 60000)) {
+      throw new Error(
+        `the wizard reported the server ready but nothing listens on ${DB_PORT}\n${logTails(80)}`,
+      );
+    }
     console.log("[terminal-e2e] server ready");
 
     const configured = readAppEnv("SYNC_PROPERTY_ID");

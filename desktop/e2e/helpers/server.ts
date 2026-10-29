@@ -14,7 +14,6 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { appDataDir } from "./appdata";
-
 const here = dirname(fileURLToPath(import.meta.url));
 // desktop/e2e/helpers -> desktop/e2e -> desktop -> <repo>
 const repoRoot = resolve(here, "..", "..", "..");
@@ -214,6 +213,27 @@ export function listenersOn(port: number): number[] {
     .split(",")
     .map((part) => Number(part.trim()))
     .filter((pid) => Number.isInteger(pid) && pid > 0);
+}
+
+/**
+ * Wait until something is listening on `port`.
+ *
+ * The wizard reports `bind_network`/`unpack_postgres` complete before it emits
+ * the done panel, but a spec reads the cluster over a separate connection; this
+ * turns a raw "connection refused" from psql into a named timeout.
+ */
+export function waitForPort(port: number, timeoutMs = 60000): boolean {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (listenersOn(port).length > 0) {
+      return true;
+    }
+    execFileSync("powershell", ["-NoProfile", "-Command", "Start-Sleep -Milliseconds 500"], {
+      stdio: "ignore",
+      timeout: 5000,
+    });
+  }
+  return false;
 }
 
 /**

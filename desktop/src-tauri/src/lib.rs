@@ -132,6 +132,18 @@ fn setup_run_server(
         return Err("setup is already running".into());
     }
 
+    // Stop any server this process still owns *before* the new run starts.
+    //
+    // Dropping a previous boot stops its Postgres with `pg_ctl -D <data dir>
+    // stop`, and a second run uses the same data directory — so dropping it
+    // after the new cluster was up would stop the cluster that just booted.
+    // Storing the fresh boot would then leave a live-looking setup with a dead
+    // database. Doing it first also makes a retry mean "restart the server",
+    // which is what an operator pressing the button again expects.
+    if let Ok(mut active) = state.active.lock() {
+        *active = None;
+    }
+
     let paths = match resolve_paths(&app) {
         Ok(paths) => paths,
         Err(error) => {
