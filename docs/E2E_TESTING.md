@@ -86,6 +86,10 @@ log is truncated at start so specs never read a stale run.
 | `operations.spec.ts` | Front-desk check-in, kitchen order creation through prep to ready, housekeeping finish with the staff access code, laundry board — each asserted in the database |
 | `reports-finance.spec.ts` | Occupancy report data, linked summary cards and a real XLSX export; finance dashboard + revenue CSV; HR staff register; inventory list and stock locations; club POS landing |
 | `guest-room.spec.ts` | A checked-in guest's QR entry reaches their room dashboard; tampered and invented tokens are refused |
+| `guest-ordering.spec.ts` | A room-service order from the room page appears on the kitchen board; service requests and maintenance reports are recorded |
+| `laundry.spec.ts` | Staff create a laundry service, the guest requests it, the board advances it to ready |
+| `club-pos.spec.ts` | A bartender unlocks the till with a PIN, opens a docket, adds a drink, takes cash, and the docket and payment rows exist |
+| `accounting-periods.spec.ts` | Tax accounts initialise; a period is opened, closed and reopened |
 | `inventory.spec.ts` | Receiving stock writes one movement and updates the balance |
 | `maintenance.spec.ts` | A ticket moved on the staff board is the same state the admin control room shows |
 | `authorization.spec.ts` | Five cross-role page requests are refused rather than served |
@@ -93,12 +97,10 @@ log is truncated at start so specs never read a stale run.
 
 ### Not yet covered (the remaining walkthrough work)
 
-Laundry items are not seeded, so the laundry lifecycle needs its own fixture
-(or a seeder) before it can be walked: create an item, request laundry from the
-guest surface, advance it on the staff board. Also outstanding: the Club POS
-docket/shift flow, accounting periods, every remaining report page with a known
-cell and every export format, menu-catalogue CRUD, and room/staff CRUD.
-`mobile` runs `smoke` and `guest-room`.
+Per-report known cells and every export format (occupancy's data, links and XLSX
+are covered), menu/room/staff CRUD round-trips, the Club POS shift close/reprint/
+void paths, and the rest of the guest surface (order history + cancel, checkout
+request, bill payment, feedback). `mobile` runs `smoke` and `guest-room`.
 
 ## Cannot prove (owner-run, unavoidable)
 
