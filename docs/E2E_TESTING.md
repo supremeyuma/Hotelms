@@ -29,6 +29,12 @@ wipes the wizard's own artifacts from `%APPDATA%\com.moorelife.desktop`
 (`setup-state.json`, `.env`, `pgdata`, `postgres`, `logs`, the SQLite file …)
 before a run. `EBWebView/` is never touched — that is WebView2's real profile.
 
+**Port 8000 must be free.** The suite refuses to start when another process
+holds it, because Windows lets a `127.0.0.1:8000` listener answer alongside the
+server's `0.0.0.0:8000` bind — the readiness probe would then pass against an
+unrelated application. The wizard itself now fails `bind_network` with the port
+named instead of booting in that state.
+
 The spec files run **in one worker, one session**, in this order: `smoke`,
 `server-setup`, `terminal-and-client`. They reset the same app-data directory and
 hold the same ports, so parallel workers would kill each other's servers.
