@@ -15,12 +15,12 @@
         <div style="padding: 32px;">
             <div style="margin: 0 0 24px; padding: 20px; border-radius: 14px; background: #f8fafc; border: 1px solid #e2e8f0;">
                 <p style="margin: 0 0 10px;"><strong>From:</strong> {{ $name }} &lt;{{ $email }}&gt;</p>
-                <p style="margin: 0;"><strong>Subject:</strong> {{ $subject }}</p>
+                <p style="margin: 0;"><strong>Subject:</strong> {{ $contactSubject }}</p>
             </div>
 
             <div style="margin: 0 0 24px; padding: 20px 0;">
                 <h2 style="margin: 0 0 8px; font-size: 16px;">Message</h2>
-                <p style="margin: 0; white-space: pre-wrap; color: #334155;">{{ $message }}</p>
+                <p style="margin: 0; white-space: pre-wrap; color: #334155;">{{ $contactMessage }}</p>
             </div>
 
             <p style="margin: 0; color: #475569; font-size: 13px;">This message was submitted through the contact form on the {{ $hotelName }} website.</p>

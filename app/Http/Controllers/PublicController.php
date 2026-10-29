@@ -122,8 +122,8 @@ class PublicController extends Controller
             hotelName: Content::where('key', 'site.name')->value('value') ?: config('app.name', 'Hotel'),
             name: $validated['name'],
             email: $validated['email'],
-            subject: $validated['subject'],
-            message: $validated['message'],
+            contactSubject: $validated['subject'],
+            contactMessage: $validated['message'],
         ));
 
         return back()->with('success', 'Your message has been sent. Our team will be in touch shortly.');

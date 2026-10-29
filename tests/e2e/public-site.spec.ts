@@ -60,11 +60,12 @@ test.describe('public site', () => {
 
         await page.getByRole('button', { name: /send message/i }).click();
 
-        // The controller redirects back with a flash; assert on the flash text
-        // rather than on the absence of an error, so a silent no-op fails.
-        await expect(page.locator('body')).toContainText(/thank|received|message/i, {
-            timeout: 20_000,
-        });
+        // The controller redirects back with this exact flash; asserting the
+        // specific sentence (not a loose /message/) is what proves the mail was
+        // actually sent — a loose pattern passed while the mailable was fatal.
+        await expect(
+            page.getByText(/your message has been sent/i),
+        ).toBeVisible({ timeout: 20_000 });
     });
 
     test('public menus render', async ({ page }) => {
