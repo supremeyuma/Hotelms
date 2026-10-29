@@ -18,6 +18,7 @@ import { resetAppData } from "../helpers/appdata";
 import {
   DB_PORT,
   HTTP_PORT,
+  listenersOn,
   logTails,
   stopLeftoverServers,
   waitForPort,
@@ -58,6 +59,14 @@ describe("desktop wizard — terminal pairing and staff client", function () {
     const removed = resetAppData();
     if (removed.length > 0) {
       console.log(`[terminal-e2e] resetAppData removed:\n  ${removed.join("\n  ")}`);
+    }
+
+    const portHolders = listenersOn(HTTP_PORT);
+    if (portHolders.length > 0) {
+      throw new Error(
+        `port ${HTTP_PORT} is already in use by PID(s) ${portHolders.join(", ")}. ` +
+          "Stop that process and rerun.",
+      );
     }
 
     // Real Postgres + migrations + seed, exactly as a server install does it.

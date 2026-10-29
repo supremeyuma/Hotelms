@@ -331,6 +331,24 @@ pub fn run_server(
 
     // --- Serve the network, bound to every interface. ---
     report(STEP_BIND_NETWORK, StepStatus::Started, None);
+
+    // A port that is already taken is not a detail: the new server cannot bind,
+    // yet whatever owns the port answers `/up` and the readiness probe would
+    // report a perfectly healthy server that is not this application. Refuse
+    // before spawning anything, with the port in the message.
+    if !port_is_free(options.http_port) {
+        let error = anyhow::anyhow!(
+            "port {} is already in use; stop the process using it, then retry",
+            options.http_port
+        );
+        report(
+            STEP_BIND_NETWORK,
+            StepStatus::Failed,
+            Some(error.to_string()),
+        );
+        return Err(error);
+    }
+
     let frankenphp = if cfg!(windows) {
         paths.runtime_dir.join("frankenphp.exe")
     } else {
@@ -752,6 +770,22 @@ fn normalize_server_url(input: &str, label: &str) -> Result<String> {
     }
 
     Ok(parsed.as_str().trim_end_matches('/').to_string())
+}
+
+/// Whether the server role can bind `port` on every interface.
+///
+/// Two checks, because neither is sufficient alone on Windows: binding the
+/// wildcard address catches a listener already on `0.0.0.0`, while a process
+/// holding only `127.0.0.1:port` coexists with that bind and keeps answering.
+/// The loopback probe catches the second case — which is exactly how a foreign
+/// dev server can answer our readiness probe while our own server never binds.
+fn port_is_free(port: u16) -> bool {
+    if std::net::TcpListener::bind((LISTEN_ALL, port)).is_err() {
+        return false;
+    }
+
+    let loopback = std::net::SocketAddr::from(([127, 0, 0, 1], port));
+    std::net::TcpStream::connect_timeout(&loopback, Duration::from_millis(150)).is_err()
 }
 
 /// Install (if needed) and start the embedded Postgres cluster.
@@ -1242,6 +1276,20 @@ mod tests {
         assert_eq!(env.len(), 2);
         assert_eq!(env[0], ("APP_KEY".to_string(), "base64:abc==".to_string()));
         assert_eq!(env[1], ("DB_PORT".to_string(), "5432".to_string()));
+    }
+
+    #[test]
+    fn a_port_held_by_another_process_is_not_free() {
+        let listener = std::net::TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        let port = listener.local_addr().unwrap().port();
+
+        assert!(
+            !port_is_free(port),
+            "a port with an active listener must not report as free"
+        );
+
+        drop(listener);
+        assert!(port_is_free(port), "the port is free once released");
     }
 
     #[test]

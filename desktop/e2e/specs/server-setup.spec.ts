@@ -95,6 +95,17 @@ describe("desktop wizard — server role boots Postgres and FrankenPHP", functio
     // php.exe / artisan serve.
     stoppedLeftovers = stopLeftoverServers();
 
+    // A foreign listener on the port (another project's dev server) would answer
+    // the readiness probe and make the wizard look healthy while serving a
+    // different application. The suite refuses to guess.
+    const portHolders = listenersOn(HTTP_PORT);
+    if (portHolders.length > 0) {
+      throw new Error(
+        `port ${HTTP_PORT} is already in use by PID(s) ${portHolders.join(", ")}. ` +
+          "Stop that process (it is not part of this suite) and rerun.",
+      );
+    }
+
     // Start from a clean wizard state. resetAppData() leaves EBWebView/ alone.
     const removed = resetAppData();
     if (removed.length > 0) {
@@ -523,7 +534,17 @@ describe("desktop wizard — server role boots Postgres and FrankenPHP", functio
 
     const xsrf = cookieJar.get("XSRF-TOKEN");
     if (!xsrf) {
-      throw new Error(`no XSRF-TOKEN cookie from GET /login\n${logTails(100)}`);
+      // The response is the evidence: a 500 (application error), a 200 with no
+      // session cookie (headers sent before the middleware could add them) and
+      // a redirect all point at different causes.
+      const body = await loginPage.clone().text().catch(() => "");
+      throw new Error(
+        `no XSRF-TOKEN cookie from GET /login ` +
+          `(status=${loginPage.status}, ` +
+          `set-cookie=${JSON.stringify(loginPage.headers.getSetCookie())}, ` +
+          `body=${JSON.stringify(body.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").slice(0, 400))})\n` +
+          logTails(100),
+      );
     }
 
     // URL-decode the cookie value (it may be URL-encoded)
