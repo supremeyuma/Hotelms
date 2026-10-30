@@ -26,7 +26,18 @@ const LARAVEL_LOG = resolve(REPO_ROOT, 'storage', 'logs', 'laravel.log');
 export async function login(page: Page, email: string, password: string): Promise<void> {
     await page.goto('/login');
 
-    await page.locator('#email').fill(email);
+    // A single dev server under load can occasionally answer the first request
+    // before the page is ready; one reload is enough to tell a slow paint apart
+    // from a real failure.
+    const emailInput = page.locator('#email');
+    try {
+        await emailInput.waitFor({ state: 'visible', timeout: 15_000 });
+    } catch {
+        await page.goto('/login');
+        await emailInput.waitFor({ state: 'visible', timeout: 15_000 });
+    }
+
+    await emailInput.fill(email);
     await page.locator('#password').fill(password);
 
     await Promise.all([
