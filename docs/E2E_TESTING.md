@@ -92,15 +92,21 @@ log is truncated at start so specs never read a stale run.
 | `accounting-periods.spec.ts` | Tax accounts initialise; a period is opened, closed and reopened |
 | `inventory.spec.ts` | Receiving stock writes one movement and updates the balance |
 | `maintenance.spec.ts` | A ticket moved on the staff board is the same state the admin control room shows |
+| `reports-depth.spec.ts` | Every report page renders its own heading and numbers; every export (occupancy XLSX; staff, inventory, revenue, profit & loss, balance sheet, daily revenue CSVs) returns the requested document type |
+| `guest-actions.spec.ts` | Order history, cancellation, feedback, and a checkout request with an unsettled bill (refused, never 5xx) |
+| `club-pos-lifecycle.spec.ts` | A docket is voided with a reason, a paid docket is reprinted, and the shift is counted and closed |
+| `crud.spec.ts` | A room is created and soft-deleted, a menu item's availability toggles and restores, a staff account is created with its role |
 | `authorization.spec.ts` | Five cross-role page requests are refused rather than served |
 | `cross-cutting.spec.ts` | A throttled double submit sends exactly one email and shows a disabled in-flight state; bad input never answers 5xx |
 
 ### Not yet covered (the remaining walkthrough work)
 
-Per-report known cells and every export format (occupancy's data, links and XLSX
-are covered), menu/room/staff CRUD round-trips, the Club POS shift close/reprint/
-void paths, and the rest of the guest surface (order history + cancel, checkout
-request, bill payment, feedback). `mobile` runs `smoke` and `guest-room`.
+Known-cell assertions inside each report (presence, headings and exports are
+covered), editing/suspending/deleting staff and rooms beyond create, menu item
+creation/deletion beyond the availability toggle, the POS reconcile endpoint and
+receipt printing (owner-run hardware), gateway payments (deliberately never
+called), guest pre-check-in, event ticketing, and public prepaid menu ordering.
+`mobile` runs `smoke`, `guest-room` and the guest surface specs.
 
 ## Cannot prove (owner-run, unavoidable)
 
