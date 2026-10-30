@@ -20,25 +20,30 @@ export interface GuestRoom {
 }
 
 export async function prepareGuestRoom(browser: Browser): Promise<GuestRoom> {
-    // A booking whose stay has not ended: the room token expires an hour after
-    // check-out, so a past stay would mint an already-expired token.
-    const bookingId = Number(
-        sqliteScalar(
-            "SELECT id FROM bookings WHERE status = 'confirmed' AND check_out >= date('now') ORDER BY check_in LIMIT 1",
-        ),
+    // A booking whose stay has not ended. Earlier specs in the same run may have
+    // checked the earliest candidates in already, so accept those too instead of
+    // failing when no `confirmed` row remains.
+    const row = sqliteScalar(
+        "SELECT id || '|' || status FROM bookings " +
+            "WHERE status IN ('confirmed', 'checked_in', 'active') AND check_out >= date('now') " +
+            'ORDER BY check_in LIMIT 1',
     );
-    expect(Number.isInteger(bookingId), 'no confirmed seeded booking to check in').toBe(true);
+    const [idText, status] = row.split('|');
+    const bookingId = Number(idText);
+    expect(Number.isInteger(bookingId), 'no seeded booking available to check in').toBe(true);
 
-    const desk = await browser.newPage({ viewport: { width: 1280, height: 900 } });
-    await login(desk, 'frontdesk@email.com', '11111111');
-    await desk.goto(`/frontdesk/bookings/${bookingId}`);
-    await desk.getByRole('button', { name: /check in guest/i }).click();
-    await expect
-        .poll(() => sqliteScalar(`SELECT status FROM bookings WHERE id = ${bookingId}`), {
-            timeout: 20_000,
-        })
-        .toMatch(/checked_in|active/);
-    await desk.close();
+    if (status === 'confirmed') {
+        const desk = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+        await login(desk, 'frontdesk@email.com', '11111111');
+        await desk.goto(`/frontdesk/bookings/${bookingId}`);
+        await desk.getByRole('button', { name: /check in guest/i }).click();
+        await expect
+            .poll(() => sqliteScalar(`SELECT status FROM bookings WHERE id = ${bookingId}`), {
+                timeout: 20_000,
+            })
+            .toMatch(/checked_in|active/);
+        await desk.close();
+    }
 
     const roomId = Number(
         sqliteScalar(`SELECT room_id FROM room_access_tokens WHERE booking_id = ${bookingId} LIMIT 1`),

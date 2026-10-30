@@ -43,6 +43,19 @@ class InventoryMovement extends Model
         return $this->belongsTo(InventoryItem::class, 'inventory_item_id');
     }
 
+    /**
+     * Alias of {@see item()} used by the inventory report.
+     *
+     * The report eager-loads `inventoryItem`; without this alias the relation
+     * resolver throws "Call to undefined relationship" and the report answers
+     * 500 as soon as a single movement exists (an empty ledger never resolves
+     * it, which is why the bug hid until stock moved).
+     */
+    public function inventoryItem()
+    {
+        return $this->belongsTo(InventoryItem::class, 'inventory_item_id');
+    }
+
     public function staff()
     {
         return $this->belongsTo(User::class, 'staff_id');
