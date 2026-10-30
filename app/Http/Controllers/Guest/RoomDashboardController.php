@@ -493,7 +493,14 @@ protected RoomServiceService $roomService;
 
     public function checkout(Request $request)
     {
-        $this->checkoutService->checkout($this->booking($request));
+        // A guest may tap checkout with an unsettled bill. `CheckoutService`
+        // refuses that by throwing, which without this guard became a 500 page
+        // on the guest's phone; the operator needs the message instead.
+        try {
+            $this->checkoutService->checkout($this->booking($request));
+        } catch (\Throwable $e) {
+            return back()->with('error', $e->getMessage());
+        }
 
         return back()->with('success', 'Checked out successfully.');
     }
