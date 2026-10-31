@@ -14,6 +14,34 @@ not the product.
 
 ## Desktop — native suite (`desktop/e2e/wdio.conf.ts`)
 
+### Installed-artifact gate (the one that signs off a release)
+
+The suite can drive the **installed application** instead of the debug build:
+
+```powershell
+# 1. stage the Laravel tree, runtime and Postgres, then build the installer
+cd desktop
+npx tauri build --features e2e --bundles nsis     # test installer (embeds WebDriver)
+
+# 2. install it silently (per-user; NSIS supports /S)
+Start-Process "$env:LOCALAPPDATA\..\desktop\src-tauri\target\release\bundle\nsis\MooreLife_0.1.0_x64-setup.exe" -ArgumentList /S -Wait
+
+# 3. run the same walkthrough against the installed exe
+$env:E2E_APP_BINARY = "$env:LOCALAPPDATA\MooreLife\desktop.exe"
+npm run e2e
+```
+
+`beforeBuildCommand` runs `npm run build:app`, which builds the Vue bundle and
+stages `resources/app`; `bundle.resources` maps the app tree, the PHP/FrankenPHP
+runtime and the trimmed Postgres into `app/`, `runtime/` and `postgres/`. The
+installer is NSIS with `installMode: currentUser` because the bundled Laravel
+tree must stay writable (sessions, cache, compiled views, logs live under it).
+
+The **release** installer is built without the feature
+(`npx tauri build --bundles nsis`). It must not carry a WebDriver server: the
+plugin is behind `--features e2e`, and the release binary contains no
+`tauri-plugin-wdio`/`WebDriver` symbols and opens no port 4445.
+
 ### Preconditions
 
 ```powershell
@@ -107,6 +135,23 @@ creation/deletion beyond the availability toggle, the POS reconcile endpoint and
 receipt printing (owner-run hardware), gateway payments (deliberately never
 called), guest pre-check-in, event ticketing, and public prepaid menu ordering.
 `mobile` runs `smoke`, `guest-room` and the guest surface specs.
+
+## Upgrading an existing install
+
+`tests/Feature/Upgrade/MigrationUpgradeTest.php` is the checked-in proof that an
+in-place upgrade works: it builds a database from the migrations released before
+the October sync/print phase, writes settings/user/property rows, runs the full
+migration set on top, and asserts the rows survived, the new schema appeared,
+the new reference data exists, and a second run is a no-op.
+
+The operator procedure is the one the installer performs on every start:
+
+1. Back up the database (Postgres dump or copy of `hotelms.sqlite`) and the
+   application data directory (`%APPDATA%\com.moorelife.desktop`).
+2. Install the new build over the old one (the NSIS installer upgrades in place).
+3. Start the app and let setup resume; it always runs `migrate --force`, and
+   only one-shot seed/admin steps are skipped by the resume record.
+4. Verify: sign in, open one report and one transactional screen.
 
 ## Cannot prove (owner-run, unavoidable)
 
