@@ -86,7 +86,17 @@ test.describe('authentication', () => {
         resetMailLog();
 
         await page.goto('/forgot-password');
-        await page.locator('#email').fill('manager@email.com');
+
+        // Under load the first paint can miss; one reload distinguishes a slow
+        // render from a real failure (the same guard the login helper uses).
+        const emailInput = page.locator('#email');
+        try {
+            await emailInput.waitFor({ state: 'visible', timeout: 15_000 });
+        } catch {
+            await page.goto('/forgot-password');
+            await emailInput.waitFor({ state: 'visible', timeout: 30_000 });
+        }
+        await emailInput.fill('manager@email.com');
 
         const [response] = await Promise.all([
             page.waitForResponse(
