@@ -104,5 +104,16 @@ test.describe('club POS', () => {
             ),
             'a payment row must back the paid docket',
         ).toBeGreaterThan(0);
+
+        // The sale must reach the books, not just the till: one journal entry,
+        // balanced, referencing this docket number.
+        expect(
+            sqliteCount(
+                `SELECT count(*) FROM journal_entries
+                 WHERE reference_type = 'pos_docket'
+                   AND reference_id = (SELECT docket_number FROM pos_dockets WHERE id = '${docketKey}')`,
+            ),
+            'a settled sale must post a journal entry',
+        ).toBe(1);
     });
 });

@@ -275,6 +275,11 @@ class ClubPosService
     {
         $closed = $this->closeDocket($docket, $payments, $closedBy);
 
+        // Post the sale to the ledger after the sale itself commits: accounting
+        // must never roll a paid sale back, and the room-charge branch already
+        // posted its own folio entry.
+        app(\App\Services\Ledgers\PosSaleLedger::class)->postSale($closed, $payments);
+
         return [
             'docket' => $closed,
             'queued_for_sync' => ! $this->connectivity->status(true)['online'],

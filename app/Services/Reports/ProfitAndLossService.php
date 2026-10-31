@@ -31,7 +31,8 @@ class ProfitAndLossService
             ->join('journal_entries', 'journal_entries.id', '=', 'journal_lines.journal_entry_id')
             ->join('accounts', 'accounts.id', '=', 'journal_lines.account_id')
             ->where('accounts.type', $type)
-            ->whereBetween('journal_entries.entry_date', [$from, $to])
+            ->whereDate('journal_entries.entry_date', '>=', $from->toDateString())
+            ->whereDate('journal_entries.entry_date', '<=', $to->toDateString())
             ->groupBy('accounts.id', 'accounts.name')
             ->select(
                 'accounts.name',
@@ -68,7 +69,8 @@ class ProfitAndLossService
             ->join('journal_entries', 'journal_entries.id', '=', 'journal_lines.journal_entry_id')
             ->join('accounts', 'accounts.id', '=', 'journal_lines.account_id')
             ->where('accounts.type', $type)
-            ->whereBetween('journal_entries.entry_date', [$from, $to])
+            ->whereDate('journal_entries.entry_date', '>=', $from->toDateString())
+            ->whereDate('journal_entries.entry_date', '<=', $to->toDateString())
             ->sum(DB::raw('journal_lines.credit - journal_lines.debit'));
     }
 }
