@@ -134,17 +134,26 @@ pub fn render(role: &Role, data_dir: &Path) -> Result<String> {
              DB_DATABASE={}\n\
              SYNC_NODE_TYPE=terminal\n\
              SYNC_PEERS=\n\
-             FRANKENPHP_PORT=8000\n",
+             FRANKENPHP_PORT=8000\n\
+             SESSION_DRIVER=file\n\
+             CACHE_STORE=file\n\
+             QUEUE_CONNECTION=sync\n",
             data_dir.join("hotelms.sqlite").display()
         ),
         // No database, no credentials: a staff client must never write database
-        // settings, because it has none to write.
+        // settings, because it has none to write. It still needs file-backed
+        // session/cache drivers for the same reason the terminal does: a
+        // packaged install ships no `.env`, so Laravel's `database` defaults
+        // would look for tables that an in-memory database does not have.
         Role::StaffClient { server_url } => format!(
             "\nSYNC_ENABLED=false\n\
              DB_CONNECTION=sqlite\n\
              DB_DATABASE=:memory:\n\
              SYNC_NODE_TYPE=staff_client\n\
              FRANKENPHP_PORT=8000\n\
+             SESSION_DRIVER=file\n\
+             CACHE_STORE=file\n\
+             QUEUE_CONNECTION=sync\n\
              LAN_SERVER_URL={server_url}\n"
         ),
     };
@@ -197,6 +206,13 @@ mod tests {
         assert_eq!(env_value(&rendered, "SYNC_NODE_TYPE"), Some("terminal"));
         assert!(env_value(&rendered, "DB_DATABASE").unwrap().ends_with("hotelms.sqlite"));
         assert_eq!(env_value(&rendered, "LAN_SERVER_URL"), None);
+
+        // A packaged install has no .env beside the app, so the role must state
+        // these itself or Laravel's database-backed defaults fail on tables the
+        // terminal database does not have.
+        assert_eq!(env_value(&rendered, "SESSION_DRIVER"), Some("file"));
+        assert_eq!(env_value(&rendered, "CACHE_STORE"), Some("file"));
+        assert_eq!(env_value(&rendered, "QUEUE_CONNECTION"), Some("sync"));
     }
 
     #[test]
@@ -213,6 +229,8 @@ mod tests {
         assert_eq!(env_value(&rendered, "LAN_SERVER_URL"), Some("http://10.0.0.2:8000"));
         assert_eq!(env_value(&rendered, "DB_USERNAME"), None);
         assert_eq!(env_value(&rendered, "DB_PASSWORD"), None);
+        assert_eq!(env_value(&rendered, "SESSION_DRIVER"), Some("file"));
+        assert_eq!(env_value(&rendered, "CACHE_STORE"), Some("file"));
     }
 
     #[test]

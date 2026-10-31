@@ -99,6 +99,9 @@ foreach ($entry in $entries) {
         $target = Join-Path $Dest $name
         if ($name -eq "resources") {
             # Laravel's resources/ (views, css, js) minus the desktop runtime.
+            # `postgres-runtime` is the trimmed Postgres staging produced below;
+            # it is bundled separately, so copying it here would duplicate
+            # 130+ MB inside the application tree.
             Invoke-Robocopy `
                 -Source $entry.FullName `
                 -Target $target `
@@ -106,6 +109,7 @@ foreach ($entry in $entries) {
                     (Join-Path $entry.FullName "app"),
                     (Join-Path $entry.FullName "bin"),
                     (Join-Path $entry.FullName "postgres"),
+                    (Join-Path $entry.FullName "postgres-runtime"),
                     (Join-Path $entry.FullName "runtime")
                 ) `
                 -ExcludeFiles @("*.md")

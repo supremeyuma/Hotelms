@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "stage": "powershell -NoProfile -ExecutionPolicy Bypass -File ../scripts/stage-app.ps1",
+    "build:app": "npm run build && npm run stage",
     "preview": "vite preview",
     "tauri": "tauri",
     "e2e": "wdio run e2e/wdio.conf.ts",

@@ -24,7 +24,9 @@ const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(here, "..", "..");
 
 // The Cargo package is named `desktop`, so the binary is `desktop.exe`.
-const appBinaryPath = resolve(
+// `E2E_APP_BINARY` points the suite at another build — in particular the
+// **installed** application, which is the artifact a release actually ships.
+const defaultBinary = resolve(
   repoRoot,
   "desktop",
   "src-tauri",
@@ -32,6 +34,13 @@ const appBinaryPath = resolve(
   "debug",
   "desktop.exe",
 );
+const appBinaryPath = process.env.E2E_APP_BINARY
+  ? resolve(process.env.E2E_APP_BINARY)
+  : defaultBinary;
+
+// A debug build loads `devUrl` (Vite); a release/installed build embeds the
+// frontend assets, so the dev server is only needed for the debug binary.
+const needsDevServer = appBinaryPath === defaultBinary;
 
 if (!existsSync(appBinaryPath)) {
   console.warn(
@@ -175,7 +184,14 @@ export const config = {
     // `npm run dev`. With npm we would get the shell's pid back and killing it
     // orphans Vite (Windows), leaving port 1420 bound for the next run. Spawning
     // the vite entry point means `devServer.pid` *is* the server, so stopping it
-    // is exact.
+    // is exact. Only a debug binary needs it.
+    if (!needsDevServer) {
+      console.log(
+        `[wdio] driving ${appBinaryPath} (embedded assets, no Vite dev server)`,
+      );
+      return;
+    }
+
     const viteBin = resolve(
       repoRoot,
       "desktop",
