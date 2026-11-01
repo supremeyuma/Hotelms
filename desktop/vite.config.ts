@@ -10,6 +10,13 @@ export default defineConfig(() => ({
   //
   // 1. prevent Vite from obscuring rust errors
   clearScreen: false,
+  // The desktop shell's CSS is plain; it must not inherit the web app's
+  // Tailwind PostCSS config from the repository root. Without this, a build run
+  // outside this directory (CI) fails looking for `tailwindcss`, and a local
+  // build silently depends on the root node_modules.
+  css: {
+    postcss: {},
+  },
   // 2. tauri expects a fixed port, fail if that port is not available
   server: {
     port: 1420,
