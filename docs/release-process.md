@@ -48,9 +48,11 @@ that is what `releases/latest` resolves to.
 
 ## CI release
 
-`.github/workflows/release.yml` runs on a `v*` tag (or manual dispatch) and does
-the same build with `tauri-apps/tauri-action`, which uploads the installer, its
-signature and `latest.json`.
+`.github/workflows/release.yml` is **manual only** (`workflow_dispatch` with an
+existing tag). A tag trigger would race `scripts/release.ps1`, which already
+publishes on a tag, and both could create the same release. Run it by hand when
+you want the build to come from CI; it installs PHP/Composer first because the
+installer ships the Laravel app and `vendor/` is not in git.
 
 The bundled PHP/FrankenPHP runtime and the trimmed Postgres are **not in git**
 (too large). CI downloads them from the `runtime-v1` prerelease asset
@@ -67,8 +69,10 @@ gh release upload runtime-v1 desktop-runtime-windows-x64.zip --clobber
 ## Pre-release checklist
 
 1. `npx playwright test` — web workflows (68).
-2. `php artisan test` — 467 tests including the upgrade test.
-3. `cargo test --lib` in `desktop/src-tauri` — 39 tests.
+2. `php artisan test` — 507 tests including the upgrade and licensing suites.
+3. `cargo test --lib` in `desktop/src-tauri` — 45 tests.
+4. `desktop-build` workflow green on the commit being released (compiles the
+   crate and verifies the vendored PHP runtime loads its extensions).
 4. Build the installer with `--features e2e`, install it, and run
    `E2E_APP_BINARY=%LOCALAPPDATA%\MooreLife\desktop.exe npm run e2e` — the
    installed-artifact walkthrough (11 tests).
