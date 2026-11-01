@@ -34,6 +34,11 @@ base64 = "0.22"
 rand = "0.8"
 ulid = "1"
 local-ip-address = "0.6"
+# Licence verification: RSA-SHA256 signature check against the embedded public
+# key, plus date handling for the trial and licence term.
+rsa = { version = "0.9", features = ["sha2", "pem"] }
+sha2 = "0.10"
+chrono = "0.4"
 
 # e2e-only: the WebdriverIO Tauri plugins. Both are optional and reachable only
 # through the `e2e` feature, which is deliberately absent from `default`, so a

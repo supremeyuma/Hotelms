@@ -640,11 +640,127 @@ async function initAutoUpdate(): Promise<void> {
   }
 }
 
+// --- Licence -----------------------------------------------------------------
+
+type LicenceState =
+  | { state: "trial"; daysLeft: number; trialEndsAt: string }
+  | { state: "active"; property: string; expiresAt: string; daysLeft: number }
+  | { state: "expired"; trialEndedAt: string };
+
+function trialBanner(state: LicenceState & { state: "trial" }): void {
+  if (document.querySelector("[data-trial-banner]")) return;
+
+  const banner = el(`<div class="trial-banner" data-trial-banner>
+    <span><strong>Trial:</strong> ${state.daysLeft} day${state.daysLeft === 1 ? "" : "s"} left</span>
+    <button class="link-button" type="button" data-activate>Activate licence</button>
+  </div>`);
+
+  banner.querySelector<HTMLButtonElement>("[data-activate]")?.addEventListener("click", () => {
+    renderActivation(state);
+  });
+
+  document.body.appendChild(banner);
+}
+
+async function renderActivation(state: LicenceState): Promise<void> {
+  const root = document.getElementById("root")!;
+  const expired = state.state === "expired";
+  const machine = await invoke<string>("licence_machine_id").catch(() => "");
+
+  const panel = el(`<section class="panel${expired ? " panel--err" : ""}">
+    ${expired ? "" : `<button class="link-button" data-back type="button">← Back</button>`}
+    <h2>${expired ? "Your trial has ended" : "Activate MooreLife"}</h2>
+    <p>${
+      expired
+        ? `The 30-day trial ended on ${escapeHtml(state.trialEndedAt)}. Enter your licence key to keep using the application.`
+        : "Enter the licence key from your purchase email. One licence covers this property and every terminal and staff client that pairs with it."
+    }</p>
+    <form>
+      <div class="field">
+        <label for="licence-key">Licence key</label>
+        <input id="licence-key" name="licenceKey" type="text" autocomplete="off"
+               placeholder="ML-XXXX-XXXX-XXXX-XXXX" required />
+      </div>
+      <button class="btn" type="submit">Activate</button>
+      <p class="note" data-licence-error hidden></p>
+    </form>
+    <p class="hint">Support may ask for this machine id: <code>${escapeHtml(machine)}</code></p>
+  </section>`);
+
+  inject(root, panel);
+  document.querySelector("[data-trial-banner]")?.remove();
+
+  panel.querySelector<HTMLButtonElement>("[data-back]")?.addEventListener("click", () => {
+    renderRoleSelect();
+    void showLicenceHint();
+  });
+
+  const form = panel.querySelector<HTMLFormElement>("form")!;
+  const submit = panel.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+  const error = panel.querySelector<HTMLElement>("[data-licence-error]")!;
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (submit.hasAttribute("data-disabled")) return;
+
+    const key = (new FormData(form).get("licenceKey") as string | null)?.trim() ?? "";
+    submit.setAttribute("data-disabled", "true");
+    submit.textContent = "Activating…";
+    error.hidden = true;
+
+    try {
+      await invoke<LicenceState>("licence_activate", { key });
+      window.location.reload();
+    } catch (failure) {
+      submit.removeAttribute("data-disabled");
+      submit.textContent = "Activate";
+      error.hidden = false;
+      error.textContent = String(failure);
+    }
+  });
+}
+
+async function showLicenceHint(): Promise<void> {
+  try {
+    const state = await invoke<LicenceState>("licence_status");
+    if (state.state === "trial") {
+      trialBanner(state);
+    }
+  } catch {
+    // A licence read failure must never block the wizard; the server gate and
+    // the activation screen are the real enforcement.
+  }
+}
+
+async function initLicence(): Promise<boolean> {
+  try {
+    const state = await invoke<LicenceState>("licence_status");
+
+    if (state.state === "expired") {
+      await renderActivation(state);
+      return false;
+    }
+
+    if (state.state === "trial") {
+      trialBanner(state);
+    }
+
+    return true;
+  } catch (failure) {
+    console.warn("licence check failed", failure);
+    return true;
+  }
+}
+
 // --- Startup ----------------------------------------------------------------
 
 async function boot(): Promise<void> {
   await listen<StepEvent>("setup://step", (event) => applyStep(event.payload));
   await listen<DoneEvent>("setup://done", (event) => finish(event.payload));
+
+  // Expired installs never reach the wizard: the server would refuse to start.
+  const licensed = await initLicence();
+  if (!licensed) return;
 
   const status = await invoke<StepStatusView>("setup_status", {});
 

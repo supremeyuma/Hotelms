@@ -1,6 +1,7 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 pub mod discovery;
 pub mod envfile;
+pub mod licence;
 pub mod paths;
 pub mod postgres;
 pub mod runtime;
@@ -130,6 +131,16 @@ fn setup_run_server(
 
     if state.running.swap(true, Ordering::SeqCst) {
         return Err("setup is already running".into());
+    }
+
+    // Licence gate: a trial may run the server, an expired install may not.
+    // Checked before the previous boot is stopped so a failed activation never
+    // takes a working server down for nothing.
+    if let Ok(paths) = resolve_paths(&app) {
+        if let Err(error) = licence::ensure_may_run(&paths.data_dir) {
+            state.running.store(false, Ordering::SeqCst);
+            return Err(error.to_string());
+        }
     }
 
     // Stop any server this process still owns *before* the new run starts.
@@ -313,6 +324,34 @@ fn setup_stop_server(state: State<'_, Arc<SetupHandle>>) -> Result<(), String> {
 #[tauri::command]
 fn updates_enabled() -> bool {
     std::env::var("MOORELIFE_DISABLE_UPDATES").is_err()
+}
+
+/// Current licence state: trial (with days left), active, or expired.
+#[tauri::command]
+fn licence_status(app: AppHandle) -> Result<serde_json::Value, String> {
+    let paths = resolve_paths(&app)?;
+    let state = licence::status(&paths.data_dir).map_err(|error| error.to_string())?;
+
+    serde_json::to_value(state).map_err(|error| error.to_string())
+}
+
+/// Exchange a purchased key for a signed licence and store it locally.
+#[tauri::command]
+fn licence_activate(app: AppHandle, key: String) -> Result<serde_json::Value, String> {
+    let paths = resolve_paths(&app)?;
+    let state = licence::activate(&paths.data_dir, &key).map_err(|error| {
+        // `anyhow`'s Display only shows the outermost context; include the chain
+        // so "failed to reach the licence server" also names the endpoint.
+        format!("{error:#}")
+    })?;
+
+    serde_json::to_value(state).map_err(|error| error.to_string())
+}
+
+/// The stable machine id, for support when moving a licence between PCs.
+#[tauri::command]
+fn licence_machine_id() -> String {
+    licence::machine_id()
 }
 
 fn emit_done(app: &AppHandle, result: Result<serde_json::Value, String>) {
@@ -562,7 +601,10 @@ pub fn run() {
             setup_stop_server,
             discovery_probe,
             discovery_pairing,
-            updates_enabled
+            updates_enabled,
+            licence_status,
+            licence_activate,
+            licence_machine_id
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

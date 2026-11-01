@@ -435,3 +435,26 @@ form[data-running] .btn {
   gap: 8px;
   flex-shrink: 0;
 }
+
+/* --- Trial banner --------------------------------------------------------- */
+.trial-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: #eef2ff;
+  border-bottom: 1px solid #c7d2fe;
+  color: #3730a3;
+  font-size: 13px;
+}
+
+.trial-banner .link-button {
+  color: #4338ca;
+  text-decoration: underline;
+}
