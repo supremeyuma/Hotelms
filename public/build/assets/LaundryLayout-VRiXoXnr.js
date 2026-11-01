@@ -1,0 +1,1 @@
+import{B as t}from"./BaseStaffLayout-BRENOT-5.js";import{c as o,w as e,D as r,o as s}from"./app-DQpWnOGK.js";const l={__name:"LaundryLayout",setup(n){return(a,u)=>(s(),o(t,null,{default:e(()=>[r(a.$slots,"default")]),_:3}))}};export{l as _};
