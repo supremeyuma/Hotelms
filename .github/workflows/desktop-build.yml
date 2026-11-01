@@ -1,5 +1,12 @@
 name: desktop-build
 
+# Compiles and tests the Tauri crate, and checks that the vendored FrankenPHP
+# runtime can actually load the PHP extensions the app needs.
+#
+# Packaging is not done here: an installer needs the staged Laravel app, the PHP
+# runtime and Postgres, which are gitignored and far too large for a test job.
+# `release.yml` builds the real artifacts.
+
 on:
   push:
     branches: [main]
@@ -35,6 +42,25 @@ jobs:
         with:
           workspaces: desktop/src-tauri
 
+      # tauri-build refuses to compile when a path listed in bundle.resources is
+      # missing. Those trees (staged Laravel app, FrankenPHP, Postgres) are
+      # gitignored and only needed when bundling, so an empty tree is enough to
+      # compile and test the crate.
+      - name: Stub the bundled resource paths
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          $paths = @(
+            "resources/app",
+            "resources/bin/x86_64-pc-windows-msvc",
+            "resources/postgres-runtime/x86_64-pc-windows-msvc/pgsql"
+          )
+
+          foreach ($path in $paths) {
+            New-Item -ItemType Directory -Force -Path $path | Out-Null
+          }
+
       - name: Test the desktop crate
         working-directory: desktop/src-tauri
         run: cargo test
@@ -50,9 +76,45 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download FrankenPHP v1.13.0 for Windows x86_64
+        shell: pwsh
         run: |
-          Invoke-WebRequest -Uri "https://github.com/dunglas/frankenphp/releases/download/v1.13.0/frankenphp-windows-x86_64.zip" -OutFile "$env:RUNNER_TEMP\frankenphp.zip"
+          $ErrorActionPreference = "Stop"
+
+          Invoke-WebRequest `
+            -Uri "https://github.com/dunglas/frankenphp/releases/download/v1.13.0/frankenphp-windows-x86_64.zip" `
+            -OutFile "$env:RUNNER_TEMP\frankenphp.zip"
+
+          # The release asset is mutable upstream; the gate must know exactly
+          # which build it verified.
+          $expected = (Get-Content resources/bin/checksums.txt |
+            Where-Object { $_ -notmatch '^\s*#' -and $_ -match 'frankenphp-windows-x86_64\.zip\s*$' } |
+            ForEach-Object { ($_ -split '\s+')[0] } |
+            Select-Object -First 1)
+
+          if (-not $expected) {
+            throw "No checksum recorded for frankenphp-windows-x86_64.zip"
+          }
+
+          $actual = (Get-FileHash "$env:RUNNER_TEMP\frankenphp.zip" -Algorithm SHA256).Hash.ToLower()
+
+          if ($actual -ne $expected.ToLower()) {
+            throw "FrankenPHP archive checksum mismatch: expected $expected, got $actual"
+          }
+
           Expand-Archive -LiteralPath "$env:RUNNER_TEMP\frankenphp.zip" -DestinationPath "$env:RUNNER_TEMP\frankenphp"
 
+          if (-not (Test-Path "$env:RUNNER_TEMP\frankenphp\frankenphp.exe")) {
+            throw "frankenphp.exe is missing from the extracted archive"
+          }
+
+      # The archive ships php.ini-production with every `extension=` line
+      # commented out, so the shared extensions under ext/ would not load. The
+      # installer bundles resources/runtime/php.ini for exactly that reason; the
+      # gate must apply it too, or it fails a runtime that is actually fine.
+      - name: Apply the bundled PHP configuration
+        shell: pwsh
+        run: Copy-Item resources/runtime/php.ini "$env:RUNNER_TEMP\frankenphp\php.ini" -Force
+
       - name: Verify required PHP extensions are present
+        shell: pwsh
         run: scripts/verify-runtime.ps1 -RuntimeDir "$env:RUNNER_TEMP\frankenphp"

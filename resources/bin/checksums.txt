@@ -1,4 +1,10 @@
 # Vendored runtime archives. Verify downloads against these hashes.
 # FrankenPHP Windows x86_64 - source: dunglas/frankenphp v1.13.0 (php/frankenphp)
 # asset: frankenphp-windows-x86_64.zip
-64f4bfef3772b657bc1ec93f9174da87f19ddd0056de01c9a35021ebcf62fb88  frankenphp-windows-x86_64.zip
+#
+# Re-confirmed 2026-11-01: the published asset now hashes to the value below
+# (the previously recorded hash no longer matched the same URL, so the archive
+# had been replaced upstream). The vendored tree was rebuilt from this download
+# and passes scripts/verify-runtime.ps1 with resources/runtime/php.ini applied.
+# The release workflow checks a download against this line before using it.
+b26749ecc1fd03bef10c3e31fef467c7b9ec3cd64a95bcb39b54bd02e515e2ab  frankenphp-windows-x86_64.zip
