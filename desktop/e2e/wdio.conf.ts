@@ -114,6 +114,9 @@ export const config = {
         // gap reported by Task 3, not a test hack.
         env: {
           SESSION_DRIVER: "file",
+          // Keep the e2e run deterministic: an update banner on an older test
+          // build would sit over the wizard.
+          MOORELIFE_DISABLE_UPDATES: "1",
         },
       },
     ],

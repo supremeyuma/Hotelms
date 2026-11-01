@@ -170,6 +170,16 @@ function Wait-Stage-Postgres {
     $pgSrc = Join-Path $Repo "resources\postgres\$triple\pgsql"
     $pgDest = Join-Path $Repo "resources\postgres-runtime\$triple\pgsql"
 
+    # CI downloads the trimmed runtime directly (the pristine 777 MB tree is not
+    # in the repository). When it is already present, keep it instead of failing.
+    if (-not (Test-Path $pgSrc)) {
+        if (Test-Path (Join-Path $pgDest "bin")) {
+            Write-Host "Using pre-staged postgres runtime at $pgDest"
+            return
+        }
+        throw "Postgres runtime missing: neither $pgSrc nor $pgDest\bin exists"
+    }
+
     if (Test-Path $pgDest) {
         Write-Host "Clearing previous postgres staging at $pgDest"
         Remove-Item -LiteralPath $pgDest -Recurse -Force

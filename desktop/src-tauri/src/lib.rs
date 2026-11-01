@@ -288,6 +288,33 @@ fn setup_run_staff_client(
     Ok(())
 }
 
+/// Stop the server this process owns, if any.
+///
+/// Auto-update installs a new build over the installed tree; Postgres and
+/// FrankenPHP are children of this process and hold open files inside that
+/// tree, so the installer cannot replace them while they run. Dropping
+/// `ServerBoot` stops both in order. Safe when nothing is running.
+#[tauri::command]
+fn setup_stop_server(state: State<'_, Arc<SetupHandle>>) -> Result<(), String> {
+    let mut active = state
+        .active
+        .lock()
+        .map_err(|_| "setup state poisoned".to_string())?;
+
+    *active = None;
+    Ok(())
+}
+
+/// Whether the start-up update check should run.
+///
+/// The native e2e suite sets `MOORELIFE_DISABLE_UPDATES=1`: an update banner
+/// would otherwise be able to intercept clicks in a build that is
+/// intentionally older than the published release.
+#[tauri::command]
+fn updates_enabled() -> bool {
+    std::env::var("MOORELIFE_DISABLE_UPDATES").is_err()
+}
+
 fn emit_done(app: &AppHandle, result: Result<serde_json::Value, String>) {
     let payload = match result {
         Ok(value) => value,
@@ -463,7 +490,13 @@ fn resolve_paths(app: &AppHandle) -> Result<setup::Paths, String> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let builder = tauri::Builder::default().plugin(tauri_plugin_opener::init());
+    let builder = tauri::Builder::default()
+        .plugin(tauri_plugin_opener::init())
+        // Auto-update: check a signed manifest, then let the NSIS installer run
+        // in passive mode and relaunch. `setup_stop_server` (below) releases the
+        // database and HTTP runtime first, so the installer can replace files.
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init());
 
     // Test-only. `--features e2e` embeds a W3C WebDriver server and the
     // WebdriverIO execute/mock command surface so `@wdio/tauri-service` can
@@ -526,8 +559,10 @@ pub fn run() {
             setup_run_server,
             setup_run_terminal,
             setup_run_staff_client,
+            setup_stop_server,
             discovery_probe,
-            discovery_pairing
+            discovery_pairing,
+            updates_enabled
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

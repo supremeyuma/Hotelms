@@ -1,6 +1,8 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { openUrl } from "@tauri-apps/plugin-opener";
+import { relaunch } from "@tauri-apps/plugin-process";
+import { check, type Update } from "@tauri-apps/plugin-updater";
 import QRCode from "qrcode";
 
 // The three shapes an installation can take (spec 9.2). An explicit answer —
@@ -552,6 +554,92 @@ function escapeHtml(value: string): string {
   return div.innerHTML;
 }
 
+// --- Auto-update -------------------------------------------------------------
+//
+// The updater manifest is signed with the release key and verified before an
+// installer runs (`plugins.updater.pubkey` in tauri.conf.json). The banner is
+// deliberately explicit: a hotel server restarting is a visible event, so the
+// operator chooses when, and the app stops Postgres/FrankenPHP first so the
+// installer can replace the bundled runtime instead of failing on locked files.
+
+function updateBanner(): HTMLElement | null {
+  return document.querySelector<HTMLElement>("[data-update-banner]");
+}
+
+function showUpdateBanner(update: Update): void {
+  if (updateBanner()) return;
+
+  const banner = el(`<div class="update-banner" data-update-banner>
+    <div class="update-banner__text">
+      <strong>Update available — version ${escapeHtml(update.version)}</strong>
+      <span data-update-status>Install it now, or keep working and update later.</span>
+    </div>
+    <div class="update-banner__actions">
+      <button class="btn btn--ghost" type="button" data-update-later>Later</button>
+      <button class="btn" type="button" data-update-install>Install update</button>
+    </div>
+  </div>`);
+
+  document.body.appendChild(banner);
+
+  const status = banner.querySelector<HTMLElement>("[data-update-status]")!;
+  const install = banner.querySelector<HTMLButtonElement>("[data-update-install]")!;
+  const later = banner.querySelector<HTMLButtonElement>("[data-update-later]")!;
+
+  later.addEventListener("click", () => banner.remove());
+
+  install.addEventListener("click", async () => {
+    install.disabled = true;
+    later.disabled = true;
+    status.textContent = "Stopping the local server…";
+
+    try {
+      // Release the database and HTTP runtime: the new build replaces the
+      // bundled Postgres/PHP binaries, which are locked while they run.
+      await invoke("setup_stop_server");
+      status.textContent = "Downloading the update…";
+
+      let downloaded = 0;
+      let total = 0;
+
+      await update.downloadAndInstall((event) => {
+        if (event.event === "Started") {
+          total = event.data.contentLength ?? 0;
+        } else if (event.event === "Progress") {
+          downloaded += event.data.chunkLength;
+          status.textContent = total
+            ? `Downloading the update… ${Math.round((downloaded / total) * 100)}%`
+            : "Downloading the update…";
+        } else if (event.event === "Finished") {
+          status.textContent = "Installing; the application will restart…";
+        }
+      });
+
+      await relaunch();
+    } catch (error) {
+      install.disabled = false;
+      later.disabled = false;
+      status.textContent = `Update failed: ${String(error)}`;
+    }
+  });
+}
+
+async function initAutoUpdate(): Promise<void> {
+  try {
+    if (!(await invoke<boolean>("updates_enabled"))) {
+      return;
+    }
+
+    const update = await check();
+    if (update) {
+      showUpdateBanner(update);
+    }
+  } catch (error) {
+    // Offline machines and a missing manifest must never block the wizard.
+    console.warn("update check failed", error);
+  }
+}
+
 // --- Startup ----------------------------------------------------------------
 
 async function boot(): Promise<void> {
@@ -564,10 +652,12 @@ async function boot(): Promise<void> {
     const role = inferRole(status.completed);
     if (role) {
       await renderWizard(role);
+      void initAutoUpdate();
       return;
     }
   }
   renderRoleSelect();
+  void initAutoUpdate();
 }
 
 function inferRole(completed: string[]): Role | null {

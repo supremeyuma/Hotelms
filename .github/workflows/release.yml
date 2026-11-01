@@ -1,0 +1,89 @@
+name: release
+
+# Builds, signs and publishes a MooreLife release.
+#
+# The updater artifacts are signed with TAURI_SIGNING_PRIVATE_KEY (minisign), so
+# installed copies can verify an update before running it. tauri-action also
+# writes latest.json, which tauri-plugin-updater polls at
+# https://github.com/supremeyuma/Hotelms/releases/latest/download/latest.json
+#
+# Required repository secrets:
+#   TAURI_SIGNING_PRIVATE_KEY           contents of ~/.tauri/moorelife.key
+#   TAURI_SIGNING_PRIVATE_KEY_PASSWORD  its password
+#
+# The bundled PHP/FrankenPHP runtime and the trimmed Postgres runtime are not in
+# git (too large; .gitignore). They are downloaded from the `runtime-v1` release
+# asset built from a machine that has them vendored.
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to release (e.g. v0.1.1)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            desktop/package-lock.json
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: desktop/src-tauri
+
+      - name: Fetch the vendored Windows runtime
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          gh release download runtime-v1 `
+            --repo ${{ github.repository }} `
+            --pattern desktop-runtime-windows-x64.zip `
+            --dir $env:RUNNER_TEMP
+          Expand-Archive "$env:RUNNER_TEMP\desktop-runtime-windows-x64.zip" `
+            -DestinationPath resources -Force
+          if (-not (Test-Path "resources/bin/x86_64-pc-windows-msvc/frankenphp.exe")) {
+            throw "runtime bundle is missing FrankenPHP"
+          }
+          if (-not (Test-Path "resources/postgres-runtime/x86_64-pc-windows-msvc/pgsql/bin/postgres.exe")) {
+            throw "runtime bundle is missing Postgres"
+          }
+
+      - name: Install dependencies
+        shell: pwsh
+        run: |
+          npm ci
+          npm ci --prefix desktop
+
+      - name: Build, sign and publish
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          projectPath: desktop
+          tagName: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+          releaseName: "MooreLife ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}"
+          releaseBody: "Windows installer. See the release notes in the repository for verification details."
+          releaseDraft: false
+          prerelease: false
+          args: --bundles nsis
