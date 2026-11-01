@@ -281,7 +281,13 @@ const nav = computed(() => {
     }
   })()
 
-  return items.map(item => ({
+  const licensingItems = page.props.licensing?.admin
+    ? [
+        { label: 'Licences', route: 'admin.licences.index', icon: 'shield', activeRoute: 'admin.licences.*' },
+      ]
+    : []
+
+  return [...items, ...licensingItems].map(item => ({
     ...item,
     iconComponent: ICONS[item.icon],
     active: route().current(item.activeRoute ?? item.route)

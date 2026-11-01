@@ -185,3 +185,30 @@ Route::middleware(['auth','role:manager|md|superuser'])->prefix('admin/website')
     Route::post('/admin/events/{event}/feature', [EventController::class,'featureEvent'])->name('admin.events.feature');
     Route::post('/admin/events/{event}/unfeature', [EventController::class,'unfeatureEvent'])->name('admin.events.unfeature');
     });
+
+/*
+|--------------------------------------------------------------------------
+| Licence desk (platform owner)
+|--------------------------------------------------------------------------
+|
+| Only on the deployment that holds LICENCE_PRIVATE_KEY (`licence.admin` 404s
+| everywhere else) and only for the superuser role: this screen shows every
+| customer's sale, can mint keys, and can revoke a hotel's licence.
+|
+*/
+Route::middleware(['auth', 'role:superuser', 'licence.admin'])
+    ->prefix('admin/licences')
+    ->as('admin.licences.')
+    ->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\LicenceAdminController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\Admin\LicenceAdminController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Admin\LicenceAdminController::class, 'store'])->name('store');
+        Route::get('/orders', [\App\Http\Controllers\Admin\LicenceAdminController::class, 'orders'])->name('orders');
+        Route::get('/plans', [\App\Http\Controllers\Admin\LicenceAdminController::class, 'plans'])->name('plans');
+        Route::put('/plans', [\App\Http\Controllers\Admin\LicenceAdminController::class, 'updatePlans'])->name('plans.update');
+        Route::get('/{licence}', [\App\Http\Controllers\Admin\LicenceAdminController::class, 'show'])->whereNumber('licence')->name('show');
+        Route::post('/{licence}/revoke', [\App\Http\Controllers\Admin\LicenceAdminController::class, 'revoke'])->whereNumber('licence')->name('revoke');
+        Route::post('/{licence}/restore', [\App\Http\Controllers\Admin\LicenceAdminController::class, 'restore'])->whereNumber('licence')->name('restore');
+        Route::post('/{licence}/clear-machine', [\App\Http\Controllers\Admin\LicenceAdminController::class, 'clearMachine'])->whereNumber('licence')->name('clear-machine');
+        Route::post('/{licence}/reissue', [\App\Http\Controllers\Admin\LicenceAdminController::class, 'reissue'])->whereNumber('licence')->name('reissue');
+    });

@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\EventTicket;
 use App\Models\EventTableReservation;
 use App\Models\Booking;
+use App\Models\LicenceOrder;
 use App\Models\Payment;
 use App\Services\BookingService;
 use App\Services\EventService;
+use App\Services\Licensing\LicenceCheckoutService;
 use App\Services\PaymentAccountingService;
 use App\Services\PaymentRecordService;
 use Illuminate\Http\Request;
@@ -26,6 +28,7 @@ class WebhookController extends Controller
         protected EventService $eventService,
         protected PaymentAccountingService $paymentAccountingService,
         protected PaymentRecordService $paymentRecords,
+        protected LicenceCheckoutService $licenceCheckout,
     ) {}
 
     /**
@@ -149,6 +152,13 @@ class WebhookController extends Controller
                 return response()->json(['status' => 'already_processed']);
             }
 
+            // Licence sales are handled before the hotel lookups: their
+            // references share the payment plumbing but must never be treated as
+            // a booking, and completing one issues a key.
+            if ($order = LicenceOrder::where('reference', $reference)->first()) {
+                return $this->handleLicenceOrderPayment($order, 'flutterwave', $data);
+            }
+
             // Try event ticket
             if ($ticket = EventTicket::where('qr_code', $reference)->first()) {
                 if ($ticket->payment_status === 'paid') {
@@ -225,6 +235,14 @@ class WebhookController extends Controller
                 'data' => $data,
             ]);
 
+            // A licence sale is not hotel revenue; cancel the order and leave
+            // bookings and the ledgers untouched.
+            if ($order = LicenceOrder::where('reference', $reference)->first()) {
+                $this->licenceCheckout->fail($order, 'flutterwave', $data);
+
+                return response()->json(['status' => 'processed']);
+            }
+
             // Mark event ticket or reservation as failed
             if ($ticket = EventTicket::where('qr_code', $reference)->first()) {
                 $ticket->update(['payment_status' => 'failed']);
@@ -274,6 +292,13 @@ class WebhookController extends Controller
             $idempotencyKey = $this->buildIdempotencyKey('paystack', $data);
             if ($idempotencyKey && $this->isIdempotencyKeyProcessed($idempotencyKey)) {
                 return response()->json(['status' => 'already_processed']);
+            }
+
+            // Licence sales are handled before the hotel lookups: their
+            // references share the payment plumbing but must never be treated as
+            // a booking, and completing one issues a key.
+            if ($order = LicenceOrder::where('reference', $reference)->first()) {
+                return $this->handleLicenceOrderPayment($order, 'paystack', $data);
             }
 
             // Try event ticket
@@ -352,6 +377,14 @@ class WebhookController extends Controller
                 'data' => $data,
             ]);
 
+            // A licence sale is not hotel revenue; cancel the order and leave
+            // bookings and the ledgers untouched.
+            if ($order = LicenceOrder::where('reference', $reference)->first()) {
+                $this->licenceCheckout->fail($order, 'paystack', $data);
+
+                return response()->json(['status' => 'processed']);
+            }
+
             // Mark event ticket or reservation as failed
             if ($ticket = EventTicket::where('qr_code', $reference)->first()) {
                 $ticket->update(['payment_status' => 'failed']);
@@ -378,6 +411,42 @@ class WebhookController extends Controller
             Log::error('Paystack payment failure handling failed: ' . $e->getMessage());
             return response()->json(['error' => 'Processing error'], 500);
         }
+    }
+
+    /**
+     * Handle a webhook that belongs to a licence sale.
+     *
+     * The webhook body is covered by the provider's signature, so it is trusted
+     * for the amount; completion is still idempotent and issue-once.
+     */
+    private function handleLicenceOrderPayment(LicenceOrder $order, string $provider, array $data): \Illuminate\Http\JsonResponse
+    {
+        if ($order->isPaid()) {
+            return response()->json(['status' => 'already_processed']);
+        }
+
+        try {
+            $payload = $data['data'] ?? [];
+
+            $this->licenceCheckout->assertAmountMatches(
+                $order,
+                $this->licenceCheckout->normalizeAmount($provider, $payload['amount'] ?? 0),
+                (string) ($payload['currency'] ?? $order->currency),
+            );
+
+            $this->licenceCheckout->complete($order, $provider, $payload);
+        } catch (\Throwable $e) {
+            // 500 so the gateway retries: a paid order that failed to issue a key
+            // must not be silently dropped.
+            Log::error('Licence order completion failed', [
+                'order' => $order->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json(['error' => 'Licence order completion failed'], 500);
+        }
+
+        return response()->json(['status' => 'processed']);
     }
 
     /**

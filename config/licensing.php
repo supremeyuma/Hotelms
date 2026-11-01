@@ -18,4 +18,16 @@ return [
     'term_months' => (int) env('LICENCE_TERM_MONTHS', 12),
 
     'product' => env('LICENCE_PRODUCT', 'MooreLife'),
+
+    /*
+     * Public checkout.
+     *
+     * Off by default: it must not be possible to take money on a deployment whose
+     * activation endpoint is not live yet. Enable it on the licence server once
+     * LICENCE_PRIVATE_KEY, the gateway keys and the public domain are in place.
+     */
+    'checkout_enabled' => (bool) env('LICENCE_CHECKOUT_ENABLED', false),
+
+    // Currency preselected on the checkout form; the buyer can switch.
+    'currency_default' => env('LICENCE_CURRENCY_DEFAULT', 'NGN'),
 ];

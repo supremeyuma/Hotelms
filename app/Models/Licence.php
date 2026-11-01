@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Licence extends Model
 {
@@ -11,13 +13,18 @@ class Licence extends Model
     public const STATUS_REVOKED = 'revoked';
 
     protected $fillable = [
+        'licence_plan_id',
         'key_hash',
         'key_prefix',
         'property_name',
+        'room_count',
         'customer_name',
         'customer_email',
         'plan',
         'term_months',
+        'currency',
+        'monthly_amount',
+        'amount',
         'status',
         'machine_id',
         'issued_at',
@@ -32,7 +39,27 @@ class Licence extends Model
         'activated_at' => 'datetime',
         'expires_at' => 'datetime',
         'term_months' => 'integer',
+        'room_count' => 'integer',
+        'monthly_amount' => 'decimal:2',
+        'amount' => 'decimal:2',
     ];
+
+    /**
+     * The price tier this licence was sold at.
+     *
+     * Named `licencePlan` rather than `plan` because `plan` is also the billing
+     * period column ('annual'); an attribute always wins over a same-named
+     * relation, which would silently return the string.
+     */
+    public function licencePlan(): BelongsTo
+    {
+        return $this->belongsTo(LicencePlan::class, 'licence_plan_id');
+    }
+
+    public function order(): HasOne
+    {
+        return $this->hasOne(LicenceOrder::class);
+    }
 
     /**
      * A licence is usable while it is active or issued (not yet activated),
@@ -45,5 +72,33 @@ class Licence extends Model
         }
 
         return $this->expires_at === null || $this->expires_at->isFuture();
+    }
+
+    /**
+     * Human status for the admin list: issued keys that were never activated are
+     * different from ones running out, and both are different from expired.
+     */
+    public function displayStatus(): string
+    {
+        if ($this->status === self::STATUS_REVOKED) {
+            return 'revoked';
+        }
+
+        if ($this->expires_at !== null && $this->expires_at->isPast()) {
+            return 'expired';
+        }
+
+        if ($this->status === self::STATUS_ISSUED) {
+            return 'not activated';
+        }
+
+        return 'active';
+    }
+
+    public function daysUntilExpiry(): ?int
+    {
+        return $this->expires_at === null
+            ? null
+            : (int) now()->startOfDay()->diffInDays($this->expires_at->copy()->startOfDay(), false);
     }
 }

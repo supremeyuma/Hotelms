@@ -3,6 +3,7 @@
 namespace App\Services\Licensing;
 
 use App\Models\Licence;
+use App\Models\LicencePlan;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -21,7 +22,10 @@ class LicenceService
     /** Unambiguous alphabet: no 0/O, 1/I/L. Read aloud over the phone. */
     private const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 
-    /** @return array{key: string, licence: Licence} */
+    /**
+     * @param  array{plan?: ?LicencePlan, rooms?: ?int, currency?: ?string, monthly_amount?: ?float, amount?: ?float}  $sale
+     * @return array{key: string, licence: Licence}
+     */
     public function issue(
         string $propertyName,
         ?string $customerName = null,
@@ -29,17 +33,26 @@ class LicenceService
         ?int $termMonths = null,
         ?string $paymentReference = null,
         ?string $notes = null,
+        array $sale = [],
     ): array {
         $key = $this->generateKey();
 
+        /** @var LicencePlan|null $plan */
+        $plan = $sale['plan'] ?? null;
+
         $licence = Licence::create([
+            'licence_plan_id' => $plan?->id,
             'key_hash' => $this->hashKey($key),
             'key_prefix' => substr($key, 0, 9),
             'property_name' => $propertyName,
+            'room_count' => $sale['rooms'] ?? null,
             'customer_name' => $customerName,
             'customer_email' => $customerEmail,
             'plan' => 'annual',
             'term_months' => $termMonths ?? (int) config('licensing.term_months', 12),
+            'currency' => $sale['currency'] ?? null,
+            'monthly_amount' => $sale['monthly_amount'] ?? null,
+            'amount' => $sale['amount'] ?? null,
             'status' => Licence::STATUS_ISSUED,
             'issued_at' => now(),
             'payment_reference' => $paymentReference,
@@ -47,6 +60,42 @@ class LicenceService
         ]);
 
         return ['key' => $key, 'licence' => $licence];
+    }
+
+    /**
+     * Replace a licence whose key was lost, or whose sale needs correcting.
+     *
+     * The new licence carries the same commercial terms and replaces the old one,
+     * which is revoked so the lost key cannot be activated on some other PC.
+     * The replacement starts its term at its own activation, like any new key.
+     *
+     * @return array{key: string, licence: Licence}
+     */
+    public function reissue(Licence $licence): array
+    {
+        return DB::transaction(function () use ($licence) {
+            $licence = Licence::whereKey($licence->id)->lockForUpdate()->firstOrFail();
+
+            $replacement = $this->issue(
+                propertyName: $licence->property_name,
+                customerName: $licence->customer_name,
+                customerEmail: $licence->customer_email,
+                termMonths: $licence->term_months,
+                paymentReference: $licence->payment_reference,
+                notes: trim(($licence->notes ?? '') . "\nReplaces licence #{$licence->id} (key re-issued)."),
+                sale: [
+                    'plan' => $licence->licencePlan,
+                    'rooms' => $licence->room_count,
+                    'currency' => $licence->currency,
+                    'monthly_amount' => $licence->monthly_amount !== null ? (float) $licence->monthly_amount : null,
+                    'amount' => $licence->amount !== null ? (float) $licence->amount : null,
+                ],
+            );
+
+            $this->revoke($licence);
+
+            return $replacement;
+        });
     }
 
     /**

@@ -54,6 +54,14 @@ class HandleInertiaRequests extends Middleware
                 'device_id' => fn () => request()->cookie('pos_device_id'),
                 'pin_verified' => fn () => request()->session()->get('pos_pin_verified', false),
             ],
+            // The licence desk is a platform-owner screen: it only exists where
+            // licences can be signed, and only for the superuser. The sidebar
+            // uses this to hide the entry on a hotel's own server.
+            'licensing' => [
+                'admin' => fn () => filled(config('licensing.private_key'))
+                    && (bool) $request->user()?->hasRole('superuser'),
+                'checkoutEnabled' => fn () => (bool) config('licensing.checkout_enabled'),
+            ],
         ];
     }
 }
