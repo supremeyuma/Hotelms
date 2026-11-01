@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Licence extends Model
@@ -27,6 +28,9 @@ class Licence extends Model
         'amount',
         'status',
         'machine_id',
+        'transfer_count',
+        'previous_machine_id',
+        'last_transferred_at',
         'issued_at',
         'activated_at',
         'expires_at',
@@ -38,11 +42,28 @@ class Licence extends Model
         'issued_at' => 'datetime',
         'activated_at' => 'datetime',
         'expires_at' => 'datetime',
+        'last_transferred_at' => 'datetime',
         'term_months' => 'integer',
         'room_count' => 'integer',
+        'transfer_count' => 'integer',
         'monthly_amount' => 'decimal:2',
         'amount' => 'decimal:2',
     ];
+
+    public function transfers(): HasMany
+    {
+        return $this->hasMany(LicenceTransfer::class)->latest('id');
+    }
+
+    public function transferLimit(): int
+    {
+        return max(0, (int) config('licensing.self_service_transfers', 2));
+    }
+
+    public function transfersRemaining(): int
+    {
+        return max(0, $this->transferLimit() - $this->transfer_count);
+    }
 
     /**
      * The price tier this licence was sold at.

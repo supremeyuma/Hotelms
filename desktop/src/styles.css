@@ -458,3 +458,15 @@ form[data-running] .btn {
   color: #4338ca;
   text-decoration: underline;
 }
+
+/* --- Self-service licence transfer ---------------------------------------- */
+.panel form [data-transfer] {
+  display: block;
+  margin-top: 10px;
+}
+
+.panel form [data-transfer][data-disabled] {
+  opacity: 0.5;
+  cursor: progress;
+  text-decoration: none;
+}

@@ -13,6 +13,10 @@ use RuntimeException;
  * The desktop app posts a purchased key together with its machine id and gets
  * back a signed licence file it can verify offline. Rate-limited because the
  * key space is guessable in principle; a real key is five groups of four.
+ *
+ * `transfer: true` means the app found itself on a different PC and the operator
+ * chose to move the licence; it is the customer's self-service replacement-PC
+ * path and is limited per licence.
  */
 class LicenceController extends Controller
 {
@@ -21,10 +25,18 @@ class LicenceController extends Controller
         $data = $request->validate([
             'key' => ['required', 'string', 'max:64'],
             'machine_id' => ['required', 'string', 'max:128'],
+            'transfer' => ['sometimes', 'boolean'],
         ]);
 
         try {
-            $licence = $licences->activate($data['key'], $data['machine_id']);
+            $licence = $licences->activate(
+                $data['key'],
+                $data['machine_id'],
+                (bool) ($data['transfer'] ?? false),
+                $request->ip(),
+                $request->userAgent() !== null ? substr($request->userAgent(), 0, 255) : null,
+            );
+
             $token = $licences->signedToken($licence);
         } catch (RuntimeException $e) {
             // Signing is not configured (or broken) on this deployment: say so
@@ -36,6 +48,7 @@ class LicenceController extends Controller
             'token' => $token,
             'property' => $licence->property_name,
             'expires_at' => $licence->expires_at?->toIso8601String(),
+            'transfers_remaining' => $licence->transfersRemaining(),
         ]);
     }
 }

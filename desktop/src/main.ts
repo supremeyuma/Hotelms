@@ -682,6 +682,9 @@ async function renderActivation(state: LicenceState): Promise<void> {
                placeholder="ML-XXXX-XXXX-XXXX-XXXX" required />
       </div>
       <button class="btn" type="submit">Activate</button>
+      <button class="link-button" type="button" data-transfer>
+        This is a replacement PC — move my licence here
+      </button>
       <p class="note" data-licence-error hidden></p>
     </form>
     <p class="hint">Support may ask for this machine id: <code>${escapeHtml(machine)}</code></p>
@@ -697,26 +700,64 @@ async function renderActivation(state: LicenceState): Promise<void> {
 
   const form = panel.querySelector<HTMLFormElement>("form")!;
   const submit = panel.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+  const move = panel.querySelector<HTMLButtonElement>("[data-transfer]")!;
   const error = panel.querySelector<HTMLElement>("[data-licence-error]")!;
 
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    if (submit.hasAttribute("data-disabled")) return;
+  let submitting = false;
+
+  /**
+   * `transfer` is the customer's self-service move. It is a separate, explicit
+   * action because it consumes one of the licence's allowed moves and leaves the
+   * old PC running until its signed expiry.
+   */
+  async function activate(transfer: boolean): Promise<void> {
+    if (submitting) return;
 
     const key = (new FormData(form).get("licenceKey") as string | null)?.trim() ?? "";
+
+    if (!key) {
+      error.hidden = false;
+      error.textContent = "Enter the licence key from your purchase email.";
+      return;
+    }
+
+    if (transfer) {
+      const confirmed = window.confirm(
+        "Move this licence to this PC?\n\n" +
+          "• The old PC keeps working until the licence expires, then stops.\n" +
+          "• This uses one of the licence's self-service moves.\n" +
+          "• The expiry date does not change.",
+      );
+
+      if (!confirmed) return;
+    }
+
+    submitting = true;
     submit.setAttribute("data-disabled", "true");
-    submit.textContent = "Activating…";
+    move.setAttribute("data-disabled", "true");
+    submit.textContent = transfer ? "Moving licence…" : "Activating…";
     error.hidden = true;
 
     try {
-      await invoke<LicenceState>("licence_activate", { key });
+      await invoke<LicenceState>("licence_activate", { key, transfer });
       window.location.reload();
     } catch (failure) {
+      submitting = false;
       submit.removeAttribute("data-disabled");
+      move.removeAttribute("data-disabled");
       submit.textContent = "Activate";
       error.hidden = false;
       error.textContent = String(failure);
     }
+  }
+
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    void activate(false);
+  });
+
+  move.addEventListener("click", () => {
+    void activate(true);
   });
 }
 

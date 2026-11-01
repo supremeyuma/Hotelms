@@ -121,7 +121,24 @@ customer.
   bought in advance is not consumed sitting in an inbox.
 - **Machine binding**: a key activates on one machine. Re-activating the same
   machine (restart, reinstall, restore) returns a fresh token and does not extend
-  the term. A second machine is refused until support clears the binding.
+  the term.
+- **Self-service moves**: a licence may be moved to a replacement PC a limited
+  number of times (`LICENCE_SELF_SERVICE_TRANSFERS`, default **2 per licence**).
+  A move never restarts or extends the term, and the old PC keeps running until
+  its signed expiry because verification is offline. Beyond the allowance the
+  customer is told to contact support; the desk can reset the allowance or clear
+  the binding directly.
+
+### Moving to a replacement PC
+
+On the new PC, open the activation screen (trial banner → *Activate licence*, or
+the screen shown when the trial has ended), paste the key, then choose **“This is
+a replacement PC — move my licence here”**. The app asks for confirmation, sends
+the key with its own machine id and `transfer: true`, and stores the new signed
+licence. Nothing is typed by hand and nothing needs to happen on the old PC.
+
+If the allowance is used up, the app says so and support can reset it under
+**Admin → Licences → (licence) → Reset self-service moves**.
 
 ## The licence desk
 
@@ -141,9 +158,15 @@ role. A hotel manager cannot reach it.
     signed expiry).
   - *Restore* — undo a revocation; the expiry does not change.
   - *Move to another PC* — clears the machine binding so the same key activates on
-    a replacement server, without extending the term.
+    a replacement server, without extending the term. This is the support-side
+    equivalent of the customer's own move.
+  - *Reset self-service moves* — gives the customer their 2 moves back once you
+    have verified their request.
   - *Re-issue key* — for a lost key: revokes the old one and issues a replacement
     with the same commercial terms, shown once so you can send it.
+- **Move history**: the detail page lists every self-service move with the old and
+  new machine ids, the IP it came from and when. Use it when one key shows up on
+  several machines.
 - **Pricing**: edit the bands and both currency prices, with a live preview of the
   12-month total and a warning when bands overlap.
 - **Orders**: every checkout including abandoned ones, filterable by status.
@@ -184,6 +207,7 @@ pair, shipping a release with the new public key, and re-issuing.
 | `LICENCE_CURRENCY_DEFAULT` | `NGN` | Currency preselected on the checkout form. |
 | `LICENCE_TRIAL_DAYS` | `30` | Mirrors the desktop trial; documentation only. |
 | `LICENCE_TERM_MONTHS` | `12` | Term of a new licence, in months. |
+| `LICENCE_SELF_SERVICE_TRANSFERS` | `2` | Moves a customer may make to another PC per licence. |
 | `LICENCE_PRODUCT` | `MooreLife` | Shown in the signed payload and emails. |
 
 The app points at `https://licence.moorelife.app/licence/activate` by default.
@@ -218,7 +242,6 @@ its embedded public key on every start. Consequences worth knowing:
 
 ## Not implemented
 
-- Automated refunds: revoke the licence in the desk and refund in the gateway
-  dashboard. There is no reverse-sync from the gateway.
-- Self-service transfer: moving a licence to a new server is a support action
-  (*Move to another PC*), not something the customer can do.
+- Automated refunds: refund in the gateway dashboard and revoke the licence in the
+  desk. Customers email you; there is no reverse-sync from the gateway.
+- Customer self-service renewal: a renewal is a new purchase and a new key.

@@ -5,8 +5,10 @@ import ManagerLayout from '@/Layouts/Staff/ManagerLayout.vue'
 import {
   AlertTriangle,
   ArrowLeft,
+  ArrowRightLeft,
   Check,
   Copy,
+  History,
   KeyRound,
   Monitor,
   RefreshCw,
@@ -19,6 +21,7 @@ const props = defineProps({
   licence: Object,
   order: { type: Object, default: null },
   issuedKey: { type: String, default: null },
+  transfers: { type: Array, default: () => [] },
 })
 
 const page = usePage()
@@ -164,6 +167,13 @@ async function copyKey() {
               {{ licence.machine_id || 'Not activated on any machine yet' }}
             </dd>
             <dd v-if="licence.activated_at" class="mt-1 text-xs text-slate-500">Activated {{ date(licence.activated_at) }}</dd>
+            <dd v-if="licence.previous_machine_id" class="mt-2 font-mono text-[11px] text-slate-400">
+              previously {{ licence.previous_machine_id }}
+            </dd>
+            <dd class="mt-2 text-xs text-slate-500">
+              Self-service moves used: <strong>{{ licence.transfer_count }} of {{ licence.transfer_limit }}</strong>
+              <span v-if="licence.last_transferred_at">· last moved {{ date(licence.last_transferred_at) }}</span>
+            </dd>
           </div>
           <div v-if="licence.payment_reference" class="sm:col-span-2 lg:col-span-3">
             <dt class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Payment reference</dt>
@@ -196,6 +206,26 @@ async function copyKey() {
             <dd class="font-bold text-slate-900">{{ date(order.paid_at) }}</dd>
           </div>
         </dl>
+      </section>
+
+      <section v-if="transfers.length" class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 class="flex items-center gap-2 text-sm font-black uppercase tracking-[0.14em] text-slate-900">
+          <History class="h-4 w-4" />
+          Moves between PCs
+        </h2>
+        <div class="mt-4 divide-y divide-slate-100">
+          <div v-for="transfer in transfers" :key="transfer.id" class="flex flex-wrap items-center justify-between gap-3 py-3 text-xs">
+            <div class="flex items-center gap-2 font-mono text-slate-600">
+              <span class="truncate">{{ transfer.from_machine_id?.slice(0, 16) || 'unknown' }}…</span>
+              <ArrowRightLeft class="h-3.5 w-3.5 text-slate-400" />
+              <span class="truncate">{{ transfer.to_machine_id.slice(0, 16) }}…</span>
+            </div>
+            <div class="text-right text-slate-500">
+              <p>{{ date(transfer.at) }}</p>
+              <p v-if="transfer.ip_address" class="font-mono text-[11px] text-slate-400">{{ transfer.ip_address }}</p>
+            </div>
+          </div>
+        </div>
       </section>
 
       <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -250,6 +280,20 @@ async function copyKey() {
             <span>
               <span class="block text-sm font-bold text-amber-700">Re-issue key</span>
               <span class="block text-xs text-amber-700">For a lost key. Revokes this one and shows a new key once.</span>
+            </span>
+          </button>
+
+          <button
+            type="button"
+            class="flex items-start gap-3 rounded-xl border border-slate-200 px-4 py-3 text-left transition hover:bg-slate-50"
+            @click="act('reset-transfers', `Reset this customer's self-service moves? Only do this once you have verified their request.`)"
+          >
+            <ArrowRightLeft class="mt-0.5 h-4 w-4 text-slate-500" />
+            <span>
+              <span class="block text-sm font-bold text-slate-800">Reset self-service moves</span>
+              <span class="block text-xs text-slate-500">
+                Gives back {{ licence.transfer_limit }} move(s); the customer still moves from the new PC.
+              </span>
             </span>
           </button>
         </div>

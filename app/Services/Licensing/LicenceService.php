@@ -4,6 +4,7 @@ namespace App\Services\Licensing;
 
 use App\Models\Licence;
 use App\Models\LicencePlan;
+use App\Models\LicenceTransfer;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -103,10 +104,15 @@ class LicenceService
      *
      * Idempotent for the same machine: restarting an activated install (or
      * reinstalling on the same PC) returns a fresh signed token instead of
-     * consuming the key again. A different machine is refused; transferring a
-     * licence is a support action that clears the binding first.
+     * consuming the key again.
+     *
+     * A different machine is refused unless `$allowTransfer` is set, in which
+     * case this is the customer's self-service move: it is allowed a limited
+     * number of times per licence (a renewal is a new licence, so the allowance
+     * is naturally per year). The term does not restart, and the move is
+     * recorded.
      */
-    public function activate(string $key, string $machineId): Licence
+    public function activate(string $key, string $machineId, bool $allowTransfer = false, ?string $ip = null, ?string $userAgent = null): Licence
     {
         $machineId = trim($machineId);
 
@@ -114,7 +120,7 @@ class LicenceService
             throw ValidationException::withMessages(['machine_id' => 'A machine id is required.']);
         }
 
-        return DB::transaction(function () use ($key, $machineId) {
+        return DB::transaction(function () use ($key, $machineId, $allowTransfer, $ip, $userAgent) {
             $licence = Licence::where('key_hash', $this->hashKey($key))->lockForUpdate()->first();
 
             if ($licence === null) {
@@ -129,26 +135,61 @@ class LicenceService
                 throw ValidationException::withMessages(['key' => 'That licence has expired.']);
             }
 
-            if ($licence->machine_id !== null && $licence->machine_id !== $machineId) {
+            $boundElsewhere = $licence->machine_id !== null && $licence->machine_id !== $machineId;
+
+            if ($boundElsewhere && ! $allowTransfer) {
                 throw ValidationException::withMessages([
-                    'key' => 'That licence is already active on another machine.',
+                    'key' => 'That licence is already active on another machine. If this is a replacement PC, choose "Move my licence to this PC".',
+                ]);
+            }
+
+            if ($boundElsewhere && $licence->transfersRemaining() < 1) {
+                throw ValidationException::withMessages([
+                    'key' => 'This licence has already used its ' . $licence->transferLimit()
+                        . ' self-service moves. Contact support to move it again.',
                 ]);
             }
 
             $activatedAt = $licence->activated_at ?? now();
 
-            $licence->forceFill([
+            $changes = [
                 'machine_id' => $machineId,
                 'status' => Licence::STATUS_ACTIVE,
                 'activated_at' => $activatedAt,
                 // The term starts when the licence is first activated, not when
                 // it was issued: a key bought in advance is not consumed sitting
-                // in an inbox.
+                // in an inbox. A move never extends or restarts it.
                 'expires_at' => $licence->expires_at ?? $activatedAt->copy()->addMonths($licence->term_months),
-            ])->save();
+            ];
+
+            if ($boundElsewhere) {
+                $changes['previous_machine_id'] = $licence->machine_id;
+                $changes['transfer_count'] = $licence->transfer_count + 1;
+                $changes['last_transferred_at'] = now();
+            }
+
+            $licence->forceFill($changes)->save();
+
+            if ($boundElsewhere) {
+                LicenceTransfer::create([
+                    'licence_id' => $licence->id,
+                    'from_machine_id' => $licence->previous_machine_id,
+                    'to_machine_id' => $machineId,
+                    'ip_address' => $ip,
+                    'user_agent' => $userAgent,
+                ]);
+            }
 
             return $licence->fresh();
         });
+    }
+
+    /**
+     * Give the customer their self-service allowance back (support action).
+     */
+    public function resetTransfers(Licence $licence): void
+    {
+        $licence->forceFill(['transfer_count' => 0])->save();
     }
 
     /**

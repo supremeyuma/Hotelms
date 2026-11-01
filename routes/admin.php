@@ -211,4 +211,5 @@ Route::middleware(['auth', 'role:superuser', 'licence.admin'])
         Route::post('/{licence}/restore', [\App\Http\Controllers\Admin\LicenceAdminController::class, 'restore'])->whereNumber('licence')->name('restore');
         Route::post('/{licence}/clear-machine', [\App\Http\Controllers\Admin\LicenceAdminController::class, 'clearMachine'])->whereNumber('licence')->name('clear-machine');
         Route::post('/{licence}/reissue', [\App\Http\Controllers\Admin\LicenceAdminController::class, 'reissue'])->whereNumber('licence')->name('reissue');
+        Route::post('/{licence}/reset-transfers', [\App\Http\Controllers\Admin\LicenceAdminController::class, 'resetTransfers'])->whereNumber('licence')->name('reset-transfers');
     });

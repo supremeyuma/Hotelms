@@ -335,11 +335,14 @@ fn licence_status(app: AppHandle) -> Result<serde_json::Value, String> {
     serde_json::to_value(state).map_err(|error| error.to_string())
 }
 
-/// Exchange a purchased key for a signed licence and store it locally.
+/// Exchange a purchased key for a signed licence and store it.
+///
+/// `transfer` moves the licence to this PC when it is bound to another one; the
+/// server allows a limited number of moves per licence.
 #[tauri::command]
-fn licence_activate(app: AppHandle, key: String) -> Result<serde_json::Value, String> {
+fn licence_activate(app: AppHandle, key: String, transfer: Option<bool>) -> Result<serde_json::Value, String> {
     let paths = resolve_paths(&app)?;
-    let state = licence::activate(&paths.data_dir, &key).map_err(|error| {
+    let state = licence::activate(&paths.data_dir, &key, transfer.unwrap_or(false)).map_err(|error| {
         // `anyhow`'s Display only shows the outermost context; include the chain
         // so "failed to reach the licence server" also names the endpoint.
         format!("{error:#}")

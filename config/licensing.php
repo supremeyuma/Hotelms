@@ -17,6 +17,15 @@ return [
     // Term of one paid licence, in months.
     'term_months' => (int) env('LICENCE_TERM_MONTHS', 12),
 
+    /*
+     * How many times a customer may move a licence to another PC themselves.
+     *
+     * A move never extends the term. Two covers a dead server and a planned
+     * replacement within a year; beyond that support takes over (and can reset
+     * the allowance from the licence desk).
+     */
+    'self_service_transfers' => (int) env('LICENCE_SELF_SERVICE_TRANSFERS', 2),
+
     'product' => env('LICENCE_PRODUCT', 'MooreLife'),
 
     /*

@@ -324,6 +324,9 @@ watch(currency, applyFilters)
                 <td class="px-5 py-4">
                   <span v-if="licence.machine_bound" class="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold text-slate-600">bound</span>
                   <span v-else class="text-xs text-slate-400">not activated</span>
+                  <p v-if="licence.transfer_count" class="mt-1 text-[11px] font-semibold text-slate-400">
+                    moved {{ licence.transfer_count }}×
+                  </p>
                 </td>
                 <td class="px-5 py-4 text-right">
                   <Link :href="route('admin.licences.show', licence.id)" class="text-xs font-black uppercase tracking-[0.14em] text-slate-500 hover:text-slate-900">

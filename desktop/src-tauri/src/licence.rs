@@ -288,7 +288,12 @@ pub fn ensure_may_run(data_dir: &Path) -> Result<()> {
 }
 
 /// Exchange a purchased key for a signed licence and store it.
-pub fn activate(data_dir: &Path, key: &str) -> Result<LicenceState> {
+///
+/// `transfer` marks the customer's self-service move to a replacement PC: the
+/// server allows a limited number of them per licence, and the old PC is left to
+/// run out its signed term. Without it, a key bound to another machine is
+/// refused and the operator is pointed at the transfer option.
+pub fn activate(data_dir: &Path, key: &str, transfer: bool) -> Result<LicenceState> {
     let key = key.trim();
 
     if key.is_empty() {
@@ -299,7 +304,7 @@ pub fn activate(data_dir: &Path, key: &str) -> Result<LicenceState> {
         option_env!("MOORELIFE_LICENCE_ENDPOINT").unwrap_or(DEFAULT_ENDPOINT);
 
     let machine = machine_id();
-    let body = serde_json::json!({ "key": key, "machine_id": machine });
+    let body = activation_body(key, &machine, transfer);
 
     let client = reqwest::blocking::Client::builder()
         .timeout(Duration::from_secs(30))
@@ -364,6 +369,18 @@ pub fn activate(data_dir: &Path, key: &str) -> Result<LicenceState> {
 
 // --- Dates -------------------------------------------------------------------
 
+/// The activation request body. Kept separate so a test can assert that the
+/// transfer flag is only sent when the operator asked for a move.
+fn activation_body(key: &str, machine: &str, transfer: bool) -> serde_json::Value {
+    let mut body = serde_json::json!({ "key": key, "machine_id": machine });
+
+    if transfer {
+        body["transfer"] = serde_json::Value::Bool(true);
+    }
+
+    body
+}
+
 fn now_iso_date() -> String {
     chrono::Utc::now().format("%Y-%m-%d").to_string()
 }
@@ -411,6 +428,17 @@ mod tests {
             .expect_err("a licence must not work on a different machine");
 
         assert!(error.to_string().contains("different machine"));
+    }
+
+    #[test]
+    fn the_activation_body_only_asks_for_a_transfer_when_asked() {
+        let plain = activation_body("ML-AAAA", "machine-1", false);
+        assert_eq!(plain["machine_id"], "machine-1");
+        assert!(plain.get("transfer").is_none());
+
+        let moved = activation_body("ML-AAAA", "machine-2", true);
+        assert_eq!(moved["transfer"], serde_json::Value::Bool(true));
+        assert_eq!(moved["machine_id"], "machine-2");
     }
 
     #[test]

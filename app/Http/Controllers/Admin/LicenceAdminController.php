@@ -85,6 +85,7 @@ class LicenceAdminController extends Controller
             'status' => $licence->displayStatus(),
             'machine_bound' => $licence->machine_id !== null,
             'machine_id' => $licence->machine_id,
+            'transfer_count' => $licence->transfer_count,
             'activated_at' => $licence->activated_at?->toIso8601String(),
             'expires_at' => $licence->expires_at?->toIso8601String(),
             'days_left' => $licence->daysUntilExpiry(),
@@ -105,6 +106,14 @@ class LicenceAdminController extends Controller
     public function show(Licence $licence): Response
     {
         $licence->load(['licencePlan', 'order']);
+
+        $transfers = $licence->transfers()->limit(10)->get()->map(fn ($transfer) => [
+            'id' => $transfer->id,
+            'from_machine_id' => $transfer->from_machine_id,
+            'to_machine_id' => $transfer->to_machine_id,
+            'ip_address' => $transfer->ip_address,
+            'at' => $transfer->created_at?->toIso8601String(),
+        ])->all();
 
         $replacement = $licence->notes && preg_match('/Replaces licence #(\d+)/', $licence->notes, $m)
             ? (int) $m[1]
@@ -127,6 +136,11 @@ class LicenceAdminController extends Controller
                 'raw_status' => $licence->status,
                 'key_prefix' => $licence->key_prefix,
                 'machine_id' => $licence->machine_id,
+                'previous_machine_id' => $licence->previous_machine_id,
+                'transfer_count' => $licence->transfer_count,
+                'transfers_remaining' => $licence->transfersRemaining(),
+                'transfer_limit' => $licence->transferLimit(),
+                'last_transferred_at' => $licence->last_transferred_at?->toIso8601String(),
                 'issued_at' => $licence->issued_at?->toIso8601String(),
                 'activated_at' => $licence->activated_at?->toIso8601String(),
                 'expires_at' => $licence->expires_at?->toIso8601String(),
@@ -146,6 +160,7 @@ class LicenceAdminController extends Controller
             ] : null,
             // A freshly issued or re-issued key is shown once, after the redirect.
             'issuedKey' => session('licence_key'),
+            'transfers' => $transfers,
         ]);
     }
 
@@ -267,6 +282,18 @@ class LicenceAdminController extends Controller
             ->route('admin.licences.show', $replacement['licence'])
             ->with('success', "Replacement licence #{$replacement['licence']->id} issued and licence #{$licence->id} revoked. Copy the new key now.")
             ->with('licence_key', $replacement['key']);
+    }
+
+    /**
+     * Give back the customer's self-service moves (support has verified the
+     * request). The binding itself is unchanged; a move still has to happen from
+     * the new PC.
+     */
+    public function resetTransfers(Licence $licence): RedirectResponse
+    {
+        $this->licences->resetTransfers($licence);
+
+        return back()->with('success', "Self-service moves reset. The customer can move this licence {$licence->fresh()->transferLimit()} more time(s).");
     }
 
     public function plans(): Response

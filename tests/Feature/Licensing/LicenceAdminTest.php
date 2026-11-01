@@ -82,6 +82,9 @@ class LicenceAdminTest extends TestCase
                 ->where('licence.property_name', 'Lagos Harbour Hotel')
                 ->where('licence.plan', 'Mid-size hotel')
                 ->where('licence.machine_id', 'machine-abc')
+                ->where('licence.transfer_limit', 2)
+                ->where('licence.transfers_remaining', 2)
+                ->has('transfers', 0)
                 ->where('licence.amount', 300000));
     }
 
@@ -92,6 +95,21 @@ class LicenceAdminTest extends TestCase
         $this->actingAs($this->userWithRole('superuser'))
             ->get(route('admin.licences.index'))
             ->assertNotFound();
+    }
+
+    public function test_support_can_reset_self_service_moves(): void
+    {
+        $user = $this->userWithRole('superuser');
+        $licence = $this->licence([
+            'machine_id' => 'machine-b',
+            'transfer_count' => 2,
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('admin.licences.reset-transfers', $licence->id))
+            ->assertRedirect();
+
+        $this->assertSame(0, $licence->fresh()->transfer_count);
     }
 
     public function test_a_licence_can_be_revoked_and_restored(): void
