@@ -7,18 +7,20 @@ name: release
 # writes latest.json, which tauri-plugin-updater polls at
 # https://github.com/supremeyuma/Hotelms/releases/latest/download/latest.json
 #
+# Manual only, deliberately: `scripts/release.ps1` already publishes on a tag, so
+# a tag trigger here would race it and double-publish the same version. Run this
+# workflow by hand with an existing tag when building from CI.
+#
 # Required repository secrets:
 #   TAURI_SIGNING_PRIVATE_KEY           contents of ~/.tauri/moorelife.key
 #   TAURI_SIGNING_PRIVATE_KEY_PASSWORD  its password
 #
 # The bundled PHP/FrankenPHP runtime and the trimmed Postgres runtime are not in
 # git (too large; .gitignore). They are downloaded from the `runtime-v1` release
-# asset built from a machine that has them vendored.
+# asset built from a machine that has them vendored. Laravel's `vendor/` is not
+# in git either, so Composer has to run before the app is staged.
 
 on:
-  push:
-    tags:
-      - "v*"
   workflow_dispatch:
     inputs:
       tag:
@@ -33,6 +35,8 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
 
       - uses: actions/setup-node@v4
         with:
@@ -47,6 +51,19 @@ jobs:
       - uses: swatinem/rust-cache@v2
         with:
           workspaces: desktop/src-tauri
+
+      - name: Install PHP and Composer
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          tools: composer
+          coverage: none
+
+      - name: Install PHP dependencies
+        shell: pwsh
+        # The installer ships the Laravel app, so vendor/ must exist before
+        # stage-app.ps1 copies the tree.
+        run: composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
       - name: Fetch the vendored Windows runtime
         shell: pwsh
@@ -81,8 +98,8 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           projectPath: desktop
-          tagName: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
-          releaseName: "MooreLife ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}"
+          tagName: ${{ inputs.tag }}
+          releaseName: "MooreLife ${{ inputs.tag }}"
           releaseBody: "Windows installer. See the release notes in the repository for verification details."
           releaseDraft: false
           prerelease: false
