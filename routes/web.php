@@ -46,6 +46,7 @@ require __DIR__ . '/club.php';
 require __DIR__ . '/finance.php';
 require __DIR__ . '/hr.php';
 require __DIR__ . '/images.php';
+require __DIR__ . '/licensing.php';
 require __DIR__ . '/public.php';
 require __DIR__ . '/roomservice.php';
 require __DIR__ . '/staff.php';
